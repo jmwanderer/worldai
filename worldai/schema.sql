@@ -10,3 +10,9 @@ CREATE TABLE elements (
   properties TEXT NOT NULL
 );      
 
+CREATE TABLE images (
+  id INTEGER PRIMARY KEY,
+  filename TEXT NOT NULL
+);      
+
+

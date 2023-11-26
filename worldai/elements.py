@@ -6,7 +6,6 @@ Represets the element of a world definition.
 import datetime
 import os
 import json
-import sqlite3
 
 class ElementType:
   """
@@ -150,165 +149,118 @@ class ElementStore:
       result.append({ "id": id, "name" :  name })
 
     return result
-  
 
-class Elements:  
-  def listWorlds(db):
-    """
-    Return a list of worlds.
-    """
-    return ElementStore.getElements(db, ElementType.WORLD, 0)
+class Image:
+  # TODO: need a class here? expansion?
+  def __init__(self, filename=None):
+    self.id = id
+    self.filename = filename
 
-  def loadWorld(db, id):
-    """
-    Return a world instance
-    """
-    return ElementStore.loadElement(db, id, World())
+def createImage(db, data_dir, f_in):
+  image = Image(os.urandom(12).hex()+".png")
+  q = db.execute("INSERT INTO images VALUES (null, ?)", (image.filename,))
+  q = db.execute("SELECT last_insert_rowid()")
+  image.id = q.fetchone()[0]
+  db.commit()
+  f_out = open(os.path.join(data_dir, image.filename), "wb")
+  f_out.write(f_in.read())
+  f_out.close()
+  return image
 
-  def createWorld(db, world):
-    """
-    Return a world instance
-    """
-    return ElementStore.createElement(db, world)
 
-  def updateWorld(db, world):
-    ElementStore.updateElement(db, world)
-  
-  def listCharacters(db, world_id):
-    """
-    Return a list of characters.
-    """
-    return ElementStore.getElements(db, ElementType.CHARACTER, world_id)
+def getImageFile(db, data_dir, id):
+  q = db.execute("SELECT filename FROM images WHERE id = ?", (id,))
+  r = q.fetchone()
+  if r is not None:
+    filename = r[0]
+    f = open(os.path.join(data_dir, filename), "rb")
+    return f
+  return None
 
-  def loadCharacter(db, id):
-    """
-    Return a character instance
-    """
-    return ElementStore.loadElement(db, id, Character())
+def listWorlds(db):
+  """
+  Return a list of worlds.
+  """
+  return ElementStore.getElements(db, ElementType.WORLD, 0)
 
-  def createCharacter(db, character):
-    """
-    Return a character instance
-    """
-    return ElementStore.createElement(db, character)
+def loadWorld(db, id):
+  """
+  Return a world instance
+  """
+  return ElementStore.loadElement(db, id, World())
 
-  def updateCharacter(db, character):
-    ElementStore.updateElement(db, character)
+def createWorld(db, world):
+  """
+  Return a world instance
+  """
+  return ElementStore.createElement(db, world)
 
-  def listSites(db, world_id):
-    """
-    Return a list of sites.
-    """
-    return ElementStore.getElements(db, ElementType.SITE, world_id)
-
-  def loadSite(db, id):
-    """
-    Return a site instance
-    """
-    return ElementStore.loadElement(db, id, Site())
-
-  def createSite(db, site):
-    """
-    Return a site instance
-    """
-    return ElementStore.createElement(db, site)
-
-  def updateSite(db, site):
-    ElementStore.updateElement(db, site)
-  
-  def listItems(db, world_id):
-    """
-    Return a list of sites.
-    """
-    return ElementStore.getElements(db, ElementType.ITEM, world_id)
-
-  def loadItem(db, id):
-    """
-    Return an item instance
-    """
-    return ElementStore.loadElement(db, id, Item())
-
-  def createItem(db, item):
-    """
-    Return an Item instance
-    """
-    return ElementStore.createElement(db, item)
-  
-  def updateItem(db, item):
-    ElementStore.updateElement(db, item)
-     
+def updateWorld(db, world):
+  ElementStore.updateElement(db, world)
     
-def test():
-  dir_name = os.path.dirname(__file__)
-  path = os.path.join(dir_name, "schema.sql")
-  db = sqlite3.connect("file::memory",
-                        detect_types=sqlite3.PARSE_DECLTYPES)
-  db.row_factory = sqlite3.Row
-  with open(path) as f:
-    db.executescript(f.read())
+def listCharacters(db, world_id):
+  """
+  Return a list of characters.
+  """
+  return ElementStore.getElements(db, ElementType.CHARACTER, world_id)
 
-  world = World("world 1", "description", "details", '{ "dog": "kona" }')
-  world = Elements.createWorld(db, world)
-  world = World("world 2", "description", "details", '{ "dog": "kona" }')
-  world = Elements.createWorld(db, world)
+def loadCharacter(db, id):
+  """
+  Return a character instance
+  """
+  return ElementStore.loadElement(db, id, Character())
 
-  character = Character(world.id, "char 1", "desc", "details")
-  character = Elements.createCharacter(db, character)
-  character = Character(world.id, "char 2", "desc", "details")
-  character = Elements.createCharacter(db, character)
+def createCharacter(db, character):
+  """
+  Return a character instance
+  """
+  return ElementStore.createElement(db, character)
 
-  site = Site(world.id, "site 1", "desc", "details")
-  site = Elements.createSite(db, site)
-  site = Site(world.id, "site 2", "desc", "details")
-  site = Elements.createSite(db, site)
+def updateCharacter(db, character):
+  ElementStore.updateElement(db, character)
 
-  item = Item(world.id, "item 1", "desc", "details")
-  item = Elements.createItem(db, item)
-  item = Item(world.id, "item 2", "desc", "details")
-  item = Elements.createItem(db, item)
+def listSites(db, world_id):
+  """
+  Return a list of sites.
+  """
+  return ElementStore.getElements(db, ElementType.SITE, world_id)
+
+def loadSite(db, id):
+  """
+  Return a site instance
+  """
+  return ElementStore.loadElement(db, id, Site())
+
+def createSite(db, site):
+  """
+  Return a site instance
+  """
+  return ElementStore.createElement(db, site)
+
+def updateSite(db, site):
+  ElementStore.updateElement(db, site)
+    
+def listItems(db, world_id):
+  """
+  Return a list of sites.
+  """
+  return ElementStore.getElements(db, ElementType.ITEM, world_id)
+
+def loadItem(db, id):
+  """
+  Return an item instance
+  """
+  return ElementStore.loadElement(db, id, Item())
+
+def createItem(db, item):
+  """
+  Return an Item instance
+  """
+  return ElementStore.createElement(db, item)
   
-  print("list worlds")
-  worlds = Elements.listWorlds(db)
-  print(str(worlds))
-
-  print("load world")
-  world = Elements.loadWorld(db, world.id)
-  print(str(world))
-
-  print("list characters")
-  characters = Elements.listCharacters(db, world.id)
-  print(str(characters))
-
-  print("load character")
-  character = Elements.loadCharacter(db, characters[0]["id"])
-  print(str(character))
-
-  print("\nlist sites")
-  sites = Elements.listSites(db, world.id)
-  print(str(sites))
-
-  print("\nload site")
-  site = Elements.loadSite(db, sites[0]["id"])
-  print(str(site))
-
-  print("\nlist items")
-  items = Elements.listItems(db, world.id)
-  print(str(items))
-
-  print("\nload item")
-  item = Elements.loadItem(db, items[0]["id"])
-  print(str(item))
-  
-  print("\nupdate item")
-  item.description = "a new description"
-  Elements.updateItem(db, item)
-  item = Elements.loadItem(db, items[0]["id"])
-  print(str(item))  
-  db.close()
-
-
-if __name__ == "__main__":
-  test()
+def updateItem(db, item):
+  ElementStore.updateElement(db, item)
+    
 
   
   
