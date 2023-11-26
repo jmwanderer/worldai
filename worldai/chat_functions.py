@@ -1,6 +1,7 @@
 import json
 import os
 import sqlite3
+from . import elements
 
 functions = [
   {
@@ -48,12 +49,6 @@ functions = [
           },
         },
         "required": ["world_id"]
-      },
-      "returns": {
-        "status" : {
-          "type": "boolean",
-          "description": "True for success",
-        },
       },
     },
     {
@@ -150,20 +145,66 @@ def check_init_db():
       db.executescript(f.read())
     db.close()
 
-  
 
 def execute_function_call(function_call):
-  if function_call["name"] == "start_new_hangman_game":
-    arguments = json.loads(function_call['arguments'])
-    return "queen"
+  arguments = json.loads(function_call['arguments'])  
+  if function_call["name"] == "create_world":
+    world = elements.World(arguments["name"], arguments["description"])
+    world = elements.createWorld(get_db(), world)
+    return f"{world.id}"
 
-  if function_call["name"] == "record_guess":
-  
-    content = { "found" : False,
-                "visible_word" : "__x++",
-                "word" : "a new word",                
-                "remaining_guesses" : 4,
-                "status" : 1 }
+  if function_call["name"] == "list_worlds":
+    worlds = elements.listWorlds(get_db())
+    return json.dumps(worlds)
+
+  if function_call["name"] == "update_world":
+    world = elements.loadWorld(get_db(), int(arguments["world_id"]))
+    if arguments.get("name") is not None:
+      world.name = arguments["name"]
+    if arguments.get("description") is not None:
+      world.name = arguments["description"]
+    if arguments.get("details") is not None:
+      world.name = arguments["details"]
+    elements.updateWorld(get_db(), world)
+    return ""
+
+  if function_call["name"] == "read_world":
+    world = elements.loadWorld(get_db(), int(arguments["world_id"]))
+    content = { "world_id": world.id,
+                "name": world.name,
+                "description": world.description,
+                "details": world.details }
     return json.dumps(content)
+    
 
   return ""
+
+def track_tokens(world_id, prompt_tokens, complete_tokens, total_tokens):
+  db = get_db()
+  q = db.execute("SELECT COUNT(*) FROM token_usage WHERE world_id = ?",
+                 (world_id,))
+  if q.fetchone()[0] == 0:
+    db.execute("INSERT INTO token_usage VALUES (?, 0, 0, 0)", (world_id,))
+    
+  db.execute("UPDATE token_usage SET prompt_tokens = prompt_tokens + ?, " +
+             "complete_tokens = complete_tokens + ?, " +
+             "total_tokens = total_tokens + ? WHERE world_id = ?",
+             (prompt_tokens, complete_tokens, total_tokens, world_id))
+  db.commit()
+
+def dump_token_usage():
+  db = get_db()
+  q = db.execute("SELECT world_id, prompt_tokens, complete_tokens, "+
+                 "total_tokens FROM token_usage")
+  for (world_id, prompt_tokens, complete_tokens, total_tokens) in q.fetchall():
+    print(f"id({world_id}): prompt: {prompt_tokens}, complete: " +
+          f"{complete_tokens}, total: {total_tokens}")
+
+  print()    
+  q = db.execute("SELECT SUM(prompt_tokens), SUM(complete_tokens), "+
+                 "SUM(total_tokens) FROM token_usage")
+  (prompt_tokens, complete_tokens, total_tokens) = q.fetchone()
+  print(f"total: prompt: {prompt_tokens}, complete: " +
+        f"{complete_tokens}, total: {total_tokens}")
+  
+

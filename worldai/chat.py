@@ -19,6 +19,21 @@ from . import chat_functions
 GPT_MODEL = "gpt-3.5-turbo-0613"
 openai.api_key = os.environ['OPENAI_API_KEY']
 
+prompt_tokens = 0
+complete_tokens = 0
+total_tokens = 0
+
+def track_tokens(prompt, complete, total):
+  global prompt_tokens
+  global complete_tokens
+  global total_tokens
+  prompt_tokens += prompt
+  complete_tokens += complete
+  total_tokens += total
+  chat_functions.track_tokens(0, prompt, complete, total)
+  print(f"prompt: {prompt}, complete: {complete}, total: {total}")
+  
+
 @retry(wait=wait_random_exponential(multiplier=1, max=40),
        stop=stop_after_attempt(3))
 def chat_completion_request(messages, functions=None, function_call=None,
@@ -39,7 +54,9 @@ def chat_completion_request(messages, functions=None, function_call=None,
       json=json_data,
       timeout=10,
     )
-    print(str(response))
+    usage = response.json()["usage"]
+    track_tokens(usage["prompt_tokens"], usage["completion_tokens"],
+                 usage["total_tokens"])
     return response
   except Exception as e:
     print("Unable to generate ChatCompletion response")
@@ -84,11 +101,25 @@ chat_functions.init_config(dir, "worldai.sqlite")
 for func in chat_functions.functions:
   func_str = json.dumps(func)
   print(func_str)
-  
+
+
+instructions = """
+You are a helpful designer of fictional worlds.
+Worlds haved characters, sites, and items.
+All of these have a unique id, a name, a high level description, and details.
+We come up with new unique fictional characters.
+
+When we develop content for a world, the content is saved by calling
+update functions.
+
+You walk the user through the process of creating worlds, starting with the high level vision and developing further details.
+
+"Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."
+"""
 messages = []
 enc = tiktoken.encoding_for_model(GPT_MODEL)
 messages.append({"role": "system",
-                 "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."})
+                 "content": instructions })
 print("sys len: %d" % len(enc.encode(messages[0]["content"])))
 function_call = False
 assistant_message = None
@@ -104,6 +135,7 @@ while True:
   else:
     content = chat_functions.execute_function_call(
       assistant_message["function_call"])
+    print("function content: %s" % json.dumps(content))
     messages.append({"role": "function",
                      "name": assistant_message["function_call"]["name"],
                      "content": content})
@@ -112,6 +144,7 @@ while True:
   chat_response = chat_completion_request(
     messages, functions=chat_functions.functions
   )
+  print(json.dumps(chat_response.json()))
   assistant_message = chat_response.json()["choices"][0]["message"]
   messages.append(assistant_message)
   
@@ -128,6 +161,8 @@ while True:
 
 pretty_print_conversation(messages)
   
+print("Total tokens")
+print(f"prompt: {prompt_tokens}, complete: {complete_tokens}, total: {total_tokens}")
 
-
+chat_functions.dump_token_usage()
 
