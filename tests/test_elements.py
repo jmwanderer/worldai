@@ -1,5 +1,4 @@
 from worldai import elements
-import worldai
 import unittest
 import tempfile
 import os
@@ -26,69 +25,120 @@ class BasicTestCase(unittest.TestCase):
     f = open(os.path.join(self.dir_name, "trees.png"), "rb")
     image = elements.createImage(self.db, self.user_dir.name, f)
     f.close()
+    self.assertIsNotNone(image)
 
     f = elements.getImageFile(self.db, self.user_dir.name, image.id)
     data = f.read()
     f.close()
+    self.assertEqual(len(data), 2366609)
       
-  def testCase(self):
-    world = elements.World("world 1", "description", "details", '{ "dog": "kona" }')
-    world = elements.createWorld(self.db, world)
-    world = elements.World("world 2", "description", "details", '{ "dog": "kona" }')
-    world = elements.createWorld(self.db, world)
+  def testCRU(self):
+    # Create world
+    world = elements.World("world 1", "description", "details",
+                           '{ "dog": "kona" }')
+    world1 = elements.createWorld(self.db, world)
+    self.assertIsNotNone(world)
 
-    character = elements.Character(world.id, "char 1", "desc", "details")
+    # Create world
+    world = elements.World("world 2", "description", "details",
+                           '{ "dog": "kona" }')
+    world2 = elements.createWorld(self.db, world)
+    self.assertIsNotNone(world)    
+
+    # Create character
+    character = elements.Character(world1.id, "char 1", "desc", "details")
     character = elements.createCharacter(self.db, character)
-    character = elements.Character(world.id, "char 2", "desc", "details")
+    self.assertIsNotNone(character)
+
+    # Create character    
+    character = elements.Character(world1.id, "char 2", "desc", "details")
     character = elements.createCharacter(self.db, character)
+    self.assertIsNotNone(character)
 
-    site = elements.Site(world.id, "site 1", "desc", "details")
-    site = elements.createSite(self.db, site)
-    site = elements.Site(world.id, "site 2", "desc", "details")
-    site = elements.createSite(self.db, site)
+    # Create character    
+    character = elements.Character(world1.id, "char 3", "desc", "details")
+    character = elements.createCharacter(self.db, character)
+    self.assertIsNotNone(character)
 
-    item = elements.Item(world.id, "item 1", "desc", "details")
+    # Create character - diff world
+    character = elements.Character(world2.id, "char1", "world 2 char",
+                                   "details")
+    character = elements.createCharacter(self.db, character)
+    self.assertIsNotNone(character)
+
+    # Create site    
+    site = elements.Site(world1.id, "site 1", "desc", "details")
+    site = elements.createSite(self.db, site)
+    self.assertIsNotNone(site)
+
+    # Create site        
+    site = elements.Site(world1.id, "site 2", "desc", "details")
+    site = elements.createSite(self.db, site)
+    self.assertIsNotNone(site)
+
+    # Create item
+    item = elements.Item(world1.id, "item 1", "desc", "details")
     item = elements.createItem(self.db, item)
-    item = elements.Item(world.id, "item 2", "desc", "details")
+    self.assertIsNotNone(item)
+
+    # Create item
+    item = elements.Item(world1.id, "item 2", "desc", "details")
     item = elements.createItem(self.db, item)
-  
-    print("list worlds")
+    self.assertIsNotNone(item)
+
+    # List worlds
     worlds = elements.listWorlds(self.db)
-    print(str(worlds))
+    self.assertEqual(len(worlds), 2)
 
-    print("load world")
-    world = elements.loadWorld(self.db, world.id)
-    print(str(world))
+    # Read world
+    world = elements.loadWorld(self.db, world1.id)
+    self.assertIsNotNone(world)
+    self.assertEqual(world.name, "world 1")
+    self.assertEqual(world.description, "description")
+    self.assertEqual(world.details, "details")    
+    self.assertEqual(world.dog, "kona")
 
-    print("list characters")
-    characters = elements.listCharacters(self.db, world.id)
-    print(str(characters))
+    # Update world
+    world.name="world 3"
+    world.description="another description"
+    elements.updateWorld(self.db, world)
+    world = elements.loadWorld(self.db, world1.id)
+    self.assertIsNotNone(world)
+    self.assertEqual(world.name, "world 3")
+    self.assertEqual(world.description, "another description")
+    self.assertEqual(world.details, "details")    
+    self.assertEqual(world.dog, "kona")
 
-    print("load character")
+    # List characters
+    characters = elements.listCharacters(self.db, world1.id)
+    self.assertEqual(len(characters), 3)
+
+    # Load character
     character = elements.loadCharacter(self.db, characters[0]["id"])
-    print(str(character))
+    self.assertIsNotNone(character)
 
-    print("\nlist sites")
-    sites = elements.listSites(self.db, world.id)
-    print(str(sites))
-
-    print("\nload site")
+    # List sites
+    sites = elements.listSites(self.db, world1.id)
+    self.assertEqual(len(sites), 2)
+    
+    # Load site
     site = elements.loadSite(self.db, sites[0]["id"])
-    print(str(site))
+    self.assertIsNotNone(site)
 
-    print("\nlist items")
-    items = elements.listItems(self.db, world.id)
-    print(str(items))
+    # List items
+    items = elements.listItems(self.db, world1.id)
+    self.assertEqual(len(items), 2)    
 
-    print("\nload item")
+    # Load item
     item = elements.loadItem(self.db, items[0]["id"])
-    print(str(item))
-  
-    print("\nupdate item")
+    self.assertIsNotNone(item)
+
+    # Update item
     item.description = "a new description"
     elements.updateItem(self.db, item)
     item = elements.loadItem(self.db, items[0]["id"])
-    print(str(item))  
+    self.assertIsNotNone(item)
+    self.assertEqual(item.description, "a new description")
 
 
 if __name__ ==  '__main__':
