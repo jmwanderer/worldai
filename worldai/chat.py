@@ -11,6 +11,7 @@ import openai
 import requests
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
+import tiktoken
 
 from . import elements
 from . import chat_functions
@@ -38,6 +39,7 @@ def chat_completion_request(messages, functions=None, function_call=None,
       json=json_data,
       timeout=10,
     )
+    print(str(response))
     return response
   except Exception as e:
     print("Unable to generate ChatCompletion response")
@@ -72,14 +74,25 @@ def pretty_print_conversation(messages):
 
 def print_assistant(message):
   print(colored(f"{message['content']}\n", "green"))
-  
 
+
+dir = os.path.split(os.path.split(__file__)[0])[0]
+dir = os.path.join(dir, 'instance')
+print(f"dir: {dir}")
+chat_functions.init_config(dir, "worldai.sqlite")
+
+for func in chat_functions.functions:
+  func_str = json.dumps(func)
+  print(func_str)
+  
 messages = []
+enc = tiktoken.encoding_for_model(GPT_MODEL)
 messages.append({"role": "system",
                  "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."})
-
+print("sys len: %d" % len(enc.encode(messages[0]["content"])))
 function_call = False
 assistant_message = None
+
 
 while True:
   if not function_call:
@@ -87,12 +100,14 @@ while True:
     if user == 'exit':
       break
     messages.append({"role": "user", "content": user})
+    print("user len: %d" % len(enc.encode(user)))
   else:
     content = chat_functions.execute_function_call(
       assistant_message["function_call"])
     messages.append({"role": "function",
                      "name": assistant_message["function_call"]["name"],
                      "content": content})
+    print("len func result: %d" % len(enc.encode(content)))
 
   chat_response = chat_completion_request(
     messages, functions=chat_functions.functions
@@ -106,7 +121,8 @@ while True:
     print("making a function call: %s" %
           (assistant_message.get("function_call")))
   else:
-    function_call = False    
+    function_call = False
+    print("msg result: %d" % len(enc.encode(assistant_message["content"])))    
     print_assistant(assistant_message)
 
 
