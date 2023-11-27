@@ -191,7 +191,7 @@ class ElementStore:
     q = db.execute("SELECT id, name FROM elements WHERE " +
                    "type = ? AND parent_id = ?", (element_type, parent_id))
     for (id, name) in q.fetchall():
-      result.append({ "id": id, "name" :  name })
+      result.append({ "id": id, PROP_NAME :  name })
 
     return result
 
@@ -226,7 +226,12 @@ def listWorlds(db):
   """
   Return a list of worlds.
   """
-  return ElementStore.getElements(db, ElementType.WORLD, 0)
+  list = ElementStore.getElements(db, ElementType.WORLD, 0)
+  result = []
+  for item in list:
+    result.append({ "world_id": item["id"], PROP_NAME: item[PROP_NAME]})
+  return result
+
 
 def loadWorld(db, id):
   """

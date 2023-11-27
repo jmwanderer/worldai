@@ -59,7 +59,12 @@ class BasicTestCase(unittest.TestCase):
     values = json.loads(content)    
     self.assertEqual(values["details"], "details")
     
-
+  def test_available_functions(self):
+    # START_START
+    functions = chat_functions.get_available_functions()
+    self.assertEqual(len(functions), 3)
+    print(json.dumps(functions))
+    
 if __name__ ==  '__main__':
   unittest.main()
     

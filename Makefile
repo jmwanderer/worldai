@@ -8,6 +8,7 @@ systest:
 .PHONY: unittest
 unittest:
 	python3 -m tests.test_elements
+	python3 -m tests.test_chat_functions
 
 .PHONY: build
 build:

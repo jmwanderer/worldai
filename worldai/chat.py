@@ -98,10 +98,6 @@ dir = os.path.join(dir, 'instance')
 print(f"dir: {dir}")
 chat_functions.init_config(dir, "worldai.sqlite")
 
-for func in chat_functions.functions:
-  func_str = json.dumps(func)
-  print(func_str)
-
 
 instructions = """
 You are a helpful designer of fictional worlds.
@@ -111,6 +107,12 @@ We come up with new unique fictional characters.
 
 When we develop content for a world, the content is saved by calling
 update functions.
+
+Save the high level description of the world in description.
+
+When resuming work, read in the world
+
+Include details such as a list of main characters, sites, and special items in the details.
 
 You walk the user through the process of creating worlds, starting with the high level vision and developing further details.
 
@@ -142,7 +144,7 @@ while True:
     print("len func result: %d" % len(enc.encode(content)))
 
   chat_response = chat_completion_request(
-    messages, functions=chat_functions.functions
+    messages, functions=chat_functions.get_available_functions()
   )
   print(json.dumps(chat_response.json()))
   assistant_message = chat_response.json()["choices"][0]["message"]
