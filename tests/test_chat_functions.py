@@ -26,17 +26,17 @@ class BasicTestCase(unittest.TestCase):
     self.user_dir.cleanup()
 
   def test_exec_calls_world(self):
-    func_call = { 'name': 'create_world',
+    func_call = { 'name': 'CreateWorld',
                   'arguments': '{ "name": "world 1" }' }
     val = chat_functions.execute_function_call(func_call)
     self.assertEqual(val, "1")
 
-    func_call = { 'name': 'create_world',
+    func_call = { 'name': 'CreateWorld',
                   'arguments': '{ "name": "world 2" }' }
     val = chat_functions.execute_function_call(func_call)
     self.assertEqual(val, "2")
 
-    func_call = { 'name': 'list_worlds',
+    func_call = { 'name': 'ListWorlds',
                   'arguments': '{}' }
     content = chat_functions.execute_function_call(func_call)
     values = json.loads(content)
@@ -44,7 +44,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(values[0]["world_id"], 1)
     self.assertEqual(values[1]["world_id"], 2)    
     
-    func_call = { 'name': 'update_world',
+    func_call = { 'name': 'UpdateWorld',
                   'arguments':
                   '{ "world_id": "1", "name": "world 1", ' +
                   ' "description": "a description", ' +
@@ -52,7 +52,7 @@ class BasicTestCase(unittest.TestCase):
                   
     chat_functions.execute_function_call(func_call)
 
-    func_call = { 'name': 'read_world',
+    func_call = { 'name': 'ReadWorld',
                   'arguments':
                   '{ "world_id": "1" }'}
     content = chat_functions.execute_function_call(func_call)
@@ -63,36 +63,40 @@ class BasicTestCase(unittest.TestCase):
     # STATE_WORLDS
     functions = chat_functions.get_available_functions()
     self.assertEqual(len(functions), 3)
-    self.assertCallAvailable('list_worlds')
-    self.assertCallNotAvailable('update_world')    
-
-    self.callFunction('create_world', '{ "name": "world 1" }')
+    self.assertCallAvailable('ListWorlds')
+    self.assertCallNotAvailable('UpdateWorld')    
+    self.assertIsNotNone(chat_functions.get_state_instructions())
+    self.assertIn("new world", chat_functions.get_state_instructions())
+                       
+    self.callFunction('CreateWorld', '{ "name": "world 1" }')
 
     # STATE EDIT WORLD
     self.assertEqual(chat_functions.current_state,
                      chat_functions.STATE_EDIT_WORLD)
-    self.assertCallAvailable('update_world')    
-    self.assertCallNotAvailable('list_worlds')
+    self.assertCallAvailable('UpdateWorld')    
+    self.assertCallNotAvailable('ListWorlds')
+    self.assertIsNotNone(chat_functions.get_state_instructions())
+    self.assertIn("description", chat_functions.get_state_instructions())
 
-    self.callFunction('open_characters', '{ }')
+    self.callFunction('OpenCharacters', '{ }')
 
     # STATE CHARACTERS
-    self.assertCallNotAvailable('update_world')
-    self.assertCallAvailable('list_characters')
-    self.assertCallAvailable('create_character')
-    self.assertCallAvailable('read_character')
+    self.assertCallNotAvailable('UpdateWorld')
+    self.assertCallAvailable('ListCharacters')
+    self.assertCallAvailable('CreateCharacter')
+    self.assertCallAvailable('ReadCharacter')
 
-    id = self.callFunction('create_character','{ "name": "char 1" }')
+    id = self.callFunction('CreateCharacter','{ "name": "char 1" }')
     # STATE CHARACTER
-    self.assertCallNotAvailable('list_characters')
-    self.assertCallAvailable('update_character')
+    self.assertCallNotAvailable('ListCharacters')
+    self.assertCallAvailable('UpdateCharacter')
 
-    self.callFunction('update_character',
+    self.callFunction('UpdateCharacter',
                       '{ "id": "' + id + '", "name": "my char 1", ' +
                       ' "description": "a description", ' +
                       ' "details": "my details" }')
 
-    content = self.callFunction('read_character',
+    content = self.callFunction('ReadCharacter',
                                 '{ "id": "' + id + '" }')
     print(content)
     values = json.loads(content)    

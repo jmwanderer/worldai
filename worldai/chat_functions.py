@@ -61,7 +61,7 @@ def dump_token_usage():
   q = db.execute("SELECT world_id, prompt_tokens, complete_tokens, "+
                  "total_tokens FROM token_usage")
   for (world_id, prompt_tokens, complete_tokens, total_tokens) in q.fetchall():
-    print(f"id({world_id}): prompt: {prompt_tokens}, complete: " +
+    print(f"world({world_id}): prompt: {prompt_tokens}, complete: " +
           f"{complete_tokens}, total: {total_tokens}")
 
   print()    
@@ -78,17 +78,79 @@ STATE_CHARACTERS = 3
 STATE_EDIT_CHARACTER = 4
 
 states = {
-  STATE_WORLDS: [ "list_worlds", "read_world", "create_world" ],
-  STATE_EDIT_WORLD: [ "update_world", "read_world", "done_world",
-                      "open_characters" ],
-  STATE_CHARACTERS: [ "list_characters", "read_character",
-                      "create_character", "done_characters" ],
-  STATE_EDIT_CHARACTER: [ "update_character", "read_character",
-                          "done_character" ],
+  STATE_WORLDS: [ "ListWorlds", "ReadWorld", "CreateWorld" ],
+  STATE_EDIT_WORLD: [ "UpdateWorld", "ReadWorld", "DoneWorld",
+                      "OpenCharacters" ],
+  STATE_CHARACTERS: [ "ListCharacters", "ReadCharacter",
+                      "CreateCharacter", "DoneCharacters" ],
+  STATE_EDIT_CHARACTER: [ "UpdateCharacter", "ReadCharacter",
+                          "DoneCharacter" ],
   }
+
+instructions = {
+  STATE_WORLDS:
+  """
+  You can create a new world or resume work on an existing one by reading it.
+
+  Before creating a new world, check if it already exists by calling the
+  list_worlds function.
+  
+  To read an existing world, get the id from the list_worlds function.
+  """,
+
+  STATE_EDIT_WORLD:
+  """
+  A high level description of the world should include information such
+  as the neture and characteristics of the world. Save the high level description of the world in description.
+
+  We are working on world id {current_world_id}.
+
+  The details of a world include a list of main characters, key sites,
+  and special items.
+
+  To create a new world or work on a different world, call DoneWorld.
+
+  To develop details for the main characters, first call the OpenCharacters function.
+  """,
+                    
+  STATE_CHARACTERS:
+  """
+  You can create new characters or read existing characters for further development of the character.
+
+  Before creating a new character, check if it already exists by calling the
+  ListCharacters function.
+
+  We are working on world id {current_world_id}.
+
+  Use information from the world details to guide character design.
+
+  When done developing characters, return to designing the world by calling DoneCharacters.
+  """,
+                    
+  STATE_EDIT_CHARACTER:
+  """
+    Characters are actors in the world with a backstory, abilities, and motivations.  You can save changes to a character by calling UpdateCharacter.
+
+  Use information in the world details to guide character design.
+
+  We are working on world id {current_world_id}.
+  We are working on character id {current_character_id}.  
+
+  Save detailed information about the character in character details.
+
+  To work on other characters, call DoneCharacter
+  """,
+  }
+  
 
 current_state = STATE_WORLDS
 current_world_id = 0
+current_character_id = 0
+
+def get_state_instructions():
+  value = instructions[current_state]
+  return value.format(current_world_id = current_world_id, 
+                      current_character_id = current_character_id)
 
 def get_available_functions():
   return get_available_functions_for_state(current_state)
@@ -105,13 +167,13 @@ def get_available_functions_for_state(state):
 def execute_function_call(function_call):
   global current_state
   global current_world_id
+  global current_character_id  
   
   name = function_call["name"]
   arguments = function_call['arguments']
-  print(f'function call: {name}, arguments: {arguments}')
   arguments = json.loads(arguments)
 
-  if function_call["name"] == "create_world":
+  if function_call["name"] == "CreateWorld":
     world = elements.World()
     world.setName(arguments["name"])
     world = elements.createWorld(get_db(), world)
@@ -119,71 +181,83 @@ def execute_function_call(function_call):
     current_world_id = world.id
     return f"{world.id}"
 
-  if function_call["name"] == "list_worlds":
+  if function_call["name"] == "ListWorlds":
     worlds = elements.listWorlds(get_db())
     return json.dumps(worlds)
 
-  if function_call["name"] == "update_world":
+  if function_call["name"] == "UpdateWorld":
     world = elements.loadWorld(get_db(), int(arguments["world_id"]))
     world.updateProperties(arguments)
     elements.updateWorld(get_db(), world)
-    return ""
+    return "updated"
 
-  if function_call["name"] == "read_world":
-    world = elements.loadWorld(get_db(), int(arguments["world_id"]))
-    content = { "world_id": world.id,
-                **world.getProperties() }
-    current_state = STATE_EDIT_WORLD
-    current_world_id = world.id    
+  if function_call["name"] == "ReadWorld":
+    id = int(arguments["world_id"])
+    world = elements.loadWorld(get_db(), id)
+    if world is not None:
+      content = { "world_id": world.id,
+                  **world.getProperties() }
+      current_state = STATE_EDIT_WORLD
+      current_world_id = world.id
+    else:
+      content = { "error": f"no world {id}" }
     return json.dumps(content)
 
-  if function_call["name"] == "done_world":
+  if function_call["name"] == "DoneWorld":
     current_state = STATE_WORLDS
-    return ""
+    return "ok"
 
-  if function_call["name"] == "open_characters":
+  if function_call["name"] == "OpenCharacters":
     current_state = STATE_CHARACTERS
-    return ""
+    return "ok"
 
-  if function_call["name"] == "list_characters":
-    worlds = elements.listCharacters(get_db())
-    return json.dumps(worlds)
+  if function_call["name"] == "ListCharacters":
+    characters = elements.listCharacters(get_db(), current_world_id)
+    return json.dumps(characters)
 
-  if function_call["name"] == "read_character":
-    character = elements.loadCharacter(get_db(), int(arguments["id"]))
-    content = { "id": character.id,
-                **character.getProperties() }
-    current_state = STATE_EDIT_CHARACTER
+  if function_call["name"] == "ReadCharacter":
+    id = int(arguments["id"])
+    character = elements.loadCharacter(get_db(), id)
+    if character is not None:
+      content = { "id": character.id,
+                  **character.getProperties() }
+      current_state = STATE_EDIT_CHARACTER
+      current_character_id  = character.id
+    else:
+      content = { "error": f"no character {id}" }
     return json.dumps(content)
   
-  if function_call["name"] == "create_character":
+  if function_call["name"] == "CreateCharacter":
     character = elements.Character(current_world_id)
     character.setName(arguments["name"])
-    world = elements.createCharacter(get_db(), character )
+    character = elements.createCharacter(get_db(), character )
+    current_character_id  = character.id    
     current_state = STATE_EDIT_CHARACTER    
-    return f"{world.id}"
+    return f"{character.id}"
 
-  if function_call["name"] == "update_character":
+  if function_call["name"] == "UpdateCharacter":
     character = elements.loadCharacter(get_db(), int(arguments["id"]))
     character.updateProperties(arguments)
     elements.updateCharacter(get_db(), character)
-    return ""
+    return "updated"
   
-  if function_call["name"] == "done_characters":
+  if function_call["name"] == "DoneCharacters":
     current_state = STATE_EDIT_WORLD
-    return ""
+    return "ok"
 
-  if function_call["name"] == "done_character":
+  if function_call["name"] == "DoneCharacter":
     current_state = STATE_CHARACTERS
-    return ""
+    current_character_id  = 0    
+    return "ok"
 
-  print(f"no such function: {name}")
-  return ""
+  err_str = f"no such function: {name}"
+  print(err_str)
+  return '{ "error": "' + err_str + '" }'              
 
 
 all_functions = [
-    {
-    "name": "list_worlds",
+  {
+    "name": "ListWorlds",
     "description": "Get a list of available worlds.",
     "parameters": {
       "type": "object",
@@ -204,9 +278,9 @@ all_functions = [
       },
     },
   },
-
+  
   {
-    "name": "create_world",
+    "name": "CreateWorld",
     "description": "Create a new virtual world",
     "parameters": {
       "type": "object",
@@ -216,6 +290,7 @@ all_functions = [
           "description": "Name of the virtual world",
         },
       },
+      "required": [ "name" ]      
     },
     "returns": {
       "type": "integer",
@@ -225,7 +300,7 @@ all_functions = [
 
 
   {
-    "name": "read_world",
+    "name": "ReadWorld",
     "description": "Read in a specific virtual world.",
     "parameters": {
       "type": "object",
@@ -262,7 +337,7 @@ all_functions = [
   
   
   {
-    "name": "update_world",
+    "name": "UpdateWorld",
     "description": "Update the values of the virtual world.",
     "parameters": {
       "type": "object",
@@ -290,22 +365,17 @@ all_functions = [
 
 
   {
-    "name": "done_world",
+    "name": "DoneWorld",
     "description": "Done editing a world.",
     "parameters": {
       "type": "object",
       "properties": {
-        "world_id": {
-          "type": "integer",
-          "description": "Unique identifier for world intance.",
-        },
       },
-      "required": [ "world_id"]
     },
   },
 
   {
-    "name": "open_characters",
+    "name": "OpenCharacters",
     "description": "Start working on characters.",
     "parameters": {
       "type": "object",
@@ -315,7 +385,7 @@ all_functions = [
   },
   
   {
-    "name": "list_characters",
+    "name": "ListCharacters",
     "description": "Get a characters in the current world.",
     "parameters": {
       "type": "object",
@@ -338,7 +408,7 @@ all_functions = [
   },
 
   {
-    "name": "create_character",
+    "name": "CreateCharacter",
     "description": "Create a new character instance",
     "parameters": {
       "type": "object",
@@ -348,6 +418,7 @@ all_functions = [
           "description": "Name of the character",
         },
       },
+      "required": [ "name" ]
     },
     "returns": {
       "type": "integer",
@@ -356,7 +427,7 @@ all_functions = [
   },
 
   {
-    "name": "read_character",
+    "name": "ReadCharacter",
     "description": "Read in a specific character.",
     "parameters": {
       "type": "object",
@@ -392,7 +463,7 @@ all_functions = [
   },
 
   {
-    "name": "done_characters",
+    "name": "DoneCharacters",
     "description": "Complete working on characters.",
     "parameters": {
       "type": "object",
@@ -402,7 +473,7 @@ all_functions = [
   },
 
   {
-    "name": "update_character",
+    "name": "UpdateCharacter",
     "description": "Update the values of the character.",
     "parameters": {
       "type": "object",
@@ -424,12 +495,12 @@ all_functions = [
           "description": "Detailed information about the character.",
         },
       },
-      "required": ["id"]
-    },
+      "required": [ "id" ],
+    }
   },
   
   {
-    "name": "done_character",
+    "name": "DoneCharacter",
     "description": "Complete working on a specifc character.",
     "parameters": {
       "type": "object",
@@ -437,5 +508,30 @@ all_functions = [
       },
     },
   },
-]            
+
+  {
+    "name": "CreateImage",
+    "description": "Create an image for a world, character, site, or item",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "description": "A prompt from which to create the image.",
+        },
+        "required": [ "prompt" ]        
+      },        
+      "returns": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Unique identifier for the image.",
+          },
+        },
+      }
+    },
+  },
+  
+]
 
