@@ -14,10 +14,6 @@ functions = [
           "type": "string",
           "description": "Name of the virtual world",
         },
-        "description": {
-          "type": "string",
-          "description": "Describes the nature of the world",
-        },
       },
     },
     "returns": {
@@ -25,33 +21,33 @@ functions = [
       "description": "Unique identifier for world instance.",
     },
   },
-    {
-      "name": "update_world",
-      "description": "Update the values of the virtual world.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "world_id": {
-            "type": "integer",
-            "description": "Unique identifier for world intance.",
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the virtual world.",
-          },
-          "description": {
-            "type": "string",
-            "description": "Describes the nature of the world.",
-          },
-          "details": {
-            "type": "string",
-            "description": "Detailed information about the virtual world.",
-          },
+  {
+    "name": "update_world",
+    "description": "Update the values of the virtual world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "world_id": {
+          "type": "integer",
+          "description": "Unique identifier for world intance.",
         },
-        "required": ["world_id"]
+        "name": {
+          "type": "string",
+          "description": "Name of the virtual world.",
+        },
+        "description": {
+          "type": "string",
+          "description": "Describes the nature of the world.",
+        },
+        "details": {
+          "type": "string",
+          "description": "Detailed information about the virtual world.",
+        },
       },
+      "required": ["world_id"]
     },
-    {
+  },
+  {
       "name": "list_worlds",
       "description": "Get a list of available worlds.",
       "parameters": {
@@ -132,6 +128,10 @@ def get_db():
     my_db.row_factory = sqlite3.Row
   return my_db
 
+def debug_set_db(db):
+  global my_db
+  my_db = db
+
 def check_init_db():
   if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
@@ -149,7 +149,8 @@ def check_init_db():
 def execute_function_call(function_call):
   arguments = json.loads(function_call['arguments'])  
   if function_call["name"] == "create_world":
-    world = elements.World(arguments["name"], arguments["description"])
+    world = elements.World()
+    world.setName(arguments["name"])
     world = elements.createWorld(get_db(), world)
     return f"{world.id}"
 
@@ -159,21 +160,14 @@ def execute_function_call(function_call):
 
   if function_call["name"] == "update_world":
     world = elements.loadWorld(get_db(), int(arguments["world_id"]))
-    if arguments.get("name") is not None:
-      world.name = arguments["name"]
-    if arguments.get("description") is not None:
-      world.name = arguments["description"]
-    if arguments.get("details") is not None:
-      world.name = arguments["details"]
+    world.updateProperties(arguments)
     elements.updateWorld(get_db(), world)
     return ""
 
   if function_call["name"] == "read_world":
     world = elements.loadWorld(get_db(), int(arguments["world_id"]))
     content = { "world_id": world.id,
-                "name": world.name,
-                "description": world.description,
-                "details": world.details }
+                **world.getProperties() }
     return json.dumps(content)
     
 

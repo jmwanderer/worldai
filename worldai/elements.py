@@ -27,77 +27,123 @@ class ElementType:
     return ElementType.typeNames[element_type]
 
 
+# Malable properties that an element may have
+PROP_NAME = "name"
+PROP_DESCRIPTION = "description"
+PROP_DETAILS = "details"
+  
+
 class Element:
   """
   Represents an element building block of a world
   """
-  def __init__(self, element_type, parent_id, name,
-               description, details, properties):
+  def __init__(self, element_type, parent_id):
     self.id = 0
     self.type = element_type
-    self.setCoreValues((parent_id, name, description, details, properties))
+    self.parent_id = parent_id
+    self.name = None
+    self.properties = {}
 
-  def setCoreValues(self, values):
-    self.parent_id = values[0]    
-    self.name = values[1]
-    self.description = values[2]
-    self.details = values[3]
-    self.setProperties(json.loads(values[4]))
-
+  def myProps(self):
+    return [ PROP_NAME, PROP_DESCRIPTION, PROP_DETAILS ]
+  
   def setProperties(self, properties):
-    pass
+    """
+    Set malable properties from a dictionary
+    """
+    self.properties = {}
+    self.updateProperties(properties)
 
+  def updateProperties(self, properties):
+    for prop_name in properties.keys():
+      if prop_name in self.myProps():
+        self.setProperty(prop_name, properties[prop_name])
+    
   def getProperties(self):
-    return {}
+    """
+    Return dictonary of malable properties
+    """
+    return { PROP_NAME: self.name, **self.properties }
+
+  def setPropertiesJSON(self, properties):
+    """
+    Take an encoded json string of property values.
+    Can take name in the string
+    """
+    self.setProperties(json.loads(properties))
+
+  def getPropertiesJSON(self):
+    """
+    Return an encoded json string of property values.
+    Will not include id, parent_id, type, or name
+    """
+    return json.dumps(self.properties)
+
+  def getProperty(self, name):
+    if name == PROP_NAME:
+      return self.name
+    return self.properties.get(name, None)
+  
+  def setProperty(self, name, value):
+    if name == PROP_NAME:
+      self.name = value
+    else:
+      self.properties[name] = value
+
+  def getName(self):
+    return self.name
+
+  def setName(self, name):
+    self.name = name
+
+  def getDescription(self):
+    return self.getProperty(PROP_DESCRIPTION)
+
+  def getDetails(self):
+    return self.getProperty(PROP_DETAILS)
+
+  def setDescription(self, value):
+    return self.setProperty(PROP_DESCRIPTION, value)
+
+  def setDetails(self, value):
+    return self.setProperty(PROP_DETAILS, value)
+  
 
   def __str__(self):
     type_str = ElementType.typeToName(self.type)
     propStr = json.dumps(self.getProperties())
     return (f"type: {self.type}, id: {self.id}, parent_id: {self.parent_id}, "
-            + f"name: {self.name}, description: {self.description}, "
-            + f"details: {self.details}, properties: {propStr}")
+            + f"name: {self.name}, description: {self.getDescription()}, "
+            + f"details: {self.getDetails()}")
                        
 class World(Element):
   """
   Represents an instance of a World.
   """
-  def __init__(self, name="", description="", details="", properties="{}"):
-    super().__init__(ElementType.WORLD, 0, name, description,
-                     details, properties)
+  def __init__(self):
+    super().__init__(ElementType.WORLD, 0)
 
-  def setProperties(self, properties):
-    self.dog = properties.get("dog", "")
-
-  def getProperties(self):
-    return { "dog": self.dog }
-  
+    
 class Character(Element):
   """
   Represents an instance of a Character.
   """
-  def __init__(self, parent_id=0, name="", description="",
-               details="", properties="{}"):
-    super().__init__(ElementType.CHARACTER, parent_id, name, description,
-                     details, properties)
+  def __init__(self, parent_id=0):
+    super().__init__(ElementType.CHARACTER, parent_id)
     
 class Site(Element):
   """
-  Represents an instance of a Character.
+  Represents an instance of a Site
   """
-  def __init__(self, parent_id=0, name="", description="",
-               details="", properties="{}"):
-    super().__init__(ElementType.SITE, parent_id, name, description,
-                     details, properties)
+  def __init__(self, parent_id=0):
+    super().__init__(ElementType.SITE, parent_id)
 
 class Item(Element):
   """
-  Represents an instance of a Character.
+  Represents an instance of an Item
   """
-  def __init__(self, parent_id=0, name="", description="",
-               details="", properties="{}"):
-    super().__init__(ElementType.ITEM, parent_id, name, description,
-                     details, properties)
-    
+  def __init__(self, parent_id=0):
+    super().__init__(ElementType.ITEM, parent_id)
 
                        
 class ElementStore:
@@ -105,33 +151,32 @@ class ElementStore:
     """
     Return an element insance
     """
-    q = db.execute("SELECT parent_id, name, description, details, properties " +
+    q = db.execute("SELECT parent_id, name, properties " +
                    "FROM elements WHERE id = ? and type = ?",
                    (id, element.type))
     r = q.fetchone()
     if r is not None:
       element.id = id
-      element.setCoreValues(r)
+      element.parent_id = r[0]
+      element.name = r[1]      
+      element.setPropertiesJSON(r[2])
       return element
     return None
 
   def updateElement(db, element):
-    q = db.execute("UPDATE elements SET  name = ?, description = ?, " +
-                   "details = ?, properties = ? " +
+    q = db.execute("UPDATE elements SET  name = ?, properties = ? " +
                    "WHERE id = ? and type = ?",
-                   (element.name, element.description, element.details,
-                    json.dumps(element.getProperties()), element.id,
-                               element.type))
+                   (element.name, element.getPropertiesJSON(),
+                    element.id, element.type))
     db.commit()    
  
   def createElement(db, element):
     """
     Return an element insance
     """
-    q = db.execute("INSERT INTO elements VALUES (null, ?, ?, ?, ?, ?, ?)",
-                   (element.parent_id, element.name, element.type,
-                    element.description, element.details,
-                    json.dumps(element.getProperties())))
+    q = db.execute("INSERT INTO elements VALUES (null, ?, ?, ?, ?)",
+                   (element.type, element.parent_id, element.name,
+                    element.getPropertiesJSON()))
     q = db.execute("SELECT last_insert_rowid()")
     id = q.fetchone()[0]
     db.commit()

@@ -34,55 +34,74 @@ class BasicTestCase(unittest.TestCase):
       
   def testCRU(self):
     # Create world
-    world = elements.World("world 1", "description", "details",
-                           '{ "dog": "kona" }')
+    world = elements.World()
+    world.setPropertiesJSON('{ "' + elements.PROP_NAME + '": "world 1", ' +
+                            '"' + elements.PROP_DESCRIPTION +
+                            '": "description" }')
+    world.setDetails("details")
     world1 = elements.createWorld(self.db, world)
     self.assertIsNotNone(world)
 
     # Create world
-    world = elements.World("world 2", "description", "details",
-                           '{ "dog": "kona" }')
+    world = elements.World()
+    world.setProperties({ elements.PROP_NAME: "world 2",
+                          elements.PROP_DESCRIPTION: "description"})
     world2 = elements.createWorld(self.db, world)
     self.assertIsNotNone(world)    
 
     # Create character
-    character = elements.Character(world1.id, "char 1", "desc", "details")
+    character = elements.Character(world1.id)
+    character.setProperties({ elements.PROP_NAME: "char1",
+                              elements.PROP_DESCRIPTION: "description",
+                              elements.PROP_DETAILS: "details"})
+    
+    character.updateProperties({ elements.PROP_DETAILS: "my details"})
     character = elements.createCharacter(self.db, character)
     self.assertIsNotNone(character)
 
     # Create character    
-    character = elements.Character(world1.id, "char 2", "desc", "details")
+    character = elements.Character(world1.id)
+    character.setName("char 2")
+    character.setDescription("description")
+    character.setDetails("details")
     character = elements.createCharacter(self.db, character)
     self.assertIsNotNone(character)
 
     # Create character    
-    character = elements.Character(world1.id, "char 3", "desc", "details")
+    character = elements.Character(world1.id)
+    character.setName("char 3")
+
     character = elements.createCharacter(self.db, character)
     self.assertIsNotNone(character)
 
     # Create character - diff world
-    character = elements.Character(world2.id, "char1", "world 2 char",
-                                   "details")
+    character = elements.Character(world2.id)
+    character.setName("char 1")
+    character.setDescription("world 2 char")
     character = elements.createCharacter(self.db, character)
     self.assertIsNotNone(character)
 
     # Create site    
-    site = elements.Site(world1.id, "site 1", "desc", "details")
+    site = elements.Site(world1.id)
+    site.setName("site 1")
     site = elements.createSite(self.db, site)
     self.assertIsNotNone(site)
 
     # Create site        
-    site = elements.Site(world1.id, "site 2", "desc", "details")
+    site = elements.Site(world1.id)
+    site.setName("site 2")
     site = elements.createSite(self.db, site)
     self.assertIsNotNone(site)
 
     # Create item
-    item = elements.Item(world1.id, "item 1", "desc", "details")
+    item = elements.Item(world1.id)
+    item.setName("item 1")
     item = elements.createItem(self.db, item)
     self.assertIsNotNone(item)
 
     # Create item
-    item = elements.Item(world1.id, "item 2", "desc", "details")
+    item = elements.Item(world1.id)
+    item.setName("item 2")    
     item = elements.createItem(self.db, item)
     self.assertIsNotNone(item)
 
@@ -93,21 +112,19 @@ class BasicTestCase(unittest.TestCase):
     # Read world
     world = elements.loadWorld(self.db, world1.id)
     self.assertIsNotNone(world)
-    self.assertEqual(world.name, "world 1")
-    self.assertEqual(world.description, "description")
-    self.assertEqual(world.details, "details")    
-    self.assertEqual(world.dog, "kona")
+    self.assertEqual(world.getName(), "world 1")
+    self.assertEqual(world.getDescription(), "description")
+    self.assertEqual(world.getDetails(), "details")    
 
     # Update world
-    world.name="world 3"
-    world.description="another description"
+    world.setName("world 3")
+    world.setDescription("another description")
     elements.updateWorld(self.db, world)
     world = elements.loadWorld(self.db, world1.id)
     self.assertIsNotNone(world)
-    self.assertEqual(world.name, "world 3")
-    self.assertEqual(world.description, "another description")
-    self.assertEqual(world.details, "details")    
-    self.assertEqual(world.dog, "kona")
+    self.assertEqual(world.getName(), "world 3")
+    self.assertEqual(world.getDescription(), "another description")
+    self.assertEqual(world.getDetails(), "details")    
 
     # List characters
     characters = elements.listCharacters(self.db, world1.id)
@@ -134,11 +151,11 @@ class BasicTestCase(unittest.TestCase):
     self.assertIsNotNone(item)
 
     # Update item
-    item.description = "a new description"
+    item.setDescription("a new description")
     elements.updateItem(self.db, item)
     item = elements.loadItem(self.db, items[0]["id"])
     self.assertIsNotNone(item)
-    self.assertEqual(item.description, "a new description")
+    self.assertEqual(item.getDescription(), "a new description")
 
 
 if __name__ ==  '__main__':
