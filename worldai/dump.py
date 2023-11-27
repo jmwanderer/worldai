@@ -27,3 +27,15 @@ for (entry) in worlds:
   world = elements.loadWorld(chat_functions.get_db(), id)
   print(world.getPropertiesJSON())
 
+  print("Loading characters...")
+  characters = elements.listCharacters(chat_functions.get_db(), world.id)
+  for (char_entry) in characters:
+    id = char_entry["id"]
+    name = char_entry["name"]
+    print(f"Character({id}): {name}")
+
+    character = elements.loadCharacter(chat_functions.get_db(), id)
+    print(character.getPropertiesJSON())
+    
+  print("\n\n")
+  

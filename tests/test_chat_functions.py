@@ -41,8 +41,8 @@ class BasicTestCase(unittest.TestCase):
     content = chat_functions.execute_function_call(func_call)
     values = json.loads(content)
     self.assertEqual(len(values), 2)
-    self.assertEqual(values[0]["id"], 1)
-    self.assertEqual(values[1]["id"], 2)    
+    self.assertEqual(values[0]["world_id"], 1)
+    self.assertEqual(values[1]["world_id"], 2)    
     
     func_call = { 'name': 'update_world',
                   'arguments':
@@ -60,10 +60,70 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(values["details"], "details")
     
   def test_available_functions(self):
-    # START_START
+    # STATE_WORLDS
     functions = chat_functions.get_available_functions()
     self.assertEqual(len(functions), 3)
-    print(json.dumps(functions))
+    self.assertCallAvailable('list_worlds')
+    self.assertCallNotAvailable('update_world')    
+
+    self.callFunction('create_world', '{ "name": "world 1" }')
+
+    # STATE EDIT WORLD
+    self.assertEqual(chat_functions.current_state,
+                     chat_functions.STATE_EDIT_WORLD)
+    self.assertCallAvailable('update_world')    
+    self.assertCallNotAvailable('list_worlds')
+
+    self.callFunction('open_characters', '{ }')
+
+    # STATE CHARACTERS
+    self.assertCallNotAvailable('update_world')
+    self.assertCallAvailable('list_characters')
+    self.assertCallAvailable('create_character')
+    self.assertCallAvailable('read_character')
+
+    id = self.callFunction('create_character','{ "name": "char 1" }')
+    # STATE CHARACTER
+    self.assertCallNotAvailable('list_characters')
+    self.assertCallAvailable('update_character')
+
+    self.callFunction('update_character',
+                      '{ "id": "' + id + '", "name": "my char 1", ' +
+                      ' "description": "a description", ' +
+                      ' "details": "my details" }')
+
+    content = self.callFunction('read_character',
+                                '{ "id": "' + id + '" }')
+    print(content)
+    values = json.loads(content)    
+    self.assertEqual(values["details"], "my details")
+    self.assertEqual(values["name"], "my char 1")
+    
+    
+  
+  def assertCallAvailable(self, name):
+    # Assert we are allowed to call the function in the current state    
+    functions = chat_functions.get_available_functions()
+    names = [ x["name"] for x in functions ]
+    self.assertIn(name, names)
+
+  def assertCallNotAvailable(self, name):
+    # Assert we are allowed to call the function in the current state    
+    functions = chat_functions.get_available_functions()
+    names = [ x["name"] for x in functions ]
+    self.assertNotIn(name, names)
+
+  def callFunction(self, name, arguments):
+    """
+    Invoke the execute_function_call
+    name: string name of function call
+    arguments: json string of arguments
+    """
+    # Assert we are allowed to call it in the current state
+    self.assertCallAvailable(name)
+    func_call = { 'name': name,
+                  'arguments': arguments }
+    return chat_functions.execute_function_call(func_call)
     
 if __name__ ==  '__main__':
   unittest.main()
