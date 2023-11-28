@@ -22,9 +22,18 @@ class BasicTestCase(unittest.TestCase):
     self.user_dir.cleanup()    
 
   def testImages(self):
-    f = open(os.path.join(self.dir_name, "trees.png"), "rb")
-    image = elements.createImage(self.db, self.user_dir.name, f)
-    f.close()
+
+    image = elements.Image()
+    image.setPrompt("a prompt")
+    image.setParentId("dummy_id")
+    filename = image.getFilename()
+    f_in = open(os.path.join(self.dir_name, "trees.png"), "rb")
+    f_out = open(os.path.join(self.user_dir.name, filename), "wb")
+    f_out.write(f_in.read())
+    f_in.close()
+    f_out.close()
+
+    image = elements.createImage(self.db, image)
     self.assertIsNotNone(image)
 
     f = elements.getImageFile(self.db, self.user_dir.name, image.id)
@@ -44,9 +53,13 @@ class BasicTestCase(unittest.TestCase):
 
     # Create world
     world = elements.World()
-    world.setProperties({ elements.PROP_NAME: "world 2",
-                          elements.PROP_DESCRIPTION: "description"})
+    world.setName("w2")
     world2 = elements.createWorld(self.db, world)
+    world2.setProperties({ elements.PROP_NAME: "world 2",
+                           elements.PROP_DESCRIPTION: "description"})
+    elements.updateWorld(self.db, world)
+    world2 = elements.loadWorld(self.db, world2.id)
+    self.assertEqual(world2.getName(), "world 2")
     self.assertIsNotNone(world)    
 
     # Create character

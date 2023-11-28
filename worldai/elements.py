@@ -38,7 +38,7 @@ class Element:
   Represents an element building block of a world
   """
   def __init__(self, element_type, parent_id):
-    self.id = 0
+    self.id = None
     self.type = element_type
     self.parent_id = parent_id
     self.name = None
@@ -121,28 +121,28 @@ class World(Element):
   Represents an instance of a World.
   """
   def __init__(self):
-    super().__init__(ElementType.WORLD, 0)
+    super().__init__(ElementType.WORLD, '')
 
     
 class Character(Element):
   """
   Represents an instance of a Character.
   """
-  def __init__(self, parent_id=0):
+  def __init__(self, parent_id=''):
     super().__init__(ElementType.CHARACTER, parent_id)
     
 class Site(Element):
   """
   Represents an instance of a Site
   """
-  def __init__(self, parent_id=0):
+  def __init__(self, parent_id=''):
     super().__init__(ElementType.SITE, parent_id)
 
 class Item(Element):
   """
   Represents an instance of an Item
   """
-  def __init__(self, parent_id=0):
+  def __init__(self, parent_id=''):
     super().__init__(ElementType.ITEM, parent_id)
 
                        
@@ -174,13 +174,11 @@ class ElementStore:
     """
     Return an element insance
     """
-    q = db.execute("INSERT INTO elements VALUES (null, ?, ?, ?, ?)",
-                   (element.type, element.parent_id, element.name,
-                    element.getPropertiesJSON()))
-    q = db.execute("SELECT last_insert_rowid()")
-    id = q.fetchone()[0]
+    element.id = "id%s" % os.urandom(4).hex()
+    q = db.execute("INSERT INTO elements VALUES (?, ?, ?, ?, ?)",
+                   (element.id, element.type, element.parent_id,
+                    element.name, element.getPropertiesJSON()))
     db.commit()
-    element.id = id
     return element
   
   def getElements(db, element_type, parent_id):
@@ -196,22 +194,33 @@ class ElementStore:
     return result
 
 class Image:
-  # TODO: need a class here? expansion?
-  def __init__(self, filename=None):
+  """
+  The image class represents an image attached to a particular element.
+  
+  """
+  def __init__(self, id=None):
     self.id = id
-    self.filename = filename
+    self.filename = None
+    self.prompt = None
+    self.parent_id = None
 
-def createImage(db, data_dir, f_in):
-  image = Image(os.urandom(12).hex()+".png")
-  q = db.execute("INSERT INTO images VALUES (null, ?)", (image.filename,))
-  q = db.execute("SELECT last_insert_rowid()")
-  image.id = q.fetchone()[0]
+  def setPrompt(self, prompt):
+    self.prompt = prompt
+
+  def setParentId(self, parent_id):
+    self.parent_id = parent_id
+    
+  def getFilename(self):
+    if self.filename is None:
+      self.filename = os.urandom(12).hex() + ".png"
+    return self.filename
+  
+def createImage(db, image):
+  image.id = "id%s" % os.urandom(4).hex()
+  db.execute("INSERT INTO images VALUES (?, ?, ?, ?)",
+             (image.id, image.parent_id, image.prompt, image.filename))
   db.commit()
-  f_out = open(os.path.join(data_dir, image.filename), "wb")
-  f_out.write(f_in.read())
-  f_out.close()
   return image
-
 
 def getImageFile(db, data_dir, id):
   q = db.execute("SELECT filename FROM images WHERE id = ?", (id,))
@@ -222,15 +231,20 @@ def getImageFile(db, data_dir, id):
     return f
   return None
 
+def listImages(db, parent_id):
+  result = []
+  q = db.execute("SELECT id, prompt, filename FROM images WHERE parent_id = ?", (parent_id,))
+  for (id, prompt, filename) in q.fetchall():
+    result.append({ "id": id,
+                    "prompt": prompt,
+                    "filename": filename })
+  return result
+
 def listWorlds(db):
   """
   Return a list of worlds.
   """
-  list = ElementStore.getElements(db, ElementType.WORLD, 0)
-  result = []
-  for item in list:
-    result.append({ "world_id": item["id"], PROP_NAME: item[PROP_NAME]})
-  return result
+  return ElementStore.getElements(db, ElementType.WORLD, '')
 
 
 def loadWorld(db, id):

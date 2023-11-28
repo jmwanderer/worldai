@@ -118,44 +118,81 @@ Worlds, characters, sites, and items have:
 
 Content for words, characters, sites, and items are saved by calling update functions.
 
+Make content suggestions for the user
+
 Keep the description short, longer information goes in the details field.
 
 Suggest next steps to the user, but seek approval before creating new content.
+
+Don't share the id values with the user
 
 "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."
 """
 
 enc = tiktoken.encoding_for_model(GPT_MODEL)
+MESSAGE_THRESHOLD=2_000
 
 messages_history = []
 def build_messages():
   messages = []
   # System instructions
-  messages.append({"role": "system",
-                   "content": instructions })
-  # State instructions
-  messages.append({"role": "user",
-                   "content":
-                   chat_functions.get_state_instructions()})
-  # Message history
-  messages.extend(messages_history)
+  sys_message = {"role": "system",
+                 "content": instructions + "\n" +
+                 chat_functions.get_state_instructions() }
 
-  thread_size = 0
-  for message in messages:
-    if message["content"] is not None:
-      thread_size += len(enc.encode(message["content"]))
-  print(f"message thread size: {thread_size}")
+  length = len(enc.encode(json.dumps(sys_message)))
+  functions = chat_functions.get_available_functions()
+  length += len(enc.encode(json.dumps(functions)))
+  print(f"sys + func: {length} tokens")
+  messages.append(sys_message)
 
+  for message in reversed(messages_history):
+    msg_len = len(enc.encode(json.dumps(message)))
+    if length + msg_len < MESSAGE_THRESHOLD:
+      messages.insert(1, message)
+    else:
+      # Since we didn't include all messages, add extra context
+      context = chat_functions.get_context() 
+      context_message = { "role": "assistant",
+                          "content": context }
+      if (context) is not None:
+        msg_len = len(enc.encode(json.dumps(context_message)))
+        length += msg_len
+        messages.insert(1, context_message)
+      break
+
+  print(f"message thread size: {length}")
   return messages
+
+
 
 function_call = False
 assistant_message = None
-
 messages = []
+
+func_call = { 'name': 'ListWorlds',
+              'arguments': '{}' }
+content = chat_functions.execute_function_call(func_call)
+values = json.loads(content)
+
+print("Welcome to the world builder!\n")
+print("You can create and design worlds with main characters, key sites, and special items.")
+if len(values) == 0:
+  print("You have no worlds yet created.")
+else:
+  print("You have %d worlds created:" % len(values))
+  for value in values:
+    print("- %s" % value["name"])
+
+print("")
+print("What do you want to do?\n")
 
 while True:
   if not function_call:
-    user = input("> ").strip()
+    try:
+      user = input("> ").strip()
+    except EOFError:
+      break
     if user == 'exit':
       break
     if len(user) == 0:
@@ -163,13 +200,11 @@ while True:
     messages_history.append({"role": "user", "content": user})
     print("user len: %d" % len(enc.encode(user)))
   else:
-    print("Calling function %s: " % assistant_message["function_call"])
     content = chat_functions.execute_function_call(
       assistant_message["function_call"])
     messages_history.append({"role": "function",
                              "name": assistant_message["function_call"]["name"],
                              "content": content})
-
   messages = build_messages()
   print("Chat completion call...")
   try:
@@ -181,18 +216,20 @@ while True:
     break
   
   assistant_message = chat_response.json()["choices"][0]["message"]
+  pretty_print_message(assistant_message)  
   messages_history.append(assistant_message)
   
   # Check function call
   if assistant_message.get("function_call"):
-    function_call = True
+    function_call = True    
+    print("msg result: %d" %
+          len(enc.encode(json.dumps(assistant_message["function_call"]))))
   else:
     function_call = False
-    pretty_print_message(assistant_message)
     print("msg result: %d" % len(enc.encode(assistant_message["content"])))    
 
 
-pretty_print_conversation(messages)
+pretty_print_conversation(build_messages())
   
 print("Tokens")
 print(f"This session - prompt: {prompt_tokens}, complete: {complete_tokens}, total: {total_tokens}")

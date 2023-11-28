@@ -1,6 +1,10 @@
 import json
 import os
 import sqlite3
+import openai
+import requests
+from tenacity import retry, wait_random_exponential, stop_after_attempt
+
 from . import elements
 
 
@@ -79,12 +83,12 @@ STATE_EDIT_CHARACTER = 4
 
 states = {
   STATE_WORLDS: [ "ListWorlds", "ReadWorld", "CreateWorld" ],
-  STATE_EDIT_WORLD: [ "UpdateWorld", "ReadWorld", "DoneWorld",
-                      "OpenCharacters" ],
+  STATE_EDIT_WORLD: [ "UpdateWorld", "ReadWorld",
+                      "OpenCharacters", "CreateImage" ],
   STATE_CHARACTERS: [ "ListCharacters", "ReadCharacter",
                       "CreateCharacter", "DoneCharacters" ],
   STATE_EDIT_CHARACTER: [ "UpdateCharacter", "ReadCharacter",
-                          "DoneCharacter" ],
+                          "DoneCharacter", "CreateImage" ],
   }
 
 instructions = {
@@ -95,32 +99,29 @@ instructions = {
   Before creating a new world, check if it already exists by calling the
   list_worlds function.
   
-  To read an existing world, get the id from the list_worlds function.
+  To read an existing world, get the id from the list_worlds function and
+  call Read World.
   """,
 
   STATE_EDIT_WORLD:
   """
-  A high level description of the world should include information such
-  as the neture and characteristics of the world. Save the high level description of the world in description.
-
-  We are working on world id {current_world_id}.
-
-  The details of a world include a list of main characters, key sites,
-  and special items.
-
-  To create a new world or work on a different world, call DoneWorld.
+  A world needs a short high level description refelcting th nature of the world.
+  A world has details, that give more information about the world, the backstory, and includes a list of main characters, key sites, and special items.
 
   To develop details for the main characters, first call the OpenCharacters function.
   """,
                     
   STATE_CHARACTERS:
   """
+  You can update the name, description, and details of the world.
+  The details should list the main characters, key sites, and special items.
+
+  You can create an image for the world with CreateImage, using information from the description to create a prompt.
+  
   You can create new characters or read existing characters for further development of the character.
 
   Before creating a new character, check if it already exists by calling the
   ListCharacters function.
-
-  We are working on world id {current_world_id}.
 
   Use information from the world details to guide character design.
 
@@ -131,10 +132,14 @@ instructions = {
   """
     Characters are actors in the world with a backstory, abilities, and motivations.  You can save changes to a character by calling UpdateCharacter.
 
-  Use information in the world details to guide character design.
+  You can update the name, description, and details of the character.
 
-  We are working on world id {current_world_id}.
-  We are working on character id {current_character_id}.  
+  Use information in the world details to guide character design.
+  
+  You can create an image for the character with CreateImage, using information from the description and details to create a prompt.
+
+  We are working on world id {current_world_name}
+  We are working on character id {current_character_name}
 
   Save detailed information about the character in character details.
 
@@ -144,14 +149,49 @@ instructions = {
   
 
 current_state = STATE_WORLDS
-current_world_id = 0
-current_character_id = 0
+current_world_name = None
+current_world_id = None
+current_character_name = None
+current_character_id = None
 
 def get_state_instructions():
   value = instructions[current_state]
-  return value.format(current_world_id = current_world_id, 
-                      current_character_id = current_character_id)
+  return value.format(current_world_name = current_world_name, 
+                      current_character_name = current_character_name)
 
+MSG_WORLD_CONTEXT="""
+We are working on the world '{name}'
+The description of the world is '{description}'
+The details of the world are '{details}'
+"""
+
+MSG_CHARACTER_CONTEXT="""
+We are working on the world '{world_name}'
+The description of the world is '{word_description}'
+We are working on the character '{name}'
+The description of the character is '{description}'
+The details of the character are '{details}'
+"""
+
+def get_context():
+  if current_world_id is not None and current_character_id is None:
+    world = elements.loadWorld(get_db(), current_world_id)
+    return MSG_WORLD_CONTEXT.format(name=world.getName(),
+                                    description=world.getDescription(),
+                                    details=world.getDetails())
+  
+  if current_world_id is not None and current_character_id is not None:
+    world = elements.loadWorld(get_db(), current_world_id)    
+    character = elements.loadCharacter(get_db(), current_character_id)
+    return MSG_CHARACTER_CONTEXT.format(
+      world_name=world.getName(),
+      world_description=world.getDescription(),
+      name=character.getName(),
+      description=character.getDescription(),
+      details=character.getDetails())
+  
+  return None
+  
 def get_available_functions():
   return get_available_functions_for_state(current_state)
 
@@ -167,7 +207,9 @@ def get_available_functions_for_state(state):
 def execute_function_call(function_call):
   global current_state
   global current_world_id
+  global current_world_name
   global current_character_id  
+  global current_character_name
   
   name = function_call["name"]
   arguments = function_call['arguments']
@@ -176,36 +218,35 @@ def execute_function_call(function_call):
   if function_call["name"] == "CreateWorld":
     world = elements.World()
     world.setName(arguments["name"])
+    world.updateProperties(arguments)    
     world = elements.createWorld(get_db(), world)
     current_state = STATE_EDIT_WORLD
     current_world_id = world.id
-    return f"{world.id}"
+    current_world_name = world.getName()
+    return f'"{world.id}"'
 
   if function_call["name"] == "ListWorlds":
     worlds = elements.listWorlds(get_db())
     return json.dumps(worlds)
 
   if function_call["name"] == "UpdateWorld":
-    world = elements.loadWorld(get_db(), int(arguments["world_id"]))
+    world = elements.loadWorld(get_db(), current_world_id)
     world.updateProperties(arguments)
     elements.updateWorld(get_db(), world)
     return "updated"
 
   if function_call["name"] == "ReadWorld":
-    id = int(arguments["world_id"])
+    id = arguments["id"]
     world = elements.loadWorld(get_db(), id)
     if world is not None:
-      content = { "world_id": world.id,
+      content = { "id": world.id,
                   **world.getProperties() }
       current_state = STATE_EDIT_WORLD
       current_world_id = world.id
+      current_world_name = world.getName()
     else:
       content = { "error": f"no world {id}" }
     return json.dumps(content)
-
-  if function_call["name"] == "DoneWorld":
-    current_state = STATE_WORLDS
-    return "ok"
 
   if function_call["name"] == "OpenCharacters":
     current_state = STATE_CHARACTERS
@@ -216,13 +257,14 @@ def execute_function_call(function_call):
     return json.dumps(characters)
 
   if function_call["name"] == "ReadCharacter":
-    id = int(arguments["id"])
+    id = arguments["id"]
     character = elements.loadCharacter(get_db(), id)
     if character is not None:
       content = { "id": character.id,
                   **character.getProperties() }
       current_state = STATE_EDIT_CHARACTER
       current_character_id  = character.id
+      current_character_name = character.getName()      
     else:
       content = { "error": f"no character {id}" }
     return json.dumps(content)
@@ -230,13 +272,15 @@ def execute_function_call(function_call):
   if function_call["name"] == "CreateCharacter":
     character = elements.Character(current_world_id)
     character.setName(arguments["name"])
+    character.updateProperties(arguments)    
     character = elements.createCharacter(get_db(), character )
-    current_character_id  = character.id    
+    current_character_id  = character.id
+    current_character_name = character.getName()    
     current_state = STATE_EDIT_CHARACTER    
-    return f"{character.id}"
+    return f'"{character.id}"'
 
   if function_call["name"] == "UpdateCharacter":
-    character = elements.loadCharacter(get_db(), int(arguments["id"]))
+    character = elements.loadCharacter(get_db(), current_character_id)
     character.updateProperties(arguments)
     elements.updateCharacter(get_db(), character)
     return "updated"
@@ -247,12 +291,71 @@ def execute_function_call(function_call):
 
   if function_call["name"] == "DoneCharacter":
     current_state = STATE_CHARACTERS
-    current_character_id  = 0    
+    current_character_id = None
+    current_character_name = None
     return "ok"
+
+  if function_call["name"] == "CreateImage":
+    image = elements.Image()
+    image.setPrompt(arguments["prompt"])
+    print("Create image: prompt %s" % image.prompt)
+    if current_state == STATE_EDIT_CHARACTER:
+      image.setParentId(current_character_id)
+    else:
+      image.setParentId(current_world_id)
+
+    if image.parent_id is None:
+      return "error"
+
+    dest_file = os.path.join(DATA_DIR, image.getFilename())
+    print("dest file: %s" % dest_file)
+    if image_get_request(image.prompt, dest_file):
+      print("file create done, create image record")
+      image = elements.createImage(get_db(), image)
+      return "ok"
+    return "error"
 
   err_str = f"no such function: {name}"
   print(err_str)
   return '{ "error": "' + err_str + '" }'              
+
+
+def image_get_request(prompt, dest_file):
+  headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + openai.api_key,
+  }
+  json_data = {"model": "dall-e-3",
+               "size" : "1024x1024",
+               "prompt": prompt }
+  try:
+    print(f"post: {prompt}")
+    response = requests.post(
+      "https://api.openai.com/v1/images/generations",
+      headers=headers,
+      json=json_data,
+      timeout=60,
+    )
+    result = response.json()
+    print("image complete")
+    if result.get("data") is None:
+      return False
+    
+    response = requests.get(result["data"][0]["url"], stream=True)
+    if response.status_code != 200:
+      return False
+
+    with open(dest_file, "wb") as f:
+      response.raw.decode_content = True
+      # Probably uses more memory than necessary
+      f.write(response.raw.read())
+    return True
+      
+  except Exception as e:
+    print("Unable to generate ChatCompletion response")
+    print(f"Exception: {e}")
+    raise e
+
 
 
 all_functions = [
@@ -267,8 +370,8 @@ all_functions = [
     "returns": {
       "type": "object",
       "properties": {
-        "world_id": {
-          "type": "integer",
+        "id": {
+          "type": "string",
           "description": "Unique identifier for world intance.",
         },
         "name": {
@@ -289,11 +392,15 @@ all_functions = [
           "type": "string",
           "description": "Name of the virtual world",
         },
+        "description": {
+          "type": "string",
+          "description": "Short high level description of the virtual world",
+        },
       },
       "required": [ "name" ]      
     },
     "returns": {
-      "type": "integer",
+      "type": "string",
       "description": "Unique identifier for world instance.",
     },
   },
@@ -305,18 +412,18 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "world_id": {
-          "type": "integer",
+        "id": {
+          "type": "string",
           "description": "Unique identifier for world intance.",
         },
       },
-      "required": [ "world_id"]
+      "required": [ "id"]
     },
     "returns": {
       "type": "object",
       "properties": {
-        "world_id": {
-          "type": "integer",
+        "id": {
+          "type": "string",
           "description": "Unique identifier for world intance.",
         },
         "name": {
@@ -325,7 +432,7 @@ all_functions = [
         },
         "description": {
           "type": "string",
-          "description": "Describes the nature of the world.",
+          "description": "Short high level description of the world.",
         },
         "details": {
           "type": "string",
@@ -342,34 +449,18 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "world_id": {
-          "type": "integer",
-          "description": "Unique identifier for world intance.",
-        },
         "name": {
           "type": "string",
           "description": "Name of the virtual world.",
         },
         "description": {
           "type": "string",
-          "description": "Describes the nature of the world.",
+          "description": "Short high level description of the world.",
         },
         "details": {
           "type": "string",
           "description": "Detailed information about the virtual world.",
         },
-      },
-      "required": ["world_id"]
-    },
-  },
-
-
-  {
-    "name": "DoneWorld",
-    "description": "Done editing a world.",
-    "parameters": {
-      "type": "object",
-      "properties": {
       },
     },
   },
@@ -396,7 +487,7 @@ all_functions = [
       "type": "object",
       "properties": {
         "id": {
-          "type": "integer",
+          "type": "string",
           "description": "Unique identifier for the character intance.",
         },
         "name": {
@@ -417,11 +508,15 @@ all_functions = [
           "type": "string",
           "description": "Name of the character",
         },
+        "descripton": {
+          "type": "string",
+          "description": "Short description of the character",
+        },
       },
       "required": [ "name" ]
     },
     "returns": {
-      "type": "integer",
+      "type": "string",
       "description": "Unique identifier for world instance.",
     },
   },
@@ -433,7 +528,7 @@ all_functions = [
       "type": "object",
       "properties": {
         "id": {
-          "type": "integer",
+          "type": "string",
           "description": "Unique identifier for the character.",
         },
       },
@@ -443,7 +538,7 @@ all_functions = [
       "type": "object",
       "properties": {
         "id": {
-          "type": "integer",
+          "type": "string",
           "description": "Unique identifier for the character.",
         },
         "name": {
@@ -452,7 +547,7 @@ all_functions = [
         },
         "description": {
           "type": "string",
-          "description": "Describes the character.",
+          "description": "Short description of the character",          
         },
         "details": {
           "type": "string",
@@ -478,24 +573,19 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "integer",
-          "description": "Unique identifier for the character.",
-        },
         "name": {
           "type": "string",
           "description": "Name of the character.",
         },
         "description": {
           "type": "string",
-          "description": "Describes the nature the character.",
+          "description": "Short description of the character",
         },
         "details": {
           "type": "string",
           "description": "Detailed information about the character.",
         },
       },
-      "required": [ "id" ],
     }
   },
   
@@ -519,19 +609,18 @@ all_functions = [
           "type": "string",
           "description": "A prompt from which to create the image.",
         },
-        "required": [ "prompt" ]        
-      },        
-      "returns": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "description": "Unique identifier for the image.",
-          },
-        },
-      }
+      },
+      "required": [ "prompt" ],
     },
+    "returns": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the image.",
+        },
+      },
+    }
   },
-  
 ]
 

@@ -27,26 +27,29 @@ class BasicTestCase(unittest.TestCase):
 
   def test_exec_calls_world(self):
     func_call = { 'name': 'CreateWorld',
-                  'arguments': '{ "name": "world 1" }' }
-    val = chat_functions.execute_function_call(func_call)
-    self.assertEqual(val, "1")
-
-    func_call = { 'name': 'CreateWorld',
                   'arguments': '{ "name": "world 2" }' }
-    val = chat_functions.execute_function_call(func_call)
-    self.assertEqual(val, "2")
+    id2 = chat_functions.execute_function_call(func_call)
+    id2 = json.loads(id2)        
+    self.assertIsNotNone(id2)
+    
+    func_call = { 'name': 'CreateWorld',
+                  'arguments': '{ "name": "world 1" }' }
+    id1 = chat_functions.execute_function_call(func_call)
+    id1 = json.loads(id1)    
+    self.assertIsNotNone(id1)
+
 
     func_call = { 'name': 'ListWorlds',
                   'arguments': '{}' }
     content = chat_functions.execute_function_call(func_call)
     values = json.loads(content)
     self.assertEqual(len(values), 2)
-    self.assertEqual(values[0]["world_id"], 1)
-    self.assertEqual(values[1]["world_id"], 2)    
+    self.assertEqual(values[0]["id"], id2)
+    self.assertEqual(values[1]["id"], id1)
     
     func_call = { 'name': 'UpdateWorld',
                   'arguments':
-                  '{ "world_id": "1", "name": "world 1", ' +
+                  '{ "name": "world 1", ' +
                   ' "description": "a description", ' +
                   ' "details": "details" }' }
                   
@@ -54,7 +57,7 @@ class BasicTestCase(unittest.TestCase):
 
     func_call = { 'name': 'ReadWorld',
                   'arguments':
-                  '{ "world_id": "1" }'}
+                  ('{ "id": "%s" }' % id1)}
     content = chat_functions.execute_function_call(func_call)
     values = json.loads(content)    
     self.assertEqual(values["details"], "details")
@@ -87,6 +90,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertCallAvailable('ReadCharacter')
 
     id = self.callFunction('CreateCharacter','{ "name": "char 1" }')
+    id = json.loads(id)
     # STATE CHARACTER
     self.assertCallNotAvailable('ListCharacters')
     self.assertCallAvailable('UpdateCharacter')
