@@ -7,6 +7,7 @@ From: https://cookbook.openai.com/examples/how_to_call_functions_with_chat_model
 
 import os
 import json
+import logging
 import openai
 import requests
 from tenacity import retry, wait_random_exponential, stop_after_attempt
@@ -18,6 +19,15 @@ from . import chat_functions
 
 GPT_MODEL = "gpt-3.5-turbo-0613"
 openai.api_key = os.environ['OPENAI_API_KEY']
+
+
+BASE_DIR = os.getcwd()
+log_file_name = os.path.join(BASE_DIR, 'log-chat.txt')
+FORMAT = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
+logging.basicConfig(filename=log_file_name,
+                    level=logging.INFO,
+                    format=FORMAT,)
+
 
 prompt_tokens = 0
 complete_tokens = 0
@@ -31,7 +41,7 @@ def track_tokens(prompt, complete, total):
   complete_tokens += complete
   total_tokens += total
   chat_functions.track_tokens(0, prompt, complete, total)
-  print(f"prompt: {prompt}, complete: {complete}, total: {total}")
+  logging.info(f"prompt: {prompt}, complete: {complete}, total: {total}")
   
 
 @retry(wait=wait_random_exponential(multiplier=1, max=40),
@@ -59,11 +69,12 @@ def chat_completion_request(messages, functions=None, function_call=None,
       track_tokens(usage["prompt_tokens"], usage["completion_tokens"],
                    usage["total_tokens"])
     else:
-      print("no usage in response: %s" % json.dumps(response.json()))
+      logging.error("no usage in response: %s" % json.dumps(response.json()))
     return response
   except Exception as e:
-    print("Unable to generate ChatCompletion response")
-    print(f"Exception: {e}")
+    print(f"Exception: {e}")    
+    logging.error("Unable to generate ChatCompletion response")
+    logging.error(f"Exception: {e}")
     raise e
 
   
@@ -102,29 +113,27 @@ chat_functions.init_config(dir, "worldai.sqlite")
 
 
 instructions = """
-You are a co-designer of fictional worlds, helping the user come up
-with ideas and backstories for these worlds and the contents of worlds.
-You walk the user through the process of creating worlds, starting
-with the high level vision and developing further details.
+You are a co-designer of fictional worlds, developing ideas
+and and backstories for these worlds and the contents of worlds, including
+new unique fictional characters.
 
-All worlds include main characters, key sites, and special items.
-We come up with new unique fictional characters.
+You walk the user through the process of creating worlds. We go in the following order:
+- Design the world, high level description, and details including plans for the main characters, sites, and special items.
+- Design the individual characters
 
-Worlds, characters, sites, and items have:
-- a unique id
-- a name
-- a high level description
-- detailed information
+We can be in one of the following states:
+- State_Worlds: We can open existing worlds and create new worlds
+- State_View_World: We can view an existing world
+- State_Edit_World: We can change the description and details of a world
+- State_Characters: We can open existing characters and create new characters
+- State_Edit_Character: We can chage the description and details of a character
 
-Content for words, characters, sites, and items are saved by calling update functions.
-
-Make content suggestions for the user
+The current state is "{current_state}"
 
 Keep the description short, longer information goes in the details field.
 
-Suggest next steps to the user, but seek approval before creating new content.
-
-Don't share the id values with the user
+Suggest next steps to the user
+Suggest description and details for worlds and characters
 
 "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."
 """
@@ -136,14 +145,18 @@ messages_history = []
 def build_messages():
   messages = []
   # System instructions
+
+  current_instructions = instructions.format(
+    current_state=chat_functions.current_state)
   sys_message = {"role": "system",
-                 "content": instructions + "\n" +
+                 "content": current_instructions + "\n" +
                  chat_functions.get_state_instructions() }
 
   length = len(enc.encode(json.dumps(sys_message)))
   functions = chat_functions.get_available_functions()
   length += len(enc.encode(json.dumps(functions)))
-  print(f"sys + func: {length} tokens")
+  logging.info(f"sys + func: {length} tokens")
+  logging.info(sys_message)
   messages.append(sys_message)
 
   for message in reversed(messages_history):
@@ -161,7 +174,7 @@ def build_messages():
         messages.insert(1, context_message)
       break
 
-  print(f"message thread size: {length}")
+  logging.info(f"message thread size: {length}")
   return messages
 
 
@@ -198,13 +211,16 @@ while True:
     if len(user) == 0:
       continue
     messages_history.append({"role": "user", "content": user})
-    print("user len: %d" % len(enc.encode(user)))
+    logging.info("user len: %d" % len(enc.encode(user)))
   else:
+    print("function call: %s" % assistant_message["function_call"])
     content = chat_functions.execute_function_call(
       assistant_message["function_call"])
+    logging.info(content)
     messages_history.append({"role": "function",
                              "name": assistant_message["function_call"]["name"],
                              "content": content})
+  print("state: %s" % chat_functions.current_state)
   messages = build_messages()
   print("Chat completion call...")
   try:
@@ -216,17 +232,17 @@ while True:
     break
   
   assistant_message = chat_response.json()["choices"][0]["message"]
-  pretty_print_message(assistant_message)  
   messages_history.append(assistant_message)
   
   # Check function call
   if assistant_message.get("function_call"):
-    function_call = True    
-    print("msg result: %d" %
+    function_call = True
+    logging.info("msg result: %d" %
           len(enc.encode(json.dumps(assistant_message["function_call"]))))
   else:
     function_call = False
-    print("msg result: %d" % len(enc.encode(assistant_message["content"])))    
+    pretty_print_message(assistant_message)  
+    logging.info("msg result: %d" % len(enc.encode(assistant_message["content"])))    
 
 
 pretty_print_conversation(build_messages())

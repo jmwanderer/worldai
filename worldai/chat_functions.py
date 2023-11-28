@@ -76,75 +76,90 @@ def dump_token_usage():
         f"{complete_tokens}, total: {total_tokens}")
   
     
-STATE_WORLDS = 1
-STATE_EDIT_WORLD = 2
-STATE_CHARACTERS = 3
-STATE_EDIT_CHARACTER = 4
+STATE_WORLDS = "State_Worlds"
+STATE_VIEW_WORLD = "State_View_World"
+STATE_EDIT_WORLD = "State_Edit_World"
+STATE_CHARACTERS = "State_Characters"
+STATE_EDIT_CHARACTER = "State_Edit_Character"
 
 states = {
   STATE_WORLDS: [ "ListWorlds", "ReadWorld", "CreateWorld" ],
+  STATE_VIEW_WORLD: [ "ReadWorld", "ChangeState"],
   STATE_EDIT_WORLD: [ "UpdateWorld", "ReadWorld",
-                      "OpenCharacters", "CreateImage" ],
+                      "CreateImage", "ChangeState" ],
   STATE_CHARACTERS: [ "ListCharacters", "ReadCharacter",
-                      "CreateCharacter", "DoneCharacters" ],
-  STATE_EDIT_CHARACTER: [ "UpdateCharacter", "ReadCharacter",
-                          "DoneCharacter", "CreateImage" ],
+                      "CreateCharacter", "ChangeState" ],
+  STATE_EDIT_CHARACTER: [ "ListCharacters", "ReadCharacter",
+                           "CreateCharacter", "UpdateCharacter",
+                           "CreateImage", "ChangeState" ]
   }
 
 instructions = {
   STATE_WORLDS:
-  """
-  You can create a new world or resume work on an existing one by reading it.
+"""
+You can create a new world or resume work on an existing one by reading it.
 
-  Before creating a new world, check if it already exists by calling the
-  list_worlds function.
+Before creating a new world, check if it already exists by calling the list_worlds function.
   
-  To read an existing world, get the id from the list_worlds function and
-  call Read World.
-  """,
+To read an existing world, get the id from the ListWorlds function and call ReadWorld.
+""",
 
+  STATE_VIEW_WORLD:
+"""
+We are looking at world {current_world_name}
+
+A world has a description and details that describe the nature of the world
+and provide information.
+
+To change information about the world, call OpenWorld.
+
+A world has main characters that we develop and design.
+
+To work on defining characters, change state to State_Characters.
+""",
+  
   STATE_EDIT_WORLD:
   """
-  A world needs a short high level description refelcting th nature of the world.
-  A world has details, that give more information about the world, the backstory, and includes a list of main characters, key sites, and special items.
-
-  To develop details for the main characters, first call the OpenCharacters function.
-  """,
-                    
-  STATE_CHARACTERS:
-  """
-  You can update the name, description, and details of the world.
-  The details should list the main characters, key sites, and special items.
-
-  You can create an image for the world with CreateImage, using information from the description to create a prompt.
+We are working on world {current_world_name}
   
-  You can create new characters or read existing characters for further development of the character.
+A world needs a short high level description refelcting th nature of the world.
 
-  Before creating a new character, check if it already exists by calling the
-  ListCharacters function.
+A world has details, that give more information about the world, the backstory, and includes a list of main characters, key sites, and special items.
 
-  Use information from the world details to guide character design.
+Save information about the world by calling UpdateWorld
 
-  When done developing characters, return to designing the world by calling DoneCharacters.
+When done making changes to the World, call ChangeState
   """,
-                    
+
+  STATE_CHARACTERS:  
+"""
+We are working on world {current_world_name}
+
+Worlds have chacaters which are actors in the world with a backstory, abilities, and motivations. You can create characters and change information about the characters.
+
+Use information in the world details to guide which characters to create
+  
+When done making changes to Characters, call ChangeState
+  """,
+  
   STATE_EDIT_CHARACTER:
-  """
-    Characters are actors in the world with a backstory, abilities, and motivations.  You can save changes to a character by calling UpdateCharacter.
+"""
+We are working on world {current_world_name}
+We are working on character {current_character_name}
 
-  You can update the name, description, and details of the character.
+Worlds have chacaters which are actors in the world with a backstory, abilities, and motivations.  You can create characters and change information about the characters.
 
-  Use information in the world details to guide character design.
+You can update the name, description, and details of the character.
+You save changes to a character by calling UpdateCharacter.  
+
+Use information in the world details to guide character creation and design..
   
-  You can create an image for the character with CreateImage, using information from the description and details to create a prompt.
+ You can create an image for the character with CreateImage, using information from the description and details to create a prompt.
 
-  We are working on world id {current_world_name}
-  We are working on character id {current_character_name}
+Save detailed information about the character in character details.
 
-  Save detailed information about the character in character details.
-
-  To work on other characters, call DoneCharacter
-  """,
+When done making changes to Characters, call ChangeState
+""",
   }
   
 
@@ -241,16 +256,33 @@ def execute_function_call(function_call):
     if world is not None:
       content = { "id": world.id,
                   **world.getProperties() }
-      current_state = STATE_EDIT_WORLD
+      if current_state == STATE_WORLDS:
+        current_state = STATE_VIEW_WORLD
       current_world_id = world.id
       current_world_name = world.getName()
     else:
       content = { "error": f"no world {id}" }
     return json.dumps(content)
 
-  if function_call["name"] == "OpenCharacters":
-    current_state = STATE_CHARACTERS
-    return "ok"
+  if function_call["name"] == "ChangeState":
+    state = arguments["state"]
+    if states.get(state) is not None:
+      # Check is state is legal
+      if ((state == STATE_VIEW_WORLD or state == STATE_EDIT_WORLD or
+           state == STATE_CHARACTERS) and current_world_id is None):
+        return "Error: must read or create a world"
+      if (state == STATE_EDIT_CHARACTER and current_character_id is None):
+        return "Error: must read or create a character"        
+      current_state = state
+
+      if state != STATE_EDIT_CHARACTER:
+        current_character_id = None
+        current_character_name = None
+      if state == STATE_WORLDS:
+        current_world_id = None
+        current_world_name = None
+      return "ok"
+    return "Error: unknown state"
 
   if function_call["name"] == "ListCharacters":
     characters = elements.listCharacters(get_db(), current_world_id)
@@ -285,16 +317,6 @@ def execute_function_call(function_call):
     elements.updateCharacter(get_db(), character)
     return "updated"
   
-  if function_call["name"] == "DoneCharacters":
-    current_state = STATE_EDIT_WORLD
-    return "ok"
-
-  if function_call["name"] == "DoneCharacter":
-    current_state = STATE_CHARACTERS
-    current_character_id = None
-    current_character_name = None
-    return "ok"
-
   if function_call["name"] == "CreateImage":
     image = elements.Image()
     image.setPrompt(arguments["prompt"])
@@ -466,16 +488,6 @@ all_functions = [
   },
 
   {
-    "name": "OpenCharacters",
-    "description": "Start working on characters.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-      },
-    },
-  },
-  
-  {
     "name": "ListCharacters",
     "description": "Get a characters in the current world.",
     "parameters": {
@@ -558,12 +570,20 @@ all_functions = [
   },
 
   {
-    "name": "DoneCharacters",
-    "description": "Complete working on characters.",
+    "name": "ChangeState",
+    "description": "Change the current state for a new activity.",
     "parameters": {
       "type": "object",
       "properties": {
+        "state": {
+          "type": "string",
+          "description": "The new state",
+        },
       },
+    },
+    "returns": {
+      "type": "string",
+      "description": "Status of change.",      
     },
   },
 
@@ -589,16 +609,6 @@ all_functions = [
     }
   },
   
-  {
-    "name": "DoneCharacter",
-    "description": "Complete working on a specifc character.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-      },
-    },
-  },
-
   {
     "name": "CreateImage",
     "description": "Create an image for a world, character, site, or item",

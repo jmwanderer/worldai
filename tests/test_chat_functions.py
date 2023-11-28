@@ -80,10 +80,16 @@ class BasicTestCase(unittest.TestCase):
     self.assertCallNotAvailable('ListWorlds')
     self.assertIsNotNone(chat_functions.get_state_instructions())
     self.assertIn("description", chat_functions.get_state_instructions())
+    self.callFunction('ChangeState', '{ "state": "State_View_World" }')
 
-    self.callFunction('OpenCharacters', '{ }')
+    # STATE VIEW WORLD
+    self.assertEqual(chat_functions.current_state,
+                     chat_functions.STATE_VIEW_WORLD)
+    self.callFunction('ChangeState', '{ "state": "State_Characters" }')
 
-    # STATE CHARACTERS
+    # STATE EDIT CHARACTERS
+    self.assertEqual(chat_functions.current_state,
+                     chat_functions.STATE_CHARACTERS)
     self.assertCallNotAvailable('UpdateWorld')
     self.assertCallAvailable('ListCharacters')
     self.assertCallAvailable('CreateCharacter')
@@ -91,8 +97,10 @@ class BasicTestCase(unittest.TestCase):
 
     id = self.callFunction('CreateCharacter','{ "name": "char 1" }')
     id = json.loads(id)
-    # STATE CHARACTER
-    self.assertCallNotAvailable('ListCharacters')
+
+    # STATE EDIT CHARACTER
+    self.assertEqual(chat_functions.current_state,
+                     chat_functions.STATE_EDIT_CHARACTER)
     self.assertCallAvailable('UpdateCharacter')
 
     self.callFunction('UpdateCharacter',
@@ -106,6 +114,10 @@ class BasicTestCase(unittest.TestCase):
     values = json.loads(content)    
     self.assertEqual(values["details"], "my details")
     self.assertEqual(values["name"], "my char 1")
+
+    self.callFunction('ChangeState', '{ "state": "State_View_World" }')    
+    self.assertEqual(chat_functions.current_state,
+                     chat_functions.STATE_VIEW_WORLD)
     
     
   
