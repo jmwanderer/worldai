@@ -3,6 +3,7 @@ import os
 import sqlite3
 import openai
 import requests
+import logging
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 from . import elements
@@ -126,9 +127,11 @@ A world needs a short high level description refelcting th nature of the world.
 
 A world has details, that give more information about the world, the backstory, and includes a list of main characters, key sites, and special items.
 
+You can create an image for the world with CreateImage, using information from the description and details to create a prompt. Use a large prompt for the image.
+  
 Save information about the world by calling UpdateWorld
 
-When done making changes to the World, call ChangeState
+To work on characters or other worlds, call ChangeState
   """,
 
   STATE_CHARACTERS:  
@@ -137,10 +140,10 @@ We are working on world {current_world_name}
 
 Worlds have chacaters which are actors in the world with a backstory, abilities, and motivations. You can create characters and change information about the characters.
 
-Use information in the world details to guide which characters to create
+Create characters based on the information in the details and description of the current world.
   
-When done making changes to Characters, call ChangeState
-  """,
+When done making all changes to Characters, call ChangeState
+""",
   
   STATE_EDIT_CHARACTER:
 """
@@ -154,11 +157,11 @@ You save changes to a character by calling UpdateCharacter.
 
 Use information in the world details to guide character creation and design..
   
- You can create an image for the character with CreateImage, using information from the description and details to create a prompt.
+You can create an image for the character with CreateImage, using information from the description and details to create a prompt. Use a large prompt for the image.
 
 Save detailed information about the character in character details.
 
-When done making changes to Characters, call ChangeState
+To work on other characters or other worlds, call ChangeState
 """,
   }
   
@@ -281,7 +284,7 @@ def execute_function_call(function_call):
       if state == STATE_WORLDS:
         current_world_id = None
         current_world_name = None
-      return "ok"
+      return "state changed"
     return "Error: unknown state"
 
   if function_call["name"] == "ListCharacters":
@@ -320,7 +323,7 @@ def execute_function_call(function_call):
   if function_call["name"] == "CreateImage":
     image = elements.Image()
     image.setPrompt(arguments["prompt"])
-    print("Create image: prompt %s" % image.prompt)
+    logging.info("Create image: prompt %s", image.prompt)
     if current_state == STATE_EDIT_CHARACTER:
       image.setParentId(current_character_id)
     else:
@@ -330,11 +333,11 @@ def execute_function_call(function_call):
       return "error"
 
     dest_file = os.path.join(DATA_DIR, image.getFilename())
-    print("dest file: %s" % dest_file)
+    logging.info("dest file: %s", dest_file)
     if image_get_request(image.prompt, dest_file):
-      print("file create done, create image record")
+      logging.info("file create done, create image record")
       image = elements.createImage(get_db(), image)
-      return "ok"
+      return "image created with id: %s" % image.id
     return "error"
 
   err_str = f"no such function: {name}"
@@ -419,7 +422,7 @@ all_functions = [
           "description": "Short high level description of the virtual world",
         },
       },
-      "required": [ "name" ]      
+      "required": [ "name", "description" ]      
     },
     "returns": {
       "type": "string",
@@ -525,7 +528,7 @@ all_functions = [
           "description": "Short description of the character",
         },
       },
-      "required": [ "name" ]
+      "required": [ "name", "description" ]
     },
     "returns": {
       "type": "string",

@@ -40,7 +40,10 @@ def track_tokens(prompt, complete, total):
   prompt_tokens += prompt
   complete_tokens += complete
   total_tokens += total
-  chat_functions.track_tokens(0, prompt, complete, total)
+  world_id = chat_functions.current_world_id
+  if world_id is None:
+    world_id = 0
+  chat_functions.track_tokens(world_id, prompt, complete, total)
   logging.info(f"prompt: {prompt}, complete: {complete}, total: {total}")
   
 
@@ -115,7 +118,7 @@ chat_functions.init_config(dir, "worldai.sqlite")
 instructions = """
 You are a co-designer of fictional worlds, developing ideas
 and and backstories for these worlds and the contents of worlds, including
-new unique fictional characters.
+new unique fictional characters. Create new characters, don't use existing characters.
 
 You walk the user through the process of creating worlds. We go in the following order:
 - Design the world, high level description, and details including plans for the main characters, sites, and special items.
@@ -124,16 +127,16 @@ You walk the user through the process of creating worlds. We go in the following
 We can be in one of the following states:
 - State_Worlds: We can open existing worlds and create new worlds
 - State_View_World: We can view an existing world
-- State_Edit_World: We can change the description and details of a world
+- State_Edit_World: We can change the description and details of a world and add images
 - State_Characters: We can open existing characters and create new characters
-- State_Edit_Character: We can chage the description and details of a character
+- State_Edit_Character: We can chage the description and details of a character and add images
 
 The current state is "{current_state}"
 
 Keep the description short, longer information goes in the details field.
 
+Suggest good ideas for descriptions and details for the worlds and the characters
 Suggest next steps to the user
-Suggest description and details for worlds and characters
 
 "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."
 """
@@ -214,9 +217,11 @@ while True:
     logging.info("user len: %d" % len(enc.encode(user)))
   else:
     print("function call: %s" % assistant_message["function_call"])
+    logging.info("function call: %s",
+                 json.dumps(assistant_message["function_call"]))
     content = chat_functions.execute_function_call(
       assistant_message["function_call"])
-    logging.info(content)
+    logging.info("function call result: %s", content)
     messages_history.append({"role": "function",
                              "name": assistant_message["function_call"]["name"],
                              "content": content})
@@ -230,10 +235,15 @@ while True:
     )
   except Exception as e:
     break
+
+  if chat_response.json().get("choices") is None:
+    print(json.dumps(chat_response.json()))
+    break
   
   assistant_message = chat_response.json()["choices"][0]["message"]
   messages_history.append(assistant_message)
-  
+  logging.info(json.dumps(assistant_message))
+               
   # Check function call
   if assistant_message.get("function_call"):
     function_call = True
