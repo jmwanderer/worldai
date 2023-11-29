@@ -21,18 +21,19 @@ class BasicTestCase(unittest.TestCase):
     self.db.close()
     self.user_dir.cleanup()    
 
-  def testImages(self):
-
-    image = elements.Image()
-    image.setPrompt("a prompt")
-    image.setParentId("dummy_id")
-    filename = image.getFilename()
+  def createImageFile(self, filename):
     f_in = open(os.path.join(self.dir_name, "trees.png"), "rb")
     f_out = open(os.path.join(self.user_dir.name, filename), "wb")
     f_out.write(f_in.read())
     f_in.close()
     f_out.close()
+    
+  def testImages(self):
 
+    image = elements.Image()
+    image.setPrompt("a prompt")
+    image.setParentId("dummy_id")
+    self.createImageFile(image.getFilename())
     image = elements.createImage(self.db, image)
     self.assertIsNotNone(image)
 
@@ -143,9 +144,20 @@ class BasicTestCase(unittest.TestCase):
     characters = elements.listCharacters(self.db, world1.id)
     self.assertEqual(len(characters), 3)
 
+    # Create character image
+    char_id = characters[0]["id"]
+    image = elements.Image()
+    image.setPrompt("a prompt")
+    image.setParentId(char_id)
+    self.createImageFile(image.getFilename())
+    image = elements.createImage(self.db, image)
+    print("char id %s, image parent %s" % (char_id, image.parent_id))
+    self.assertIsNotNone(image)
+
     # Load character
-    character = elements.loadCharacter(self.db, characters[0]["id"])
+    character = elements.loadCharacter(self.db, char_id)
     self.assertIsNotNone(character)
+    self.assertEqual(len(character.getImages()), 1)
 
     # List sites
     sites = elements.listSites(self.db, world1.id)

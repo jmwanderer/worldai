@@ -43,6 +43,7 @@ class Element:
     self.parent_id = parent_id
     self.name = None
     self.properties = {}
+    self.images = []  # List of image ids
 
   def myProps(self):
     return [ PROP_NAME, PROP_DESCRIPTION, PROP_DETAILS ]
@@ -102,12 +103,24 @@ class Element:
   def getDetails(self):
     return self.getProperty(PROP_DETAILS)
 
+  def getDetailsHTML(self):
+    return textToHTML(self.getProperty(PROP_DETAILS))
+  
+
   def setDescription(self, value):
     return self.setProperty(PROP_DESCRIPTION, value)
 
   def setDetails(self, value):
     return self.setProperty(PROP_DETAILS, value)
-  
+
+  def getImages(self):
+    # Return a list of image ids
+    return self.images
+
+  def getImageByIndex(self, index):
+    if index < len(self.images):
+      return self.images[0]
+    return None
 
   def __str__(self):
     type_str = ElementType.typeToName(self.type)
@@ -115,6 +128,12 @@ class Element:
     return (f"type: {self.type}, id: {self.id}, parent_id: {self.parent_id}, "
             + f"name: {self.name}, description: {self.getDescription()}, "
             + f"details: {self.getDetails()}")
+
+
+def textToHTML(text):
+  if text is None:
+    return None
+  return text.replace("\n\n","<p>").replace("\n","<br>")
                        
 class World(Element):
   """
@@ -155,13 +174,18 @@ class ElementStore:
                    "FROM elements WHERE id = ? and type = ?",
                    (id, element.type))
     r = q.fetchone()
-    if r is not None:
-      element.id = id
-      element.parent_id = r[0]
-      element.name = r[1]      
-      element.setPropertiesJSON(r[2])
-      return element
-    return None
+    if r is None:
+      return None
+
+    element.id = id
+    element.parent_id = r[0]
+    element.name = r[1]      
+    element.setPropertiesJSON(r[2])
+
+    c = db.execute("SELECT id FROM images WHERE parent_id = ?", (id,))
+    for entry in c.fetchall():
+      element.images.append(entry[0])
+    return element
 
   def updateElement(db, element):
     q = db.execute("UPDATE elements SET  name = ?, properties = ? " +
@@ -229,6 +253,18 @@ def getImageFile(db, data_dir, id):
     filename = r[0]
     f = open(os.path.join(data_dir, filename), "rb")
     return f
+  return None
+
+def getImage(db, id):
+  q = db.execute("SELECT parent_id, prompt, filename FROM images WHERE id = ?",
+                 (id,))
+  r = q.fetchone()
+  if r is not None:
+    image = Image(id)
+    image.parent_id = r[0] 
+    image.prompt = r[1]
+    image.filename = r[2]    
+    return image
   return None
 
 def listImages(db, parent_id):
