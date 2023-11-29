@@ -41,6 +41,8 @@ class BasicTestCase(unittest.TestCase):
     data = f.read()
     f.close()
     self.assertEqual(len(data), 2366609)
+    elements.deleteImage(self.db, self.user_dir.name, image.id)
+    
       
   def testCRU(self):
     # Create world

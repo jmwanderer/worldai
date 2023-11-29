@@ -17,7 +17,14 @@ import tiktoken
 from . import elements
 from . import chat_functions
 
-GPT_MODEL = "gpt-3.5-turbo-0613"
+#GPT_MODEL = "gpt-3.5-turbo-0613"
+#MESSAGE_THRESHOLD=2_000
+
+GPT_MODEL = "gpt-3.5-turbo-1106"
+#MESSAGE_THRESHOLD=10_000
+# Can be higher, but save $$$ with some potential loss in perf
+MESSAGE_THRESHOLD=3_000
+
 openai.api_key = os.environ['OPENAI_API_KEY']
 
 
@@ -141,7 +148,6 @@ Suggest next steps to the user
 """
 
 enc = tiktoken.encoding_for_model(GPT_MODEL)
-MESSAGE_THRESHOLD=2_000
 
 messages_history = []
 def build_messages():

@@ -361,10 +361,28 @@ def createItem(db, item):
 def updateItem(db, item):
   ElementStore.updateElement(db, item)
     
+def deleteImage(db, data_dir, image_id):
+  image = getImage(db, image_id)
+  
+  db.execute("DELETE FROM images WHERE id = ?", (image_id,))
+  db.commit()
+  print(f"remove image {image_id}")  
+  path = os.path.join(data_dir, image.filename)
+  os.unlink(path)
+  print(f"delete file: {path}")
 
-  
-  
+def deleteCharacter(db, data_dir, id):
+  character = loadCharacter(db, id)
+  images = listImages(db, id)
 
-  
+  for image in images:
+    deleteImage(db, data_Dir, image["id"])
+    
+  db.execute("DELETE FROM elements WHERE id = ? AND type = ?",
+            (id, ElementType.CHARACTER))
+  db.commit()
+  print("delete character: [%s] %s" % (character.id, character.getName()))
+
+        
     
 

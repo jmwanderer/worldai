@@ -77,6 +77,29 @@ def close_db(e=None):
 
 bp = Blueprint('worldai', __name__, cli_group=None)
 
+@bp.cli.command('delete-image')
+@click.argument('id')
+def delete_image(id):
+  """Delete an image."""
+  image = elements.getImage(get_db(), id)
+  if image is not None:
+    elements.deleteImage(get_db(), current_app.instance_path, id)
+    click.echo('Deleted image [%s] %s.' % (image.id, image.getName()))
+  else:
+    click.echo(f'Error, no such image id:{id}')
+
+@bp.cli.command('delete-character')
+@click.argument('id')
+def delete_character(id):
+  """Delete a character and associated images."""
+  character = elements.loadCharacter(get_db(), id)
+  if character is not None:
+    elements.deleteCharacter(get_db(), current_app.instance_path, id)
+    click.echo('Deleted character [%s] %s.' % (character.id,
+                                               character.getName()))
+  else:
+    click.echo(f'Error, no such character id:{id}')
+
 @bp.route('/view/worlds', methods=["GET"])
 def list_worlds():
   """

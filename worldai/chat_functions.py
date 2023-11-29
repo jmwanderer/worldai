@@ -160,6 +160,19 @@ current_world_id = None
 current_character_name = None
 current_character_id = None
 
+def InitializeStateVars():
+  global current_state
+  global current_world_name
+  global current_world_id
+  global current_character_name
+  global current_character_id
+
+  current_state = STATE_WORLDS
+  current_world_name = None
+  current_world_id = None
+  current_character_name = None
+  current_character_id = None
+
 def get_state_instructions():
   value = instructions[current_state]
   return value.format(current_world_name = current_world_name, 
@@ -210,6 +223,31 @@ def get_available_functions_for_state(state):
     result.append(functions[name])
   return result
 
+
+def checkDuplication(name, element_list):
+  """
+  Check for any collisions between name and existing list
+  element_list: list returned from getElements
+
+  Return None if no conflict
+  Return a name if a conflict
+
+  """
+  # Check if name is a substring of any existing name
+  name = name.lower()
+  for element in element_list:
+    if name in element[elements.PROP_NAME].lower():
+      return element[elements.PROP_NAME]
+
+  # Check if any existing name is a substring of the new name
+  for element in element_list:
+    if element[elements.PROP_NAME].lower() in name:
+      return element[elements.PROP_NAME]
+
+  return None
+
+
+# TODO - refactor into primary interface, display, and individual functions
 def execute_function_call(function_call):
   global current_state
   global current_world_id
@@ -224,7 +262,15 @@ def execute_function_call(function_call):
   if function_call["name"] == "CreateWorld":
     world = elements.World()
     world.setName(arguments["name"])
-    world.updateProperties(arguments)    
+    world.updateProperties(arguments)
+
+    # Check for duplicates
+    worlds = elements.listWorlds(get_db())    
+    name = checkDuplication(world.getName(), worlds)
+    if name is not None:
+      content = { "error": f"Similar name already exists: {name}" }
+      return json.dumps(content)
+    
     world = elements.createWorld(get_db(), world)
     current_state = STATE_EDIT_WORLD
     current_world_id = world.id
@@ -239,7 +285,6 @@ def execute_function_call(function_call):
     world = elements.loadWorld(get_db(), current_world_id)
     world.updateProperties(arguments)
     elements.updateWorld(get_db(), world)
-    return "updated"
 
   if function_call["name"] == "ReadWorld":
     id = arguments["id"]
@@ -293,6 +338,13 @@ def execute_function_call(function_call):
   if function_call["name"] == "CreateCharacter":
     character = elements.Character(current_world_id)
     character.setName(arguments["name"])
+
+    characters = elements.listCharacters(get_db(), current_world_id)    
+    name = checkDuplication(character.getName(), characters)
+    if name is not None:
+      content = { "error": f"Similar name already exists: {name}" }
+      return json.dumps(content)
+    
     character.updateProperties(arguments)    
     character = elements.createCharacter(get_db(), character )
     current_character_id  = character.id
@@ -517,7 +569,7 @@ all_functions = [
           "type": "string",
           "description": "Name of the character",
         },
-        "descripton": {
+        "description": {
           "type": "string",
           "description": "Short description of the character",
         },

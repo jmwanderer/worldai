@@ -20,6 +20,7 @@ class BasicTestCase(unittest.TestCase):
       self.db.executescript(f.read())
     self.user_dir = tempfile.TemporaryDirectory()
     chat_functions.debug_set_db(self.db)
+    chat_functions.InitializeStateVars()
     
   def tearDown(self):
     self.db.close()
@@ -28,36 +29,54 @@ class BasicTestCase(unittest.TestCase):
   def test_exec_calls_world(self):
     func_call = { 'name': 'CreateWorld',
                   'arguments': '{ "name": "world 2" }' }
+    self.assertCallAvailable('CreateWorld')
     id2 = chat_functions.execute_function_call(func_call)
     id2 = json.loads(id2)        
     self.assertIsNotNone(id2)
+
+    self.callFunction('ChangeState', '{ "state": "State_Worlds" }')
     
     func_call = { 'name': 'CreateWorld',
                   'arguments': '{ "name": "world 1" }' }
+    self.assertCallAvailable('CreateWorld')
     id1 = chat_functions.execute_function_call(func_call)
     id1 = json.loads(id1)    
     self.assertIsNotNone(id1)
 
 
+    self.callFunction('ChangeState', '{ "state": "State_Worlds" }')
+    
     func_call = { 'name': 'ListWorlds',
                   'arguments': '{}' }
+    self.assertCallAvailable('ListWorlds')
     content = chat_functions.execute_function_call(func_call)
     values = json.loads(content)
     self.assertEqual(len(values), 2)
     self.assertEqual(values[0]["id"], id2)
     self.assertEqual(values[1]["id"], id1)
+
+    func_call = { 'name': 'ReadWorld',
+                  'arguments':
+                  ('{ "id": "%s" }' % id1)}
+    self.assertCallAvailable('ReadWorld')
+    content = chat_functions.execute_function_call(func_call)
+    values = json.loads(content)    
+    self.assertIsNone(values.get("details"))
+
+    self.callFunction('ChangeState', '{ "state": "State_Edit_World" }')    
     
     func_call = { 'name': 'UpdateWorld',
                   'arguments':
                   '{ "name": "world 1", ' +
                   ' "description": "a description", ' +
                   ' "details": "details" }' }
-                  
+    self.assertCallAvailable('UpdateWorld')                  
     chat_functions.execute_function_call(func_call)
 
     func_call = { 'name': 'ReadWorld',
                   'arguments':
                   ('{ "id": "%s" }' % id1)}
+    self.assertCallAvailable('ReadWorld')
     content = chat_functions.execute_function_call(func_call)
     values = json.loads(content)    
     self.assertEqual(values["details"], "details")
