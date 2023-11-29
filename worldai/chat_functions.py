@@ -80,19 +80,16 @@ def dump_token_usage():
 STATE_WORLDS = "State_Worlds"
 STATE_VIEW_WORLD = "State_View_World"
 STATE_EDIT_WORLD = "State_Edit_World"
-STATE_CHARACTERS = "State_Characters"
-STATE_EDIT_CHARACTER = "State_Edit_Character"
+STATE_EDIT_CHARACTERS = "State_Edit_Characters"
 
 states = {
   STATE_WORLDS: [ "ListWorlds", "ReadWorld", "CreateWorld" ],
   STATE_VIEW_WORLD: [ "ReadWorld", "ChangeState"],
   STATE_EDIT_WORLD: [ "UpdateWorld", "ReadWorld",
-                      "CreateImage", "ChangeState" ],
-  STATE_CHARACTERS: [ "ListCharacters", "ReadCharacter",
-                      "CreateCharacter", "ChangeState" ],
-  STATE_EDIT_CHARACTER: [ "ListCharacters", "ReadCharacter",
+                      "CreateWorldImage", "ChangeState" ],
+  STATE_EDIT_CHARACTERS: [ "ListCharacters", "ReadCharacter",
                            "CreateCharacter", "UpdateCharacter",
-                           "CreateImage", "ChangeState" ]
+                           "CreateCharacterImage", "ChangeState" ]
   }
 
 instructions = {
@@ -100,7 +97,7 @@ instructions = {
 """
 You can create a new world or resume work on an existing one by reading it.
 
-Before creating a new world, check if it already exists by calling the list_worlds function.
+Before creating a new world, check if it already exists by calling the ListWorlds function.
   
 To read an existing world, get the id from the ListWorlds function and call ReadWorld.
 """,
@@ -112,11 +109,11 @@ We are looking at world {current_world_name}
 A world has a description and details that describe the nature of the world
 and provide information.
 
-To change information about the world, call OpenWorld.
+To change information about the world, call change state to State_Edit_World.
 
 A world has main characters that we develop and design.
 
-To work on defining characters, change state to State_Characters.
+To work on defining characters, change state to State_Edit_Characters.
 """,
   
   STATE_EDIT_WORLD:
@@ -127,25 +124,14 @@ A world needs a short high level description refelcting th nature of the world.
 
 A world has details, that give more information about the world, the backstory, and includes a list of main characters, key sites, and special items.
 
-You can create an image for the world with CreateImage, using information from the description and details to create a prompt. Use a large prompt for the image.
+You can create an image for the world with CreateWorldImage, using information from the description and details to create a prompt. Use a large prompt for the image.
   
 Save information about the world by calling UpdateWorld
 
-To work on characters or other worlds, call ChangeState
+To work on characters call ChangeState
   """,
 
-  STATE_CHARACTERS:  
-"""
-We are working on world {current_world_name}
-
-Worlds have chacaters which are actors in the world with a backstory, abilities, and motivations. You can create characters and change information about the characters.
-
-Create characters based on the information in the details and description of the current world.
-  
-When done making all changes to Characters, call ChangeState
-""",
-  
-  STATE_EDIT_CHARACTER:
+  STATE_EDIT_CHARACTERS:
 """
 We are working on world {current_world_name}
 We are working on character {current_character_name}
@@ -155,13 +141,16 @@ Worlds have chacaters which are actors in the world with a backstory, abilities,
 You can update the name, description, and details of the character.
 You save changes to a character by calling UpdateCharacter.  
 
-Use information in the world details to guide character creation and design..
+Use information in the world details to guide character creation and design.
+
+Before creating a new character, check if it already exists by calling the ListCharacters function.
+
   
-You can create an image for the character with CreateImage, using information from the description and details to create a prompt. Use a large prompt for the image.
+You can create an image for the character with CreateCharacterImage, using information from the description and details to create a prompt. Use a large prompt for the image.
 
 Save detailed information about the character in character details.
 
-To work on other characters or other worlds, call ChangeState
+To work on information about the world call ChangeState
 """,
   }
   
@@ -185,7 +174,7 @@ The details of the world are '{details}'
 
 MSG_CHARACTER_CONTEXT="""
 We are working on the world '{world_name}'
-The description of the world is '{word_description}'
+The description of the world is '{world_description}'
 We are working on the character '{name}'
 The description of the character is '{description}'
 The details of the character are '{details}'
@@ -272,13 +261,11 @@ def execute_function_call(function_call):
     if states.get(state) is not None:
       # Check is state is legal
       if ((state == STATE_VIEW_WORLD or state == STATE_EDIT_WORLD or
-           state == STATE_CHARACTERS) and current_world_id is None):
+           state == STATE_EDIT_CHARACTERS) and current_world_id is None):
         return "Error: must read or create a world"
-      if (state == STATE_EDIT_CHARACTER and current_character_id is None):
-        return "Error: must read or create a character"        
       current_state = state
 
-      if state != STATE_EDIT_CHARACTER:
+      if state != STATE_EDIT_CHARACTERS:
         current_character_id = None
         current_character_name = None
       if state == STATE_WORLDS:
@@ -297,7 +284,7 @@ def execute_function_call(function_call):
     if character is not None:
       content = { "id": character.id,
                   **character.getProperties() }
-      current_state = STATE_EDIT_CHARACTER
+      current_state = STATE_EDIT_CHARACTERS
       current_character_id  = character.id
       current_character_name = character.getName()      
     else:
@@ -311,7 +298,7 @@ def execute_function_call(function_call):
     character = elements.createCharacter(get_db(), character )
     current_character_id  = character.id
     current_character_name = character.getName()    
-    current_state = STATE_EDIT_CHARACTER    
+    current_state = STATE_EDIT_CHARACTERS   
     return f'"{character.id}"'
 
   if function_call["name"] == "UpdateCharacter":
@@ -320,16 +307,24 @@ def execute_function_call(function_call):
     elements.updateCharacter(get_db(), character)
     return "updated"
   
-  if function_call["name"] == "CreateImage":
+  if (function_call["name"] == "CreateWorldImage" or
+      function_call["name"] == "CreateCharacterImage"):
     image = elements.Image()
     image.setPrompt(arguments["prompt"])
     logging.info("Create image: prompt %s", image.prompt)
-    if current_state == STATE_EDIT_CHARACTER:
-      image.setParentId(current_character_id)
+    if current_state == STATE_EDIT_CHARACTERS:
+      id = arguments["id"]
+      character = elements.loadCharacter(get_db(), id)
+      if character is None:
+        return "error: no character %s" % id
+      image.setParentId(id)
+      current_character_id = id
+      current_character_name = character.getName()
     else:
       image.setParentId(current_world_id)
 
     if image.parent_id is None:
+      logging.info("create image error: empty parent_id")
       return "error"
 
     dest_file = os.path.join(DATA_DIR, image.getFilename())
@@ -337,8 +332,8 @@ def execute_function_call(function_call):
     if image_get_request(image.prompt, dest_file):
       logging.info("file create done, create image record")
       image = elements.createImage(get_db(), image)
-      return "image created with id: %s" % image.id
-    return "error"
+      return "Image creation complete"
+    return "error generating image"
 
   err_str = f"no such function: {name}"
   print(err_str)
@@ -613,8 +608,8 @@ all_functions = [
   },
   
   {
-    "name": "CreateImage",
-    "description": "Create an image for a world, character, site, or item",
+    "name": "CreateWorldImage",
+    "description": "Create an image for the world",
     "parameters": {
       "type": "object",
       "properties": {
@@ -628,9 +623,37 @@ all_functions = [
     "returns": {
       "type": "object",
       "properties": {
+        "status": {
+          "type": "string",
+          "description": "Status of image creation",
+        },
+      },
+    }
+  },
+
+  {
+    "name": "CreateCharacterImage",
+    "description": "Create an image for a specific character",
+    "parameters": {
+      "type": "object",
+      "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the image.",
+          "description": "Unique identifier for the character.",
+        },
+        "prompt": {
+          "type": "string",
+          "description": "A prompt from which to create the image.",
+        },
+      },
+      "required": [ "id", "prompt" ],
+    },
+    "returns": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Status of image creation",          
         },
       },
     }

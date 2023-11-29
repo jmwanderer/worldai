@@ -1,6 +1,5 @@
-1. GPT creating images for the wrong character, not the
-current_character_id
+1.  GTP Creating characters when they already exist
 
-2. build messages is sendign a thread that is too long
+
 
 3. Asks about changing to a different state

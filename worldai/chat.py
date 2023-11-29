@@ -128,8 +128,7 @@ We can be in one of the following states:
 - State_Worlds: We can open existing worlds and create new worlds
 - State_View_World: We can view an existing world
 - State_Edit_World: We can change the description and details of a world and add images
-- State_Characters: We can open existing characters and create new characters
-- State_Edit_Character: We can chage the description and details of a character and add images
+- State_Edit_Characters: We can create new characters and chage the description and details of a character and add images to a character
 
 The current state is "{current_state}"
 
@@ -166,6 +165,7 @@ def build_messages():
     msg_len = len(enc.encode(json.dumps(message)))
     if length + msg_len < MESSAGE_THRESHOLD:
       messages.insert(1, message)
+      length += msg_len
     else:
       # Since we didn't include all messages, add extra context
       context = chat_functions.get_context() 

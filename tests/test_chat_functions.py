@@ -85,11 +85,11 @@ class BasicTestCase(unittest.TestCase):
     # STATE VIEW WORLD
     self.assertEqual(chat_functions.current_state,
                      chat_functions.STATE_VIEW_WORLD)
-    self.callFunction('ChangeState', '{ "state": "State_Characters" }')
+    self.callFunction('ChangeState', '{ "state": "State_Edit_Characters" }')
 
     # STATE EDIT CHARACTERS
     self.assertEqual(chat_functions.current_state,
-                     chat_functions.STATE_CHARACTERS)
+                     chat_functions.STATE_EDIT_CHARACTERS)
     self.assertCallNotAvailable('UpdateWorld')
     self.assertCallAvailable('ListCharacters')
     self.assertCallAvailable('CreateCharacter')
@@ -100,7 +100,7 @@ class BasicTestCase(unittest.TestCase):
 
     # STATE EDIT CHARACTER
     self.assertEqual(chat_functions.current_state,
-                     chat_functions.STATE_EDIT_CHARACTER)
+                     chat_functions.STATE_EDIT_CHARACTERS)
     self.assertCallAvailable('UpdateCharacter')
 
     self.callFunction('UpdateCharacter',
