@@ -1,4 +1,12 @@
 1.  GTP Creating characters when they already exist
+- check if names are subsets of other names
+
+* refactor func_call to have 1 return
+- check type
+
+State ==> Mode
+
+
 
 
 

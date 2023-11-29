@@ -145,8 +145,7 @@ Use information in the world details to guide character creation and design.
 
 Before creating a new character, check if it already exists by calling the ListCharacters function.
 
-  
-You can create an image for the character with CreateCharacterImage, using information from the description and details to create a prompt. Use a large prompt for the image.
+You can create an image for the character with CreateCharacterImage, using information from the character description to create a prompt. Use a large prompt for the image.
 
 Save detailed information about the character in character details.
 

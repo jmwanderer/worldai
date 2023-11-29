@@ -172,6 +172,7 @@ def build_messages():
       context_message = { "role": "assistant",
                           "content": context }
       if (context) is not None:
+        logging.info("add a context message: %s", conext)
         msg_len = len(enc.encode(json.dumps(context_message)))
         length += msg_len
         messages.insert(1, context_message)
