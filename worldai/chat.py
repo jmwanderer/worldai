@@ -177,33 +177,35 @@ def build_messages():
     else:
       # Since we didn't include all messages, add extra context
       print("Context buffer Exeeded!!!!!")
-      if (chat_functions.current_world_id is not None and
-          "ReadWorld" not in call_set):
-        print("loading world in context")        
-        logging.info("add world context: %s",
-                     chat_functions.current_world_id)
-        messages = getFunctionMessages('ReadWorld',
-                                       chat_functions.current_world_id)
-        messages.insert(1, messages[0])
-        messages.insert(1, messages[1])
-        msg_len = len(enc.encode(json.dumps(messages[0])))
-        length += msg_len        
-        msg_len = len(enc.encode(json.dumps(messages[1])))
-        length += msg_len
         
       if (chat_functions.current_character_id is not None and
           "ReadCharacter" not in call_set):
         print("loading character in context")
         logging.info("add character context: %s",
                      chat_functions.current_character_id)        
-        messages = getFunctionMessages('ReadCharacter',
-                                       chat_functions.current_character_id)
-        messages.insert(1, messages[0])
-        messages.insert(1, messages[1])
-        msg_len = len(enc.encode(json.dumps(messages[0])))
+        func_messages = getFunctionMessages('ReadCharacter',
+                                            chat_functions.current_character_id)
+        messages.insert(1, func_messages[1])
+        messages.insert(1, func_messages[0])
+        msg_len = len(enc.encode(json.dumps(func_messages[0])))
         length += msg_len        
-        msg_len = len(enc.encode(json.dumps(messages[1])))
+        msg_len = len(enc.encode(json.dumps(func_messages[1])))
         length += msg_len
+
+      if (chat_functions.current_world_id is not None and
+          "ReadWorld" not in call_set):
+        print("loading world in context")        
+        logging.info("add world context: %s",
+                     chat_functions.current_world_id)
+        func_messages = getFunctionMessages('ReadWorld',
+                                            chat_functions.current_world_id)
+        messages.insert(1, func_messages[1])
+        messages.insert(1, func_messages[0])
+        msg_len = len(enc.encode(json.dumps(func_messages[0])))
+        length += msg_len        
+        msg_len = len(enc.encode(json.dumps(func_messages[1])))
+        length += msg_len
+        
       break
 
   logging.info(f"message thread size: {length}")
