@@ -1,13 +1,10 @@
-1.  GTP Creating characters when they already exist
-- check if names are subsets of other names
 
 * refactor func_call to have 1 return
 - check type
 
 State ==> Mode
 
+3. Asks about changing to a different state???
 
 
-
-
-3. Asks about changing to a different state
+Suggest using details also in image creation

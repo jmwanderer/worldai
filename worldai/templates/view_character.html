@@ -17,8 +17,12 @@
       <h1>{{ character.getName() }}</h1>
       <h2>Description:</h2>
       {% if not character.getImageByIndex(0) is none %}
-      <img src="{{ url_for('worldai.get_image', id=character.getImageByIndex(0)) }}"
-           style="max-width:500px;padding-left:2em;float:right;display:inline;">
+      <div style="padding-left:2em;float:right;display:inline;">
+        <img id="image" style="max-width:500px;">
+        <br>
+        <button id="image_back">Prev</button>
+        <button id="image_fwd">Next</button>
+      </div>
       {% endif %}
       
       {{ character.getDescription() }}
@@ -27,4 +31,31 @@
       {{ character.getDetailsHTML() | safe }}
 
     </div>
+    <script>
+      const images = [
+          {% for image in character.getImages() %}
+          "{{ url_for('worldai.get_image', id=image) }}",
+          {% endfor %}
+      ];
+      let image = document.getElementById("image");
+      let image_back = document.getElementById("image_back");
+      let image_fwd = document.getElementById("image_fwd");                  
+      let index = 0;
+      function setImageIndex(delta) {
+          let new_index = index + delta;
+          if (new_index >= 0 && new_index < images.length) {
+              index = new_index;
+              image.src = images[index]
+          }
+          image_back.disabled = (index == 0);
+          image_fwd.disabled = (index == images.length - 1);
+      }
+
+      if (image) {
+          image_back.onclick = () => setImageIndex(-1);
+          image_fwd.onclick = () => setImageIndex(1);
+          setImageIndex(0);
+      }
+    </script>
 </html>
+

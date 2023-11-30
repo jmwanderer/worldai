@@ -139,12 +139,9 @@ We can be in one of the following states:
 
 The current state is "{current_state}"
 
-Keep the description short, longer information goes in the details field.
-
 Suggest good ideas for descriptions and details for the worlds and the characters
 Suggest next steps to the user
 
-"Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."
 """
 
 enc = tiktoken.encoding_for_model(GPT_MODEL)
@@ -178,7 +175,7 @@ def build_messages():
       context_message = { "role": "assistant",
                           "content": context }
       if (context) is not None:
-        logging.info("add a context message: %s", conext)
+        logging.info("add a context message: %s", context)
         msg_len = len(enc.encode(json.dumps(context_message)))
         length += msg_len
         messages.insert(1, context_message)

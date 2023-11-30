@@ -96,10 +96,8 @@ instructions = {
   STATE_WORLDS:
 """
 You can create a new world or resume work on an existing one by reading it.
-
+Get a list of worlds before reading a world or crating a new one
 Before creating a new world, check if it already exists by calling the ListWorlds function.
-  
-To read an existing world, get the id from the ListWorlds function and call ReadWorld.
 """,
 
   STATE_VIEW_WORLD:
@@ -133,8 +131,8 @@ To work on characters call ChangeState
 
   STATE_EDIT_CHARACTERS:
 """
-We are working on world {current_world_name}
-We are working on character {current_character_name}
+We are working on world "{current_world_name}"
+We are working on character "{current_character_name}"
 
 Worlds have chacaters which are actors in the world with a backstory, abilities, and motivations.  You can create characters and change information about the characters.
 
@@ -145,7 +143,7 @@ Use information in the world details to guide character creation and design.
 
 Before creating a new character, check if it already exists by calling the ListCharacters function.
 
-You can create an image for the character with CreateCharacterImage, using information from the character description to create a prompt. Use a large prompt for the image.
+You can create an image for the character with CreateCharacterImage, using information from the character description and detailed to create a prompt. Use a large prompt for the image.
 
 Save detailed information about the character in character details.
 
@@ -230,19 +228,19 @@ def checkDuplication(name, element_list):
   element_list: list returned from getElements
 
   Return None if no conflict
-  Return a name if a conflict
+  Return an id if a conflict
 
   """
   # Check if name is a substring of any existing name
   name = name.lower()
   for element in element_list:
     if name in element[elements.PROP_NAME].lower():
-      return element[elements.PROP_NAME]
+      return element[elements.PROP_ID]
 
   # Check if any existing name is a substring of the new name
   for element in element_list:
     if element[elements.PROP_NAME].lower() in name:
-      return element[elements.PROP_NAME]
+      return element[elements.PROP_ID]
 
   return None
 
@@ -354,6 +352,9 @@ def execute_function_call(function_call):
 
   if function_call["name"] == "UpdateCharacter":
     character = elements.loadCharacter(get_db(), current_character_id)
+    if character is None:
+      content = { "error": f"Character not found" }
+      return json.dumps(content)
     character.updateProperties(arguments)
     elements.updateCharacter(get_db(), character)
     return "updated"
@@ -432,7 +433,7 @@ def image_get_request(prompt, dest_file):
 all_functions = [
   {
     "name": "ListWorlds",
-    "description": "Get a list of available worlds.",
+    "description": "Get a list of existing worlds.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -443,11 +444,11 @@ all_functions = [
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for world intance.",
+          "description": "Unique identifier for the world.",
         },
         "name": {
           "type": "string",
-          "description": "Name of the virtual world.",
+          "description": "Name of the world.",
         },
       },
     },

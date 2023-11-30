@@ -27,6 +27,9 @@ class ElementType:
     return ElementType.typeNames[element_type]
 
 
+# Non-malable properties
+PROP_ID="id"
+
 # Malable properties that an element may have
 PROP_NAME = "name"
 PROP_DESCRIPTION = "description"
@@ -118,9 +121,11 @@ class Element:
     return self.images
 
   def getImageByIndex(self, index):
-    if index < len(self.images):
-      return self.images[0]
-    return None
+    if len(self.images) == 0:
+      return None
+    
+    index = max(0, min(index, len(self.images) - 1))
+    return self.images[index]
 
   def __str__(self):
     type_str = ElementType.typeToName(self.type)
