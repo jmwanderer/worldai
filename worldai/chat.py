@@ -165,32 +165,41 @@ def build_messages():
   messages.append(sys_message)
 
   for message in reversed(messages_history):
+    call_set = set()
     msg_len = len(enc.encode(json.dumps(message)))
     if length + msg_len < MESSAGE_THRESHOLD:
       messages.insert(1, message)
       length += msg_len
+      # Track function calls being added.
+      if message.get("function_call"):
+        print("track function add: %s" % message["function_call"]["name"])
+        call_set.add(message["function_call"]["name"])
     else:
       # Since we didn't include all messages, add extra context
       print("Context buffer Exeeded!!!!!")
-      if chat_functions.current_world_id is not None:
+      if (chat_functions.current_world_id is not None and
+          "ReadWorld" not in call_set):
+        print("loading world in context")        
         logging.info("add world context: %s",
                      chat_functions.current_world_id)
         messages = getFunctionMessages('ReadWorld',
                                        chat_functions.current_world_id)
-        messages_history.insert(1, messages[0])
-        messages_history.insert(1, messages[1])
+        messages.insert(1, messages[0])
+        messages.insert(1, messages[1])
         msg_len = len(enc.encode(json.dumps(messages[0])))
         length += msg_len        
         msg_len = len(enc.encode(json.dumps(messages[1])))
         length += msg_len
         
-      if chat_functions.current_character_id is not None:
+      if (chat_functions.current_character_id is not None and
+          "ReadCharacter" not in call_set):
+        print("loading character in context")
         logging.info("add character context: %s",
                      chat_functions.current_character_id)        
         messages = getFunctionMessages('ReadCharacter',
                                        chat_functions.current_character_id)
-        messages_history.insert(1, messages[0])
-        messages_history.insert(1, messages[1])
+        messages.insert(1, messages[0])
+        messages.insert(1, messages[1])
         msg_len = len(enc.encode(json.dumps(messages[0])))
         length += msg_len        
         msg_len = len(enc.encode(json.dumps(messages[1])))

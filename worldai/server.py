@@ -165,4 +165,47 @@ def get_image(id):
   return flask.send_file(image_file, mimetype="image/webp")
 
 
+@bp.route('/client/<wid>/<cid>', methods=["GET"])
+def view_client(wid, cid):
+  """
+  Client view
+  """
+  world = elements.loadWorld(get_db(), wid)
+  if world == None:
+    return "World xxx not found", 400
+  character = elements.loadCharacter(get_db(), cid)
+  if character == None:
+    return "Character xxx not found", 400
+
+  return flask.render_template("client.html", world=world,
+                               character=character)
+
+
+@bp.route('/worlds/<wid>/characters/<cid>', methods=["GET", "POST"])
+def get_character(wid, cid):
+  """
+  Get a character in JSON form
+  """
+  world = elements.loadWorld(get_db(), wid)
+  if world == None:
+    return { "error": "World not found"}, 400
+  character = elements.loadCharacter(get_db(), cid)
+  if character == None:
+    return { "error": "Character not found"}, 400
+
+  if request.method == "GET":  
+    content = {
+      "name": character.getName(),
+      "description": character.getDescription(),
+      "details": character.getDetails()
+    }
+  else:
+    values = request.json
+    content = {
+      "name": values,
+      "description": values,
+      "details": values
+    }
+  return flask.jsonify(content)
+  
 
