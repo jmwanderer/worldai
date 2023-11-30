@@ -171,65 +171,102 @@ def build_messages():
       length += msg_len
     else:
       # Since we didn't include all messages, add extra context
-      context = chat_functions.get_context() 
-      context_message = { "role": "assistant",
-                          "content": context }
-      if (context) is not None:
-        logging.info("add a context message: %s", context)
-        msg_len = len(enc.encode(json.dumps(context_message)))
+      print("Context buffer Exeeded!!!!!")
+      if chat_functions.current_world_id is not None:
+        logging.info("add world context: %s",
+                     chat_functions.current_world_id)
+        messages = getFunctionMessages('ReadWorld',
+                                       chat_functions.current_world_id)
+        messages_history.insert(1, messages[0])
+        messages_history.insert(1, messages[1])
+        msg_len = len(enc.encode(json.dumps(messages[0])))
+        length += msg_len        
+        msg_len = len(enc.encode(json.dumps(messages[1])))
         length += msg_len
-        messages.insert(1, context_message)
+        
+      if chat_functions.current_character_id is not None:
+        logging.info("add character context: %s",
+                     chat_functions.current_character_id)        
+        messages = getFunctionMessages('ReadCharacter',
+                                       chat_functions.current_character_id)
+        messages_history.insert(1, messages[0])
+        messages_history.insert(1, messages[1])
+        msg_len = len(enc.encode(json.dumps(messages[0])))
+        length += msg_len        
+        msg_len = len(enc.encode(json.dumps(messages[1])))
+        length += msg_len
       break
 
   logging.info(f"message thread size: {length}")
   return messages
 
 
+def getFunctionMessages(func_name, id=None):
+  """
+  Create an assistant function_call request message and get a response message.
+  Return as a list.
+
+  Used to set context in the message history.
+  """
+  result = []
+  if id is None:
+    arguments = '{}'
+  else:
+    arguments = '{"id":"%s"}' % id
+  func_call = { 'name': '%s' % func_name,
+                'arguments': arguments }
+  content = chat_functions.execute_function_call(func_call)
+  
+  result.append({"role": "assistant", "function_call": func_call})
+  result.append({"role": "function",
+                 "name": func_call["name"],
+                 "content": content})
+  return result
+  
 
 function_call = False
 assistant_message = None
 messages = []
 
-func_call = { 'name': 'ListWorlds',
-              'arguments': '{}' }
-content = chat_functions.execute_function_call(func_call)
-values = json.loads(content)
-
+logging.info("\nstartup*****************");
 print("Welcome to the world builder!\n")
 print("You can create and design worlds with main characters, key sites, and special items.")
-if len(values) == 0:
-  print("You have no worlds yet created.")
-else:
-  print("You have %d worlds created:" % len(values))
-  for value in values:
-    print("- %s" % value["name"])
-
 print("")
-print("What do you want to do?\n")
+
+messages = getFunctionMessages('ListWorlds')
+messages_history.append(messages[0])
+messages_history.append(messages[1])
+messages_history.append({"role": "user", "content": "what are the availble worlds?"})
+skip_user_input = True
+                        
 
 while True:
-  if not function_call:
-    try:
-      user = input("> ").strip()
-    except EOFError:
-      break
-    if user == 'exit':
-      break
-    if len(user) == 0:
-      continue
-    messages_history.append({"role": "user", "content": user})
-    logging.info("user len: %d" % len(enc.encode(user)))
-  else:
-    print("function call: %s" % assistant_message["function_call"])
-    logging.info("function call: %s",
-                 json.dumps(assistant_message["function_call"]))
-    content = chat_functions.execute_function_call(
-      assistant_message["function_call"])
-    logging.info("function call result: %s", content)
-    messages_history.append({"role": "function",
-                             "name": assistant_message["function_call"]["name"],
-                             "content": content})
-  print("state: %s" % chat_functions.current_state)
+  if not skip_user_input:
+    if not function_call:
+      try:
+        user = input("> ").strip()
+      except EOFError:
+        break
+      if user == 'exit':
+        break
+      if len(user) == 0:
+        continue
+      messages_history.append({"role": "user", "content": user})
+      logging.info("user len: %d" % len(enc.encode(user)))
+    else:
+      print("function call: %s" % assistant_message["function_call"])
+      logging.info("function call: %s",
+                   json.dumps(assistant_message["function_call"]))
+      content = chat_functions.execute_function_call(
+        assistant_message["function_call"])
+      logging.info("function call result: %s", content)
+      messages_history.append({"role": "function",
+                               "name": assistant_message["function_call"]["name"],
+                               "content": content})
+      print("state: %s" % chat_functions.current_state)
+
+  skip_user_input = False
+  logging.info("state: %s", chat_functions.current_state)
   messages = build_messages()
   print("Chat completion call...")
   try:

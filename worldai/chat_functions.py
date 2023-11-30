@@ -96,13 +96,14 @@ instructions = {
   STATE_WORLDS:
 """
 You can create a new world or resume work on an existing one by reading it.
-Get a list of worlds before reading a world or crating a new one
-Before creating a new world, check if it already exists by calling the ListWorlds function.
+Get a list of worlds before reading a world or creating a new one
+To get a list of worlds, call ListWorlds
+Before creating a new world, check if it already exists by using ListWorlds
 """,
 
   STATE_VIEW_WORLD:
 """
-We are looking at world {current_world_name}
+We are viewing the world "{current_world_name}"
 
 A world has a description and details that describe the nature of the world
 and provide information.
@@ -116,9 +117,9 @@ To work on defining characters, change state to State_Edit_Characters.
   
   STATE_EDIT_WORLD:
   """
-We are working on world {current_world_name}
+We are working on the world "{current_world_name}"
   
-A world needs a short high level description refelcting th nature of the world.
+A world needs a short high level description refelcting the nature of the world.
 
 A world has details, that give more information about the world, the backstory, and includes a list of main characters, key sites, and special items.
 
@@ -132,7 +133,6 @@ To work on characters call ChangeState
   STATE_EDIT_CHARACTERS:
 """
 We are working on world "{current_world_name}"
-We are working on character "{current_character_name}"
 
 Worlds have chacaters which are actors in the world with a backstory, abilities, and motivations.  You can create characters and change information about the characters.
 
@@ -150,7 +150,12 @@ Save detailed information about the character in character details.
 To work on information about the world call ChangeState
 """,
   }
+
   
+def get_state_instructions():
+  value = instructions[current_state].format(current_world_name = current_world_name)
+  return value
+
 
 current_state = STATE_WORLDS
 current_world_name = None
@@ -171,43 +176,7 @@ def InitializeStateVars():
   current_character_name = None
   current_character_id = None
 
-def get_state_instructions():
-  value = instructions[current_state]
-  return value.format(current_world_name = current_world_name, 
-                      current_character_name = current_character_name)
 
-MSG_WORLD_CONTEXT="""
-We are working on the world '{name}'
-The description of the world is '{description}'
-The details of the world are '{details}'
-"""
-
-MSG_CHARACTER_CONTEXT="""
-We are working on the world '{world_name}'
-The description of the world is '{world_description}'
-We are working on the character '{name}'
-The description of the character is '{description}'
-The details of the character are '{details}'
-"""
-
-def get_context():
-  if current_world_id is not None and current_character_id is None:
-    world = elements.loadWorld(get_db(), current_world_id)
-    return MSG_WORLD_CONTEXT.format(name=world.getName(),
-                                    description=world.getDescription(),
-                                    details=world.getDetails())
-  
-  if current_world_id is not None and current_character_id is not None:
-    world = elements.loadWorld(get_db(), current_world_id)    
-    character = elements.loadCharacter(get_db(), current_character_id)
-    return MSG_CHARACTER_CONTEXT.format(
-      world_name=world.getName(),
-      world_description=world.getDescription(),
-      name=character.getName(),
-      description=character.getDescription(),
-      details=character.getDetails())
-  
-  return None
   
 def get_available_functions():
   return get_available_functions_for_state(current_state)
