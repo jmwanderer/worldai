@@ -56,17 +56,15 @@ def track_tokens(prompt, complete, total):
 
 @retry(wait=wait_random_exponential(multiplier=1, max=40),
        stop=stop_after_attempt(3))
-def chat_completion_request(messages, functions=None, function_call=None,
-                            model=GPT_MODEL):
+def chat_completion_request(messages, tools=None, model=GPT_MODEL):
+  print("chat completion request")
   headers = {
     "Content-Type": "application/json",
     "Authorization": "Bearer " + openai.api_key,
   }
   json_data = {"model": model, "messages": messages}
-  if functions is not None:
-    json_data.update({"functions": functions})
-  if function_call is not None:
-    json_data.update({"function_call": function_call})
+  if tools is not None:
+    json_data.update({"tools": tools})
   try:
     response = requests.post(
       "https://api.openai.com/v1/chat/completions",
@@ -80,7 +78,7 @@ def chat_completion_request(messages, functions=None, function_call=None,
                    usage["total_tokens"])
     else:
       logging.error("no usage in response: %s" % json.dumps(response.json()))
-    return response
+    return response.json()
   except Exception as e:
     print(f"Exception: {e}")    
     logging.error("Unable to generate ChatCompletion response")
@@ -97,7 +95,7 @@ def pretty_print_message(message):
     "system": "red",
     "user": "white",
     "assistant": "green",
-    "function": "magenta",
+    "tool": "magenta",
   }
     
   if message["role"] == "system":
@@ -106,14 +104,15 @@ def pretty_print_message(message):
   elif message["role"] == "user":
     print(colored(f"user: {message['content']}\n",
                   role_to_color[message["role"]]))
-  elif message["role"] == "assistant" and message.get("function_call"):
-    print(colored(f"assistant: {message['function_call']}\n",
+  elif message["role"] == "assistant" and message.get("tool_calls"):
+    print(colored(f"assistant: {message['tool_calls']}\n",
                   role_to_color[message["role"]]))
-  elif message["role"] == "assistant" and not message.get("function_call"):
+  elif message["role"] == "assistant":
     print(colored(f"assistant: {message['content']}\n",
                   role_to_color[message["role"]]))
-  elif message["role"] == "function":
-    print(colored(f"function ({message['name']}): {message['content']}\n",
+  elif message["role"] == "tool":
+    print(colored(f"function {message['tool_call_id']}: " +
+                  f"({message['name']}): {message['content']}\n",
                   role_to_color[message["role"]]))
 
 dir = os.path.split(os.path.split(__file__)[0])[0]
@@ -158,7 +157,7 @@ def build_messages():
                  chat_functions.get_state_instructions() }
 
   length = len(enc.encode(json.dumps(sys_message)))
-  functions = chat_functions.get_available_functions()
+  functions = chat_functions.get_available_tools()
   length += len(enc.encode(json.dumps(functions)))
   logging.info(f"sys + func: {length} tokens")
   logging.info(sys_message)
@@ -224,93 +223,101 @@ def getFunctionMessages(func_name, id=None):
     arguments = '{}'
   else:
     arguments = '{"id":"%s"}' % id
-  func_call = { 'name': '%s' % func_name,
+  tool_call = { 'name': '%s' % func_name,
                 'arguments': arguments }
-  content = chat_functions.execute_function_call(func_call)
+  content = chat_functions.execute_function_call(tool_call)
   
-  result.append({"role": "assistant", "function_call": func_call})
-  result.append({"role": "function",
+  result.append({"role": "assistant", "tool_choice": func_call})
+  result.append({"role": "tool",
                  "name": func_call["name"],
                  "content": content})
   return result
-  
 
-function_call = False
-assistant_message = None
-messages = []
+def get_user_input():
+  return input("> ").strip()
 
-logging.info("\nstartup*****************");
-print("Welcome to the world builder!\n")
-print("You can create and design worlds with main characters, key sites, and special items.")
-print("")
+def chat_loop():
+  function_call = False
+  assistant_message = None
+  messages = []
 
-messages = getFunctionMessages('ListWorlds')
-messages_history.append(messages[0])
-messages_history.append(messages[1])
-messages_history.append({"role": "user", "content": "what are the availble worlds?"})
-skip_user_input = True
-                        
+  logging.info("\nstartup*****************");
+  print("Welcome to the world builder!\n")
+  print("You can create and design worlds with main characters, key sites, and special items.")
+  print("")
 
-while True:
-  if not skip_user_input:
-    if not function_call:
-      try:
-        user = input("> ").strip()
-      except EOFError:
-        break
-      if user == 'exit':
-        break
-      if len(user) == 0:
-        continue
-      messages_history.append({"role": "user", "content": user})
-      logging.info("user len: %d" % len(enc.encode(user)))
-    else:
-      print("function call: %s" % assistant_message["function_call"])
-      logging.info("function call: %s",
-                   json.dumps(assistant_message["function_call"]))
-      content = chat_functions.execute_function_call(
-        assistant_message["function_call"])
-      logging.info("function call result: %s", content)
-      messages_history.append({"role": "function",
-                               "name": assistant_message["function_call"]["name"],
-                               "content": content})
+  while True:
+    try:
+      user = get_user_input()
+    except EOFError:
+      break
+    if user == 'exit':
+      break
+    if len(user) == 0:
+      continue
+      
+    messages_history.append({"role": "user", "content": user})
+    logging.info("user len: %d" % len(enc.encode(user)))
+
+    print("state: %s" % chat_functions.current_state)
+    logging.info("state: %s", chat_functions.current_state)
+    messages = build_messages()
+    print("Chat completion call...")
+    try:
+      response = chat_completion_request(
+        messages,
+        tools=chat_functions.get_available_tools())
+    except Exception as e:
+      print(f"Exception: {e}")      
+      break
+    assistant_message = response["choices"][0]["message"]    
+    tool_calls = assistant_message.get("tool_calls")
+
+    if tool_calls:
+      messages_history.append(assistant_message)      
+      print("function call: %s" % json.dumps(tool_calls))
+      logging.info("function call: %s", json.dumps(tool_calls))
+      pretty_print_message(assistant_message)
+      
+      for tool_call in tool_calls:
+        function_name = tool_call["function"]["name"]
+        function_args = json.loads(tool_call["function"]["arguments"])
+        function_response = chat_functions.execute_function_call(
+          function_name, function_args)
+        logging.info("function call result: %s" % json.dumps(response))
+        print("function call result: %s" % json.dumps(response))        
+      
+        messages_history.append({
+          "tool_call_id": tool_call["id"],
+          "role": "tool",
+          "name": function_name,
+          "content": function_response
+          })
+
       print("state: %s" % chat_functions.current_state)
+      logging.info("state: %s", chat_functions.current_state)
+      messages = build_messages()
+      print("2nd Chat completion call...")    
+      try:
+        response = chat_completion_request(messages)
+      except Exception as e:
+        print(f"Exception: {e}")      
+        break
 
-  skip_user_input = False
-  logging.info("state: %s", chat_functions.current_state)
-  messages = build_messages()
-  print("Chat completion call...")
-  try:
-    chat_response = chat_completion_request(
-      messages,
-      functions=chat_functions.get_available_functions()
-    )
-  except Exception as e:
-    break
+      print(json.dumps(response))
+      assistant_message = response["choices"][0]["message"]
+      
+    messages_history.append(assistant_message)
+    logging.info(json.dumps(assistant_message))
+    pretty_print_message(assistant_message)               
 
-  if chat_response.json().get("choices") is None:
-    print(json.dumps(chat_response.json()))
-    break
-  
-  assistant_message = chat_response.json()["choices"][0]["message"]
-  messages_history.append(assistant_message)
-  logging.info(json.dumps(assistant_message))
-               
-  # Check function call
-  if assistant_message.get("function_call"):
-    function_call = True
-    logging.info("msg result: %d" %
-          len(enc.encode(json.dumps(assistant_message["function_call"]))))
-  else:
-    function_call = False
-    pretty_print_message(assistant_message)  
-    logging.info("msg result: %d" % len(enc.encode(assistant_message["content"])))    
+  pretty_print_conversation(build_messages())
+  print("Tokens")
+  print(f"This session - prompt: {prompt_tokens}, complete: {complete_tokens}, total: {total_tokens}")
+  print("\nRunning total")
+  chat_functions.dump_token_usage()
 
+if __name__ ==  '__main__':
+  chat_loop()
 
-pretty_print_conversation(build_messages())
-  
-print("Tokens")
-print(f"This session - prompt: {prompt_tokens}, complete: {complete_tokens}, total: {total_tokens}")
-print("\nRunning total")
-chat_functions.dump_token_usage()
 

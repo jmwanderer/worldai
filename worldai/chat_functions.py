@@ -178,16 +178,19 @@ def InitializeStateVars():
 
 
   
-def get_available_functions():
-  return get_available_functions_for_state(current_state)
+def get_available_tools():
+  return get_available_tools_for_state(current_state)
 
-def get_available_functions_for_state(state):
+def get_available_tools_for_state(state):
   functions = {}
   for function in all_functions:
     functions[function["name"]] = function
+
   result = []
   for name in states[state]:
-    result.append(functions[name])
+    tool = { "type": "function",
+             "function": functions[name] }   
+    result.append(tool)
   return result
 
 
@@ -215,18 +218,15 @@ def checkDuplication(name, element_list):
 
 
 # TODO - refactor into primary interface, display, and individual functions
-def execute_function_call(function_call):
+def execute_function_call(function_name, arguments):
   global current_state
   global current_world_id
   global current_world_name
   global current_character_id  
   global current_character_name
-  
-  name = function_call["name"]
-  arguments = function_call['arguments']
-  arguments = json.loads(arguments)
 
-  if function_call["name"] == "CreateWorld":
+  
+  if function_name == "CreateWorld":
     world = elements.World()
     world.setName(arguments["name"])
     world.updateProperties(arguments)
@@ -244,16 +244,16 @@ def execute_function_call(function_call):
     current_world_name = world.getName()
     return f'"{world.id}"'
 
-  if function_call["name"] == "ListWorlds":
+  if function_name == "ListWorlds":
     worlds = elements.listWorlds(get_db())
     return json.dumps(worlds)
 
-  if function_call["name"] == "UpdateWorld":
+  if function_name == "UpdateWorld":
     world = elements.loadWorld(get_db(), current_world_id)
     world.updateProperties(arguments)
     elements.updateWorld(get_db(), world)
 
-  if function_call["name"] == "ReadWorld":
+  if function_name == "ReadWorld":
     id = arguments["id"]
     world = elements.loadWorld(get_db(), id)
     if world is not None:
@@ -267,7 +267,7 @@ def execute_function_call(function_call):
       content = { "error": f"no world {id}" }
     return json.dumps(content)
 
-  if function_call["name"] == "ChangeState":
+  if function_name == "ChangeState":
     state = arguments["state"]
     if states.get(state) is not None:
       # Check is state is legal
@@ -285,11 +285,11 @@ def execute_function_call(function_call):
       return "state changed"
     return "Error: unknown state"
 
-  if function_call["name"] == "ListCharacters":
+  if function_name == "ListCharacters":
     characters = elements.listCharacters(get_db(), current_world_id)
     return json.dumps(characters)
 
-  if function_call["name"] == "ReadCharacter":
+  if function_name == "ReadCharacter":
     id = arguments["id"]
     character = elements.loadCharacter(get_db(), id)
     if character is not None:
@@ -302,7 +302,7 @@ def execute_function_call(function_call):
       content = { "error": f"no character {id}" }
     return json.dumps(content)
   
-  if function_call["name"] == "CreateCharacter":
+  if function_name == "CreateCharacter":
     character = elements.Character(current_world_id)
     character.setName(arguments["name"])
 
@@ -319,7 +319,7 @@ def execute_function_call(function_call):
     current_state = STATE_EDIT_CHARACTERS   
     return f'"{character.id}"'
 
-  if function_call["name"] == "UpdateCharacter":
+  if function_name == "UpdateCharacter":
     character = elements.loadCharacter(get_db(), current_character_id)
     if character is None:
       content = { "error": f"Character not found" }
@@ -328,8 +328,8 @@ def execute_function_call(function_call):
     elements.updateCharacter(get_db(), character)
     return "updated"
   
-  if (function_call["name"] == "CreateWorldImage" or
-      function_call["name"] == "CreateCharacterImage"):
+  if (function_name == "CreateWorldImage" or
+      function_name == "CreateCharacterImage"):
     image = elements.Image()
     image.setPrompt(arguments["prompt"])
     logging.info("Create image: prompt %s", image.prompt)
