@@ -408,19 +408,6 @@ all_functions = [
       "properties": {
       },
     },
-    "returns": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the world.",
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the world.",
-        },
-      },
-    },
   },
   
   {
@@ -440,10 +427,6 @@ all_functions = [
       },
       "required": [ "name", "description" ]      
     },
-    "returns": {
-      "type": "string",
-      "description": "Unique identifier for world instance.",
-    },
   },
 
 
@@ -459,27 +442,6 @@ all_functions = [
         },
       },
       "required": [ "id"]
-    },
-    "returns": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for world intance.",
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the virtual world.",
-        },
-        "description": {
-          "type": "string",
-          "description": "Short high level description of the world.",
-        },
-        "details": {
-          "type": "string",
-          "description": "Detailed information about the virtual world.",
-        },
-      },
     },
   },
   
@@ -514,19 +476,6 @@ all_functions = [
       "properties": {
       },
     },
-    "returns": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the character intance.",
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the character.",
-        },
-      },
-    },
   },
 
   {
@@ -546,10 +495,6 @@ all_functions = [
       },
       "required": [ "name", "description" ]
     },
-    "returns": {
-      "type": "string",
-      "description": "Unique identifier for world instance.",
-    },
   },
 
   {
@@ -565,27 +510,6 @@ all_functions = [
       },
       "required": [ "id"]
     },
-    "returns": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the character.",
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the character.",
-        },
-        "description": {
-          "type": "string",
-          "description": "Short description of the character",          
-        },
-        "details": {
-          "type": "string",
-          "description": "Detailed information about the character.",
-        },
-      },
-    },
   },
 
   {
@@ -599,10 +523,6 @@ all_functions = [
           "description": "The new state",
         },
       },
-    },
-    "returns": {
-      "type": "string",
-      "description": "Status of change.",      
     },
   },
 
@@ -641,15 +561,6 @@ all_functions = [
       },
       "required": [ "prompt" ],
     },
-    "returns": {
-      "type": "object",
-      "properties": {
-        "status": {
-          "type": "string",
-          "description": "Status of image creation",
-        },
-      },
-    }
   },
 
   {
@@ -669,15 +580,6 @@ all_functions = [
       },
       "required": [ "id", "prompt" ],
     },
-    "returns": {
-      "type": "object",
-      "properties": {
-        "status": {
-          "type": "string",
-          "description": "Status of image creation",          
-        },
-      },
-    }
   },
 ]
 

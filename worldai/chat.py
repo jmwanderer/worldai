@@ -284,8 +284,8 @@ def chat_loop():
         function_args = json.loads(tool_call["function"]["arguments"])
         function_response = chat_functions.execute_function_call(
           function_name, function_args)
-        logging.info("function call result: %s" % json.dumps(response))
-        print("function call result: %s" % json.dumps(response))        
+        logging.info("function call result: %s" % json.dumps(function_response))
+        print("function call result: %s" % json.dumps(function_response))        
       
         messages_history.append({
           "tool_call_id": tool_call["id"],
