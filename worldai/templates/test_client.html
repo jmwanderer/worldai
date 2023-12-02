@@ -10,43 +10,47 @@
       }
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-   </head>
+  </head>
 
   <body>
-    <div id="messages">
-    </div>
-    <br>
     <div>
-        <input type="text" id="user" name="user">
-        <button id="send">Send</button>
+      <h1>JS Client</h1>
+      <h2>Description:</h2>
+      <div id="description"></div>
+
+      <h2>Detail Notes:</h2>
+      <div id="details"></div>
+      <button id="load_get">Get</button>
+      <button id="load_post">Post</button>      
     </div>
   </body>
   <script>
-    const messages = document.getElementById("messages")
-    const user_input = document.getElementById("user")
-    const send_button = document.getElementById("send")
-    const url = "{{ url_for('worldai.chat', session_id=session_id) }}";
-    
+    const char_id = "{{ character.id }}";
+    const world_id = "{{ world.id }}";    
+    const load_get = document.getElementById("load_get")
+    const load_post = document.getElementById("load_post")    
+    const url = "{{ url_for('worldai.get_character', wid=world.id, cid=character.id, _external=True) }}";
     const userAction = async() => {
         const response = await fetch(url);
         const values = await response.json();
         document.getElementById("description").innerHTML = values["description"];
         document.getElementById("details").innerHTML = values["details"];
     }
-    // load_get.onclick = userAction;
+    load_get.onclick = userAction;
 
     const postAction = async() => {
         const response = await fetch(url, {
             method: 'POST',
-            body: '{ "user": "' + user_input.text + '"}',
+            body: '"example contents in the body"',
             headers: {
                 'Content-Type': 'application/json'
             }
         });
         const values = await response.json();
-        messages.innerHTML = values["assistant"];
+        document.getElementById("description").innerHTML = values["description"];
+        document.getElementById("details").innerHTML = values["details"];
     }
-    send_button.onclick = postAction;    
+    load_post.onclick = postAction;    
     
   </script>
 </html>

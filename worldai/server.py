@@ -166,9 +166,9 @@ def get_image(id):
 
 
 @bp.route('/client/<wid>/<cid>', methods=["GET"])
-def view_client(wid, cid):
+def test_view_client(wid, cid):
   """
-  Client view
+  Test Client view
   """
   world = elements.loadWorld(get_db(), wid)
   if world == None:
@@ -177,8 +177,15 @@ def view_client(wid, cid):
   if character == None:
     return "Character xxx not found", 400
 
-  return flask.render_template("client.html", world=world,
+  return flask.render_template("test_client.html", world=world,
                                character=character)
+
+@bp.route('/client/<session_id>', methods=["GET"])
+def view_client(session_id):
+  """
+  Client view
+  """
+  return flask.render_template("client.html", session_id=session_id)
 
 
 @bp.route('/chat/<session_id>', methods=["GET","POST"])
