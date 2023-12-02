@@ -199,7 +199,23 @@ def chat(session_id):
         {
           "user": "some content",
           "assistant": "more content"
-        }
+        },
+        {
+          "user": "test1",
+          "assistant": "test2"
+        },
+        {
+          "user": "Where is San Diego?",
+          "assistant": "I am not sure who you are talking about?"
+        },
+        {
+          "user": "Will people like my joke?",
+          "assistant": "No. But they might chuckle to be polite."
+        },
+        {
+          "user": "I think I should start a new online crypto currancy!",
+          "assistant": "yeah, go for it"
+        },
       ]
     }
   else:

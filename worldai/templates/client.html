@@ -13,39 +13,82 @@
    </head>
 
   <body>
-    <div id="messages">
-    </div>
-    <br>
-    <div>
-        <input type="text" id="user" name="user">
-        <button id="send">Send</button>
-    </div>
+    <div style='width:100%;height:90vh;verticle-align:text-bottom;border:3px solid green;'>    
+      <div id="messages" style="width:90%;height:80%;border:1px;padding-top:2em;padding-left:5em;overflow-y:auto;">
+      </div>
+      <br>
+      <div style='width:100%;text-align:center;vertical-align:middle;'>
+        <div>
+          <textarea id="user" name="user" cols="60" rows="2"></textarea>
+        </div>
+        <div>        
+          <button id="send">Send</button>
+        </div>
+      </div>
+    </div>      
   </body>
   <script>
     const messages = document.getElementById("messages")
     const user_input = document.getElementById("user")
     const send_button = document.getElementById("send")
     const url = "{{ url_for('worldai.chat', session_id=session_id) }}";
+
+    function addUserMessage(message) {
+        messages.innerHTML +=
+            '<p><b>You</b><br>' + message + '</p>';
+    }
     
-    const userAction = async() => {
+    function addAssistantMessage(message) {
+        messages.innerHTML +=
+            '<p><b>Assistant</b><br>' + message + '</p>';
+    }
+
+    
+    in_progress = false;
+    
+    const loadAction = async() => {
+        if (in_progress) {
+            return
+        }
+        in_progress = true;
         const response = await fetch(url);
         const values = await response.json();
-        document.getElementById("description").innerHTML = values["description"];
-        document.getElementById("details").innerHTML = values["details"];
+        const messages = values["messages"];
+        for (i in messages) {
+            addUserMessage(messages[i]["user"]);
+            addAssistantMessage(messages[i]["assistant"]);
+        }
+        in_progress = false;        
     }
-    // load_get.onclick = userAction;
+    loadAction()
 
     const postAction = async() => {
+        if (in_progress) {
+            return
+        }
+        in_progress = true;
+        text = user_input.value;
+        user_input.value = ''
         const response = await fetch(url, {
             method: 'POST',
-            body: '{ "user": "' + user_input.text + '"}',
+            body: '{ "user": "' + text + '"}',
             headers: {
                 'Content-Type': 'application/json'
             }
         });
+        addUserMessage(text);        
         const values = await response.json();
-        messages.innerHTML = values["assistant"];
+        addAssistantMessage(values["assistant"]);
+        in_progress = false;
+        messages.scrollTop = messages.scrollHeight;
     }
+    function keyEvent(key) {
+        if (key.keyCode == 13) {
+            postAction();
+            key.preventDefault();
+        }
+    }
+    user_input.addEventListener("keydown", keyEvent);
     send_button.onclick = postAction;    
     
   </script>
