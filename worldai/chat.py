@@ -10,6 +10,8 @@ import json
 import logging
 import openai
 import requests
+import pickle
+
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
 import tiktoken
@@ -45,7 +47,6 @@ def chat_completion_request(messages, tools=None, model=GPT_MODEL):
     logging.error("Unable to generate ChatCompletion response")
     logging.error(f"Exception: {e}")
     raise e
-
   
 def pretty_print_conversation(messages):
   for message in messages:
@@ -101,30 +102,29 @@ class MessageSetRecord:
   { "role": "tool", "tool_call_id": xxx, "name": function_name, ..
   id eg: call_RYXaDjxpUCfWmpXU7BZEYVqS
   """
-  def __init__(self, encoder):
+  def __init__(self):
     self.request_message = None
     self.tool_request_message = None    
     self.tool_response_messages = []
     self.response_message = None
     self.message_tokens = 0
     self.included = False
-    self.encoder = encoder
 
-  def setRequestMessage(self, message):
+  def setRequestMessage(self, enc, message):
     self.request_message = message
-    self.message_tokens += len(self.encoder.encode(json.dumps(message)))
+    self.message_tokens += len(enc.encode(json.dumps(message)))
 
-  def setResponseMessage(self, message):
+  def setResponseMessage(self, enc, message):
     self.response_message = message
-    self.message_tokens += len(self.encoder.encode(json.dumps(message)))
+    self.message_tokens += len(enc.encode(json.dumps(message)))
 
-  def setToolRequestMessage(self, message):
+  def setToolRequestMessage(self, enc, message):
     self.tool_request_message = message
-    self.message_tokens += len(self.encoder.encode(json.dumps(message)))
+    self.message_tokens += len(enc.encode(json.dumps(message)))
 
-  def addToolResponseMessage(self, message):
+  def addToolResponseMessage(self, enc, message):
     self.tool_response_messages.append(message)
-    self.message_tokens += len(self.encoder.encode(json.dumps(message)))
+    self.message_tokens += len(enc.encode(json.dumps(message)))
 
   def getTokenCount(self):
     return self.message_tokens
@@ -152,13 +152,12 @@ class MessageSetRecord:
   
 
 class MessageRecords:
-  def __init__(self, encoder):
+  def __init__(self):
     # List of message records
     self.message_history = []
     self.current_message = None
     self.system_message = None
     self.overhead = 0
-    self.encoder = encoder
 
   def setSystemMessage(self, message):
     self.system_message = message
@@ -166,22 +165,22 @@ class MessageRecords:
   def setTokenOverhead(self, count):
     self.overhead = count
     
-  def addRequestMessage(self, message):
-    self.current_message = MessageSetRecord(self.encoder)
+  def addRequestMessage(self, enc, message):
+    self.current_message = MessageSetRecord()
     self.message_history.append(self.current_message)
-    self.current_message.setRequestMessage(message)
+    self.current_message.setRequestMessage(enc, message)
 
-  def addToolRequestMessage(self, message):
+  def addToolRequestMessage(self, enc, message):
     if self.current_message is not None:
-      self.current_message.setToolRequestMessage(message)
+      self.current_message.setToolRequestMessage(enc, message)
     
-  def addToolResponseMessage(self, message):
+  def addToolResponseMessage(self, enc, message):
     if self.current_message is not None:
-      self.current_message.addToolResponseMessage(message)
+      self.current_message.addToolResponseMessage(enc, message)
 
-  def addResponseMessage(self, message):
+  def addResponseMessage(self, enc, message):
     if self.current_message is not None:
-      self.current_message.setResponseMessage(message)
+      self.current_message.setResponseMessage(enc, message)
 
   def message_sets(self):
     return self.message_history
@@ -194,14 +193,14 @@ class MessageRecords:
       message_set.addMessagesToList(messages)
     return json.dumps(messages)
 
-  def getThreadTokenCount(self):
+  def getThreadTokenCount(self, enc):
     """
     Return the total number of tokens for messages
     marked as included.
     """
     count = self.overhead
     if self.system_message is not None:
-      count += len(self.encoder.encode(json.dumps(self.system_message)))
+      count += len(enc.encode(json.dumps(self.system_message)))
     for message in self.message_history:
       if message.included:
         count += message.getTokenCount()
@@ -243,12 +242,43 @@ Suggest next steps to the user
 """
 
 class ChatSession:
-  def __init__(self):
+  def __init__(self, path=None):
     self.prompt_tokens = 0
     self.complete_tokens = 0
     self.total_tokens = 0
     self.enc = tiktoken.encoding_for_model(GPT_MODEL)
-    self.history = MessageRecords(self.enc)    
+    self.history = MessageRecords()
+    self.path = path
+
+  def loadChatSession(path):
+    chat_session = ChatSession(path)
+    if not os.path.isfile(path):
+      return chat_session
+
+    # TODO: locking - keep file open?
+    f = open(path, 'rb')
+    chat_session.load(f)
+    f.close()
+    return chat_session
+
+  def saveChatSession(self):
+    f = open(self.path + '.tmp', 'wb')
+    self.save(f)
+    f.close()
+    os.replace(self.path + '.tmp', self.path)
+  
+  def load(self, f):
+    self.prompt_tokens = pickle.load(f)
+    self.complete_tokens = pickle.load(f)
+    self.total_tokens = pickle.load(f)
+    self.history = pickle.load(f)
+
+  def save(self, f):
+    pickle.dump(self.prompt_tokens, f)
+    pickle.dump(self.complete_tokens, f)    
+    pickle.dump(self.total_tokens, f)
+    pickle.dump(self.history, f)    
+    
     
   def track_tokens(self, prompt, complete, total):
     self.prompt_tokens += prompt
@@ -283,13 +313,14 @@ class ChatSession:
     history.setTokenOverhead(len(self.enc.encode(json.dumps(functions))))
 
     for message_set in reversed(history.message_sets()):
-      new_size = history.getThreadTokenCount() + message_set.getTokenCount()
+      new_size = (history.getThreadTokenCount(self.enc) +
+                  message_set.getTokenCount())
       if new_size < MESSAGE_THRESHOLD:
         message_set.setIncluded()
       else:
         break
 
-      print("Calc message size = %d" % history.getThreadTokenCount())    
+      print("Calc message size = %d" % history.getThreadTokenCount(self.enc))  
       history.addIncludedMessagesToList(messages)
     return messages
 
@@ -298,7 +329,8 @@ class ChatSession:
     assistant_message = None
     messages = []
 
-    self.history.addRequestMessage({"role": "user", "content": user})
+    self.history.addRequestMessage(self.enc,
+                                   {"role": "user", "content": user})
 
     print_log(f"state: {chat_functions.current_state}")
     messages = self.BuildMessages(self.history)
@@ -321,7 +353,7 @@ class ChatSession:
     tool_calls = assistant_message.get("tool_calls")
 
     if tool_calls:
-      self.history.addToolRequestMessage(assistant_message)      
+      self.history.addToolRequestMessage(self.enc, assistant_message)      
       logging.info("function call: %s" % json.dumps(tool_calls))
       
       for tool_call in tool_calls:
@@ -331,12 +363,13 @@ class ChatSession:
         function_response = execute_function_call(function_name, function_args)
         logging.info("function call result: %s" % str(function_response))
       
-        self.history.addToolResponseMessage({
-          "tool_call_id": tool_call["id"],
-          "role": "tool",
-          "name": function_name,
-          "content": function_response
-          })
+        self.history.addToolResponseMessage(
+          self.enc,
+          { "tool_call_id": tool_call["id"],
+            "role": "tool",
+            "name": function_name,
+            "content": function_response
+           })
 
       messages = self.BuildMessages(self.history)
       print("2nd Chat completion call...")    
@@ -353,9 +386,10 @@ class ChatSession:
       logging.info(json.dumps(response))
       assistant_message = response["choices"][0]["message"]
       
-    self.history.addResponseMessage(assistant_message)
+    self.history.addResponseMessage(self.enc, assistant_message)
     logging.info(json.dumps(assistant_message))
     return assistant_message
+
 
 
 def initializeApp():

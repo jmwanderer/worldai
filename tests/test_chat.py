@@ -2,8 +2,9 @@ from worldai import chat
 
 import unittest
 import unittest.mock
-
+import tempfile
 import json
+import os
 import tiktoken
 
 def getSystemMessage():
@@ -33,28 +34,26 @@ def getToolResponseMessage():
            'name': 'lookup_route',
            'content': 'South on 101' }
 
-
-
 class RecordsTestCase(unittest.TestCase):
   def testMessageRecords(self):
     enc = tiktoken.encoding_for_model(chat.GPT_MODEL)    
-    records = chat.MessageRecords(enc)
+    records = chat.MessageRecords()
     records.setSystemMessage(getSystemMessage())
-    records.addRequestMessage(getUserMessage())
-    records.addResponseMessage(getAssistantMessage())
+    records.addRequestMessage(enc, getUserMessage())
+    records.addResponseMessage(enc, getAssistantMessage())
     # Just system message included
-    self.assertEqual(records.getThreadTokenCount(), 17)
+    self.assertEqual(records.getThreadTokenCount(enc), 17)
 
     records.message_sets()[0].setIncluded()
-    self.assertNotEqual(records.getThreadTokenCount(), 0)
+    self.assertNotEqual(records.getThreadTokenCount(enc), 0)
 
     records.clearIncluded()
-    self.assertEqual(records.getThreadTokenCount(), 17)    
+    self.assertEqual(records.getThreadTokenCount(enc), 17)    
 
-    records.addRequestMessage(getUserMessage())
-    records.addToolRequestMessage(getToolRequestMessage())
-    records.addToolResponseMessage(getToolResponseMessage())
-    records.addResponseMessage(getAssistantMessage())    
+    records.addRequestMessage(enc, getUserMessage())
+    records.addToolRequestMessage(enc, getToolRequestMessage())
+    records.addToolResponseMessage(enc, getToolResponseMessage())
+    records.addResponseMessage(enc, getAssistantMessage())    
 
     message_set = records.message_sets()[1]
     self.assertTrue(message_set.hasFunctionResponse(["lookup_route"]))
@@ -73,6 +72,25 @@ class RecordsTestCase(unittest.TestCase):
     print(records.jsonString())
 
 
+class SaveLoadTestCase(unittest.TestCase):
+
+  def setUp(self):
+    self.user_dir = tempfile.TemporaryDirectory()
+
+  def tearDown(self):
+    self.user_dir.cleanup()
+
+  def testLoadSave(self):
+    path = os.path.join(self.user_dir.name, "1")
+    session = chat.ChatSession.loadChatSession(path)
+    self.assertIsNotNone(session)
+
+    session.saveChatSession()
+
+    session = chat.ChatSession.loadChatSession(path)
+    self.assertIsNotNone(session)
+
+    
 
 def getCompletionResponse(msg):
   completion_response = {

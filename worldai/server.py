@@ -15,6 +15,7 @@ import logging
 import click
 
 from . import elements
+from . import chat_functions
 
 
 def create_app(instance_path=None):
