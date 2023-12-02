@@ -17,42 +17,10 @@ import tiktoken
 from . import elements
 from . import chat_functions
 
-#GPT_MODEL = "gpt-3.5-turbo-0613"
-#MESSAGE_THRESHOLD=2_000
-
 GPT_MODEL = "gpt-3.5-turbo-1106"
-#MESSAGE_THRESHOLD=10_000
 # Can be higher, but save $$$ with some potential loss in perf
 MESSAGE_THRESHOLD=3_000
 
-openai.api_key = os.environ['OPENAI_API_KEY']
-
-
-BASE_DIR = os.getcwd()
-log_file_name = os.path.join(BASE_DIR, 'log-chat.txt')
-FORMAT = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
-logging.basicConfig(filename=log_file_name,
-                    level=logging.INFO,
-                    format=FORMAT,)
-
-
-prompt_tokens = 0
-complete_tokens = 0
-total_tokens = 0
-
-def track_tokens(prompt, complete, total):
-  global prompt_tokens
-  global complete_tokens
-  global total_tokens
-  prompt_tokens += prompt
-  complete_tokens += complete
-  total_tokens += total
-  world_id = chat_functions.current_world_id
-  if world_id is None:
-    world_id = 0
-  chat_functions.track_tokens(world_id, prompt, complete, total)
-  logging.info(f"prompt: {prompt}, complete: {complete}, total: {total}")
-  
 
 @retry(wait=wait_random_exponential(multiplier=1, max=40),
        stop=stop_after_attempt(3))
@@ -108,11 +76,17 @@ def pretty_print_message(message):
                   f"({message['name']}): {message['content']}\n",
                   role_to_color[message["role"]]))
 
-dir = os.path.split(os.path.split(__file__)[0])[0]
-dir = os.path.join(dir, 'instance')
-print(f"dir: {dir}")
-chat_functions.init_config(dir, "worldai.sqlite")
+def get_user_input():
+  return input("> ").strip()
 
+def print_log(value):
+  print(value)
+  logging.info(value)
+
+def execute_function_call(function_name, function_args):
+  return chat_functions.execute_function_call(function_name, function_args)
+    
+    
 
 class MessageSetRecord:
   """
@@ -127,29 +101,30 @@ class MessageSetRecord:
   { "role": "tool", "tool_call_id": xxx, "name": function_name, ..
   id eg: call_RYXaDjxpUCfWmpXU7BZEYVqS
   """
-  def __init__(self):
+  def __init__(self, encoder):
     self.request_message = None
     self.tool_request_message = None    
     self.tool_response_messages = []
     self.response_message = None
     self.message_tokens = 0
     self.included = False
+    self.encoder = encoder
 
   def setRequestMessage(self, message):
     self.request_message = message
-    self.message_tokens += len(enc.encode(json.dumps(message)))
+    self.message_tokens += len(self.encoder.encode(json.dumps(message)))
 
   def setResponseMessage(self, message):
     self.response_message = message
-    self.message_tokens += len(enc.encode(json.dumps(message)))
+    self.message_tokens += len(self.encoder.encode(json.dumps(message)))
 
   def setToolRequestMessage(self, message):
     self.tool_request_message = message
-    self.message_tokens += len(enc.encode(json.dumps(message)))
+    self.message_tokens += len(self.encoder.encode(json.dumps(message)))
 
   def addToolResponseMessage(self, message):
     self.tool_response_messages.append(message)
-    self.message_tokens += len(enc.encode(json.dumps(message)))
+    self.message_tokens += len(self.encoder.encode(json.dumps(message)))
 
   def getTokenCount(self):
     return self.message_tokens
@@ -177,12 +152,13 @@ class MessageSetRecord:
   
 
 class MessageRecords:
-  def __init__(self):
+  def __init__(self, encoder):
     # List of message records
     self.message_history = []
     self.current_message = None
     self.system_message = None
     self.overhead = 0
+    self.encoder = encoder
 
   def setSystemMessage(self, message):
     self.system_message = message
@@ -191,7 +167,7 @@ class MessageRecords:
     self.overhead = count
     
   def addRequestMessage(self, message):
-    self.current_message = MessageSetRecord()
+    self.current_message = MessageSetRecord(self.encoder)
     self.message_history.append(self.current_message)
     self.current_message.setRequestMessage(message)
 
@@ -225,7 +201,7 @@ class MessageRecords:
     """
     count = self.overhead
     if self.system_message is not None:
-      count += len(enc.encode(json.dumps(self.system_message)))
+      count += len(self.encoder.encode(json.dumps(self.system_message)))
     for message in self.message_history:
       if message.included:
         count += message.getTokenCount()
@@ -243,7 +219,6 @@ class MessageRecords:
         message.addMessagesToList(messages)
     
         
-
 
 instructions = """
 You are a co-designer of fictional worlds, developing ideas
@@ -267,132 +242,140 @@ Suggest next steps to the user
 
 """
 
-enc = tiktoken.encoding_for_model(GPT_MODEL)
-
-def BuildMessages(history):
-  """
-  Take a MessageRecords instance
-  Return a list of messages that fit context size
-  """
-  messages = []
-  history.clearIncluded()
-  
-  # System instructions
-  current_instructions = instructions.format(
-    current_state=chat_functions.current_state)
-
-  history.setSystemMessage({"role": "system",
-                            "content": current_instructions + "\n" +
-                            chat_functions.get_state_instructions() })
-
-
-  functions = chat_functions.get_available_tools()
-  history.setTokenOverhead(len(enc.encode(json.dumps(functions))))
-
-  for message_set in reversed(history.message_sets()):
-    new_size = history.getThreadTokenCount() + message_set.getTokenCount()
-    if new_size < MESSAGE_THRESHOLD:
-      message_set.setIncluded()
-    else:
-      break
-
-  print("Calc message size = %d" % history.getThreadTokenCount())    
-  history.addIncludedMessagesToList(messages)
-  return messages
-
-
-def old_alg():
-  for message in reversed(messages_history):
-    call_set = set()
-    msg_len = len(enc.encode(json.dumps(message)))
-    if length + msg_len < MESSAGE_THRESHOLD:
-      messages.insert(1, message)
-      length += msg_len
-      # Track function calls being added.
-      if message.get("function_call"):
-        print("track function add: %s" % message["function_call"]["name"])
-        call_set.add(message["function_call"]["name"])
-    else:
-      # Since we didn't include all messages, add extra context
-      print("Context buffer Exeeded!!!!!")
-        
-      if (chat_functions.current_character_id is not None and
-          "ReadCharacter" not in call_set):
-        print("loading character in context")
-        logging.info("add character context: %s",
-                     chat_functions.current_character_id)        
-        func_messages = getFunctionMessages('ReadCharacter',
-                                            chat_functions.current_character_id)
-        messages.insert(1, func_messages[1])
-        messages.insert(1, func_messages[0])
-        msg_len = len(enc.encode(json.dumps(func_messages[0])))
-        length += msg_len        
-        msg_len = len(enc.encode(json.dumps(func_messages[1])))
-        length += msg_len
-
-      if (chat_functions.current_world_id is not None and
-          "ReadWorld" not in call_set):
-        print("loading world in context")        
-        logging.info("add world context: %s",
-                     chat_functions.current_world_id)
-        func_messages = getFunctionMessages('ReadWorld',
-                                            chat_functions.current_world_id)
-        messages.insert(1, func_messages[1])
-        messages.insert(1, func_messages[0])
-        msg_len = len(enc.encode(json.dumps(func_messages[0])))
-        length += msg_len        
-        msg_len = len(enc.encode(json.dumps(func_messages[1])))
-        length += msg_len
-        
-      break
-
-  logging.info(f"message thread size: {length}")
-  return messages
-
-
-def getFunctionMessages(func_name, id=None):
-  """
-  Create an assistant function_call request message and get a response message.
-  Return as a list.
-
-  Used to set context in the message history.
-  """
-  result = []
-  if id is None:
-    arguments = '{}'
-  else:
-    arguments = '{"id":"%s"}' % id
-  tool_call = { 'name': '%s' % func_name,
-                'arguments': arguments }
-  content = chat_functions.execute_function_call(tool_call)
-  
-  result.append({"role": "assistant", "tool_choice": func_call})
-  result.append({"role": "tool",
-                 "name": func_call["name"],
-                 "content": content})
-  return result
-
-def get_user_input():
-  return input("> ").strip()
-
-def print_log(value):
-  print(value)
-  logging.info(value)
-
-def execute_function_call(function_name, function_args):
-  return chat_functions.execute_function_call(function_name, function_args)
+class ChatSession:
+  def __init__(self):
+    self.prompt_tokens = 0
+    self.complete_tokens = 0
+    self.total_tokens = 0
+    self.enc = tiktoken.encoding_for_model(GPT_MODEL)
+    self.history = MessageRecords(self.enc)    
     
+  def track_tokens(self, prompt, complete, total):
+    self.prompt_tokens += prompt
+    self.complete_tokens += complete
+    self.total_tokens += total
+
+    world_id = chat_functions.current_world_id
+    if world_id is None:
+      world_id = 0
+    chat_functions.track_tokens(world_id, prompt, complete, total)
+    logging.info(f"prompt: {prompt}, complete: {complete}, total: {total}")
   
 
-message_history = None
+  def BuildMessages(self, history):
+    """
+    Take a MessageRecords instance
+    Return a list of messages that fit context size
+    """
+    messages = []
+    history.clearIncluded()
+  
+    # System instructions
+    current_instructions = instructions.format(
+      current_state=chat_functions.current_state)
 
+    history.setSystemMessage({"role": "system",
+                              "content": current_instructions + "\n" +
+                              chat_functions.get_state_instructions() })
+
+
+    functions = chat_functions.get_available_tools()
+    history.setTokenOverhead(len(self.enc.encode(json.dumps(functions))))
+
+    for message_set in reversed(history.message_sets()):
+      new_size = history.getThreadTokenCount() + message_set.getTokenCount()
+      if new_size < MESSAGE_THRESHOLD:
+        message_set.setIncluded()
+      else:
+        break
+
+      print("Calc message size = %d" % history.getThreadTokenCount())    
+      history.addIncludedMessagesToList(messages)
+    return messages
+
+  def chat_exchange(self, user):
+    function_call = False
+    assistant_message = None
+    messages = []
+
+    self.history.addRequestMessage({"role": "user", "content": user})
+
+    print_log(f"state: {chat_functions.current_state}")
+    messages = self.BuildMessages(self.history)
+    print("Chat completion call...")
+
+    response = chat_completion_request(
+      messages,
+      tools=chat_functions.get_available_tools())
+    
+    if response.get("usage") is not None:
+      usage = response["usage"]
+      self.track_tokens(usage["prompt_tokens"],
+                        usage["completion_tokens"],
+                        usage["total_tokens"])
+      print("prompt tokens: %s" % usage["prompt_tokens"])
+    else:
+      logging.error("no usage in response: %s" % json.dumps(response))
+      
+    assistant_message = response["choices"][0]["message"]    
+    tool_calls = assistant_message.get("tool_calls")
+
+    if tool_calls:
+      self.history.addToolRequestMessage(assistant_message)      
+      logging.info("function call: %s" % json.dumps(tool_calls))
+      
+      for tool_call in tool_calls:
+        function_name = tool_call["function"]["name"]
+        function_args = json.loads(tool_call["function"]["arguments"])
+        print(f"function call: {function_name}")
+        function_response = execute_function_call(function_name, function_args)
+        logging.info("function call result: %s" % str(function_response))
+      
+        self.history.addToolResponseMessage({
+          "tool_call_id": tool_call["id"],
+          "role": "tool",
+          "name": function_name,
+          "content": function_response
+          })
+
+      messages = self.BuildMessages(self.history)
+      print("2nd Chat completion call...")    
+      response = chat_completion_request(messages)
+      if response.get("usage") is not None:
+        usage = response["usage"]
+        self.track_tokens(usage["prompt_tokens"],
+                          usage["completion_tokens"],
+                          usage["total_tokens"])
+        print("prompt tokens: %s" % usage["prompt_tokens"])
+      else:
+        logging.error("no usage in response: %s" % json.dumps(response))
+
+      logging.info(json.dumps(response))
+      assistant_message = response["choices"][0]["message"]
+      
+    self.history.addResponseMessage(assistant_message)
+    logging.info(json.dumps(assistant_message))
+    return assistant_message
+
+
+def initializeApp():
+  openai.api_key = os.environ['OPENAI_API_KEY']  
+  BASE_DIR = os.getcwd()
+  log_file_name = os.path.join(BASE_DIR, 'log-chat.txt')
+  FORMAT = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
+  logging.basicConfig(filename=log_file_name,
+                      level=logging.INFO,
+                      format=FORMAT,)
+
+  dir = os.path.split(os.path.split(__file__)[0])[0]
+  dir = os.path.join(dir, 'instance')
+  print(f"dir: {dir}")
+  chat_functions.init_config(dir, "worldai.sqlite")
+  
+  
 def chat_loop():
-  function_call = False
-  assistant_message = None
-  global message_history
-  message_history = MessageRecords()
-  messages = []
-
+  initializeApp()
+  chat_session = ChatSession()
   logging.info("\nstartup*****************");
   print("Welcome to the world builder!\n")
   print("You can create and design worlds with main characters, key sites, and special items.")
@@ -408,68 +391,19 @@ def chat_loop():
     if len(user) == 0:
       continue
 
-    message_history.addRequestMessage({"role": "user", "content": user})
-
-    print_log(f"state: {chat_functions.current_state}")
-    messages = BuildMessages(message_history)
-    print("Chat completion call...")
-
-    response = chat_completion_request(
-      messages,
-      tools=chat_functions.get_available_tools())
-    
-    if response.get("usage") is not None:
-      usage = response["usage"]
-      track_tokens(usage["prompt_tokens"], usage["completion_tokens"],
-                   usage["total_tokens"])
-      print("prompt tokens: %s" % usage["prompt_tokens"])
-    else:
-      logging.error("no usage in response: %s" % json.dumps(response))
+    assistant_message = chat_session.chat_exchange(user)
       
-    assistant_message = response["choices"][0]["message"]    
-    tool_calls = assistant_message.get("tool_calls")
-
-    if tool_calls:
-      message_history.addToolRequestMessage(assistant_message)      
-      logging.info("function call: %s" % json.dumps(tool_calls))
-      
-      for tool_call in tool_calls:
-        function_name = tool_call["function"]["name"]
-        function_args = json.loads(tool_call["function"]["arguments"])
-        print(f"function call: {function_name}")
-        function_response = execute_function_call(function_name, function_args)
-        logging.info("function call result: %s" % str(function_response))
-      
-        message_history.addToolResponseMessage({
-          "tool_call_id": tool_call["id"],
-          "role": "tool",
-          "name": function_name,
-          "content": function_response
-          })
-
-      messages = BuildMessages(message_history)
-      print("2nd Chat completion call...")    
-      response = chat_completion_request(messages)
-      if response.get("usage") is not None:
-        usage = response["usage"]
-        track_tokens(usage["prompt_tokens"], usage["completion_tokens"],
-                     usage["total_tokens"])
-        print("prompt tokens: %s" % usage["prompt_tokens"])
-      else:
-        logging.error("no usage in response: %s" % json.dumps(response))
-
-      logging.info(json.dumps(response))
-      assistant_message = response["choices"][0]["message"]
-      
-    message_history.addResponseMessage(assistant_message)
-    logging.info(json.dumps(assistant_message))
     pretty_print_message(assistant_message)               
 
   #pretty_print_conversation(BuildMessages(message_history))
   print("Tokens")
-  print(f"This session - prompt: {prompt_tokens}, complete: {complete_tokens}, total: {total_tokens}")
+  print(f"This session - prompt: {chat_session.prompt_tokens}, "+
+        f"complete: {chat_session.complete_tokens}, " +
+        f"total: {chat_session.total_tokens}")
+  
   print("\nRunning total")
   chat_functions.dump_token_usage()
+  
 
 if __name__ ==  '__main__':
   chat_loop()

@@ -4,7 +4,7 @@ import unittest
 import unittest.mock
 
 import json
-
+import tiktoken
 
 def getSystemMessage():
   return { "role": "system", "content": "You are a friendly assistant."}
@@ -33,16 +33,12 @@ def getToolResponseMessage():
            'name': 'lookup_route',
            'content': 'South on 101' }
 
-def calcTokens(messages):
-  total = 0
-  for message in messages:
-    total += len(chat.enc.encode(json.dumps(message)))
-  return total
 
 
 class RecordsTestCase(unittest.TestCase):
   def testMessageRecords(self):
-    records = chat.MessageRecords()
+    enc = tiktoken.encoding_for_model(chat.GPT_MODEL)    
+    records = chat.MessageRecords(enc)
     records.setSystemMessage(getSystemMessage())
     records.addRequestMessage(getUserMessage())
     records.addResponseMessage(getAssistantMessage())
@@ -125,13 +121,13 @@ class BasicChatTestCase(unittest.TestCase):
     def get_function_result(name, args):
       return getToolResponseMessage()
 
-    def track_tokens(prompt, complete, total):
+    def track_tokens(self, prompt, complete, total):
       pass
     
     chat.chat_completion_request = chat_completion_request
     chat.get_user_input = get_user_input
     chat.execute_function_call = get_function_result
-    chat.track_tokens = track_tokens
+    chat.ChatSession.track_tokens = track_tokens
 
   def testChatLoop(self):
     chat.chat_loop()
@@ -143,6 +139,7 @@ class ExtendedChatTestCase(unittest.TestCase):
     # Stub out the user input, completion request, and exec fuc routines
     self.msg_index = 0
     self.max_token_count = 0
+    self.encoder = tiktoken.encoding_for_model(chat.GPT_MODEL)        
 
     def get_user_input():
       if self.msg_index == len(msg_thread):
@@ -153,7 +150,7 @@ class ExtendedChatTestCase(unittest.TestCase):
       return msg.get("content")
 
     def chat_completion_request(messages, tools=None):
-      tokenCount = calcTokens(messages)
+      tokenCount = self.calcTokens(messages)
       self.max_token_count = max(tokenCount, self.max_token_count)
       print(f"********** token count: {tokenCount}, max: {self.max_token_count}")
       msg_response = msg_thread[self.msg_index]
@@ -166,11 +163,20 @@ class ExtendedChatTestCase(unittest.TestCase):
       self.msg_index += 1
       self.assertEqual(msg_result.get("role"), "tool")
       return msg_result
-    
+
+    def track_tokens(self, prompt, complete, total):
+      pass
+
     chat.chat_completion_request = chat_completion_request
     chat.get_user_input = get_user_input
     chat.execute_function_call = get_function_result
+    chat.ChatSession.track_tokens = track_tokens
 
+  def calcTokens(self, messages):
+    total = 0
+    for message in messages:
+      total += len(self.encoder.encode(json.dumps(message)))
+      return total
 
   def testSimpleChatLoop(self):
     # No buffer management needed
