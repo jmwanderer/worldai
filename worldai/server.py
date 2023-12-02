@@ -181,6 +181,37 @@ def view_client(wid, cid):
                                character=character)
 
 
+@bp.route('/chat/<session_id>', methods=["GET","POST"])
+def chat(session_id):
+  """
+  Chat interface
+  """
+  if request.method == "GET":  
+    content = {
+      "messages": [
+        {
+          "user": "some content",
+          "assistant": "more content"
+        }
+      ]
+    }
+  else:
+    values = {
+      "user": "Hi there HAL. Open the pod bay doors."
+    }
+    if request.json.get("user") is None:
+      content = { "error": "malformed input" }
+    else:
+      user_msg = request.json.get("user")
+      # chat_loop - message
+      content = {
+        "assistant": "Sure Dave, whatever you say",
+        "functions": [ "OpenDoor" ]
+      }
+    
+  return flask.jsonify(content)
+
+
 @bp.route('/worlds/<wid>/characters/<cid>', methods=["GET", "POST"])
 def get_character(wid, cid):
   """
