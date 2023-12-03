@@ -280,7 +280,7 @@ def chat_api(session_id):
       else:
         message = chat_session.chat_exchange(get_db(), user_msg)
         content = {
-          "assistant": message['content']
+          "assistant": elements.textToHTML(message['content'])
         }
   chat_session.saveChatSession()
   return flask.jsonify(content)

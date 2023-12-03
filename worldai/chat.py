@@ -279,12 +279,14 @@ class ChatSession:
     self.complete_tokens = pickle.load(f)
     self.total_tokens = pickle.load(f)
     self.history = pickle.load(f)
+    self.chatFunctions = pickle.load(f)
 
   def save(self, f):
     pickle.dump(self.prompt_tokens, f)
     pickle.dump(self.complete_tokens, f)    
     pickle.dump(self.total_tokens, f)
-    pickle.dump(self.history, f)    
+    pickle.dump(self.history, f)
+    pickle.dump(self.chatFunctions, f)
     
     
   def track_tokens(self, db, prompt, complete, total):
@@ -331,7 +333,6 @@ class ChatSession:
       else:
         break
 
-      print("Calc message size = %d" % history.getThreadTokenCount(self.enc))  
       history.addIncludedMessagesToList(messages)
     return messages
 
@@ -339,8 +340,10 @@ class ChatSession:
   def chat_history(self):
     messages = []
     for message_set in self.history.message_sets():
-      messages.append({ "user": message_set.getRequestContent(),
-                        "assistant": message_set.getResponseContent()
+      user = elements.textToHTML(message_set.getRequestContent())
+      assistant = elements.textToHTML(message_set.getResponseContent())
+      messages.append({ "user": user,
+                        "assistant": assistant
                        })
 
     return { "messages": messages }

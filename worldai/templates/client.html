@@ -12,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
    </head>
 
-  <body>
+  <body onload="loadAction()">
     <div style='width:100%;height:90vh;verticle-align:text-bottom;border:3px solid green;'>    
       <div id="messages" style="width:90%;height:80%;border:1px;padding-top:2em;padding-left:5em;overflow-y:auto;">
       </div>
@@ -53,15 +53,15 @@
         in_progress = true;
         const response = await fetch(url);
         const values = await response.json();
-        const messages = values["messages"];
-        for (i in messages) {
-            addUserMessage(messages[i]["user"]);
-            addAssistantMessage(messages[i]["assistant"]);
+        const msg_list = values["messages"];
+        for (i in msg_list) {
+            addUserMessage(msg_list[i]["user"]);
+            addAssistantMessage(msg_list[i]["assistant"]);
         }
-        in_progress = false;        
+        messages.scrollTop = messages.scrollHeight;
+        in_progress = false;
     }
-    loadAction()
-
+    
     const postAction = async() => {
         if (in_progress) {
             return
@@ -69,6 +69,9 @@
         in_progress = true;
         text = user_input.value;
         user_input.value = ''
+        addUserMessage(text);
+        messages.scrollTop = messages.scrollHeight;
+        
         const response = await fetch(url, {
             method: 'POST',
             body: '{ "user": "' + text + '"}',
@@ -76,7 +79,6 @@
                 'Content-Type': 'application/json'
             }
         });
-        addUserMessage(text);        
         const values = await response.json();
         addAssistantMessage(values["assistant"]);
         in_progress = false;
