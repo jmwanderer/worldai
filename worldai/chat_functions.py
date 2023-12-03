@@ -267,7 +267,7 @@ class ChatFunctions:
         return json.dumps(content)
       character.updateProperties(arguments)
       elements.updateCharacter(db, character)
-    return "updated"
+      return "updated"
   
     if (function_name == "CreateWorldImage" or
         function_name == "CreateCharacterImage"):

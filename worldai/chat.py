@@ -369,6 +369,8 @@ class ChatSession:
                                    {"role": "user", "content": user})
 
     print_log(f"state: {self.chatFunctions.current_state}")
+    print_log(f"world: {self.chatFunctions.current_world_id}")
+    print_log(f"world: {self.chatFunctions.current_character_id}")        
     messages = self.BuildMessages(self.history)
     print("Chat completion call...")
 

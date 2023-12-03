@@ -91,7 +91,11 @@
         in_progress = false;
         messages.scrollTop = messages.scrollHeight;
         console.log(values["view"])
-        view_frame.src = values["view"];
+        if (view_frame.src == values["view"]) {
+            view_frame.reload()
+        } else {
+            view_frame.src = values["view"];
+        }
     }
     function keyEvent(key) {
         if (key.keyCode == 13) {
