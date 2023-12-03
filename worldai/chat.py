@@ -325,15 +325,18 @@ class ChatSession:
     functions = self.chatFunctions.get_available_tools()
     history.setTokenOverhead(len(self.enc.encode(json.dumps(functions))))
 
+    thread_size = 0
     for message_set in reversed(history.message_sets()):
-      new_size = (history.getThreadTokenCount(self.enc) +
-                  message_set.getTokenCount())
+      new_size = thread_size + (history.getThreadTokenCount(self.enc) +
+                                message_set.getTokenCount())
       if new_size < MESSAGE_THRESHOLD:
         message_set.setIncluded()
+        thread_size = new_size
       else:
         break
 
-      history.addIncludedMessagesToList(messages)
+    history.addIncludedMessagesToList(messages)
+    logging.info(f"calc thread size {thread_size}")
     return messages
 
 
@@ -349,6 +352,14 @@ class ChatSession:
     return { "messages": messages }
   
 
+  def get_view(self):
+    result = {}
+    if self.chatFunctions.current_world_id is not None:
+      result["world"] = self.chatFunctions.current_world_id
+    if self.chatFunctions.current_character_id is not None:
+      result["character"] = self.chatFunctions.current_character_id
+    return result
+  
   def chat_exchange(self, db, user):
     function_call = False
     assistant_message = None

@@ -279,8 +279,20 @@ def chat_api(session_id):
         }
       else:
         message = chat_session.chat_exchange(get_db(), user_msg)
+        current_view = chat_session.get_view();
+        if (current_view.get("world") is not None and
+            current_view.get("character") is not None):
+          view = flask.url_for('worldai.view_character',
+                              wid=current_view.get("world"),
+                              cid=current_view.get("character"))
+        elif current_view.get("world") is not None:
+          view = flask.url_for('worldai.view_world',
+                               id=current_view.get("world"))
+        else:
+          view = flask.url_for('worldai.list_worlds')
         content = {
-          "assistant": elements.textToHTML(message['content'])
+          "assistant": elements.textToHTML(message['content']),
+          "view": view
         }
   chat_session.saveChatSession()
   return flask.jsonify(content)
