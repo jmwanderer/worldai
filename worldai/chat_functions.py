@@ -1,6 +1,5 @@
 import json
 import os
-import sqlite3
 import openai
 import requests
 import logging
@@ -8,48 +7,7 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 from . import elements
 
-
-
-DATA_DIR = None
-DATABASE = None
-
-def init_config(data_dir, database):
-  global DATA_DIR
-  global DATABASE
-  DATA_DIR = data_dir
-  DATABASE = database
-  check_init_db()
-  
-my_db = None
-def get_db():
-  global my_db
-  if my_db is None:
-    my_db = sqlite3.connect(
-      os.path.join(DATA_DIR, DATABASE),
-      detect_types=sqlite3.PARSE_DECLTYPES)
-    my_db.row_factory = sqlite3.Row
-  return my_db
-
-def debug_set_db(db):
-  global my_db
-  my_db = db
-
-def check_init_db():
-  if not os.path.exists(DATA_DIR):
-    os.makedirs(DATA_DIR)
-    
-  if not os.path.exists(os.path.join(DATA_DIR, DATABASE)):
-    path = os.path.join(os.path.dirname(__file__), "schema.sql")
-    db = sqlite3.connect(os.path.join(DATA_DIR, DATABASE),
-                              detect_types=sqlite3.PARSE_DECLTYPES)
-    db.row_factory = sqlite3.Row
-    with open(path) as f:
-      db.executescript(f.read())
-    db.close()
-
-
-def track_tokens(world_id, prompt_tokens, complete_tokens, total_tokens):
-  db = get_db()
+def track_tokens(db, world_id, prompt_tokens, complete_tokens, total_tokens):
   q = db.execute("SELECT COUNT(*) FROM token_usage WHERE world_id = ?",
                  (world_id,))
   if q.fetchone()[0] == 0:
@@ -61,8 +19,7 @@ def track_tokens(world_id, prompt_tokens, complete_tokens, total_tokens):
              (prompt_tokens, complete_tokens, total_tokens, world_id))
   db.commit()
 
-def dump_token_usage():
-  db = get_db()
+def dump_token_usage(db):
   q = db.execute("SELECT world_id, prompt_tokens, complete_tokens, "+
                  "total_tokens FROM token_usage")
   for (world_id, prompt_tokens, complete_tokens, total_tokens) in q.fetchall():
@@ -218,7 +175,7 @@ def checkDuplication(name, element_list):
 
 
 # TODO - refactor into primary interface, display, and individual functions
-def execute_function_call(function_name, arguments):
+def execute_function_call(db, function_name, arguments):
   global current_state
   global current_world_id
   global current_world_name
@@ -232,30 +189,31 @@ def execute_function_call(function_name, arguments):
     world.updateProperties(arguments)
 
     # Check for duplicates
-    worlds = elements.listWorlds(get_db())    
+    worlds = elements.listWorlds(db)    
     name = checkDuplication(world.getName(), worlds)
     if name is not None:
       content = { "error": f"Similar name already exists: {name}" }
       return json.dumps(content)
     
-    world = elements.createWorld(get_db(), world)
+    world = elements.createWorld(db, world)
     current_state = STATE_EDIT_WORLD
     current_world_id = world.id
     current_world_name = world.getName()
     return f'"{world.id}"'
 
   if function_name == "ListWorlds":
-    worlds = elements.listWorlds(get_db())
+    worlds = elements.listWorlds(db)
     return json.dumps(worlds)
 
   if function_name == "UpdateWorld":
-    world = elements.loadWorld(get_db(), current_world_id)
+    world = elements.loadWorld(db, current_world_id)
     world.updateProperties(arguments)
-    elements.updateWorld(get_db(), world)
+    elements.updateWorld(db, world)
+    return "updated"
 
   if function_name == "ReadWorld":
     id = arguments["id"]
-    world = elements.loadWorld(get_db(), id)
+    world = elements.loadWorld(db, id)
     if world is not None:
       content = { "id": world.id,
                   **world.getProperties() }
@@ -286,12 +244,12 @@ def execute_function_call(function_name, arguments):
     return "Error: unknown state"
 
   if function_name == "ListCharacters":
-    characters = elements.listCharacters(get_db(), current_world_id)
+    characters = elements.listCharacters(db, current_world_id)
     return json.dumps(characters)
 
   if function_name == "ReadCharacter":
     id = arguments["id"]
-    character = elements.loadCharacter(get_db(), id)
+    character = elements.loadCharacter(db, id)
     if character is not None:
       content = { "id": character.id,
                   **character.getProperties() }
@@ -306,26 +264,26 @@ def execute_function_call(function_name, arguments):
     character = elements.Character(current_world_id)
     character.setName(arguments["name"])
 
-    characters = elements.listCharacters(get_db(), current_world_id)    
+    characters = elements.listCharacters(db, current_world_id)    
     name = checkDuplication(character.getName(), characters)
     if name is not None:
       content = { "error": f"Similar name already exists: {name}" }
       return json.dumps(content)
     
     character.updateProperties(arguments)    
-    character = elements.createCharacter(get_db(), character )
+    character = elements.createCharacter(db, character )
     current_character_id  = character.id
     current_character_name = character.getName()    
     current_state = STATE_EDIT_CHARACTERS   
     return f'"{character.id}"'
 
   if function_name == "UpdateCharacter":
-    character = elements.loadCharacter(get_db(), current_character_id)
+    character = elements.loadCharacter(db, current_character_id)
     if character is None:
       content = { "error": f"Character not found" }
       return json.dumps(content)
     character.updateProperties(arguments)
-    elements.updateCharacter(get_db(), character)
+    elements.updateCharacter(db, character)
     return "updated"
   
   if (function_name == "CreateWorldImage" or
@@ -335,7 +293,7 @@ def execute_function_call(function_name, arguments):
     logging.info("Create image: prompt %s", image.prompt)
     if current_state == STATE_EDIT_CHARACTERS:
       id = arguments["id"]
-      character = elements.loadCharacter(get_db(), id)
+      character = elements.loadCharacter(db, id)
       if character is None:
         return "error: no character %s" % id
       image.setParentId(id)
@@ -352,11 +310,11 @@ def execute_function_call(function_name, arguments):
     logging.info("dest file: %s", dest_file)
     if image_get_request(image.prompt, dest_file):
       logging.info("file create done, create image record")
-      image = elements.createImage(get_db(), image)
+      image = elements.createImage(db, image)
       return "Image creation complete"
     return "error generating image"
 
-  err_str = f"no such function: {name}"
+  err_str = f"no such function: {function_name}"
   print(err_str)
   return '{ "error": "' + err_str + '" }'              
 

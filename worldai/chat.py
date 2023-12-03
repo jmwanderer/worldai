@@ -16,6 +16,7 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
 import tiktoken
 
+from . import db_access
 from . import elements
 from . import chat_functions
 
@@ -84,9 +85,8 @@ def print_log(value):
   print(value)
   logging.info(value)
 
-def execute_function_call(function_name, function_args):
-  return chat_functions.execute_function_call(function_name, function_args)
-    
+def execute_function_call(db, function_name, function_args):
+  return chat_functions.execute_function_call(db, function_name, function_args)
     
 
 class MessageSetRecord:
@@ -280,7 +280,7 @@ class ChatSession:
     pickle.dump(self.history, f)    
     
     
-  def track_tokens(self, prompt, complete, total):
+  def track_tokens(self, db, prompt, complete, total):
     self.prompt_tokens += prompt
     self.complete_tokens += complete
     self.total_tokens += total
@@ -288,7 +288,7 @@ class ChatSession:
     world_id = chat_functions.current_world_id
     if world_id is None:
       world_id = 0
-    chat_functions.track_tokens(world_id, prompt, complete, total)
+    chat_functions.track_tokens(db, world_id, prompt, complete, total)
     logging.info(f"prompt: {prompt}, complete: {complete}, total: {total}")
   
 
@@ -324,7 +324,7 @@ class ChatSession:
       history.addIncludedMessagesToList(messages)
     return messages
 
-  def chat_exchange(self, user):
+  def chat_exchange(self, db, user):
     function_call = False
     assistant_message = None
     messages = []
@@ -342,7 +342,8 @@ class ChatSession:
     
     if response.get("usage") is not None:
       usage = response["usage"]
-      self.track_tokens(usage["prompt_tokens"],
+      self.track_tokens(db,
+                        usage["prompt_tokens"],
                         usage["completion_tokens"],
                         usage["total_tokens"])
       print("prompt tokens: %s" % usage["prompt_tokens"])
@@ -360,7 +361,9 @@ class ChatSession:
         function_name = tool_call["function"]["name"]
         function_args = json.loads(tool_call["function"]["arguments"])
         print(f"function call: {function_name}")
-        function_response = execute_function_call(function_name, function_args)
+        function_response = execute_function_call(db,
+                                                  function_name,
+                                                  function_args)
         logging.info("function call result: %s" % str(function_response))
       
         self.history.addToolResponseMessage(
@@ -376,7 +379,8 @@ class ChatSession:
       response = chat_completion_request(messages)
       if response.get("usage") is not None:
         usage = response["usage"]
-        self.track_tokens(usage["prompt_tokens"],
+        self.track_tokens(db,
+                          usage["prompt_tokens"],
                           usage["completion_tokens"],
                           usage["total_tokens"])
         print("prompt tokens: %s" % usage["prompt_tokens"])
@@ -404,11 +408,11 @@ def initializeApp():
   dir = os.path.split(os.path.split(__file__)[0])[0]
   dir = os.path.join(dir, 'instance')
   print(f"dir: {dir}")
-  chat_functions.init_config(dir, "worldai.sqlite")
-  
+  db_access.init_config(dir, "worldai.sqlite")
   
 def chat_loop():
   initializeApp()
+  db = db_access.open_db()
   chat_session = ChatSession()
   logging.info("\nstartup*****************");
   print("Welcome to the world builder!\n")
@@ -425,7 +429,7 @@ def chat_loop():
     if len(user) == 0:
       continue
 
-    assistant_message = chat_session.chat_exchange(user)
+    assistant_message = chat_session.chat_exchange(db, user)
       
     pretty_print_message(assistant_message)               
 
@@ -436,7 +440,8 @@ def chat_loop():
         f"total: {chat_session.total_tokens}")
   
   print("\nRunning total")
-  chat_functions.dump_token_usage()
+  chat_functions.dump_token_usage(db)
+  db.close()
   
 
 if __name__ ==  '__main__':
