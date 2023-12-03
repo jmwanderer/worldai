@@ -3,7 +3,6 @@ import os.path
 import pathlib
 import time
 import functools
-import sqlite3
 import io
 import flask
 from flask import Flask
@@ -13,9 +12,11 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import werkzeug.utils
 import logging
 import click
+import openai
 
+from . import db_access
 from . import elements
-from . import chat_functions
+from . import chat
 
 
 def create_app(instance_path=None):
@@ -26,6 +27,7 @@ def create_app(instance_path=None):
                 instance_path=instance_path)
   app.config.from_mapping(
     SECRET_KEY='DEV',
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY'),    
     DATABASE=os.path.join(app.instance_path, 'worldai.sqlite'),    
   )
   app.config.from_prefixed_env()
@@ -38,6 +40,8 @@ def create_app(instance_path=None):
   logging.basicConfig(filename=log_file_name,
                       level=logging.INFO,
                       format=FORMAT,)
+  db_access.init_config(app.config['DATABASE'])
+  openai.api_key = app.config['OPENAI_API_KEY']
   
   logging.info("Starting worldai.server: %s", __name__)
   
@@ -64,10 +68,7 @@ def create_app(instance_path=None):
 
 def get_db():
   if 'db' not in g:
-    g.db = sqlite3.connect(
-      current_app.config['DATABASE'],
-      detect_types=sqlite3.PARSE_DECLTYPES)
-    g.db.row_factory = sqlite3.Row
+    g.db = db_access.open_db()
   return g.db
 
 def close_db(e=None):
@@ -100,6 +101,45 @@ def delete_character(id):
                                                character.getName()))
   else:
     click.echo(f'Error, no such character id:{id}')
+
+
+def list_images(parent_id):
+  print("Listing images...")
+  image_list = elements.listImages(get_db(), parent_id)
+  for entry in image_list:
+    print("Image(%s) filename:%s, prompt: %s" %
+          (entry["id"], entry["filename"], entry["prompt"]))
+    
+
+@bp.cli.command('dump-worlds')
+def dump_worlds():
+  """Dump the contents of the world DB."""
+  print("Loading worlds...")
+  worlds = elements.listWorlds(get_db())
+  print("%d worlds listed" % len(worlds))
+
+  for (entry) in worlds:
+    id = entry["id"]
+    name = entry["name"]
+    print(f"World({id}): {name}")
+  
+    world = elements.loadWorld(get_db(), id)
+    print(world.getPropertiesJSON())
+    list_images(world.id)
+
+    print("Loading characters...")
+    characters = elements.listCharacters(get_db(), world.id)
+    for (char_entry) in characters:
+      id = char_entry["id"]
+      name = char_entry["name"]
+      print(f"Character({id}): {name}")
+
+      character = elements.loadCharacter(get_db(), id)
+      print(character.getPropertiesJSON())
+      list_images(character.id)
+    
+  print("\n\n")
+    
 
 @bp.route('/view/worlds', methods=["GET"])
 def list_worlds():

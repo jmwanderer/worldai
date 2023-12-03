@@ -409,7 +409,8 @@ def initializeApp():
   dir = os.path.split(os.path.split(__file__)[0])[0]
   dir = os.path.join(dir, 'instance')
   print(f"dir: {dir}")
-  db_access.init_config(dir, "worldai.sqlite")
+  DATABASE=os.path.join(dir, 'worldai.sqlite')
+  db_access.init_config(DATABASE)
   
 def chat_loop():
   initializeApp()
