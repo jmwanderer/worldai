@@ -27,6 +27,7 @@ def create_app(instance_path=None):
                 instance_path=instance_path)
   app.config.from_mapping(
     SECRET_KEY='DEV',
+    TEST=False,    
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY'),    
     DATABASE=os.path.join(app.instance_path, 'worldai.sqlite'),    
   )
@@ -230,49 +231,58 @@ def view_client(session_id):
 
 
 @bp.route('/chat/<session_id>', methods=["GET","POST"])
-def chat(session_id):
+def chat_api(session_id):
   """
   Chat interface
   """
-  if request.method == "GET":  
-    content = {
-      "messages": [
-        {
-          "user": "some content",
-          "assistant": "more content"
-        },
-        {
-          "user": "test1",
-          "assistant": "test2"
-        },
-        {
-          "user": "Where is San Diego?",
-          "assistant": "I am not sure who you are talking about?"
-        },
-        {
-          "user": "Will people like my joke?",
-          "assistant": "No. But they might chuckle to be polite."
-        },
-        {
-          "user": "I think I should start a new online crypto currancy!",
-          "assistant": "yeah, go for it"
-        },
-      ]
-    }
+  path = os.path.join(current_app.instance_path, "chatfile")
+  chat_session = chat.ChatSession.loadChatSession(path)
+  
+  if request.method == "GET":
+    if current_app.config['TEST']:
+      content = {
+        "messages": [
+          {
+            "user": "some content",
+            "assistant": "more content"
+          },
+          {
+            "user": "test1",
+            "assistant": "test2"
+          },
+          {
+            "user": "Where is San Diego?",
+            "assistant": "I am not sure who you are talking about?"
+          },
+          {
+            "user": "Will people like my joke?",
+            "assistant": "No. But they might chuckle to be polite."
+          },
+          {
+            "user": "I think I should start a new online crypto currancy!",
+            "assistant": "yeah, go for it"
+          },
+        ]
+      }
+    else:
+      content = chat_session.chat_history()
   else:
-    values = {
-      "user": "Hi there HAL. Open the pod bay doors."
-    }
     if request.json.get("user") is None:
       content = { "error": "malformed input" }
     else:
       user_msg = request.json.get("user")
-      # chat_loop - message
-      content = {
-        "assistant": "Sure Dave, whatever you say",
-        "functions": [ "OpenDoor" ]
-      }
-    
+      
+      if current_app.config['TEST']:
+        content = {
+          "assistant": "Sure Dave, whatever you say",
+          "functions": [ "OpenDoor" ]
+        }
+      else:
+        message = chat_session.chat_exchange(get_db(), user_msg)
+        content = {
+          "assistant": message['content']
+        }
+  chat_session.saveChatSession()
   return flask.jsonify(content)
 
 

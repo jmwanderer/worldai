@@ -31,7 +31,7 @@
     const messages = document.getElementById("messages")
     const user_input = document.getElementById("user")
     const send_button = document.getElementById("send")
-    const url = "{{ url_for('worldai.chat', session_id=session_id) }}";
+    const url = "{{ url_for('worldai.chat_api', session_id=session_id) }}";
 
     function addUserMessage(message) {
         messages.innerHTML +=

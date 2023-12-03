@@ -110,9 +110,19 @@ class MessageSetRecord:
     self.request_message = message
     self.message_tokens += len(enc.encode(json.dumps(message)))
 
+  def getRequestContent(self):
+    if self.request_message is None:
+      return ""
+    return self.request_message["content"]
+
   def setResponseMessage(self, enc, message):
     self.response_message = message
     self.message_tokens += len(enc.encode(json.dumps(message)))
+
+  def getResponseContent(self):
+    if self.response_message is None:
+      return ""
+    return self.response_message["content"]
 
   def setToolRequestMessage(self, enc, message):
     self.tool_request_message = message
@@ -324,6 +334,17 @@ class ChatSession:
       print("Calc message size = %d" % history.getThreadTokenCount(self.enc))  
       history.addIncludedMessagesToList(messages)
     return messages
+
+
+  def chat_history(self):
+    messages = []
+    for message_set in self.history.message_sets():
+      messages.append({ "user": message_set.getRequestContent(),
+                        "assistant": message_set.getResponseContent()
+                       })
+
+    return { "messages": messages }
+  
 
   def chat_exchange(self, db, user):
     function_call = False
