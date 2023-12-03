@@ -3,7 +3,6 @@ import os
 import openai
 import requests
 import logging
-from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 from . import elements
 
@@ -108,49 +107,6 @@ To work on information about the world call ChangeState
 """,
   }
 
-  
-def get_state_instructions():
-  value = instructions[current_state].format(current_world_name = current_world_name)
-  return value
-
-
-current_state = STATE_WORLDS
-current_world_name = None
-current_world_id = None
-current_character_name = None
-current_character_id = None
-
-def InitializeStateVars():
-  global current_state
-  global current_world_name
-  global current_world_id
-  global current_character_name
-  global current_character_id
-
-  current_state = STATE_WORLDS
-  current_world_name = None
-  current_world_id = None
-  current_character_name = None
-  current_character_id = None
-
-
-  
-def get_available_tools():
-  return get_available_tools_for_state(current_state)
-
-def get_available_tools_for_state(state):
-  functions = {}
-  for function in all_functions:
-    functions[function["name"]] = function
-
-  result = []
-  for name in states[state]:
-    tool = { "type": "function",
-             "function": functions[name] }   
-    result.append(tool)
-  return result
-
-
 def checkDuplication(name, element_list):
   """
   Check for any collisions between name and existing list
@@ -174,149 +130,176 @@ def checkDuplication(name, element_list):
   return None
 
 
-# TODO - refactor into primary interface, display, and individual functions
-def execute_function_call(db, function_name, arguments):
-  global current_state
-  global current_world_id
-  global current_world_name
-  global current_character_id  
-  global current_character_name
+class ChatFunctions:
 
+  def __init__(self):
+    self.current_state = STATE_WORLDS
+    self.current_world_name = None
+    self.current_world_id = None
+    self.current_character_name = None
+    self.current_character_id = None
   
-  if function_name == "CreateWorld":
-    world = elements.World()
-    world.setName(arguments["name"])
-    world.updateProperties(arguments)
+  def get_state_instructions(self):
+    value = instructions[self.current_state].format(
+      current_world_name = self.current_world_name)
+    return value
 
-    # Check for duplicates
-    worlds = elements.listWorlds(db)    
-    name = checkDuplication(world.getName(), worlds)
-    if name is not None:
-      content = { "error": f"Similar name already exists: {name}" }
-      return json.dumps(content)
+  def get_available_tools(self):
+    return self.get_available_tools_for_state(self.current_state)
+
+  def get_available_tools_for_state(self, state):
+    functions = {}
+    for function in all_functions:
+      functions[function["name"]] = function
+
+    result = []
+    for name in states[state]:
+      tool = { "type": "function",
+               "function": functions[name] }   
+      result.append(tool)
+    return result
+
+  # TODO - refactor into primary interface, display, and individual functions
+  def execute_function_call(self, db, function_name, arguments):
+
+    if function_name == "CreateWorld":
+      world = elements.World()
+      world.setName(arguments["name"])
+      world.updateProperties(arguments)
+
+      # Check for duplicates
+      worlds = elements.listWorlds(db)    
+      name = checkDuplication(world.getName(), worlds)
+      if name is not None:
+        content = { "error": f"Similar name already exists: {name}" }
+        return json.dumps(content)
     
-    world = elements.createWorld(db, world)
-    current_state = STATE_EDIT_WORLD
-    current_world_id = world.id
-    current_world_name = world.getName()
-    return f'"{world.id}"'
+      world = elements.createWorld(db, world)
+      self.current_state = STATE_EDIT_WORLD
+      self.current_world_id = world.id
+      self.current_world_name = world.getName()
+      return f'"{world.id}"'
 
-  if function_name == "ListWorlds":
-    worlds = elements.listWorlds(db)
-    return json.dumps(worlds)
+    if function_name == "ListWorlds":
+      worlds = elements.listWorlds(db)
+      return json.dumps(worlds)
 
-  if function_name == "UpdateWorld":
-    world = elements.loadWorld(db, current_world_id)
-    world.updateProperties(arguments)
-    elements.updateWorld(db, world)
-    return "updated"
+    if function_name == "UpdateWorld":
+      world = elements.loadWorld(db, self.current_world_id)
+      world.updateProperties(arguments)
+      elements.updateWorld(db, world)
+      return "updated"
 
-  if function_name == "ReadWorld":
-    id = arguments["id"]
-    world = elements.loadWorld(db, id)
-    if world is not None:
-      content = { "id": world.id,
-                  **world.getProperties() }
-      if current_state == STATE_WORLDS:
-        current_state = STATE_VIEW_WORLD
-      current_world_id = world.id
-      current_world_name = world.getName()
-    else:
-      content = { "error": f"no world {id}" }
-    return json.dumps(content)
+    if function_name == "ReadWorld":
+      id = arguments["id"]
+      world = elements.loadWorld(db, id)
+      if world is not None:
+        content = { "id": world.id,
+                    **world.getProperties() }
+        if self.current_state == STATE_WORLDS:
+          self.current_state = STATE_VIEW_WORLD
+          self.current_world_id = world.id
+          self.current_world_name = world.getName()
+      else:
+        content = { "error": f"no world {id}" }
+      return json.dumps(content)
 
-  if function_name == "ChangeState":
-    state = arguments["state"]
-    if states.get(state) is not None:
+    if function_name == "ChangeState":
+      state = arguments["state"]
+      if states.get(state) is None:
+        return "Error: unknown state"    
+
       # Check is state is legal
       if ((state == STATE_VIEW_WORLD or state == STATE_EDIT_WORLD or
-           state == STATE_EDIT_CHARACTERS) and current_world_id is None):
+           state == STATE_EDIT_CHARACTERS) and self.current_world_id is None):
         return "Error: must read or create a world"
-      current_state = state
+      self.current_state = state
 
       if state != STATE_EDIT_CHARACTERS:
-        current_character_id = None
-        current_character_name = None
+        self.current_character_id = None
+        self.current_character_name = None
+
       if state == STATE_WORLDS:
-        current_world_id = None
-        current_world_name = None
+        self.current_world_id = None
+        self.current_world_name = None
+          
       return "state changed"
-    return "Error: unknown state"
-
-  if function_name == "ListCharacters":
-    characters = elements.listCharacters(db, current_world_id)
-    return json.dumps(characters)
-
-  if function_name == "ReadCharacter":
-    id = arguments["id"]
-    character = elements.loadCharacter(db, id)
-    if character is not None:
-      content = { "id": character.id,
-                  **character.getProperties() }
-      current_state = STATE_EDIT_CHARACTERS
-      current_character_id  = character.id
-      current_character_name = character.getName()      
-    else:
-      content = { "error": f"no character {id}" }
-    return json.dumps(content)
-  
-  if function_name == "CreateCharacter":
-    character = elements.Character(current_world_id)
-    character.setName(arguments["name"])
-
-    characters = elements.listCharacters(db, current_world_id)    
-    name = checkDuplication(character.getName(), characters)
-    if name is not None:
-      content = { "error": f"Similar name already exists: {name}" }
-      return json.dumps(content)
     
-    character.updateProperties(arguments)    
-    character = elements.createCharacter(db, character )
-    current_character_id  = character.id
-    current_character_name = character.getName()    
-    current_state = STATE_EDIT_CHARACTERS   
-    return f'"{character.id}"'
 
-  if function_name == "UpdateCharacter":
-    character = elements.loadCharacter(db, current_character_id)
-    if character is None:
-      content = { "error": f"Character not found" }
-      return json.dumps(content)
-    character.updateProperties(arguments)
-    elements.updateCharacter(db, character)
-    return "updated"
-  
-  if (function_name == "CreateWorldImage" or
-      function_name == "CreateCharacterImage"):
-    image = elements.Image()
-    image.setPrompt(arguments["prompt"])
-    logging.info("Create image: prompt %s", image.prompt)
-    if current_state == STATE_EDIT_CHARACTERS:
+    if function_name == "ListCharacters":
+      characters = elements.listCharacters(db, self.current_world_id)
+      return json.dumps(characters)
+
+    if function_name == "ReadCharacter":
       id = arguments["id"]
       character = elements.loadCharacter(db, id)
+      if character is not None:
+        content = { "id": character.id,
+                    **character.getProperties() }
+        self.current_state = STATE_EDIT_CHARACTERS
+        self.current_character_id  = character.id
+        self.current_character_name = character.getName()      
+      else:
+        content = { "error": f"no character {id}" }
+      return json.dumps(content)
+  
+    if function_name == "CreateCharacter":
+      character = elements.Character(self.current_world_id)
+      character.setName(arguments["name"])
+
+      characters = elements.listCharacters(db, self.current_world_id)    
+      name = checkDuplication(character.getName(), characters)
+      if name is not None:
+        content = { "error": f"Similar name already exists: {name}" }
+        return json.dumps(content)
+    
+      character.updateProperties(arguments)    
+      character = elements.createCharacter(db, character)
+      self.current_character_id  = character.id
+      self.current_character_name = character.getName()    
+      self.current_state = STATE_EDIT_CHARACTERS   
+      return f'"{character.id}"'
+
+    if function_name == "UpdateCharacter":
+      character = elements.loadCharacter(db, self.current_character_id)
       if character is None:
-        return "error: no character %s" % id
-      image.setParentId(id)
-      current_character_id = id
-      current_character_name = character.getName()
-    else:
-      image.setParentId(current_world_id)
+        content = { "error": f"Character not found" }
+        return json.dumps(content)
+      character.updateProperties(arguments)
+      elements.updateCharacter(db, character)
+    return "updated"
+  
+    if (function_name == "CreateWorldImage" or
+        function_name == "CreateCharacterImage"):
+      image = elements.Image()
+      image.setPrompt(arguments["prompt"])
+      logging.info("Create image: prompt %s", image.prompt)
+      if self.current_state == STATE_EDIT_CHARACTERS:
+        id = arguments["id"]
+        character = elements.loadCharacter(db, id)
+        if character is None:
+          return "error: no character %s" % id
+        image.setParentId(id)
+        self.current_character_id = id
+        self.current_character_name = character.getName()
+      else:
+        image.setParentId(self.current_world_id)
 
-    if image.parent_id is None:
-      logging.info("create image error: empty parent_id")
-      return "error"
+      if image.parent_id is None:
+        logging.info("create image error: empty parent_id")
+        return "error"
 
-    dest_file = os.path.join(DATA_DIR, image.getFilename())
-    logging.info("dest file: %s", dest_file)
-    if image_get_request(image.prompt, dest_file):
-      logging.info("file create done, create image record")
-      image = elements.createImage(db, image)
-      return "Image creation complete"
-    return "error generating image"
+      dest_file = os.path.join(DATA_DIR, image.getFilename())
+      logging.info("dest file: %s", dest_file)
+      if image_get_request(image.prompt, dest_file):
+        logging.info("file create done, create image record")
+        image = elements.createImage(db, image)
+        return "Image creation complete"
+      return "error generating image"
 
-  err_str = f"no such function: {function_name}"
-  print(err_str)
-  return '{ "error": "' + err_str + '" }'              
+    err_str = f"no such function: {function_name}"
+    print(err_str)
+    return '{ "error": "' + err_str + '" }'              
 
 
 def image_get_request(prompt, dest_file):

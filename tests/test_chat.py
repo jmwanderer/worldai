@@ -136,15 +136,17 @@ class BasicChatTestCase(unittest.TestCase):
         return "Hello"
       raise EOFError()
 
-    def get_function_result(name, args):
+    def get_function_result(dummy_self, db, name, args):
+      # Note: dummy_self is the ChatSession instance      
       return getToolResponseMessage()
 
-    def track_tokens(self, prompt, complete, total):
+    def track_tokens(dummy_self, db, prompt, complete, total):
+      # Note: dummy_self is the ChatSession instance      
       pass
     
     chat.chat_completion_request = chat_completion_request
     chat.get_user_input = get_user_input
-    chat.execute_function_call = get_function_result
+    chat.ChatSession.execute_function_call = get_function_result
     chat.ChatSession.track_tokens = track_tokens
 
   def testChatLoop(self):
@@ -176,18 +178,20 @@ class ExtendedChatTestCase(unittest.TestCase):
       self.assertEqual(msg_response.get("role"), "assistant")
       return getCompletionResponse(msg_response)
 
-    def get_function_result(name, args):
+    def get_function_result(dummy_self, db, name, args):
+      # Note: dummy_self is the ChatSession instance      
       msg_result = msg_thread[self.msg_index]
       self.msg_index += 1
       self.assertEqual(msg_result.get("role"), "tool")
       return msg_result
 
-    def track_tokens(self, prompt, complete, total):
+    def track_tokens(dummy_self, db, prompt, complete, total):
+      # Note: dummy_self is the ChatSession instance      
       pass
 
     chat.chat_completion_request = chat_completion_request
     chat.get_user_input = get_user_input
-    chat.execute_function_call = get_function_result
+    chat.ChatSession.execute_function_call = get_function_result
     chat.ChatSession.track_tokens = track_tokens
 
   def calcTokens(self, messages):

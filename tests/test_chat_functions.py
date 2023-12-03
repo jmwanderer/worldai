@@ -19,7 +19,7 @@ class BasicTestCase(unittest.TestCase):
     with open(path) as f:
       self.db.executescript(f.read())
     self.user_dir = tempfile.TemporaryDirectory()
-    chat_functions.InitializeStateVars()
+    self.chatFunctions = chat_functions.ChatFunctions()
     
   def tearDown(self):
     self.db.close()
@@ -70,31 +70,31 @@ class BasicTestCase(unittest.TestCase):
     
   def test_available_functions(self):
     # STATE_WORLDS
-    functions = chat_functions.get_available_tools()
+    functions = self.chatFunctions.get_available_tools()
     self.assertEqual(len(functions), 3)
     self.assertCallAvailable('ListWorlds')
     self.assertCallNotAvailable('UpdateWorld')    
-    self.assertIsNotNone(chat_functions.get_state_instructions())
-    self.assertIn("new world", chat_functions.get_state_instructions())
+    self.assertIsNotNone(self.chatFunctions.get_state_instructions())
+    self.assertIn("new world", self.chatFunctions.get_state_instructions())
                        
     self.callFunction('CreateWorld', '{ "name": "world 1" }')
 
     # STATE EDIT WORLD
-    self.assertEqual(chat_functions.current_state,
+    self.assertEqual(self.chatFunctions.current_state,
                      chat_functions.STATE_EDIT_WORLD)
     self.assertCallAvailable('UpdateWorld')    
     self.assertCallNotAvailable('ListWorlds')
-    self.assertIsNotNone(chat_functions.get_state_instructions())
-    self.assertIn("description", chat_functions.get_state_instructions())
+    self.assertIsNotNone(self.chatFunctions.get_state_instructions())
+    self.assertIn("description", self.chatFunctions.get_state_instructions())
     self.callFunction('ChangeState', '{ "state": "State_View_World" }')
 
     # STATE VIEW WORLD
-    self.assertEqual(chat_functions.current_state,
+    self.assertEqual(self.chatFunctions.current_state,
                      chat_functions.STATE_VIEW_WORLD)
     self.callFunction('ChangeState', '{ "state": "State_Edit_Characters" }')
 
     # STATE EDIT CHARACTERS
-    self.assertEqual(chat_functions.current_state,
+    self.assertEqual(self.chatFunctions.current_state,
                      chat_functions.STATE_EDIT_CHARACTERS)
     self.assertCallNotAvailable('UpdateWorld')
     self.assertCallAvailable('ListCharacters')
@@ -105,7 +105,7 @@ class BasicTestCase(unittest.TestCase):
     id = json.loads(id)
 
     # STATE EDIT CHARACTER
-    self.assertEqual(chat_functions.current_state,
+    self.assertEqual(self.chatFunctions.current_state,
                      chat_functions.STATE_EDIT_CHARACTERS)
     self.assertCallAvailable('UpdateCharacter')
 
@@ -122,20 +122,20 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(values["name"], "my char 1")
 
     self.callFunction('ChangeState', '{ "state": "State_View_World" }')    
-    self.assertEqual(chat_functions.current_state,
+    self.assertEqual(self.chatFunctions.current_state,
                      chat_functions.STATE_VIEW_WORLD)
     
     
   
   def assertCallAvailable(self, name):
     # Assert we are allowed to call the function in the current state    
-    functions = chat_functions.get_available_tools()
+    functions = self.chatFunctions.get_available_tools()
     names = [ x["function"]["name"] for x in functions ]
     self.assertIn(name, names)
 
   def assertCallNotAvailable(self, name):
     # Assert we are allowed to call the function in the current state    
-    functions = chat_functions.get_available_tools()
+    functions = self.chatFunctions.get_available_tools()
     names = [ x["function"]["name"] for x in functions ]
     self.assertNotIn(name, names)
 
@@ -148,7 +148,7 @@ class BasicTestCase(unittest.TestCase):
     # Assert we are allowed to call it in the current state
     self.assertCallAvailable(name)
     args = json.loads(arguments)
-    return chat_functions.execute_function_call(self.db, name, args)
+    return self.chatFunctions.execute_function_call(self.db, name, args)
     
 if __name__ ==  '__main__':
   unittest.main()

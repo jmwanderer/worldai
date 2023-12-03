@@ -85,10 +85,6 @@ def print_log(value):
   print(value)
   logging.info(value)
 
-def execute_function_call(db, function_name, function_args):
-  return chat_functions.execute_function_call(db, function_name, function_args)
-    
-
 class MessageSetRecord:
   """
   Records a request / response message.
@@ -248,6 +244,7 @@ class ChatSession:
     self.total_tokens = 0
     self.enc = tiktoken.encoding_for_model(GPT_MODEL)
     self.history = MessageRecords()
+    self.chatFunctions = chat_functions.ChatFunctions()
     self.path = path
 
   def loadChatSession(path):
@@ -285,13 +282,17 @@ class ChatSession:
     self.complete_tokens += complete
     self.total_tokens += total
 
-    world_id = chat_functions.current_world_id
+    world_id = self.chatFunctions.current_world_id
     if world_id is None:
       world_id = 0
     chat_functions.track_tokens(db, world_id, prompt, complete, total)
     logging.info(f"prompt: {prompt}, complete: {complete}, total: {total}")
-  
 
+  def execute_function_call(self, db, function_name, function_args):
+    return self.chatFunctions.execute_function_call(db,
+                                                    function_name,
+                                                    function_args)
+    
   def BuildMessages(self, history):
     """
     Take a MessageRecords instance
@@ -302,14 +303,14 @@ class ChatSession:
   
     # System instructions
     current_instructions = instructions.format(
-      current_state=chat_functions.current_state)
+      current_state=self.chatFunctions.current_state)
 
     history.setSystemMessage({"role": "system",
                               "content": current_instructions + "\n" +
-                              chat_functions.get_state_instructions() })
+                              self.chatFunctions.get_state_instructions() })
 
 
-    functions = chat_functions.get_available_tools()
+    functions = self.chatFunctions.get_available_tools()
     history.setTokenOverhead(len(self.enc.encode(json.dumps(functions))))
 
     for message_set in reversed(history.message_sets()):
@@ -332,13 +333,13 @@ class ChatSession:
     self.history.addRequestMessage(self.enc,
                                    {"role": "user", "content": user})
 
-    print_log(f"state: {chat_functions.current_state}")
+    print_log(f"state: {self.chatFunctions.current_state}")
     messages = self.BuildMessages(self.history)
     print("Chat completion call...")
 
     response = chat_completion_request(
       messages,
-      tools=chat_functions.get_available_tools())
+      tools=self.chatFunctions.get_available_tools())
     
     if response.get("usage") is not None:
       usage = response["usage"]
@@ -361,9 +362,9 @@ class ChatSession:
         function_name = tool_call["function"]["name"]
         function_args = json.loads(tool_call["function"]["arguments"])
         print(f"function call: {function_name}")
-        function_response = execute_function_call(db,
-                                                  function_name,
-                                                  function_args)
+        function_response = self.execute_function_call(db,
+                                                       function_name,
+                                                       function_args)
         logging.info("function call result: %s" % str(function_response))
       
         self.history.addToolResponseMessage(
