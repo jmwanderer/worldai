@@ -114,7 +114,7 @@ class BasicChatTestCase(unittest.TestCase):
     # Stub out the user input, completion request, and exec fuc routines
     self.request_count = 0
 
-    def chat_completion_request(messages, tools=None):
+    def chat_completion_request(messages, tools=None, tool_choice=None):
       # Return:
       # 1: assistant response
       # 2: tool request
@@ -169,7 +169,7 @@ class ExtendedChatTestCase(unittest.TestCase):
       self.assertEqual(msg.get("role"), "user")
       return msg.get("content")
 
-    def chat_completion_request(messages, tools=None):
+    def chat_completion_request(messages, tools=None, tool_choice=None):
       tokenCount = self.calcTokens(messages)
       self.max_token_count = max(tokenCount, self.max_token_count)
       print(f"********** token count: {tokenCount}, max: {self.max_token_count}")
