@@ -6,6 +6,10 @@ import logging
 
 from . import elements
 
+
+IMAGE_DIRECTORY="/tmp"
+
+
 def track_tokens(db, world_id, prompt_tokens, complete_tokens, total_tokens):
   q = db.execute("SELECT COUNT(*) FROM token_usage WHERE world_id = ?",
                  (world_id,))
@@ -138,6 +142,13 @@ class ChatFunctions:
     self.current_world_id = None
     self.current_character_name = None
     self.current_character_id = None
+    self.modified = False
+
+  def madeChanges(self):
+    return self.modified
+
+  def clearChanges(self):
+    self.modified = False
   
   def get_state_instructions(self):
     value = instructions[self.current_state].format(
@@ -173,11 +184,12 @@ class ChatFunctions:
       if name is not None:
         content = { "error": f"Similar name already exists: {name}" }
         return json.dumps(content)
-    
+
       world = elements.createWorld(db, world)
       self.current_state = STATE_EDIT_WORLD
       self.current_world_id = world.id
       self.current_world_name = world.getName()
+      self.modified = True      
       return f'"{world.id}"'
 
     if function_name == "ListWorlds":
@@ -188,6 +200,7 @@ class ChatFunctions:
       world = elements.loadWorld(db, self.current_world_id)
       world.updateProperties(arguments)
       elements.updateWorld(db, world)
+      self.modified = True
       return "updated"
 
     if function_name == "ReadWorld":
@@ -215,7 +228,10 @@ class ChatFunctions:
         return "Error: must read or create a world"
       self.current_state = state
 
-      if state != STATE_EDIT_CHARACTERS:
+      if state == STATE_EDIT_CHARACTERS:
+        characters = elements.listCharacters(db, self.current_world_id)
+        return json.dumps(characters)
+      else:
         self.current_character_id = None
         self.current_character_name = None
 
@@ -267,6 +283,7 @@ class ChatFunctions:
         return json.dumps(content)
       character.updateProperties(arguments)
       elements.updateCharacter(db, character)
+      self.modified = True      
       return "updated"
   
     if (function_name == "CreateWorldImage" or
@@ -289,11 +306,12 @@ class ChatFunctions:
         logging.info("create image error: empty parent_id")
         return "error"
 
-      dest_file = os.path.join(DATA_DIR, image.getFilename())
+      dest_file = os.path.join(IMAGE_DIRECTORY, image.getFilename())
       logging.info("dest file: %s", dest_file)
       if image_get_request(image.prompt, dest_file):
         logging.info("file create done, create image record")
         image = elements.createImage(db, image)
+        self.modified = True
         return "Image creation complete"
       return "error generating image"
 

@@ -52,6 +52,7 @@
 
     
     in_progress = false;
+    current_view = "{{ url_for('worldai.list_worlds') }}";
     
     const loadAction = async() => {
         if (in_progress) {
@@ -89,12 +90,11 @@
         const values = await response.json();
         addAssistantMessage(values["assistant"]);
         in_progress = false;
-        messages.scrollTop = messages.scrollHeight;
-        console.log(values["view"])
-        if (view_frame.src == values["view"]) {
-            view_frame.reload()
-        } else {
-            view_frame.src = values["view"];
+      messages.scrollTop = messages.scrollHeight;
+
+      if (current_view != values["view"] || values["changes"]) {
+        view_frame.src = values["view"];
+        current_view = values["view"];
         }
     }
     function keyEvent(key) {

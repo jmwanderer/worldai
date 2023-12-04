@@ -27,7 +27,8 @@ MESSAGE_THRESHOLD=3_000
 
 @retry(wait=wait_random_exponential(multiplier=1, max=40),
        stop=stop_after_attempt(3))
-def chat_completion_request(messages, tools=None, model=GPT_MODEL):
+def chat_completion_request(messages, tools=None,
+                            tool_choice=None, model=GPT_MODEL):
   headers = {
     "Content-Type": "application/json",
     "Authorization": "Bearer " + openai.api_key,
@@ -35,6 +36,9 @@ def chat_completion_request(messages, tools=None, model=GPT_MODEL):
   json_data = {"model": model, "messages": messages}
   if tools is not None:
     json_data.update({"tools": tools})
+  if tool_choice is not None:
+    json_data.update({"tool_choice": tool_choice})
+
   try:
     response = requests.post(
       "https://api.openai.com/v1/chat/completions",
@@ -170,6 +174,9 @@ class MessageRecords:
     
   def setTokenOverhead(self, count):
     self.overhead = count
+
+  def isEmpty(self):
+    return len(self.message_history) == 0
     
   def addRequestMessage(self, enc, message):
     self.current_message = MessageSetRecord()
@@ -256,6 +263,7 @@ class ChatSession:
     self.history = MessageRecords()
     self.chatFunctions = chat_functions.ChatFunctions()
     self.path = path
+    self.madeChanges = False
 
   def loadChatSession(path):
     chat_session = ChatSession(path)
@@ -288,7 +296,10 @@ class ChatSession:
     pickle.dump(self.history, f)
     pickle.dump(self.chatFunctions, f)
     
-    
+
+  def madeModifications(self):
+    return self.madeChanges
+  
   def track_tokens(self, db, prompt, complete, total):
     self.prompt_tokens += prompt
     self.complete_tokens += complete
@@ -364,19 +375,28 @@ class ChatSession:
     function_call = False
     assistant_message = None
     messages = []
+    tool_choice = None
+
+    self.chatFunctions.clearChanges()
+
+    if self.history.isEmpty():
+      tool_choice = { "type": "function",
+                      "function": { "name": "ListWorlds"}}
 
     self.history.addRequestMessage(self.enc,
                                    {"role": "user", "content": user})
 
     print_log(f"state: {self.chatFunctions.current_state}")
     print_log(f"world: {self.chatFunctions.current_world_id}")
-    print_log(f"world: {self.chatFunctions.current_character_id}")        
+    print_log(f"character: {self.chatFunctions.current_character_id}")        
     messages = self.BuildMessages(self.history)
     print("Chat completion call...")
 
     response = chat_completion_request(
       messages,
-      tools=self.chatFunctions.get_available_tools())
+      tools=self.chatFunctions.get_available_tools(),
+      tool_choice=tool_choice
+    )
     
     if response.get("usage") is not None:
       usage = response["usage"]
@@ -430,6 +450,8 @@ class ChatSession:
       
     self.history.addResponseMessage(self.enc, assistant_message)
     logging.info(json.dumps(assistant_message))
+
+    self.madeChanges = self.chatFunctions.madeChanges() 
     return assistant_message
 
 
@@ -445,6 +467,7 @@ def initializeApp():
 
   dir = os.path.split(os.path.split(__file__)[0])[0]
   dir = os.path.join(dir, 'instance')
+  chat_functions.IMAGE_DIRECTORY = dir
   print(f"dir: {dir}")
   DATABASE=os.path.join(dir, 'worldai.sqlite')
   db_access.init_config(DATABASE)

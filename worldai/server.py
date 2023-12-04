@@ -17,6 +17,7 @@ import openai
 from . import db_access
 from . import elements
 from . import chat
+from . import chat_functions
 
 
 def create_app(instance_path=None):
@@ -57,7 +58,8 @@ def create_app(instance_path=None):
     os.makedirs(app.instance_path)
   except OSError as err:
     pass
-
+  chat_functions.IMAGE_DIRECTORY = app.instance_path
+  
   app.register_blueprint(bp)
 
   @app.errorhandler(Exception)
@@ -292,7 +294,8 @@ def chat_api(session_id):
           view = flask.url_for('worldai.list_worlds')
         content = {
           "assistant": elements.textToHTML(message['content']),
-          "view": view
+          "view": view,
+          "changes": chat_session.madeModifications()
         }
   chat_session.saveChatSession()
   return flask.jsonify(content)
