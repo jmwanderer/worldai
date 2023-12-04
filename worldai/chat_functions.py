@@ -360,9 +360,11 @@ class ChatFunctions:
 
     dest_file = os.path.join(IMAGE_DIRECTORY, image.getFilename())
     logging.info("dest file: %s", dest_file)
-    result = image_get_request(image.prompt +
-                               "Do not include text in the image.",
-                               dest_file)
+    result = image_get_request(
+      "Produce a visual image that captures the following: " +
+      image.prompt,
+      dest_file)
+    
     if result:
       logging.info("file create done, create image record")
       image = elements.createImage(db, image)
