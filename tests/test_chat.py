@@ -72,6 +72,47 @@ class RecordsTestCase(unittest.TestCase):
     print(records.jsonString())
 
 
+class ExtendedRecordsTestCase(unittest.TestCase):
+
+  # Encoder that only returns 1 element
+  class Encode:
+    def encode(self, my_input):
+      return ["1"]
+    
+  def testMessageRecords(self):
+    enc = ExtendedRecordsTestCase.Encode()
+    records = chat.MessageRecords()
+    records.setSystemMessage(getSystemMessage())
+    records.addRequestMessage(enc, getUserMessage())
+
+    # Repeated tool calls
+    # Call 1
+    records.addToolRequestMessage(enc, getToolRequestMessage())
+    records.addToolResponseMessage(enc, getToolResponseMessage())
+    records.addToolResponseMessage(enc, getToolResponseMessage())
+    records.addToolResponseMessage(enc, getToolResponseMessage())
+
+    # Call 2
+    records.addToolRequestMessage(enc, getToolRequestMessage())
+    records.addToolResponseMessage(enc, getToolResponseMessage())
+    records.addToolResponseMessage(enc, getToolResponseMessage())
+
+    # Call 3
+    records.addToolRequestMessage(enc, getToolRequestMessage())
+    records.addToolResponseMessage(enc, getToolResponseMessage())
+
+    # Final response
+    records.addResponseMessage(enc, getAssistantMessage())
+
+    # Include all
+    for message_set in records.message_sets():
+      message_set.setIncluded()
+
+    # Count number of size 1 messages
+    self.assertEqual(records.getThreadTokenCount(enc), 12)
+
+    
+
 class SaveLoadTestCase(unittest.TestCase):
 
   def setUp(self):
