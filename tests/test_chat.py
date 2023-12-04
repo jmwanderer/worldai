@@ -42,13 +42,13 @@ class RecordsTestCase(unittest.TestCase):
     records.addRequestMessage(enc, getUserMessage())
     records.addResponseMessage(enc, getAssistantMessage())
     # Just system message included
-    self.assertEqual(records.getThreadTokenCount(enc), 17)
+    self.assertEqual(records.getThreadTokenCount(enc), 13)
 
     records.message_sets()[0].setIncluded()
     self.assertNotEqual(records.getThreadTokenCount(enc), 0)
 
     records.clearIncluded()
-    self.assertEqual(records.getThreadTokenCount(enc), 17)    
+    self.assertEqual(records.getThreadTokenCount(enc), 13)    
 
     records.addRequestMessage(enc, getUserMessage())
     records.addToolRequestMessage(enc, getToolRequestMessage())
@@ -109,7 +109,7 @@ class ExtendedRecordsTestCase(unittest.TestCase):
       message_set.setIncluded()
 
     # Count number of size 1 messages
-    self.assertEqual(records.getThreadTokenCount(enc), 12)
+    self.assertEqual(records.getThreadTokenCount(enc), 86)
 
     
 

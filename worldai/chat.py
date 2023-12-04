@@ -113,11 +113,38 @@ class MessageSetRecord:
   class ToolRequestMessage:
     def __init__(self):
       self.request_message = None
-      self.response_messages = []      
+      self.response_messages = []
 
+  def _recursiveValueCount(enc, elements):
+    count = 0
+    for key, value in elements.items():
+      if value is None:
+        continue
+
+      if isinstance(value, dict):
+        count += MessageSetRecord._recursiveValueCount(enc, value)
+      elif isinstance(value, list):
+        for entry in value:
+          if isinstance(entry, dict):
+            count += MessageSetRecord._recursiveValueCount(enc, entry)
+          else:
+            count += len(enc.encode(entry))
+      else:
+        count += len(enc.encode(value))
+        if key == "name":
+          count -= 1
+    return count
+  
+  def _updateTokenCount(self, enc, message):
+    """
+    Called for each add message.
+    """
+    self.message_tokens += 4
+    self.message_tokens += MessageSetRecord._recursiveValueCount(enc, message)
+        
   def setRequestMessage(self, enc, message):
     self.request_message = message
-    self.message_tokens += len(enc.encode(json.dumps(message)))
+    self._updateTokenCount(enc, message)
 
   def getRequestContent(self):
     if self.request_message is None:
@@ -126,7 +153,7 @@ class MessageSetRecord:
 
   def setResponseMessage(self, enc, message):
     self.response_message = message
-    self.message_tokens += len(enc.encode(json.dumps(message)))
+    self._updateTokenCount(enc, message)    
 
   def getResponseContent(self):
     if self.response_message is None:
@@ -137,12 +164,12 @@ class MessageSetRecord:
     record = MessageSetRecord.ToolRequestMessage()
     record.request_message = message
     self.tool_messages.append(record)
-    self.message_tokens += len(enc.encode(json.dumps(message)))
+    self._updateTokenCount(enc, message)    
 
   def addToolResponseMessage(self, enc, message):
     record = self.tool_messages[-1]
     record.response_messages.append(message)
-    self.message_tokens += len(enc.encode(json.dumps(message)))
+    self._updateTokenCount(enc, message)        
 
   def getTokenCount(self):
     return self.message_tokens
@@ -177,13 +204,46 @@ class MessageRecords:
     self.message_history = []
     self.current_message = None
     self.system_message = None
-    self.overhead = 0
+    self.function_tokens = 0
 
   def setSystemMessage(self, message):
     self.system_message = message
-    
-  def setTokenOverhead(self, count):
-    self.overhead = count
+
+  def _countFunctionTokens(self, enc, function):
+    count = len(enc.encode(function["name"]))
+    count += len(enc.encode(function["description"]))
+    if "parameters" in function:
+      parameters = function["parameters"]
+      if "properties" in parameters:
+        for key in parameters["properties"]:
+          count += len(enc.encode(key))
+          values = parameters["properties"][key]
+          for field in values:
+            if field == 'type':
+              count += 2
+              count += len(enc.encode(values['type']))
+
+            elif field == 'description':
+              count += 2
+              count += len(enc.encode(values['description']))
+
+            elif field == 'enum':
+              count -= 3
+              for entry in values['enum']:
+                count += 3
+                count += len(enc.encode(entry))
+        count += 11
+
+    return count
+      
+  def setFunctions(self, enc, functions):
+    self.function_tokens = 0    
+    if functions is None:
+      return
+
+    self.function_tokens = 12
+    for entry in functions:
+      self.function_tokens += self._countFunctionTokens(enc, entry["function"])
 
   def isEmpty(self):
     return len(self.message_history) == 0
@@ -221,13 +281,18 @@ class MessageRecords:
     Return the total number of tokens for messages
     marked as included.
     """
-    count = self.overhead
+    count = self.function_tokens
     if self.system_message is not None:
-      count += len(enc.encode(json.dumps(self.system_message)))
+      count += 4
+      for key, value in self.system_message.items():
+        count += len(enc.encode(value))
+        if key == "name":
+          count -= 1
+
     for message in self.message_history:
       if message.included:
         count += message.getTokenCount()
-    return count
+    return count + 2
 
   def clearIncluded(self):
     for message in self.message_history:
@@ -333,7 +398,7 @@ class ChatSession:
     """
     messages = []
     history.clearIncluded()
-  
+    
     # System instructions
     current_instructions = instructions.format(
       current_state=self.chatFunctions.current_state)
@@ -342,14 +407,13 @@ class ChatSession:
                               "content": current_instructions + "\n" +
                               self.chatFunctions.get_state_instructions() })
 
-
     functions = self.chatFunctions.get_available_tools()
-    history.setTokenOverhead(len(self.enc.encode(json.dumps(functions))))
+    history.setFunctions(self.enc, functions)
 
     thread_size = 0
     for message_set in reversed(history.message_sets()):
-      new_size = thread_size + (history.getThreadTokenCount(self.enc) +
-                                message_set.getTokenCount())
+      new_size = (history.getThreadTokenCount(self.enc) +
+                  message_set.getTokenCount())
       if new_size < MESSAGE_THRESHOLD:
         message_set.setIncluded()
         thread_size = new_size
@@ -418,7 +482,7 @@ class ChatSession:
       # Make completion request call with the messages we have
       # selected from the message history and potentially
       # available tools and specified tool choice.
-      logging.info(json.dumps(messages))
+      #logging.info(json.dumps(messages))
       response = chat_completion_request(
         messages,
         tools=tools,
