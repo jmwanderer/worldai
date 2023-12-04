@@ -27,32 +27,40 @@ class BasicTestCase(unittest.TestCase):
 
   def test_exec_calls_world(self):
     self.assertCallAvailable('CreateWorld')
-    id2 = self.callFunction('CreateWorld',
-                            '{ "name": "world 2" }')
-    id2 = json.loads(id2)        
+    result = self.callFunction('CreateWorld',
+                               '{ "name": "world 2" }')
+    id2 = result["id"]
     self.assertIsNotNone(id2)
 
+    # Check illegal state
+    result = self.callFunction('ChangeState', '{ "state": "non existent" }')
+    self.assertIsNotNone(result.get("error"))
+    
     self.callFunction('ChangeState', '{ "state": "State_Worlds" }')
     
     self.assertCallAvailable('CreateWorld')
-    id1 = self.callFunction('CreateWorld', '{ "name": "world 1" }')
-    id1 = json.loads(id1)    
+    result = self.callFunction('CreateWorld', '{ "name": "world 1" }')
+    id1 = result["id"]
     self.assertIsNotNone(id1)
 
+    self.callFunction('ChangeState', '{ "state": "State_Worlds" }')    
 
-    self.callFunction('ChangeState', '{ "state": "State_Worlds" }')
+    # Create duplicate name
+    result = self.callFunction('CreateWorld', '{ "name": "world 1" }')
+    self.assertIsNotNone(result.get("error"))
     
     self.assertCallAvailable('ListWorlds')
-    content = self.callFunction('ListWorlds', '{}')
-    values = json.loads(content)
+    values = self.callFunction('ListWorlds', '{}')
     self.assertEqual(len(values), 2)
     self.assertEqual(values[0]["id"], id2)
     self.assertEqual(values[1]["id"], id1)
 
+    # Read not existent world
+    values = self.callFunction('ReadWorld', '{ "id": "not_exist" }')
+    self.assertIsNotNone(values.get("error"))
                   
     self.assertCallAvailable('ReadWorld')
-    content = self.callFunction('ReadWorld', '{ "id": "%s" }' % id1)
-    values = json.loads(content)    
+    values = self.callFunction('ReadWorld', '{ "id": "%s" }' % id1)
     self.assertIsNone(values.get("details"))
 
     self.callFunction('ChangeState', '{ "state": "State_Edit_World" }')    
@@ -64,9 +72,38 @@ class BasicTestCase(unittest.TestCase):
                       ' "details": "details" }')
     
     self.assertCallAvailable('ReadWorld')
-    content = self.callFunction('ReadWorld', '{ "id": "%s" }' % id1)
-    values = json.loads(content)    
+    values = self.callFunction('ReadWorld', '{ "id": "%s" }' % id1)
     self.assertEqual(values["details"], "details")
+
+    
+  def test_exec_calls_characters(self):
+    # Create a world for the characters
+    result = self.callFunction('CreateWorld', '{ "name": "world 1" }')
+    self.assertIsNotNone(result["id"])
+
+    self.callFunction('ChangeState', '{ "state": "State_Edit_Characters" }')    
+
+    # Read not existent character
+    values = self.callFunction('ReadCharacter', '{ "id": "not_exist" }')
+    self.assertIsNotNone(values.get("error"))
+    
+    # Create a character
+    result = self.callFunction('CreateCharacter', '{ "name": "Bob" }')
+    id = result["id"]
+    self.assertIsNotNone(id)
+
+    # Create a duplicate character
+    result = self.callFunction('CreateCharacter', '{ "name": "Bob" }')
+    self.assertIsNotNone(result.get("error"))
+
+    # Read not existent character again
+    values = self.callFunction('ReadCharacter', '{ "id": "not_exist" }')
+    self.assertIsNotNone(values.get("error"))
+
+    # Update a character
+    result = self.callFunction('UpdateCharacter', '{ "name": "Robert" }')
+    self.assertIsNone(result.get("error"))
+    
     
   def test_available_functions(self):
     # STATE_WORLDS
@@ -101,8 +138,8 @@ class BasicTestCase(unittest.TestCase):
     self.assertCallAvailable('CreateCharacter')
     self.assertCallAvailable('ReadCharacter')
 
-    id = self.callFunction('CreateCharacter','{ "name": "char 1" }')
-    id = json.loads(id)
+    result = self.callFunction('CreateCharacter','{ "name": "char 1" }')
+    id = result["id"]
 
     # STATE EDIT CHARACTER
     self.assertEqual(self.chatFunctions.current_state,
@@ -114,10 +151,9 @@ class BasicTestCase(unittest.TestCase):
                       ' "description": "a description", ' +
                       ' "details": "my details" }')
 
-    content = self.callFunction('ReadCharacter',
+    values = self.callFunction('ReadCharacter',
                                 '{ "id": "' + id + '" }')
-    print(content)
-    values = json.loads(content)    
+    print(str(values))
     self.assertEqual(values["details"], "my details")
     self.assertEqual(values["name"], "my char 1")
 

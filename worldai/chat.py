@@ -418,6 +418,7 @@ class ChatSession:
       # Make completion request call with the messages we have
       # selected from the message history and potentially
       # available tools and specified tool choice.
+      logging.info(json.dumps(messages))
       response = chat_completion_request(
         messages,
         tools=tools,
@@ -446,8 +447,6 @@ class ChatSession:
       if tool_calls: 
         # Make requested calls to tools.
         self.history.addToolRequestMessage(self.enc, assistant_message)      
-        logging.info("function call: %s" % json.dumps(tool_calls))
-
       
         for tool_call in tool_calls:
           function_name = tool_call["function"]["name"]
@@ -463,7 +462,7 @@ class ChatSession:
             { "tool_call_id": tool_call["id"],
               "role": "tool",
               "name": function_name,
-              "content": function_response
+              "content": json.dumps(function_response)
              })
       else:
         # Otherwise, just a response from the assistant, we are done.
