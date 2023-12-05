@@ -182,7 +182,10 @@ class ChatFunctions:
     # Default response value
     result = '{ "error": "' + f"no such function: {function_name}" + '" }'
 
-    if function_name == "ChangeState":
+    if function_name not in states[self.current_state]:
+      result = self.funcError(f"No available function {function_name}. " +
+                              "Perhaps call ChangeState")
+    elif function_name == "ChangeState":
       result = self.FuncChangeState(db, arguments)
 
     elif function_name == "CreateWorld":
@@ -233,10 +236,7 @@ class ChatFunctions:
       return self.funcError(f"Must read or create a world for {state}")
     self.current_state = state
 
-    if state == STATE_EDIT_CHARACTERS:
-      # TODO: change this to a force func call
-      return elements.listCharacters(db, self.current_world_id)
-    else:
+    if state != STATE_EDIT_CHARACTERS:
       self.last_character_id = None
 
     if state == STATE_WORLDS:
@@ -294,7 +294,10 @@ class ChatFunctions:
     return content
 
   def FuncReadCharacter(self, db, arguments):
-    id = arguments["id"]
+    id = arguments.get("id")
+    if id is None:
+      return self.funcError("request missing id parameter")
+    
     character = elements.loadCharacter(db, id)
     if character is not None:
       content = { "id": character.id,

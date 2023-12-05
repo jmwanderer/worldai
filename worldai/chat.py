@@ -174,14 +174,24 @@ class MessageSetRecord:
   def getTokenCount(self):
     return self.message_tokens
 
-  def hasFunctionResponse(self, functions):
-    found = False
-    for record in self.tool_messages:
-      for message in record.response_messages:
-        if message.get("tool_call_id") is None:
-          continue
-        found = found or message.get("name") in functions
-    return found
+  def hasToolCall(self, name, args):
+    """
+    Check if the function name and arguments are in a tool
+    call message. The args can be a subset.
+    """
+    for message in self.tool_messages:
+      for tool_call in message.request_message.get("tool_calls"):
+        function_name = tool_call["function"]["name"]
+        if function_name == name:
+          arg_str = tool_call["function"]["arguments"]
+          function_args = json.loads(arg_str)
+          args_check = True
+          for key, value in args.items():
+            if function_args.get(key) != value:
+              args_check = False
+          if args_check:
+            return True
+    return False
 
   def setIncluded(self):
     self.included = True
@@ -304,6 +314,16 @@ class MessageRecords:
     for message in self.message_history:
       if message.included:
         message.addMessagesToList(messages)
+
+
+  def hasToolCall(self, name, args):
+    """
+    Check for matching function call in included messages
+    """
+    for message in self.message_history:
+      if message.included and message.hasToolCall(name, args):
+        return True
+    return False
     
         
 
@@ -425,6 +445,31 @@ class ChatSession:
     return messages
 
 
+    
+  def checkToolChoice(self):
+    """
+    Determine if we need to fetch additional information
+    to act on requests.
+
+    Use the current state and the presense of included messages
+    to make decisions.
+    """
+    tool_func = None
+    if self.chatFunctions.current_state == chat_functions.STATE_WORLDS:
+      if not self.history.hasToolCall("ListWorlds", {}):
+        tool_func = "ListWorlds"
+    elif (self.chatFunctions.current_state ==
+          chat_functions.STATE_EDIT_CHARACTERS):
+      if not self.history.hasToolCall("ListCharacters", {}):
+        tool_func = "ListCharacters"
+
+    if tool_func is not None:
+      return { "type": "function",
+               "function": { "name": tool_func }}
+    return None
+    
+
+
   def chat_history(self):
     messages = []
     for message_set in self.history.message_sets():
@@ -454,30 +499,33 @@ class ChatSession:
     self.chatFunctions.clearChanges()
 
     # Check if we need to build content.
-    if self.history.isEmpty():
+    #if self.history.isEmpty():
       # First message, load a list of worlds
-      tool_choice = { "type": "function",
-                      "function": { "name": "ListWorlds"}}
+      #tool_choice = { "type": "function",
+       #               "function": { "name": "ListWorlds"}}
     # TODO: more cases
 
     self.history.addRequestMessage(self.enc,
                                    {"role": "user", "content": user})
 
-    print_log(f"state: {self.chatFunctions.current_state}")
-    print_log(f"world: {self.chatFunctions.current_world_id}")
-    print_log(f"character: {self.chatFunctions.last_character_id}")
+    
+    logging.info(f"world: {self.chatFunctions.current_world_id}")
+    logging.info(f"character: {self.chatFunctions.last_character_id}")
 
     call_count = 0
     done = False
     while not done:
       messages = self.BuildMessages(self.history)
+      tool_choice = self.checkToolChoice()
+      logging.info(f"state: {self.chatFunctions.current_state}")      
       call_count += 1
-      print(f"[{call_count}]: Chat completion call...")
+      print_log(f"[{call_count}]: Chat completion call...")
       # Limit tools call to 5
-      if call_count < 5:
+      if call_count < 6:
         tools=self.chatFunctions.get_available_tools()
       else:
         tools = None
+        tool_choice=None
 
       # Make completion request call with the messages we have
       # selected from the message history and potentially
@@ -500,7 +548,7 @@ class ChatSession:
                           usage["prompt_tokens"],
                           usage["completion_tokens"],
                           usage["total_tokens"])
-        print("prompt tokens: %s" % usage["prompt_tokens"])
+        print_log("prompt tokens: %s" % usage["prompt_tokens"])
       else:
         logging.error("no usage in response: %s" % json.dumps(response))
 

@@ -23,7 +23,7 @@ def getToolRequestMessage():
              'type': 'function',
              'function': {
                'name': 'lookup_route',
-               'arguments': '{\n "start": "Palo Alto,\n "end": "San Jose\n}'
+               'arguments': '{\n "start": "Palo Alto",\n "end": "San Jose"\n}'
              }
            }]
           }
@@ -56,8 +56,8 @@ class RecordsTestCase(unittest.TestCase):
     records.addResponseMessage(enc, getAssistantMessage())    
 
     message_set = records.message_sets()[1]
-    self.assertTrue(message_set.hasFunctionResponse(["lookup_route"]))
-    self.assertFalse(message_set.hasFunctionResponse(["lookup_weather"]))
+    self.assertTrue(message_set.hasToolCall("lookup_route", {}))
+    self.assertFalse(message_set.hasToolCall("lookup_weather", {}))
 
     messages = []
     records.addIncludedMessagesToList(messages)
