@@ -469,7 +469,6 @@ class ChatSession:
     return None
     
 
-
   def chat_history(self):
     messages = []
     for message_set in self.history.message_sets():
@@ -484,6 +483,8 @@ class ChatSession:
 
   def get_view(self):
     result = {}
+    if self.history.isEmpty():
+      result["logo"] = "logo"
     if self.chatFunctions.current_world_id is not None:
       result["world"] = self.chatFunctions.current_world_id
     if self.chatFunctions.last_character_id is not None:
@@ -497,18 +498,9 @@ class ChatSession:
     tool_choice = None
 
     self.chatFunctions.clearChanges()
-
-    # Check if we need to build content.
-    #if self.history.isEmpty():
-      # First message, load a list of worlds
-      #tool_choice = { "type": "function",
-       #               "function": { "name": "ListWorlds"}}
-    # TODO: more cases
-
     self.history.addRequestMessage(self.enc,
                                    {"role": "user", "content": user})
 
-    
     logging.info(f"world: {self.chatFunctions.current_world_id}")
     logging.info(f"character: {self.chatFunctions.last_character_id}")
 

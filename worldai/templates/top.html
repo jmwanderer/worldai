@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>WorldAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+    <link href='https://fonts.googleapis.com/css?family=Open Sans' rel='stylesheet'/>
+    <style>
+      body {
+	  font-family: 'Open Sans';
+      }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+
+
+  <body>
+    <div>
+      <a href="{{ url_for('worldai.list_worlds') }}"> 
+      <img src="{{ url_for('static', filename='logo.png') }}">
+      </a>
+    </div>
+</html>

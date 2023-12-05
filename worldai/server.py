@@ -144,6 +144,13 @@ def dump_worlds():
   print("\n\n")
     
 
+@bp.route('/view', methods=["GET"])
+def view():
+  """
+  Top level logo screen
+  """
+  return flask.render_template("top.html")
+  
 @bp.route('/view/worlds', methods=["GET"])
 def list_worlds():
   """
@@ -232,6 +239,23 @@ def view_client(session_id):
   return flask.render_template("client.html", session_id=session_id)
 
 
+def generate_view(chat_session):
+  current_view = chat_session.get_view();
+  if current_view.get("logo") is not None:
+    view = flask.url_for('worldai.view')
+  elif (current_view.get("world") is not None and
+      current_view.get("character") is not None):
+    view = flask.url_for('worldai.view_character',
+                         wid=current_view.get("world"),
+                         cid=current_view.get("character"))
+  elif current_view.get("world") is not None:
+    view = flask.url_for('worldai.view_world',
+                         id=current_view.get("world"))
+  else:
+    view = flask.url_for('worldai.list_worlds')
+  return view
+
+
 @bp.route('/chat/<session_id>', methods=["GET","POST"])
 def chat_api(session_id):
   """
@@ -268,6 +292,8 @@ def chat_api(session_id):
       }
     else:
       content = chat_session.chat_history()
+      content["view"] = generate_view(chat_session)      
+
   else:
     if request.json.get("user") is None:
       content = { "error": "malformed input" }
@@ -281,17 +307,7 @@ def chat_api(session_id):
         }
       else:
         message = chat_session.chat_exchange(get_db(), user_msg)
-        current_view = chat_session.get_view();
-        if (current_view.get("world") is not None and
-            current_view.get("character") is not None):
-          view = flask.url_for('worldai.view_character',
-                              wid=current_view.get("world"),
-                              cid=current_view.get("character"))
-        elif current_view.get("world") is not None:
-          view = flask.url_for('worldai.view_world',
-                               id=current_view.get("world"))
-        else:
-          view = flask.url_for('worldai.list_worlds')
+        view = generate_view(chat_session)
         content = {
           "assistant": elements.textToHTML(message['content']),
           "view": view,
