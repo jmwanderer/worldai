@@ -441,8 +441,8 @@ class ChatSession:
     result = {}
     if self.chatFunctions.current_world_id is not None:
       result["world"] = self.chatFunctions.current_world_id
-    if self.chatFunctions.current_character_id is not None:
-      result["character"] = self.chatFunctions.current_character_id
+    if self.chatFunctions.last_character_id is not None:
+      result["character"] = self.chatFunctions.last_character_id
     return result
   
   def chat_exchange(self, db, user):
@@ -465,7 +465,7 @@ class ChatSession:
 
     print_log(f"state: {self.chatFunctions.current_state}")
     print_log(f"world: {self.chatFunctions.current_world_id}")
-    print_log(f"character: {self.chatFunctions.current_character_id}")
+    print_log(f"character: {self.chatFunctions.last_character_id}")
 
     call_count = 0
     done = False
@@ -488,7 +488,7 @@ class ChatSession:
         tools=tools,
         tool_choice=tool_choice
       )
-      logging.info(json.dumps(response))
+      logging.info("Response: %s", json.dumps(response))
 
       # Clear tool choice, only force a tool call on the first request.
       tool_choice = None
@@ -515,7 +515,7 @@ class ChatSession:
         for tool_call in tool_calls:
           function_name = tool_call["function"]["name"]
           function_args = json.loads(tool_call["function"]["arguments"])
-          print(f"function call: {function_name}")
+          print_log(f"function call: {function_name}")
           function_response = self.execute_function_call(db,
                                                          function_name,
                                                          function_args)

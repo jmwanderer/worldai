@@ -72,7 +72,7 @@ To change information about the world, call change state to State_Edit_World.
 
 A world has main characters that we develop and design.
 
-To work on defining characters, change state to State_Edit_Characters.
+To view, create, or update characters, change state to State_Edit_Characters.
 """,
   
   STATE_EDIT_WORLD:
@@ -87,7 +87,7 @@ You can create an image for the world with CreateWorldImage, using information f
   
 Save information about the world by calling UpdateWorld
 
-To work on characters call ChangeState
+To view, create, or update characters, change state to State_Edit_Characters.  
   """,
 
   STATE_EDIT_CHARACTERS:
@@ -140,8 +140,7 @@ class ChatFunctions:
     self.current_state = STATE_WORLDS
     self.current_world_name = None
     self.current_world_id = None
-    self.current_character_name = None
-    self.current_character_id = None
+    self.last_character_id = None
     self.modified = False
 
   def madeChanges(self):
@@ -238,8 +237,7 @@ class ChatFunctions:
       # TODO: change this to a force func call
       return elements.listCharacters(db, self.current_world_id)
     else:
-      self.current_character_id = None
-      self.current_character_name = None
+      self.last_character_id = None
 
     if state == STATE_WORLDS:
       self.current_world_id = None
@@ -302,8 +300,7 @@ class ChatFunctions:
       content = { "id": character.id,
                   **character.getProperties() }
       self.current_state = STATE_EDIT_CHARACTERS
-      self.current_character_id  = character.id
-      self.current_character_name = character.getName()      
+      self.last_character_id  = character.id
     else:
       return self.funcError(f"no character '{id}'")
     return content
@@ -319,23 +316,23 @@ class ChatFunctions:
 
     character.updateProperties(arguments)    
     character = elements.createCharacter(db, character)
-    self.current_character_id  = character.id
-    self.current_character_name = character.getName()    
+    self.last_character_id  = character.id
     self.current_state = STATE_EDIT_CHARACTERS   
     status = self.funcStatus("Created character")
     status["id"] = character.id
     return status
     
   def FuncUpdateCharcter(self, db, arguments):
-    character = elements.loadCharacter(db, self.current_character_id)
+    id = arguments["id"]
+    character = elements.loadCharacter(db, id)
     if character is None:
-      return self.funcError(f"Character not found {self.current_character_id}")
+      return self.funcError(f"Character not found {id}")
     character.updateProperties(arguments)
     # TODO: check name collision
     elements.updateCharacter(db, character)
     self.modified = True      
     status = self.funcStatus("Updated character")
-    status["id"] = self.current_character_id
+    status["id"] = id
     return status
 
   def FuncCreateImage(self, db, arguments):
@@ -349,8 +346,7 @@ class ChatFunctions:
         return self.funcError(f"no character '{id}'")
         
       image.setParentId(id)
-      self.current_character_id = id
-      self.current_character_name = character.getName()
+      self.last_character_id = id
     else:
       image.setParentId(self.current_world_id)
 
@@ -546,6 +542,10 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the character.",
+        },
         "name": {
           "type": "string",
           "description": "Name of the character.",
@@ -559,6 +559,7 @@ all_functions = [
           "description": "Detailed information about the character.",
         },
       },
+      "required": [ "id"]      
     }
   },
   

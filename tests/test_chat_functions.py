@@ -101,7 +101,8 @@ class BasicTestCase(unittest.TestCase):
     self.assertIsNotNone(values.get("error"))
 
     # Update a character
-    result = self.callFunction('UpdateCharacter', '{ "name": "Robert" }')
+    result = self.callFunction('UpdateCharacter',
+                               '{ "id": "' + id + '", "name": "Robert" }')
     self.assertIsNone(result.get("error"))
     
     
