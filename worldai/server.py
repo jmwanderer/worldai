@@ -144,7 +144,7 @@ def dump_worlds():
   print("\n\n")
     
 
-@bp.route('/view', methods=["GET"])
+@bp.route('/', methods=["GET"])
 def view():
   """
   Top level logo screen
@@ -241,9 +241,7 @@ def view_client(session_id):
 
 def generate_view(chat_session):
   current_view = chat_session.get_view();
-  if current_view.get("logo") is not None:
-    view = flask.url_for('worldai.view')
-  elif (current_view.get("world") is not None and
+  if (current_view.get("world") is not None and
       current_view.get("character") is not None):
     view = flask.url_for('worldai.view_character',
                          wid=current_view.get("world"),
@@ -263,6 +261,7 @@ def chat_api(session_id):
   """
   path = os.path.join(current_app.instance_path, "chatfile")
   chat_session = chat.ChatSession.loadChatSession(path)
+  deleteSession = False
   
   if request.method == "GET":
     if current_app.config['TEST']:
@@ -295,11 +294,8 @@ def chat_api(session_id):
       content["view"] = generate_view(chat_session)      
 
   else:
-    if request.json.get("user") is None:
-      content = { "error": "malformed input" }
-    else:
+    if request.json.get("user") is not None:
       user_msg = request.json.get("user")
-      
       if current_app.config['TEST']:
         content = {
           "assistant": "Sure Dave, whatever you say",
@@ -313,7 +309,17 @@ def chat_api(session_id):
           "view": view,
           "changes": chat_session.madeModifications()
         }
-  chat_session.saveChatSession()
+    elif request.json.get("command"):
+      content= { "status": "ok" }
+      deleteSession = True
+      print("clear thread")
+    else:
+      content = { "error": "malformed input" }
+
+  if not deleteSession:
+    chat_session.saveChatSession()
+  else:
+    os.unlink(path)
   return flask.jsonify(content)
 
 

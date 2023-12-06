@@ -25,6 +25,9 @@
           <div>        
             <button id="send">Send</button>
           </div>
+          <div>        
+            <button id="clear" onclick="clearThread()">Clear Thread</button>
+          </div>
         </div>
       </div>
       <div style='flex-grow:1;'>
@@ -63,6 +66,9 @@
         const values = await response.json();
         view_frame.src = values["view"];      
         const msg_list = values["messages"];
+        if (msg_list.length == 0) {
+            addAssistantMessage("Hello, welcome to world builder!<br>Enter a request in the text box below.");
+        }
         for (i in msg_list) {
             addUserMessage(msg_list[i]["user"]);
             addAssistantMessage(msg_list[i]["assistant"]);
@@ -91,6 +97,7 @@
             }
         });
         const values = await response.json();
+        console.log(values);
         user_input.value = '';
         user_input.disabled = false;
         send_button.disbled = false;
@@ -100,7 +107,8 @@
 
       if (current_view != values["view"] || values["changes"]) {
         view_frame.src = values["view"];
-        current_view = values["view"];
+          current_view = values["view"];
+          console.log(`view: ${values["view"]}`);
         }
     }
     function keyEvent(key) {
@@ -110,7 +118,18 @@
         }
     }
     user_input.addEventListener("keydown", keyEvent);
-    send_button.onclick = postAction;    
+    send_button.onclick = postAction;
+
+    async function clearThread() {
+        const response = await fetch(url, {
+            method: 'POST',
+            body: '{ "command": "clear_thread" }',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        document.location.reload();
+    }
     
   </script>
 </html>

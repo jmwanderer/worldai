@@ -14,9 +14,11 @@
 
 
   <body>
-    <div>
-      <a href="{{ url_for('worldai.list_worlds') }}"> 
-      <img src="{{ url_for('static', filename='logo.png') }}">
-      </a>
+    <div style='width:100%;text-align:center;vertical-align:middle;'>      
+      <img style="max-width:600px;" src="{{ url_for('static', filename='logo.png') }}">
+      <br>
+      <a href="{{ url_for('worldai.list_worlds') }}">Browse Worlds</a>
+      <br>
+      <a href="{{ url_for('worldai.view_client', session_id='x') }}">Design Worlds</a>      
     </div>
 </html>
