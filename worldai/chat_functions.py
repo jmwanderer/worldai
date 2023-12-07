@@ -9,13 +9,24 @@ from . import elements
 
 IMAGE_DIRECTORY="/tmp"
 
-
-def track_tokens(db, world_id, prompt_tokens, complete_tokens, total_tokens):
+def ensure_token_entry(db, world_id):
   q = db.execute("SELECT COUNT(*) FROM token_usage WHERE world_id = ?",
                  (world_id,))
   if q.fetchone()[0] == 0:
-    db.execute("INSERT INTO token_usage VALUES (?, 0, 0, 0)", (world_id,))
-    
+    db.execute("INSERT INTO token_usage VALUES (?, 0, 0, 0, 0)", (world_id,))
+  
+def count_image(db, world_id, count):
+  ensure_token_entry(db, world_id)
+
+  db.execute("UPDATE token_usage SET images = images + ? " +
+             "WHERE world_id = ?",
+             (count, world_id))
+  db.commit()
+  
+
+def track_tokens(db, world_id, prompt_tokens, complete_tokens, total_tokens):
+  ensure_token_entry(db, world_id)  
+
   db.execute("UPDATE token_usage SET prompt_tokens = prompt_tokens + ?, " +
              "complete_tokens = complete_tokens + ?, " +
              "total_tokens = total_tokens + ? WHERE world_id = ?",
@@ -366,6 +377,7 @@ class ChatFunctions:
     
     if result:
       logging.info("file create done, create image record")
+      count_image(db, self.current_world_id, 1)
       image = elements.createImage(db, image)
       self.modified = True
       status = self.funcStatus("created image")

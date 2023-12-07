@@ -19,7 +19,8 @@ CREATE TABLE token_usage (
   world_id STRING NOT NULL,
   prompt_tokens INTEGER NOT NULL,
   complete_tokens INTEGER NOT NULL,
-  total_tokens INTEGER NOT NULL
+  total_tokens INTEGER NOT NULL,
+  images INTEGER NOT NULL DEFAULT 0
 );
 
 

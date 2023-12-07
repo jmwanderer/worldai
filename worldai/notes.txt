@@ -1,6 +1,8 @@
 Plans
 -----
 
+- Revamp ChatExchange API messages
+- Change JSON OpenAPI to YAML
 - Introduce a JSON object id - wid, type, eid, ...
 - trim contents of message history in chat_session
 - move chat_session state into sqlite
