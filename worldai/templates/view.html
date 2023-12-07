@@ -19,7 +19,8 @@
   {% if not world.getImageByIndex(0) is none %}
 
   <div style="padding-left:2em;float:right;display:inline;">
-    <img id="image" style="max-width:500px;">
+    <img id="image" style="max-width:500px;"
+         src="{{ url_for('worldai.get_image', id=world.getImageByIndex(0)) }}">
   </div>
   {% endif %}
 
@@ -44,7 +45,8 @@
 <h2>Description:</h2>
 {% if not character.getImageByIndex(0) is none %}
 <div style="padding-left:2em;float:right;display:inline;">
-  <img id="image" style="max-width:500px;">
+  <img id="image" style="max-width:500px;"
+       src="{{ url_for('worldai.get_image', id=character.getImageByIndex(0)) }}">
   <br>
 </div>
 {% endif %}

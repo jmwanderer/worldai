@@ -107,7 +107,6 @@
         addAssistantMessage(values["assistant"]);
         in_progress = false;
         messages.scrollTop = messages.scrollHeight;
-        console.log(values)
         view = values['view']
         loadContent(view)
     }
@@ -148,7 +147,6 @@
         });
 
         const values = await response.text();
-        /* console.log(values); */
         content.innerHTML = values;
     }
         
