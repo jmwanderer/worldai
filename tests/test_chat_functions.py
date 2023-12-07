@@ -13,9 +13,7 @@ class BasicTestCase(unittest.TestCase):
   def setUp(self):
     self.dir_name = os.path.dirname(__file__)
     path = os.path.join(self.dir_name, "../worldai/schema.sql")
-    self.db = sqlite3.connect("file::memory:",
-                              detect_types=sqlite3.PARSE_DECLTYPES)
-    self.db.row_factory = sqlite3.Row
+    self.db = sqlite3.connect("file::memory:")
     with open(path) as f:
       self.db.executescript(f.read())
     self.user_dir = tempfile.TemporaryDirectory()
@@ -24,6 +22,33 @@ class BasicTestCase(unittest.TestCase):
   def tearDown(self):
     self.db.close()
     self.user_dir.cleanup()
+
+  def test_token_tracking(self):
+    chat_functions.track_tokens(self.db, 1, 100, 100, 100)
+    chat_functions.count_image(self.db, 1, 1)
+    self.assertTrue(chat_functions.check_token_budgets(self.db))
+    self.assertTrue(chat_functions.check_image_budget(self.db))    
+
+    chat_functions.track_tokens(self.db, 2, 100, 100, 100)
+    chat_functions.count_image(self.db, 2, 1)
+
+    self.assertTrue(chat_functions.check_token_budgets(self.db))
+    self.assertTrue(chat_functions.check_image_budget(self.db))    
+
+    # Add a budget
+    self.db.execute("INSERT INTO token_usage VALUES (?, 500, 500, 500, 5)",
+                    ("limits",))
+    self.db.commit()
+    self.assertTrue(chat_functions.check_token_budgets(self.db))
+    self.assertTrue(chat_functions.check_image_budget(self.db))
+
+    chat_functions.track_tokens(self.db, 1, 300, 300, 300)
+    chat_functions.count_image(self.db, 1, 3)
+
+    self.assertFalse(chat_functions.check_token_budgets(self.db))
+    self.assertFalse(chat_functions.check_image_budget(self.db))
+
+    
 
   def test_exec_calls_world(self):
     self.assertCallAvailable('CreateWorld')

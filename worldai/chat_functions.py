@@ -9,6 +9,37 @@ from . import elements
 
 IMAGE_DIRECTORY="/tmp"
 
+def get_budgets(db):
+  c = db.execute("SELECT prompt_tokens, complete_tokens, total_tokens, " +
+                 " images FROM token_usage WHERE world_id = ?",
+                 ("limits",))
+  r = c.fetchone()
+  if r is None:
+    return { "prompt_tokens": 5_000_000,
+             "complete_tokens": 2_000_000,
+             "images": 100 }
+  else:
+    (prompt, complete, total, images) = r
+    return { "prompt_tokens": prompt,
+             "complete_tokens": complete,
+             "images": images }
+
+def check_token_budgets(db):
+  budgets = get_budgets(db)
+  q = db.execute("SELECT SUM(prompt_tokens), SUM(complete_tokens) "+
+                 "FROM token_usage WHERE world_id != ?",
+                 ("limits",))
+  (prompt_tokens, complete_tokens) = q.fetchone()
+  return (prompt_tokens < budgets["prompt_tokens"] and
+          complete_tokens < budgets["complete_tokens"])
+  
+def check_image_budget(db):
+  budgets = get_budgets(db)
+  q = db.execute("SELECT SUM(images) FROM token_usage WHERE world_id != ?",
+                 ("limits",))
+  (images,) = q.fetchone()
+  return images < budgets["images"]
+
 def ensure_token_entry(db, world_id):
   q = db.execute("SELECT COUNT(*) FROM token_usage WHERE world_id = ?",
                  (world_id,))
@@ -23,7 +54,6 @@ def count_image(db, world_id, count):
              (count, world_id))
   db.commit()
   
-
 def track_tokens(db, world_id, prompt_tokens, complete_tokens, total_tokens):
   ensure_token_entry(db, world_id)  
 
@@ -42,7 +72,8 @@ def dump_token_usage(db):
 
   print()    
   q = db.execute("SELECT SUM(prompt_tokens), SUM(complete_tokens), "+
-                 "SUM(total_tokens) FROM token_usage")
+                 "SUM(total_tokens) FROM token_usage WHERE world_id != ?",
+                 ("limits",))
   (prompt_tokens, complete_tokens, total_tokens) = q.fetchone()
   print(f"total: prompt: {prompt_tokens}, complete: " +
         f"{complete_tokens}, total: {total_tokens}")
@@ -350,6 +381,10 @@ class ChatFunctions:
     return status
 
   def FuncCreateImage(self, db, arguments):
+    # Check if the budget allows
+    if not check_image_budget(db):
+      return self.funcError("No budget available for image creation")
+    
     image = elements.Image()
     image.setPrompt(arguments["prompt"])
     logging.info("Create image: prompt %s", image.prompt)
