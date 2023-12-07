@@ -151,6 +151,7 @@ def view():
   """
   return flask.render_template("top.html")
   
+
 @bp.route('/view/worlds', methods=["GET"])
 def list_worlds():
   """
@@ -231,11 +232,16 @@ def test_view_client(wid, cid):
   return flask.render_template("test_client.html", world=world,
                                character=character)
 
-@bp.route('/client/<session_id>', methods=["GET"])
-def view_client(session_id):
+@bp.route('/client', methods=["GET"])
+def view_client():
   """
   Client view
   """
+  session_id = session.get('session_id')
+  if session_id is None:
+    session_id = os.urandom(12).hex()
+    session['session_id'] = session_id
+    
   return flask.render_template("client.html", session_id=session_id)
 
 
@@ -259,7 +265,8 @@ def chat_api(session_id):
   """
   Chat interface
   """
-  path = os.path.join(current_app.instance_path, "chatfile")
+  filename = session_id + ".chat"
+  path = os.path.join(current_app.instance_path, filename)
   chat_session = chat.ChatSession.loadChatSession(path)
   deleteSession = False
   
