@@ -1,0 +1,57 @@
+{% if obj == 'worlds' %}
+
+<h1>Worlds</h1>
+<ul>
+  {% for entry in world_list %}
+  <li>
+    <h2> {{ entry[1] }} </h2>
+    {{ entry[2] }}
+  </li>
+  {% endfor %}
+</ul>
+
+
+{% elif obj == 'world' %}
+
+<h1>{{ world.getName() }}</h1>
+<h2>Description:</h2>
+
+  {% if not world.getImageByIndex(0) is none %}
+
+  <div style="padding-left:2em;float:right;display:inline;">
+    <img id="image" style="max-width:500px;">
+  </div>
+  {% endif %}
+
+{{ world.getDescription() }}
+
+<h2>Detail Notes:</h2>
+{{ world.getDetailsHTML() | safe }}
+
+<h2>Main Characters:</h2>
+<ul>
+  {% for entry in character_list %}
+  <li>
+    <h3> {{ entry[1] }} </h3>
+    {{ entry[2] }}          
+  </li>
+  {% endfor %}
+</ul>
+
+{% else %}      
+
+<h1>{{ character.getName() }}</h1>
+<h2>Description:</h2>
+{% if not character.getImageByIndex(0) is none %}
+<div style="padding-left:2em;float:right;display:inline;">
+  <img id="image" style="max-width:500px;">
+  <br>
+</div>
+{% endif %}
+
+{{ character.getDescription() }}
+
+<h2>Detail Notes:</h2>
+{{ character.getDetailsHTML() | safe }}
+
+{% endif %}

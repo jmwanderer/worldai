@@ -149,8 +149,6 @@ def extract_auth_key(headers):
   if auth is not None:
     index = auth.find(' ')
     if index > 0:
-      print("found auth header")
-      print(auth[index+1:])
       return auth[index+1:]
   return None
   
@@ -161,10 +159,9 @@ def auth_required(view):
   @functools.wraps(view)
   def wrapped_view(**kwargs):
     # Verify auth matches
-    print("check auth")
     auth = extract_auth_key(request.headers)
     if auth != current_app.config['AUTH_KEY']:
-      print(f"auth failed! {auth}")
+      logging.info("auth failed: %s", auth)
       return { "error": "Invalid authorization header" }, 401
     return view(**kwargs)
   return wrapped_view
@@ -206,6 +203,66 @@ def login():
   return flask.render_template("login.html")
   
 
+@bp.route('/testview', methods=["GET"])
+@login_required
+def main_view():
+  """
+  Main view for browsing all elements.
+  """
+  wid = request.args.get("wid")
+  cid = request.args.get("cid")  
+  return flask.render_template("main_view.html", wid=wid, cid=cid,
+                               auth_key=current_app.config['AUTH_KEY'])
+
+
+@bp.route('/object', methods=["POST"])
+@auth_required
+def get_view():
+  """
+  Return HTML for an object
+  """
+  wid = request.json.get("world")
+  cid = request.json.get("character")
+  if wid is None:
+    # List of worlds view
+    world_list = []
+    worlds = elements.listWorlds(get_db())
+    for (entry) in worlds:
+      id = entry["id"]
+      world = elements.loadWorld(get_db(), id)
+      world_list.append((id, world.getName(), world.getDescription()))
+    return flask.render_template("view.html", obj="worlds", world_list=world_list)
+
+  elif cid is not None:
+    # Character view
+    world = elements.loadWorld(get_db(), wid)
+    if world == None:
+      return "World not found", 400
+    character = elements.loadCharacter(get_db(), cid)
+    if character == None:
+      return "Character not found", 400
+
+    return flask.render_template("view.html", obj="character", world=world,
+                                 character=character)
+
+  else:
+    # World view
+    world = elements.loadWorld(get_db(), wid)
+    if world == None:
+      return "World not found", 400
+
+    characters = elements.listCharacters(get_db(), world.id)
+    char_list = []
+    for entry in characters:
+      char_id = entry["id"]
+      char_name = entry["name"]
+      character = elements.loadCharacter(get_db(), char_id)    
+      char_list.append((char_id, char_name, character.getDescription()))
+    
+    return flask.render_template("view.html", obj='world', world=world,
+                                 character_list=char_list)
+  
+
 @bp.route('/view/worlds', methods=["GET"])
 @login_required
 def list_worlds():
@@ -220,6 +277,9 @@ def list_worlds():
     world_list.append((id, world.getName(), world.getDescription()))
 
   return flask.render_template("list_worlds.html", world_list=world_list)
+
+
+  
 
 @bp.route('/view/world/<id>', methods=["GET"])
 @login_required
@@ -342,7 +402,6 @@ def chat_api(session_id):
   else:
     os.unlink(path)
   return flask.jsonify(content)
-
 
 
 @bp.route('/client/<wid>/<cid>', methods=["GET"])
