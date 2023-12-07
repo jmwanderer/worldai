@@ -221,8 +221,8 @@ def get_view():
   """
   Return HTML for an object
   """
-  wid = request.json.get("world")
-  cid = request.json.get("character")
+  wid = request.json.get("wid")
+  cid = request.json.get("cid")
   if wid is None:
     # List of worlds view
     world_list = []
@@ -352,21 +352,6 @@ def view_client():
                                auth_key=current_app.config['AUTH_KEY'])
 
 
-def generate_view(chat_session):
-  current_view = chat_session.get_view();
-  if (current_view.get("world") is not None and
-      current_view.get("character") is not None):
-    view = flask.url_for('worldai.view_character',
-                         wid=current_view.get("world"),
-                         cid=current_view.get("character"))
-  elif current_view.get("world") is not None:
-    view = flask.url_for('worldai.view_world',
-                         id=current_view.get("world"))
-  else:
-    view = flask.url_for('worldai.list_worlds')
-  return view
-
-
 @bp.route('/chat/<session_id>', methods=["GET","POST"])
 @auth_required
 def chat_api(session_id):
@@ -380,26 +365,16 @@ def chat_api(session_id):
   
   if request.method == "GET":
       content = chat_session.chat_history()
-      content["view"] = generate_view(chat_session)
-      if chat_session.chatFunctions.last_character_id is not None:
-        content['cid'] = chat_session.chatFunctions.last_character_id
-      if chat_session.chatFunctions.current_world_id is not None:
-        content['wid'] = chat_session.chatFunctions.current_world_id
+      content['view'] = chat_session.get_view()
   else:
     if request.json.get("user") is not None:
       user_msg = request.json.get("user")
       message = chat_session.chat_exchange(get_db(), user_msg)
-      view = generate_view(chat_session)
       content = {
         "assistant": elements.textToHTML(message['content']),
-        "view": view,
         "changes": chat_session.madeModifications()
       }
-      
-      if chat_session.chatFunctions.last_character_id is not None:
-        content['cid'] = chat_session.chatFunctions.last_character_id
-      if chat_session.chatFunctions.current_world_id is not None:
-        content['wid'] = chat_session.chatFunctions.current_world_id
+      content['view'] = chat_session.get_view()
     elif request.json.get("command") is not None:
       content= { "status": "ok" }
       deleteSession = True

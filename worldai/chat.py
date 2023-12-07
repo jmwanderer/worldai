@@ -483,12 +483,10 @@ class ChatSession:
 
   def get_view(self):
     result = {}
-    if self.history.isEmpty():
-      result["logo"] = "logo"
     if self.chatFunctions.current_world_id is not None:
-      result["world"] = self.chatFunctions.current_world_id
+      result["wid"] = self.chatFunctions.current_world_id
     if self.chatFunctions.last_character_id is not None:
-      result["character"] = self.chatFunctions.last_character_id
+      result["cid"] = self.chatFunctions.last_character_id
     return result
   
   def chat_exchange(self, db, user):

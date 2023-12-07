@@ -54,7 +54,6 @@
 
     
     in_progress = false;
-    current_view = "{{ url_for('worldai.view') }}";
     
     const loadAction = async() => {
         if (in_progress) {
@@ -67,18 +66,8 @@
             }
         });
         const values = await response.json();
-        if ('wid' in values) {
-            wid = values['wid'];
-        } else {
-            wid = null;
-        }
-        if ('cid' in values) {
-            cid = values['cid'];
-        } else {
-            cid = null;
-        }
-        loadContent(wid, cid)
-        
+        view = values['view']
+        loadContent(view)
         const msg_list = values["messages"];
         if (msg_list.length == 0) {
             addAssistantMessage("Hello, welcome to world builder!<br>Enter a request in the text box below.");
@@ -119,21 +108,8 @@
         in_progress = false;
         messages.scrollTop = messages.scrollHeight;
         console.log(values)
-        if ('wid' in values) {
-            wid = values['wid'];
-        } else {
-            wid = null;
-        }
-        if ('cid' in values) {
-            cid = values['cid'];
-        } else {
-            cid = null;
-        }
-        loadContent(wid, cid)
-      if (current_view != values["view"] || values["changes"]) {
-          current_view = values["view"];
-          console.log(`view: ${values["view"]}`);
-        }
+        view = values['view']
+        loadContent(view)
     }
     function keyEvent(key) {
         if (key.keyCode == 13) {
@@ -160,18 +136,11 @@
     const content = document.getElementById("content")
     const url_obj = "{{ url_for('worldai.get_view') }}";
 
-    async function loadContent(wid, cid) {
-        console.log(`load content ${wid} ${cid}`)
-        key = {}
-        if (wid) {
-            key['world'] = wid;
-        }
-        if (cid) {
-            key['character'] = cid;
-        }
+    async function loadContent(view) {
+        console.log(`load content ${JSON.stringify(view)}`)
         const response = await fetch(url_obj, {
             method: 'POST',
-            body: JSON.stringify(key),
+            body: JSON.stringify(view),
             headers: {
                 'Content-Type': 'application/json',
                 "Authorization": "Bearer {{auth_key}}"                
