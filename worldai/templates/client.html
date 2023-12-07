@@ -62,7 +62,11 @@
             return
         }
         in_progress = true;
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: {
+                "Authorization": "Bearer {{auth_key}}"
+            }
+        });
         const values = await response.json();
         view_frame.src = values["view"];      
         const msg_list = values["messages"];
@@ -93,11 +97,11 @@
             method: 'POST',
             body: '{ "user": "' + text + '"}',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                "Authorization": "Bearer {{auth_key}}"                
             }
         });
         const values = await response.json();
-        console.log(values);
         user_input.value = '';
         user_input.disabled = false;
         send_button.disbled = false;

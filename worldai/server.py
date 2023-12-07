@@ -28,6 +28,7 @@ def create_app(instance_path=None):
                 instance_path=instance_path)
   app.config.from_mapping(
     SECRET_KEY='DEV',
+    AUTH_KEY='auth',    
     TEST=False,    
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY'),    
     DATABASE=os.path.join(app.instance_path, 'worldai.sqlite'),    
@@ -142,17 +143,71 @@ def dump_worlds():
       list_images(character.id)
     
   print("\n\n")
-    
 
+def extract_auth_key(headers):
+  auth = request.headers.get('Authorization')
+  if auth is not None:
+    index = auth.find(' ')
+    if index > 0:
+      print("found auth header")
+      print(auth[index+1:])
+      return auth[index+1:]
+  return None
+  
+def auth_required(view):
+  """
+  Ensure authorization is valid on a json endpoint.
+  """
+  @functools.wraps(view)
+  def wrapped_view(**kwargs):
+    # Verify auth matches
+    print("check auth")
+    auth = extract_auth_key(request.headers)
+    if auth != current_app.config['AUTH_KEY']:
+      print(f"auth failed! {auth}")
+      return { "error": "Invalid authorization header" }, 401
+    return view(**kwargs)
+  return wrapped_view
+
+def login_required(view):
+  """
+  Ensure user is authenticated
+  """
+  @functools.wraps(view)
+  def wrapped_view(**kwargs):
+    auth = session.get('auth_key')
+    if auth != current_app.config['AUTH_KEY']:
+      flask.flash("Please enter an authorization key")
+      return flask.redirect(flask.url_for('worldai.login'))
+    return view(**kwargs)
+  return wrapped_view
+  
 @bp.route('/', methods=["GET"])
+@login_required
 def view():
   """
   Top level logo screen
   """
   return flask.render_template("top.html")
+
+@bp.route('/login', methods=["GET", "POST"])
+def login():
+  """
+  Login view
+  """
+  if request.method == "POST":
+    auth = request.form["auth_key"]
+    if auth != current_app.config['AUTH_KEY']:
+      flask.flash("Authorization key does not match")
+      return flask.redirect(flask.url_for('worldai.login'))
+    session['auth_key'] = auth
+    return flask.redirect(flask.url_for('worldai.view'))
+
+  return flask.render_template("login.html")
   
 
 @bp.route('/view/worlds', methods=["GET"])
+@login_required
 def list_worlds():
   """
   List Worlds
@@ -167,6 +222,7 @@ def list_worlds():
   return flask.render_template("list_worlds.html", world_list=world_list)
 
 @bp.route('/view/world/<id>', methods=["GET"])
+@login_required
 def view_world(id):
   """
   View a world
@@ -187,6 +243,7 @@ def view_world(id):
                                character_list=char_list)
 
 @bp.route('/view/worlds/<wid>/characters/<cid>', methods=["GET"])
+@login_required
 def view_character(wid, cid):
   """
   View a character
@@ -203,6 +260,7 @@ def view_character(wid, cid):
 
 
 @bp.route('/images/<id>', methods=["GET"])
+@login_required
 def get_image(id):
   """
   Return an image
@@ -217,22 +275,8 @@ def get_image(id):
   return flask.send_file(image_file, mimetype="image/webp")
 
 
-@bp.route('/client/<wid>/<cid>', methods=["GET"])
-def test_view_client(wid, cid):
-  """
-  Test Client view
-  """
-  world = elements.loadWorld(get_db(), wid)
-  if world == None:
-    return "World xxx not found", 400
-  character = elements.loadCharacter(get_db(), cid)
-  if character == None:
-    return "Character xxx not found", 400
-
-  return flask.render_template("test_client.html", world=world,
-                               character=character)
-
 @bp.route('/client', methods=["GET"])
+@login_required
 def view_client():
   """
   Client view
@@ -241,8 +285,11 @@ def view_client():
   if session_id is None:
     session_id = os.urandom(12).hex()
     session['session_id'] = session_id
-    
-  return flask.render_template("client.html", session_id=session_id)
+
+
+  return flask.render_template("client.html",
+                               session_id=session_id,
+                               auth_key=current_app.config['AUTH_KEY'])
 
 
 def generate_view(chat_session):
@@ -261,6 +308,7 @@ def generate_view(chat_session):
 
 
 @bp.route('/chat/<session_id>', methods=["GET","POST"])
+@auth_required
 def chat_api(session_id):
   """
   Chat interface
@@ -271,55 +319,21 @@ def chat_api(session_id):
   deleteSession = False
   
   if request.method == "GET":
-    if current_app.config['TEST']:
-      content = {
-        "messages": [
-          {
-            "user": "some content",
-            "assistant": "more content"
-          },
-          {
-            "user": "test1",
-            "assistant": "test2"
-          },
-          {
-            "user": "Where is San Diego?",
-            "assistant": "I am not sure who you are talking about?"
-          },
-          {
-            "user": "Will people like my joke?",
-            "assistant": "No. But they might chuckle to be polite."
-          },
-          {
-            "user": "I think I should start a new online crypto currancy!",
-            "assistant": "yeah, go for it"
-          },
-        ]
-      }
-    else:
       content = chat_session.chat_history()
       content["view"] = generate_view(chat_session)      
-
   else:
     if request.json.get("user") is not None:
       user_msg = request.json.get("user")
-      if current_app.config['TEST']:
-        content = {
-          "assistant": "Sure Dave, whatever you say",
-          "functions": [ "OpenDoor" ]
-        }
-      else:
-        message = chat_session.chat_exchange(get_db(), user_msg)
-        view = generate_view(chat_session)
-        content = {
-          "assistant": elements.textToHTML(message['content']),
-          "view": view,
-          "changes": chat_session.madeModifications()
-        }
-    elif request.json.get("command"):
+      message = chat_session.chat_exchange(get_db(), user_msg)
+      view = generate_view(chat_session)
+      content = {
+        "assistant": elements.textToHTML(message['content']),
+        "view": view,
+        "changes": chat_session.madeModifications()
+      }
+    elif request.json.get("command") is not None:
       content= { "status": "ok" }
       deleteSession = True
-      print("clear thread")
     else:
       content = { "error": "malformed input" }
 
@@ -330,10 +344,26 @@ def chat_api(session_id):
   return flask.jsonify(content)
 
 
+
+@bp.route('/client/<wid>/<cid>', methods=["GET"])
+def test_view_client(wid, cid):
+  """
+  Test Client view  --- TEST CODE
+  """
+  world = elements.loadWorld(get_db(), wid)
+  if world == None:
+    return "World xxx not found", 400
+  character = elements.loadCharacter(get_db(), cid)
+  if character == None:
+    return "Character xxx not found", 400
+
+  return flask.render_template("test_client.html", world=world,
+                               character=character)
+
 @bp.route('/worlds/<wid>/characters/<cid>', methods=["GET", "POST"])
 def get_character(wid, cid):
   """
-  Get a character in JSON form
+  Get a character in JSON form  -- TEST CODE
   """
   world = elements.loadWorld(get_db(), wid)
   if world == None:
