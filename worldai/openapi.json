@@ -1,0 +1,203 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "WorldAI JSON API",
+    "description": "Chat client functions.",
+    "version": "v1.0.1"
+  },
+
+
+    
+  "paths": {
+    "/chat/{session_id}": {
+
+      "get": {
+        "description": "Get the history of a chat thread.",
+        "operationId": "GetChatSession",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "description": "Unique identifier of the chat thread.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "user": {
+                            "type": "string",                            
+                            "description": "Message posted by user.",
+                          },
+                          "assistant": {
+                            "type": "string",                            
+                            "description": "Message reply from assistant.",
+                          }
+                        }
+                      }
+                    },
+                    "view": {
+                      "type": "object",
+                      "description": "Name for curent object to display"
+                      "properties": {
+                        "wid": {
+                            "type": "string",                            
+                            "description": "Unique ID for world.",
+                        },
+                        "cid": {
+                            "type": "string",                            
+                            "description": "Unique ID for character.",
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      "post": {
+        "description": "Submit user chat message.",
+        "operationId": "ChatExchange",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "description": "Unique identifier of the chat thread.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {              
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "type": "string",
+                      "description": "Message posted by user.",
+                      "required": true,                      
+                  },
+                  "command": {
+                    "type": "string",
+                      "description": "Control comment for thread.",
+                      "required": true,                      
+                  },
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "assistant": {
+                      "type": "string",
+                      "description": "Assistants reply messge",
+                    },
+                    "changes": {
+                      "type": "string",
+                      "description": "True if assistant made data updates",
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "OK if command completed",
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "Error string",
+                    },
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    
+    "/view_props": {
+      "post": {
+        "description": "Get view information for an element.",
+        "operationId": "GetViewProperties",
+        
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {              
+                "type": "object",
+                "properties": {
+                  "wid": {
+                    "type": "string",
+                      "description": "Unique identifier for the world.",
+                      "required": true,                      
+                  },
+                  "cid": {
+                    "type": "string",
+                    "description": "Unique identifier for a charcter.",
+                  }
+                }
+              }
+            }
+          }
+        },
+        
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "html": {
+                      "type": "string",
+                      "description": "HTML that describes element",
+                    },
+                    "images": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "description": "URL of an image for the element",
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+
+

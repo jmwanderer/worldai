@@ -178,14 +178,6 @@ def login_required(view):
       return flask.redirect(flask.url_for('worldai.login'))
     return view(**kwargs)
   return wrapped_view
-  
-@bp.route('/', methods=["GET"])
-@login_required
-def view():
-  """
-  Top level logo screen
-  """
-  return flask.render_template("top.html")
 
 @bp.route('/login', methods=["GET", "POST"])
 def login():
@@ -198,22 +190,18 @@ def login():
       flask.flash("Authorization key does not match")
       return flask.redirect(flask.url_for('worldai.login'))
     session['auth_key'] = auth
-    return flask.redirect(flask.url_for('worldai.view'))
+    return flask.redirect(flask.url_for('worldai.top_view'))
 
   return flask.render_template("login.html")
   
-
-@bp.route('/testview', methods=["GET"])
+  
+@bp.route('/', methods=["GET"])
 @login_required
-def main_view():
+def top_view():
   """
-  Main view for browsing all elements.
+  Top level logo screen
   """
-  wid = request.args.get("wid")
-  cid = request.args.get("cid")  
-  return flask.render_template("main_view.html", wid=wid, cid=cid,
-                               auth_key=current_app.config['AUTH_KEY'])
-
+  return flask.render_template("top.html")
 
 
 @bp.route('/view/worlds', methods=["GET"])
@@ -231,8 +219,6 @@ def list_worlds():
 
   return flask.render_template("list_worlds.html", world_list=world_list)
 
-
-  
 
 @bp.route('/view/world/<id>', methods=["GET"])
 @login_required
@@ -342,11 +328,14 @@ def chat_api(session_id):
     print("unlink")
   return flask.jsonify(content)
 
-@bp.route('/object', methods=["POST"])
+
+@bp.route('/view_props', methods=["POST"])
 @auth_required
-def get_view():
+def view_props():
   """
-  Return HTML for an object
+  Return view properties for an element.
+  - HTML to display
+  - List of image urls
   """
   wid = request.json.get("wid")
   cid = request.json.get("cid")
@@ -401,48 +390,5 @@ def get_view():
                                  character_list=char_list)
 
   return flask.jsonify({ "html": html, "images": images })
-  
-
-@bp.route('/client/<wid>/<cid>', methods=["GET"])
-def test_view_client(wid, cid):
-  """
-  Test Client view  --- TEST CODE
-  """
-  world = elements.loadWorld(get_db(), wid)
-  if world == None:
-    return "World xxx not found", 400
-  character = elements.loadCharacter(get_db(), cid)
-  if character == None:
-    return "Character xxx not found", 400
-
-  return flask.render_template("test_client.html", world=world,
-                               character=character)
-
-@bp.route('/worlds/<wid>/characters/<cid>', methods=["GET", "POST"])
-def get_character(wid, cid):
-  """
-  Get a character in JSON form  -- TEST CODE
-  """
-  world = elements.loadWorld(get_db(), wid)
-  if world == None:
-    return { "error": "World not found"}, 400
-  character = elements.loadCharacter(get_db(), cid)
-  if character == None:
-    return { "error": "Character not found"}, 400
-
-  if request.method == "GET":  
-    content = {
-      "name": character.getName(),
-      "description": character.getDescription(),
-      "details": character.getDetails()
-    }
-  else:
-    values = request.json
-    content = {
-      "name": values,
-      "description": values,
-      "details": values
-    }
-  return flask.jsonify(content)
   
 
