@@ -21,6 +21,9 @@
   <div style="padding-left:2em;float:right;display:inline;">
     <img id="image" style="max-width:500px;"
          src="{{ url_for('worldai.get_image', id=world.getImageByIndex(0)) }}">
+    <br>
+    <button id="image_back">Prev</button>
+    <button id="image_fwd">Next</button>
   </div>
   {% endif %}
 
@@ -48,6 +51,8 @@
   <img id="image" style="max-width:500px;"
        src="{{ url_for('worldai.get_image', id=character.getImageByIndex(0)) }}">
   <br>
+  <button id="image_back">Prev</button>
+  <button id="image_fwd">Next</button>
 </div>
 {% endif %}
 

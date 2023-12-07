@@ -215,53 +215,6 @@ def main_view():
                                auth_key=current_app.config['AUTH_KEY'])
 
 
-@bp.route('/object', methods=["POST"])
-@auth_required
-def get_view():
-  """
-  Return HTML for an object
-  """
-  wid = request.json.get("wid")
-  cid = request.json.get("cid")
-  if wid is None:
-    # List of worlds view
-    world_list = []
-    worlds = elements.listWorlds(get_db())
-    for (entry) in worlds:
-      id = entry["id"]
-      world = elements.loadWorld(get_db(), id)
-      world_list.append((id, world.getName(), world.getDescription()))
-    return flask.render_template("view.html", obj="worlds", world_list=world_list)
-
-  elif cid is not None:
-    # Character view
-    world = elements.loadWorld(get_db(), wid)
-    if world == None:
-      return "World not found", 400
-    character = elements.loadCharacter(get_db(), cid)
-    if character == None:
-      return "Character not found", 400
-
-    return flask.render_template("view.html", obj="character", world=world,
-                                 character=character)
-
-  else:
-    # World view
-    world = elements.loadWorld(get_db(), wid)
-    if world == None:
-      return "World not found", 400
-
-    characters = elements.listCharacters(get_db(), world.id)
-    char_list = []
-    for entry in characters:
-      char_id = entry["id"]
-      char_name = entry["name"]
-      character = elements.loadCharacter(get_db(), char_id)    
-      char_list.append((char_id, char_name, character.getDescription()))
-    
-    return flask.render_template("view.html", obj='world', world=world,
-                                 character_list=char_list)
-  
 
 @bp.route('/view/worlds', methods=["GET"])
 @login_required
@@ -389,6 +342,66 @@ def chat_api(session_id):
     print("unlink")
   return flask.jsonify(content)
 
+@bp.route('/object', methods=["POST"])
+@auth_required
+def get_view():
+  """
+  Return HTML for an object
+  """
+  wid = request.json.get("wid")
+  cid = request.json.get("cid")
+  images = []
+
+  if wid is None:
+    # List of worlds view
+    world_list = []
+    worlds = elements.listWorlds(get_db())
+    for (entry) in worlds:
+      id = entry["id"]
+      world = elements.loadWorld(get_db(), id)
+      world_list.append((id, world.getName(), world.getDescription()))
+    html = flask.render_template("view.html", obj="worlds",
+                                 world_list=world_list)
+
+  elif cid is not None:
+    # Character view
+    world = elements.loadWorld(get_db(), wid)
+    if world == None:
+      return "World not found", 400
+    character = elements.loadCharacter(get_db(), cid)
+    if character == None:
+      return "Character not found", 400
+    for image in character.getImages():
+      url = flask.url_for('worldai.get_image', id=image)
+      images.append(url)
+   
+
+    html = flask.render_template("view.html", obj="character", world=world,
+                                 character=character)
+
+  else:
+    # World view
+    world = elements.loadWorld(get_db(), wid)
+    if world == None:
+      return "World not found", 400
+
+    characters = elements.listCharacters(get_db(), world.id)
+    char_list = []
+    for entry in characters:
+      char_id = entry["id"]
+      char_name = entry["name"]
+      character = elements.loadCharacter(get_db(), char_id)    
+      char_list.append((char_id, char_name, character.getDescription()))
+
+    for image in world.getImages():
+      url = flask.url_for('worldai.get_image', id=image)
+      images.append(url)
+    
+    html = flask.render_template("view.html", obj='world', world=world,
+                                 character_list=char_list)
+
+  return flask.jsonify({ "html": html, "images": images })
+  
 
 @bp.route('/client/<wid>/<cid>', methods=["GET"])
 def test_view_client(wid, cid):
