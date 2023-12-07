@@ -1,0 +1,16 @@
+[Unit]
+Description=DocServer Web Service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=ubuntu
+WorkingDirectory=/home/ubuntu/worldai
+Environment="PATH=/home/ubuntu/.local/bin:/bin:/usr/bin"
+ExecStart=bash -c "python3 -m waitress --threads=5 --url-prefix=worldai --port 8085 --call worldai.server:create_app"
+
+
+[Install]
+WantedBy=multi-user.target
