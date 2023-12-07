@@ -30,13 +30,12 @@
           </div>
         </div>
       </div>
-      <div style='flex-grow:1;'>
-        <iframe id="view" 
-                style="width:100%;height:100%"></iframe>
+      <div id="content" style='flex-grow:1;'>
       </div>
     </div>    
   </body>
   <script>
+    
     const view_frame = document.getElementById("view")    
     const messages = document.getElementById("messages")
     const user_input = document.getElementById("user")
@@ -68,7 +67,18 @@
             }
         });
         const values = await response.json();
-        view_frame.src = values["view"];      
+        if ('wid' in values) {
+            wid = values['wid'];
+        } else {
+            wid = null;
+        }
+        if ('cid' in values) {
+            cid = values['cid'];
+        } else {
+            cid = null;
+        }
+        loadContent(wid, cid)
+        
         const msg_list = values["messages"];
         if (msg_list.length == 0) {
             addAssistantMessage("Hello, welcome to world builder!<br>Enter a request in the text box below.");
@@ -108,9 +118,19 @@
         addAssistantMessage(values["assistant"]);
         in_progress = false;
         messages.scrollTop = messages.scrollHeight;
-
+        console.log(values)
+        if ('wid' in values) {
+            wid = values['wid'];
+        } else {
+            wid = null;
+        }
+        if ('cid' in values) {
+            cid = values['cid'];
+        } else {
+            cid = null;
+        }
+        loadContent(wid, cid)
       if (current_view != values["view"] || values["changes"]) {
-        view_frame.src = values["view"];
           current_view = values["view"];
           console.log(`view: ${values["view"]}`);
         }
@@ -129,12 +149,40 @@
             method: 'POST',
             body: '{ "command": "clear_thread" }',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                "Authorization": "Bearer {{auth_key}}"                
             }
         });
         document.location.reload();
     }
-    
+
+
+    const content = document.getElementById("content")
+    const url_obj = "{{ url_for('worldai.get_view') }}";
+
+    async function loadContent(wid, cid) {
+        console.log(`load content ${wid} ${cid}`)
+        key = {}
+        if (wid) {
+            key['world'] = wid;
+        }
+        if (cid) {
+            key['character'] = cid;
+        }
+        const response = await fetch(url_obj, {
+            method: 'POST',
+            body: JSON.stringify(key),
+            headers: {
+                'Content-Type': 'application/json',
+                "Authorization": "Bearer {{auth_key}}"                
+            }
+        });
+
+        const values = await response.text();
+        /* console.log(values); */
+        content.innerHTML = values;
+    }
+        
   </script>
 </html>
 

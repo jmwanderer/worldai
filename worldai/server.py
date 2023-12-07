@@ -380,7 +380,11 @@ def chat_api(session_id):
   
   if request.method == "GET":
       content = chat_session.chat_history()
-      content["view"] = generate_view(chat_session)      
+      content["view"] = generate_view(chat_session)
+      if chat_session.chatFunctions.last_character_id is not None:
+        content['cid'] = chat_session.chatFunctions.last_character_id
+      if chat_session.chatFunctions.current_world_id is not None:
+        content['wid'] = chat_session.chatFunctions.current_world_id
   else:
     if request.json.get("user") is not None:
       user_msg = request.json.get("user")
@@ -391,9 +395,15 @@ def chat_api(session_id):
         "view": view,
         "changes": chat_session.madeModifications()
       }
+      
+      if chat_session.chatFunctions.last_character_id is not None:
+        content['cid'] = chat_session.chatFunctions.last_character_id
+      if chat_session.chatFunctions.current_world_id is not None:
+        content['wid'] = chat_session.chatFunctions.current_world_id
     elif request.json.get("command") is not None:
       content= { "status": "ok" }
       deleteSession = True
+      print("delete session")
     else:
       content = { "error": "malformed input" }
 
@@ -401,6 +411,7 @@ def chat_api(session_id):
     chat_session.saveChatSession()
   else:
     os.unlink(path)
+    print("unlink")
   return flask.jsonify(content)
 
 
