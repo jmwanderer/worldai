@@ -346,6 +346,17 @@ class ChatFunctions:
           function_name == "CreateSiteImage"):          
       result = self.FuncCreateImage(db, arguments)
 
+    if self.current_state != STATE_CHARACTERS:
+      self.last_character_id = None
+    if self.current_state != STATE_ITEMS:
+      self.last_item_id = None
+    if self.current_state != STATE_SITES:
+      self.last_site_id = None
+
+    if self.current_state == STATE_WORLDS:
+      self.current_world_id = None
+      self.current_world_name = None
+      
     return result
 
   
@@ -366,12 +377,6 @@ class ChatFunctions:
       return self.funcError(f"Must read or create a world for {state}")
     self.current_state = state
 
-    if state != STATE_CHARACTERS:
-      self.last_character_id = None
-
-    if state == STATE_WORLDS:
-      self.current_world_id = None
-      self.current_world_name = None
           
     return self.funcStatus(f"state changed: {state}")
 
@@ -583,14 +588,16 @@ class ChatFunctions:
         
       image.setParentId(id)
       self.last_item_id = id
+      
     elif self.current_state == STATE_SITES:
       id = arguments["id"]
       site = elements.loadSite(db, id)
-      if item is None:
+      if site is None:
         return self.funcError(f"no site '{id}'")
         
       image.setParentId(id)
       self.last_site_id = id
+
     else:
       image.setParentId(self.current_world_id)
 

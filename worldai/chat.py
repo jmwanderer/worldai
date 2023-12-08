@@ -497,6 +497,10 @@ class ChatSession:
       result["wid"] = self.chatFunctions.current_world_id
     if self.chatFunctions.last_character_id is not None:
       result["cid"] = self.chatFunctions.last_character_id
+    if self.chatFunctions.last_site_id is not None:
+      result["sid"] = self.chatFunctions.last_site_id
+    if self.chatFunctions.last_item_id is not None:
+      result["iid"] = self.chatFunctions.last_item_id
     return result
   
   def chat_exchange(self, db, user):

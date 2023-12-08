@@ -14,9 +14,9 @@
 
   <body>
     <div>
-      <h1>{{ world.getName() }}</h1>
+      <h1>{{ site.getName() }}</h1>
       <h2>Description:</h2>
-      {% if not world.getImageByIndex(0) is none %}      
+      {% if not site.getImageByIndex(0) is none %}
       <div style="padding-left:2em;float:right;display:inline;">
         <img id="image" style="max-width:500px;">
         <br>
@@ -24,59 +24,16 @@
         <button id="image_fwd">Next</button>
       </div>
       {% endif %}
-
-      {{ world.getDescription() }}
+      
+      {{ site.getDescription() }}
 
       <h2>Detail Notes:</h2>
-      {{ world.getDetailsHTML() | safe }}
+      {{ site.getDetailsHTML() | safe }}
 
-
-      <h2>Main Characters:</h2>
-      <ul>
-        {% for entry in character_list %}
-        <li>
-          <h3>
-            <a href="{{ url_for('worldai.view_character', wid=world.id, cid=entry[0]) }}"> 
-              {{ entry[1] }}
-            </a>
-          </h3>
-          {{ entry[2] }}          
-        </li>
-        {% endfor %}
-      </ul>
-
-      <h2>Significant Items:</h2>
-      <ul>
-        {% for entry in item_list %}
-        <li>
-          <h3>
-            <a href="{{ url_for('worldai.view_item', wid=world.id, iid=entry[0]) }}"> 
-              {{ entry[1] }}
-            </a>
-          </h3>
-          {{ entry[2] }}          
-        </li>
-        {% endfor %}
-      </ul>
-
-      <h2>Key Sites:</h2>
-      <ul>
-        {% for entry in site_list %}
-        <li>
-          <h3>
-            <a href="{{ url_for('worldai.view_site', wid=world.id, sid=entry[0]) }}"> 
-              {{ entry[1] }}
-            </a>
-          </h3>
-          {{ entry[2] }}          
-        </li>
-        {% endfor %}
-      </ul>
-      
     </div>
     <script>
       const images = [
-          {% for image in world.getImages() %}
+          {% for image in site.getImages() %}
           "{{ url_for('worldai.get_image', id=image) }}",
           {% endfor %}
       ];
@@ -101,3 +58,4 @@
       }
     </script>
 </html>
+

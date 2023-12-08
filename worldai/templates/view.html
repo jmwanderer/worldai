@@ -42,7 +42,7 @@
   {% endfor %}
 </ul>
 
-{% else %}      
+{% elif obj == 'character' %}      
 
 <h1>{{ character.getName() }}</h1>
 <h2>Description:</h2>
@@ -60,5 +60,48 @@
 
 <h2>Detail Notes:</h2>
 {{ character.getDetailsHTML() | safe }}
+
+
+{% elif obj == 'item' %}      
+
+<h1>{{ item.getName() }}</h1>
+<h2>Description:</h2>
+{% if not item.getImageByIndex(0) is none %}
+<div style="padding-left:2em;float:right;display:inline;">
+  <img id="image" style="max-width:500px;"
+       src="{{ url_for('worldai.get_image', id=item.getImageByIndex(0)) }}">
+  <br>
+  <button id="image_back">Prev</button>
+  <button id="image_fwd">Next</button>
+</div>
+{% endif %}
+
+{{ item.getDescription() }}
+
+<h2>Detail Notes:</h2>
+{{ item.getDetailsHTML() | safe }}
+
+{% elif obj == 'site' %}      
+
+<h1>{{ site.getName() }}</h1>
+<h2>Description:</h2>
+{% if not site.getImageByIndex(0) is none %}
+<div style="padding-left:2em;float:right;display:inline;">
+  <img id="image" style="max-width:500px;"
+       src="{{ url_for('worldai.get_image', id=site.getImageByIndex(0)) }}">
+  <br>
+  <button id="image_back">Prev</button>
+  <button id="image_fwd">Next</button>
+</div>
+{% endif %}
+
+{{ site.getDescription() }}
+
+<h2>Detail Notes:</h2>
+{{ site.getDetailsHTML() | safe }}
+
+{% else %}
+
+<h1>Unknown element</h1>
 
 {% endif %}

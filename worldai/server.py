@@ -250,8 +250,26 @@ def view_world(id):
     character = elements.loadCharacter(get_db(), char_id)    
     char_list.append((char_id, char_name, character.getDescription()))
 
+  items = elements.listItems(get_db(), world.id)
+  item_list = []
+  for entry in items:
+    item_id = entry["id"]
+    item_name = entry["name"]
+    item = elements.loadItem(get_db(), item_id)    
+    item_list.append((item_id, item_name, item.getDescription()))
+
+  sites = elements.listSites(get_db(), world.id)
+  site_list = []
+  for entry in sites:
+    site_id = entry["id"]
+    site_name = entry["name"]
+    site = elements.loadSite(get_db(), site_id)    
+    site_list.append((site_id, site_name, site.getDescription()))
+    
   return flask.render_template("view_world.html", world=world,
-                               character_list=char_list)
+                               character_list=char_list,
+                               item_list=item_list,
+                               site_list=site_list)
 
 @bp.route('/view/worlds/<wid>/characters/<cid>', methods=["GET"])
 @login_required
@@ -268,6 +286,38 @@ def view_character(wid, cid):
 
   return flask.render_template("view_character.html", world=world,
                                character=character)
+
+@bp.route('/view/worlds/<wid>/items/<iid>', methods=["GET"])
+@login_required
+def view_item(wid, iid):
+  """
+  View a character
+  """
+  world = elements.loadWorld(get_db(), wid)
+  if world == None:
+    return "World not found", 400
+  item = elements.loadItem(get_db(), iid)
+  if item == None:
+    return "Item not found", 400
+
+  return flask.render_template("view_item.html", world=world,
+                               item=item)
+
+@bp.route('/view/worlds/<wid>/sites/<sid>', methods=["GET"])
+@login_required
+def view_site(wid, sid):
+  """
+  View a site
+  """
+  world = elements.loadWorld(get_db(), wid)
+  if world == None:
+    return "World not found", 400
+  site = elements.loadSite(get_db(), sid)
+  if site == None:
+    return "Site not found", 400
+
+  return flask.render_template("view_site.html", world=world,
+                               site=site)
 
 
 @bp.route('/images/<id>', methods=["GET"])
@@ -347,6 +397,8 @@ def view_props():
   """
   wid = request.json.get("wid")
   cid = request.json.get("cid")
+  iid = request.json.get("iid")
+  sid = request.json.get("sid")
   images = []
 
   if wid is None:
@@ -375,6 +427,36 @@ def view_props():
 
     html = flask.render_template("view.html", obj="character", world=world,
                                  character=character)
+
+  elif iid is not None:
+    # Item view
+    world = elements.loadWorld(get_db(), wid)
+    if world == None:
+      return "World not found", 400
+    item = elements.loadItem(get_db(), iid)
+    if item == None:
+      return "Item not found", 400
+    for image in item.getImages():
+      url = flask.url_for('worldai.get_image', id=image)
+      images.append(url)
+
+    html = flask.render_template("view.html", obj="item", world=world,
+                                 item=item)
+
+  elif sid is not None:
+    # Site view
+    world = elements.loadWorld(get_db(), wid)
+    if world == None:
+      return "World not found", 400
+    site = elements.loadSite(get_db(), sid)
+    if site == None:
+      return "Site not found", 400
+    for image in site.getImages():
+      url = flask.url_for('worldai.get_image', id=image)
+      images.append(url)
+   
+    html = flask.render_template("view.html", obj="site", world=world,
+                                 site=site)
 
   else:
     # World view
