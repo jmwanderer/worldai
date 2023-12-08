@@ -372,14 +372,16 @@ def deleteImage(db, data_dir, image_id):
   
   db.execute("DELETE FROM images WHERE id = ?", (image_id,))
   db.commit()
-  print(f"remove image {image_id}")  
+  logging.info("remove image: %s",  image_id)  
   path = os.path.join(data_dir, image.filename)
   os.unlink(path)
-  print(f"delete file: {path}")
+  logging.info("delete file: %s", path)
 
 def deleteCharacter(db, data_dir, id):
   character = loadCharacter(db, id)
-  print("delete character: [%s] %s" % (character.id, character.getName()))  
+  logging.info("delete character: [%s] %s",
+               character.id,
+               character.getName())
   images = listImages(db, id)
 
   for image in images:
@@ -393,7 +395,7 @@ def deleteCharacter(db, data_dir, id):
 
 def deleteWorld(db, data_dir, world_id):
   world = loadWorld(db, world_id)
-  print("delete world: [%s] %s" % (world.id, world.getName()))  
+  logging.info("delete world: [%s] %s",  world.id, world.getName())
   characters = listCharacters(db, world.id)
   for entry in characters:
     deleteCharacter(db, data_dir, entry["id"])

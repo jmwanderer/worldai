@@ -430,7 +430,7 @@ def image_get_request(prompt, dest_file):
                "size" : "1024x1024",
                "prompt": prompt }
   try:
-    print(f"post: {prompt}")
+    logging.info("post: %s", prompt)
     response = requests.post(
       "https://api.openai.com/v1/images/generations",
       headers=headers,
@@ -438,7 +438,7 @@ def image_get_request(prompt, dest_file):
       timeout=60,
     )
     result = response.json()
-    print("image complete")
+    logging.info("image complete")
     if result.get("data") is None:
       return False
     
@@ -453,8 +453,8 @@ def image_get_request(prompt, dest_file):
     return True
       
   except Exception as e:
-    print("Unable to generate ChatCompletion response")
-    print(f"Exception: {e}")
+    logging.info("Unable to generate ChatCompletion response")
+    logging.info("Exception: ", str(e))
     raise e
 
 
