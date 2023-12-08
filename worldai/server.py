@@ -105,6 +105,19 @@ def delete_character(id):
   else:
     click.echo(f'Error, no such character id:{id}')
 
+@bp.cli.command('delete-world')
+@click.argument('id')
+def delete_world(id):
+  """Delete a world and associated characters and images."""
+  world = elements.loadWorld(get_db(), id)
+  if world is not None:
+    elements.deleteWorld(get_db(), current_app.instance_path, id)
+    click.echo('Deleted world [%s] %s.' % (world.id,
+                                           world.getName()))
+  else:
+    click.echo(f'Error, no such world id:{id}')
+
+
 
 def list_images(parent_id):
   print("Listing images...")

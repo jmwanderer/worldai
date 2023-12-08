@@ -7,11 +7,13 @@ Plans
 - trim contents of message history in chat_session
 - move chat_session state into sqlite
 - consider changing state to mode
-- set budget for tokens and images
+- set budget for tokens and images (images done)
 - items and sites
 - plans / possibile chars etc in world text
 - more properties for characters, personality, etc
 - document chat_api and object api in openapi
+- add system / integration test coverage
+- update status of calls in client
 
 Potential
 ---------
