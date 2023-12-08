@@ -328,27 +328,6 @@ class MessageRecords:
     
         
 
-instructions = """
-You are a co-designer of fictional worlds, developing ideas
-and and backstories for these worlds and the contents of worlds, including
-new unique fictional characters. Create new characters, don't use existing characters.
-
-You walk the user through the process of creating worlds. We go in the following order:
-- Design the world, high level description, and details including plans for the main characters, sites, and special items.
-- Design the individual characters
-
-We can be in one of the following states:
-- State_Worlds: We can open existing worlds and create new worlds
-- State_View_World: We can view an existing world
-- State_Edit_World: We can change the description and details of a world and add images
-- State_Edit_Characters: We can create new characters and chage the description and details of a character and add images to a character
-
-The current state is "{current_state}"
-
-Suggest good ideas for descriptions and details for the worlds and the characters
-Suggest next steps to the user
-
-"""
 
 def get_thread(db, session_id):
   c = db.execute("SELECT thread FROM threads WHERE id = ? ",
@@ -451,7 +430,7 @@ class ChatSession:
     history.clearIncluded()
     
     # System instructions
-    current_instructions = instructions.format(
+    current_instructions = chat_functions.GLOBAL_INSTRUCTIONS.format(
       current_state=self.chatFunctions.current_state)
 
     history.setSystemMessage({"role": "system",
@@ -490,7 +469,7 @@ class ChatSession:
       if not self.history.hasToolCall("ListWorlds", {}):
         tool_func = "ListWorlds"
     elif (self.chatFunctions.current_state ==
-          chat_functions.STATE_EDIT_CHARACTERS):
+          chat_functions.STATE_CHARACTERS):
       if not self.history.hasToolCall("ListCharacters", {}):
         tool_func = "ListCharacters"
 

@@ -77,47 +77,64 @@ def dump_token_usage(db):
   (prompt_tokens, complete_tokens, total_tokens) = q.fetchone()
   print(f"total: prompt: {prompt_tokens}, complete: " +
         f"{complete_tokens}, total: {total_tokens}")
-  
-    
+
+
 STATE_WORLDS = "State_Worlds"
-STATE_VIEW_WORLD = "State_View_World"
-STATE_EDIT_WORLD = "State_Edit_World"
-STATE_EDIT_CHARACTERS = "State_Edit_Characters"
+STATE_WORLD = "State_World"
+STATE_CHARACTERS = "State_Characters"
+STATE_ITEMS = "State_Items"
+STATE_SITES = "State_Sites"
 
 states = {
   STATE_WORLDS: [ "ListWorlds", "ReadWorld", "CreateWorld" ],
-  STATE_VIEW_WORLD: [ "ReadWorld", "ChangeState"],
-  STATE_EDIT_WORLD: [ "UpdateWorld", "ReadWorld",
-                      "CreateWorldImage", "ChangeState" ],
-  STATE_EDIT_CHARACTERS: [ "ListCharacters", "ReadCharacter",
-                           "CreateCharacter", "UpdateCharacter",
-                           "CreateCharacterImage", "ChangeState" ]
+  STATE_WORLD: [ "UpdateWorld", "ReadWorld",
+                 "CreateWorldImage", "ChangeState" ],
+  STATE_CHARACTERS: [ "ListCharacters", "ReadCharacter",
+                      "CreateCharacter", "UpdateCharacter",
+                      "CreateCharacterImage", "ChangeState" ],
+  STATE_ITEMS: [ "ListItems", "ReadItem",
+                 "CreateItem", "UpdateItem",
+                 "CreateItemImage", "ChangeState" ],
+  STATE_SITES: [ "ListSites", "ReadSite",
+                 "CreateSite", "UpdateSite",
+                 "CreateSiteImage", "ChangeState" ],
   }
+  
+GLOBAL_INSTRUCTIONS = """
+You are a co-designer of fictional worlds, developing ideas
+and and backstories for these worlds and the contents of worlds, including
+new unique fictional characters. Create new characters, don't use existing characters.
+
+You walk the user through the process of creating worlds. We go in the following order:
+- Design the world, high level description, and details including plans for the main characters, sites, and special items.
+- Design the individual characters
+
+We can be in one of the following states:
+- State_Worlds: We can open existing worlds and create new worlds
+- State_World: We can change the description and details of a world and add images
+- State_Characters: We can create new characters and change the description and details of a character and add images to a character
+- State_Items: We can create new items and change the description and details of an item and add images to an item
+- State_Sites: We can create new sites and change the description and details of a site and add images to a site
+
+The current state is "{current_state}"
+
+Suggest good ideas for descriptions and details for the worlds, characters, sites, nad items.
+Suggest next steps to the user in designing a complete world.
+
+"""
+  
 
 instructions = {
   STATE_WORLDS:
 """
 You can create a new world or resume work on an existing one by reading it.
-Get a list of worlds before reading a world or creating a new one
+To modify an existing world, ChangeState to State_Edit_World.
 To get a list of worlds, call ListWorlds
+Get a list of worlds before reading a world or creating a new one
 Before creating a new world, check if it already exists by using ListWorlds
 """,
 
-  STATE_VIEW_WORLD:
-"""
-We are viewing the world "{current_world_name}"
-
-A world has a description and details that describe the nature of the world
-and provide information.
-
-To change information about the world, call change state to State_Edit_World.
-
-A world has main characters that we develop and design.
-
-To view, create, or update characters, change state to State_Edit_Characters.
-""",
-  
-  STATE_EDIT_WORLD:
+  STATE_WORLD:
   """
 We are working on the world "{current_world_name}"
   
@@ -126,17 +143,19 @@ A world needs a short high level description refelcting the nature of the world.
 A world has details, that give more information about the world, the backstory, and includes a list of main characters, key sites, and special items.
 
 You can create an image for the world with CreateWorldImage, using information from the description and details to create a prompt. Use a large prompt for the image.
-  
+
+A world has characters, sites, and items that we develop and design.
+
 Save information about the world by calling UpdateWorld
 
 To view, create, or update characters, change state to State_Edit_Characters.  
   """,
 
-  STATE_EDIT_CHARACTERS:
+  STATE_CHARACTERS:
 """
 We are working on world "{current_world_name}"
 
-Worlds have chacaters which are actors in the world with a backstory, abilities, and motivations.  You can create characters and change information about the characters.
+Worlds have charaters which are actors in the world with a backstory, abilities, and motivations.  You can create characters and change information about the characters.
 
 You can update the name, description, and details of the character.
 You save changes to a character by calling UpdateCharacter.  
@@ -151,7 +170,48 @@ Save detailed information about the character in character details.
 
 To work on information about the world call ChangeState
 """,
-  }
+
+  STATE_ITEMS:
+"""
+We are working on world "{current_world_name}"
+
+Worlds have items which exist in the world and have special significance.  You can create items and change information about the items.
+
+You can update the name, description, and details of an item.
+You save changes to an item by calling UpdateItem.  
+
+Use information in the world details to guide item creation and design.
+
+Before creating a new item, check if it already exists by calling the ListItems function.
+
+You can create an image for the item with CreateItemImage, using information from the item description and detailed to create a prompt. Use a large prompt for the image.
+
+Save detailed information about the item in item details.
+
+To work on information about the world call ChangeState
+""",
+
+  STATE_SITES:
+"""
+We are working on world "{current_world_name}"
+
+Worlds have sites which are significant locations. Cities, buildings, and special areas may all be sites. You can create sites and change information about the sites.
+
+You can update the name, description, and details of a site.
+You save changes to a site by calling UpdateSite.  
+
+Use information in the world details to guide site creation and design.
+
+Before creating a new site, check if it already exists by calling the ListSites function.
+
+You can create an image for the site with CreateSiteImage, using information from the item description and detailed to create a prompt. Use a large prompt for the image.
+
+Save detailed information about the site in site details.
+
+To work on information about the world call ChangeState
+""",
+
+}
 
 def checkDuplication(name, element_list):
   """
@@ -183,6 +243,8 @@ class ChatFunctions:
     self.current_world_name = None
     self.current_world_id = None
     self.last_character_id = None
+    self.last_item_id = None    
+    self.last_site_id = None
     self.modified = False
 
   def madeChanges(self):
@@ -252,10 +314,36 @@ class ChatFunctions:
       result = self.FuncCreateCharacter(db, arguments)
 
     elif function_name == "UpdateCharacter":
-      result = self.FuncUpdateCharcter(db, arguments)
+      result = self.FuncUpdateCharacter(db, arguments)
+
+    elif function_name == "ListItems":
+      result = elements.listItems(db, self.current_world_id)
+
+    elif function_name == "ReadItem":
+      result = self.FuncReadItem(db, arguments)
   
+    elif function_name == "CreateItem":
+      result = self.FuncCreateItem(db, arguments)
+
+    elif function_name == "UpdateItem":
+      result = self.FuncUpdateItem(db, arguments)
+      
+    elif function_name == "ListSites":
+      result = elements.listSites(db, self.current_world_id)
+
+    elif function_name == "ReadSite":
+      result = self.FuncReadSite(db, arguments)
+  
+    elif function_name == "CreateSite":
+      result = self.FuncCreateSite(db, arguments)
+
+    elif function_name == "UpdateSite":
+      result = self.FuncUpdateSite(db, arguments)
+      
     elif (function_name == "CreateWorldImage" or
-          function_name == "CreateCharacterImage"):
+          function_name == "CreateCharacterImage" or
+          function_name == "CreateItemImage" or
+          function_name == "CreateSiteImage"):          
       result = self.FuncCreateImage(db, arguments)
 
     return result
@@ -273,12 +361,12 @@ class ChatFunctions:
       return self.funcError(f"unknown state: {state}")
 
     # Check is state is legal
-    if ((state == STATE_VIEW_WORLD or state == STATE_EDIT_WORLD or
-         state == STATE_EDIT_CHARACTERS) and self.current_world_id is None):
+    if ((state == STATE_WORLD or
+         state == STATE_CHARACTERS) and self.current_world_id is None):
       return self.funcError(f"Must read or create a world for {state}")
     self.current_state = state
 
-    if state != STATE_EDIT_CHARACTERS:
+    if state != STATE_CHARACTERS:
       self.last_character_id = None
 
     if state == STATE_WORLDS:
@@ -299,7 +387,7 @@ class ChatFunctions:
       return self.funcError(f"Similar name already exists: {name}")
 
     world = elements.createWorld(db, world)
-    self.current_state = STATE_EDIT_WORLD
+    self.current_state = STATE_WORLD
     self.current_world_id = world.id
     self.current_world_name = world.getName()
     self.modified = True      
@@ -327,7 +415,7 @@ class ChatFunctions:
                   **world.getProperties() }
 
       # Side affect, change state
-      self.current_state = STATE_VIEW_WORLD
+      self.current_state = STATE_WORLD
       self.current_world_id = world.id
       self.current_world_name = world.getName()
 
@@ -344,7 +432,7 @@ class ChatFunctions:
     if character is not None:
       content = { "id": character.id,
                   **character.getProperties() }
-      self.current_state = STATE_EDIT_CHARACTERS
+      self.current_state = STATE_CHARACTERS
       self.last_character_id  = character.id
     else:
       return self.funcError(f"no character '{id}'")
@@ -362,12 +450,12 @@ class ChatFunctions:
     character.updateProperties(arguments)    
     character = elements.createCharacter(db, character)
     self.last_character_id  = character.id
-    self.current_state = STATE_EDIT_CHARACTERS   
+    self.current_state = STATE_CHARACTERS   
     status = self.funcStatus("Created character")
     status["id"] = character.id
     return status
     
-  def FuncUpdateCharcter(self, db, arguments):
+  def FuncUpdateCharacter(self, db, arguments):
     id = arguments["id"]
     character = elements.loadCharacter(db, id)
     if character is None:
@@ -380,6 +468,97 @@ class ChatFunctions:
     status["id"] = id
     return status
 
+  def FuncReadItem(self, db, arguments):
+    id = arguments.get("id")
+    if id is None:
+      return self.funcError("request missing id parameter")
+    
+    item = elements.loadItem(db, id)
+    if item is not None:
+      content = { "id": item.id,
+                  **item.getProperties() }
+      self.current_state = STATE_ITEMS
+      self.last_item_id  = item.id
+    else:
+      return self.funcError(f"no item '{id}'")
+    return content
+  
+  def FuncCreateItem(self, db, arguments):
+    item = elements.Item(self.current_world_id)
+    item.setName(arguments["name"])
+
+    items = elements.listItems(db, self.current_world_id)    
+    name = checkDuplication(item.getName(), items)
+    if name is not None:
+      return self.funcError(f"Similar name already exists: {name}")
+
+    item.updateProperties(arguments)    
+    item = elements.createItem(db, item)
+    self.last_item_id  = item.id
+    self.current_state = STATE_ITEMS   
+    status = self.funcStatus("Created item")
+    status["id"] = item.id
+    return status
+    
+  def FuncUpdateItem(self, db, arguments):
+    id = arguments["id"]
+    item = elements.loadItem(db, id)
+    if item is None:
+      return self.funcError(f"Item not found {id}")
+    item.updateProperties(arguments)
+    # TODO: check name collision
+    elements.updateItem(db, item)
+    self.modified = True      
+    status = self.funcStatus("Updated item")
+    status["id"] = id
+    return status
+
+  def FuncReadSite(self, db, arguments):
+    id = arguments.get("id")
+    if id is None:
+      return self.funcError("request missing id parameter")
+    
+    site = elements.loadSite(db, id)
+    if site is not None:
+      content = { "id": site.id,
+                  **site.getProperties() }
+      self.current_state = STATE_SITES
+      self.last_site_id  = site.id
+    else:
+      return self.funcError(f"no site '{id}'")
+    return content
+  
+  def FuncCreateSite(self, db, arguments):
+    site = elements.Site(self.current_world_id)
+    site.setName(arguments["name"])
+
+    sites = elements.listSites(db, self.current_world_id)    
+    name = checkDuplication(site.getName(), sites)
+    if name is not None:
+      return self.funcError(f"Similar name already exists: {name}")
+
+    site.updateProperties(arguments)    
+    site = elements.createSite(db, site)
+    self.last_site_id  = site.id
+    self.current_state = STATE_SITES   
+    status = self.funcStatus("Created site")
+    status["id"] = site.id
+    return status
+    
+  def FuncUpdateSite(self, db, arguments):
+    id = arguments["id"]
+    site = elements.loadSite(db, id)
+    if site is None:
+      return self.funcError(f"Site not found {id}")
+    site.updateProperties(arguments)
+    # TODO: check name collision
+    elements.updateSite(db, site)
+    self.modified = True      
+    status = self.funcStatus("Updated site")
+    status["id"] = id
+    return status
+
+  
   def FuncCreateImage(self, db, arguments):
     # Check if the budget allows
     if not check_image_budget(db):
@@ -388,7 +567,7 @@ class ChatFunctions:
     image = elements.Image()
     image.setPrompt(arguments["prompt"])
     logging.info("Create image: prompt %s", image.prompt)
-    if self.current_state == STATE_EDIT_CHARACTERS:
+    if self.current_state == STATE_CHARACTERS:
       id = arguments["id"]
       character = elements.loadCharacter(db, id)
       if character is None:
@@ -396,6 +575,22 @@ class ChatFunctions:
         
       image.setParentId(id)
       self.last_character_id = id
+    elif self.current_state == STATE_ITEMS:
+      id = arguments["id"]
+      item = elements.loadItem(db, id)
+      if item is None:
+        return self.funcError(f"no item '{id}'")
+        
+      image.setParentId(id)
+      self.last_item_id = id
+    elif self.current_state == STATE_SITES:
+      id = arguments["id"]
+      site = elements.loadSite(db, id)
+      if item is None:
+        return self.funcError(f"no site '{id}'")
+        
+      image.setParentId(id)
+      self.last_site_id = id
     else:
       image.setParentId(self.current_world_id)
 
@@ -543,6 +738,21 @@ all_functions = [
   },
 
   {
+    "name": "CreateWorldImage",
+    "description": "Create an image for the world",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "description": "A prompt from which to create the image.",
+        },
+      },
+      "required": [ "prompt" ],
+    },
+  },
+
+  {
     "name": "ListCharacters",
     "description": "Get a characters in the current world.",
     "parameters": {
@@ -614,21 +824,6 @@ all_functions = [
   },
   
   {
-    "name": "CreateWorldImage",
-    "description": "Create an image for the world",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "prompt": {
-          "type": "string",
-          "description": "A prompt from which to create the image.",
-        },
-      },
-      "required": [ "prompt" ],
-    },
-  },
-
-  {
     "name": "CreateCharacterImage",
     "description": "Create an image for a specific character",
     "parameters": {
@@ -646,5 +841,187 @@ all_functions = [
       "required": [ "id", "prompt" ],
     },
   },
+
+  {
+    "name": "ListItems",
+    "description": "Get a items in the current world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+
+  {
+    "name": "CreateItem",
+    "description": "Create a new item instance",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the item",
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description of the item",
+        },
+      },
+      "required": [ "name", "description" ]
+    },
+  },
+
+  {
+    "name": "ReadItem",
+    "description": "Read in a specific item.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the item.",
+        },
+      },
+      "required": [ "id"]
+    },
+  },
+
+  {
+    "name": "UpdateItem",
+    "description": "Update the values of the item.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the item.",
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the item.",
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description of the item",
+        },
+        "details": {
+          "type": "string",
+          "description": "Detailed information about the item.",
+        },
+      },
+      "required": [ "id"]      
+    }
+  },
+  
+  {
+    "name": "CreateItemImage",
+    "description": "Create an image for a specific item",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the item.",
+        },
+        "prompt": {
+          "type": "string",
+          "description": "A prompt from which to create the image.",
+        },
+      },
+      "required": [ "id", "prompt" ],
+    },
+  },
+
+
+  {
+    "name": "ListSites",
+    "description": "Get a sites in the current world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+
+  {
+    "name": "CreateSite",
+    "description": "Create a new site instance",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the site",
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description of the site",
+        },
+      },
+      "required": [ "name", "description" ]
+    },
+  },
+
+  {
+    "name": "ReadSite",
+    "description": "Read in a specific site.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the site.",
+        },
+      },
+      "required": [ "id"]
+    },
+  },
+
+  {
+    "name": "UpdateSite",
+    "description": "Update the values of the site.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the site.",
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the site.",
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description of the site",
+        },
+        "details": {
+          "type": "string",
+          "description": "Detailed information about the site.",
+        },
+      },
+      "required": [ "id"]      
+    }
+  },
+  
+  {
+    "name": "CreateSiteImage",
+    "description": "Create an image for a specific site",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the site.",
+        },
+        "prompt": {
+          "type": "string",
+          "description": "A prompt from which to create the image.",
+        },
+      },
+      "required": [ "id", "prompt" ],
+    },
+  },
+    
 ]
 
