@@ -309,9 +309,7 @@ def chat_api(session_id):
   """
   Chat interface
   """
-  filename = session_id + ".chat"
-  path = os.path.join(current_app.instance_path, filename)
-  chat_session = chat.ChatSession.loadChatSession(path)
+  chat_session = chat.ChatSession.loadChatSession(get_db(), session_id)
   deleteSession = False
   
   if request.method == "GET":
@@ -329,15 +327,13 @@ def chat_api(session_id):
     elif request.json.get("command") is not None:
       content= { "status": "ok" }
       deleteSession = True
-      print("delete session")
     else:
       content = { "error": "malformed input" }
 
   if not deleteSession:
-    chat_session.saveChatSession()
+    chat_session.saveChatSession(get_db())
   else:
-    os.unlink(path)
-    print("unlink")
+    chat_session.deleteChatSession(get_db())    
   return flask.jsonify(content)
 
 

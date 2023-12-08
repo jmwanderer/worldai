@@ -6,6 +6,7 @@ Represets the element of a world definition.
 import datetime
 import os
 import json
+import logging
 
 class ElementType:
   """

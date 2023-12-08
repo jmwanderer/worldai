@@ -6,6 +6,7 @@ import tempfile
 import json
 import os
 import tiktoken
+import sqlite3    
 
 def getSystemMessage():
   return { "role": "system", "content": "You are a friendly assistant."}
@@ -111,25 +112,30 @@ class ExtendedRecordsTestCase(unittest.TestCase):
     # Count number of size 1 messages
     self.assertEqual(records.getThreadTokenCount(enc), 86)
 
-    
+
 
 class SaveLoadTestCase(unittest.TestCase):
 
   def setUp(self):
-    self.user_dir = tempfile.TemporaryDirectory()
+    dir_name = os.path.dirname(__file__)    
+    path = os.path.join(dir_name, "../worldai/schema.sql")
+    self.db = sqlite3.connect("file::memory:")
+    with open(path) as f:
+      self.db.executescript(f.read())
 
   def tearDown(self):
-    self.user_dir.cleanup()
+    self.db.close()    
 
   def testLoadSave(self):
-    path = os.path.join(self.user_dir.name, "1")
-    session = chat.ChatSession.loadChatSession(path)
+    session = chat.ChatSession.loadChatSession(self.db, "1")
     self.assertIsNotNone(session)
 
-    session.saveChatSession()
+    session.saveChatSession(self.db)
 
-    session = chat.ChatSession.loadChatSession(path)
+    session = chat.ChatSession.loadChatSession(self.db, "1")
     self.assertIsNotNone(session)
+
+    session.deleteChatSession(self.db)    
 
     
 

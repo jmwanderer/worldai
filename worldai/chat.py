@@ -11,6 +11,7 @@ import logging
 import openai
 import requests
 import pickle
+import io
 
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
@@ -349,34 +350,64 @@ Suggest next steps to the user
 
 """
 
+def get_thread(db, session_id):
+  c = db.execute("SELECT thread FROM threads WHERE id = ? ",
+                 (session_id,))
+  r = c.fetchone()
+  if r is not None:
+    thread = r[0]
+    return thread
+  return None
+
+def save_thread(db, session_id, thread):
+  c = db.execute("SELECT count(*) FROM threads WHERE id = ? ",
+                 (session_id,))
+  if c.fetchone()[0] == 0:
+    # INSERT
+    q = db.execute("INSERT INTO threads VALUES (?, ?, ?, ?)",
+                   (session_id, 0, 0, thread))
+  else:
+    # UPDATE
+    q = db.execute("UPDATE threads SET thread = ? WHERE id = ?",
+                   (thread, session_id))
+  db.commit()
+
+def delete_thread(db, session_id)  :
+  q = db.execute("DELETE FROM threads WHERE id = ?",
+                   (session_id,))
+  db.commit()
+
+  
 class ChatSession:
-  def __init__(self, path=None):
+  def __init__(self, id=None):
     self.prompt_tokens = 0
     self.complete_tokens = 0
     self.total_tokens = 0
     self.enc = tiktoken.encoding_for_model(GPT_MODEL)
     self.history = MessageRecords()
     self.chatFunctions = chat_functions.ChatFunctions()
-    self.path = path
+    self.id = id
     self.madeChanges = False
 
-  def loadChatSession(path):
-    chat_session = ChatSession(path)
-    if not os.path.isfile(path):
-      return chat_session
-
-    # TODO: locking - keep file open?
-    f = open(path, 'rb')
-    chat_session.load(f)
-    f.close()
+  def loadChatSession(db, session_id):
+    chat_session = ChatSession(session_id)
+    thread = get_thread(db, session_id)
+    if thread is not None:
+      f = io.BytesIO(thread)
+      chat_session.load(f)
+      f.close()
     return chat_session
 
-  def saveChatSession(self):
-    f = open(self.path + '.tmp', 'wb')
+  def saveChatSession(self, db):
+    f = io.BytesIO()
     self.save(f)
+    thread = f.getvalue()
+    save_thread(db, self.id, thread)
     f.close()
-    os.replace(self.path + '.tmp', self.path)
-  
+
+  def deleteChatSession(self, db):
+    delete_thread(db, self.id)
+    
   def load(self, f):
     self.prompt_tokens = pickle.load(f)
     self.complete_tokens = pickle.load(f)

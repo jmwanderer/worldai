@@ -23,4 +23,13 @@ CREATE TABLE token_usage (
   images INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE threads (
+  id TEXT PRIMARY KEY,
+  created INTEGER NOT NULL,
+  updated INTEGER NOT NULL,
+  thread BLOB
+);
+
+
+
 
