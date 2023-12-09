@@ -111,7 +111,7 @@ You walk the user through the process of creating worlds. We go in the following
 
 We can be in one of the following states:
 - State_Worlds: We can open existing worlds and create new worlds
-- State_World: We can change the description and details of a world and add images
+- State_World: We can change the description and details of a world and create images of the world.
 - State_Characters: We can create new characters and change the description and details of a character and add images to a character
 - State_Items: We can create new items and change the description and details of an item and add images to an item
 - State_Sites: We can create new sites and change the description and details of a site and add images to a site
@@ -128,10 +128,11 @@ instructions = {
   STATE_WORLDS:
 """
 You can create a new world or resume work on an existing one by reading it.
-To modify an existing world, ChangeState to State_Edit_World.
+To modify an existing world, ChangeState to State_World.
 To get a list of worlds, call ListWorlds
 Get a list of worlds before reading a world or creating a new one
 Before creating a new world, check if it already exists by using ListWorlds
+Always check with the user before creating an image.
 """,
 
   STATE_WORLD:
@@ -142,13 +143,16 @@ A world needs a short high level description refelcting the nature of the world.
 
 A world has details, that give more information about the world, the backstory, and includes a list of main characters, key sites, and special items.
 
-You can create an image for the world with CreateWorldImage, using information from the description and details to create a prompt. Use a large prompt for the image.
+You can create an image for the world with CreateWorldImage, using information from the description and details to create a prompt. Use a large prompt for the image. Always check with the user before creating an image.
 
 A world has characters, sites, and items that we develop and design.
 
 Save information about the world by calling UpdateWorld
 
-To view, create, or update characters, change state to State_Edit_Characters.  
+To view, create, update, or make images for characters, change state to State_Characters.
+To view, create, update, or make images for items, change state to State_Items.
+To view, create, update, or make images for sites, change state to State_Sites.  
+
   """,
 
   STATE_CHARACTERS:
@@ -164,7 +168,7 @@ Use information in the world details to guide character creation and design.
 
 Before creating a new character, check if it already exists by calling the ListCharacters function.
 
-You can create an image for the character with CreateCharacterImage, using information from the character description and detailed to create a prompt. Use a large prompt for the image.
+You can create an image for the character with CreateCharacterImage, using information from the character description and detailed to create a prompt. Use a large prompt for the image. Always check with the user before creating an image.
 
 Save detailed information about the character in character details.
 
@@ -184,7 +188,7 @@ Use information in the world details to guide item creation and design.
 
 Before creating a new item, check if it already exists by calling the ListItems function.
 
-You can create an image for the item with CreateItemImage, using information from the item description and detailed to create a prompt. Use a large prompt for the image.
+You can create an image for the item with CreateItemImage, using information from the item description and detailed to create a prompt. Use a large prompt for the image. Always check with the user before creating an image.
 
 Save detailed information about the item in item details.
 
@@ -204,7 +208,7 @@ Use information in the world details to guide site creation and design.
 
 Before creating a new site, check if it already exists by calling the ListSites function.
 
-You can create an image for the site with CreateSiteImage, using information from the item description and detailed to create a prompt. Use a large prompt for the image.
+You can create an image for the site with CreateSiteImage, using information from the item description and detailed to create a prompt. Use a large prompt for the image. Always check with the user before creating an image.
 
 Save detailed information about the site in site details.
 
@@ -303,6 +307,7 @@ class ChatFunctions:
 
     elif function_name == "ReadWorld":
       result = self.FuncReadWorld(db, arguments)
+      print(str(result))
 
     elif function_name == "ListCharacters":
       result = elements.listCharacters(db, self.current_world_id)
@@ -415,17 +420,34 @@ class ChatFunctions:
   def FuncReadWorld(self, db, arguments):
     id = arguments["id"]
     world = elements.loadWorld(db, id)
-    if world is not None:
-      content = { "id": world.id,
-                  **world.getProperties() }
+    if world is None:
+      return self.funcError(f"no world '{id}'")      
+    content = { "id": world.id,
+                **world.getProperties() }
 
-      # Side affect, change state
-      self.current_state = STATE_WORLD
-      self.current_world_id = world.id
-      self.current_world_name = world.getName()
+    # Supply information on the existing elements of the world.
+    population = []
+    population.append("Characters:")
+    for character in elements.listCharacters(db, world.id):
+      population.append(f"- {character['name']}")
+    population.append("")
 
-    else:
-        return self.funcError(f"no world '{id}'")
+    population.append("Items:")        
+    for item in elements.listItems(db, world.id):
+      population.append(f"- {item['name']}")
+    population.append("")
+    
+    population.append("Sites:")        
+    for site in elements.listSites(db, world.id):
+      population.append(f"- {site['name']}")
+
+    content["elements"] = "\n".join(population)
+
+    # Side affect, change state
+    self.current_state = STATE_WORLD
+    self.current_world_id = world.id
+    self.current_world_name = world.getName()
+      
     return content
 
   def FuncReadCharacter(self, db, arguments):
@@ -746,7 +768,7 @@ all_functions = [
 
   {
     "name": "CreateWorldImage",
-    "description": "Create an image for the world",
+    "description": "Create an image for the current world",
     "parameters": {
       "type": "object",
       "properties": {

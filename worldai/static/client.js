@@ -36,7 +36,7 @@ const loadAction = async() => {
     const msg_list = values["messages"];
     if (msg_list.length == 0) {
         // If empty, include  a welcome message
-        addAssistantMessage("Hello, welcome to world builder!<br>Enter a request in the text box below.");
+        addAssistantMessage("Hello, welcome to world builder!<br>I can help you create worlds filled with characters, items, and sites.<br>Enter your request in the text box below.");
     }
     // Display chat history
     for (i in msg_list) {
