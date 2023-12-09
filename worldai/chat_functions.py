@@ -3,6 +3,7 @@ import os
 import openai
 import requests
 import logging
+import markdown
 
 from . import elements
 
@@ -78,6 +79,23 @@ def dump_token_usage(db):
   print(f"total: prompt: {prompt_tokens}, complete: " +
         f"{complete_tokens}, total: {total_tokens}")
 
+
+
+def parseResponseText(text):
+  md = markdown.Markdown()
+  # Catch case of unordered list starting without a preceeding blank line
+  prev_line_list = False
+  lines = []
+  for line in text.splitlines():
+    if line.startswith("   -"):
+      line = " " + line
+    line_list = line.startswith("-")
+    if line_list and not prev_line_list:
+      lines.append("")
+    lines.append(line)
+    prev_line_list = line_list
+  text = "\n".join(lines)
+  return md.convert(text)
 
 STATE_WORLDS = "State_Worlds"
 STATE_WORLD = "State_World"
@@ -307,7 +325,6 @@ class ChatFunctions:
 
     elif function_name == "ReadWorld":
       result = self.FuncReadWorld(db, arguments)
-      print(str(result))
 
     elif function_name == "ListCharacters":
       result = elements.listCharacters(db, self.current_world_id)
@@ -427,17 +444,17 @@ class ChatFunctions:
 
     # Supply information on the existing elements of the world.
     population = []
-    population.append("Characters:")
+    population.append("Characters:\n")
     for character in elements.listCharacters(db, world.id):
       population.append(f"- {character['name']}")
     population.append("")
 
-    population.append("Items:")        
+    population.append("Items:\n")        
     for item in elements.listItems(db, world.id):
       population.append(f"- {item['name']}")
     population.append("")
     
-    population.append("Sites:")        
+    population.append("Sites:\n")        
     for site in elements.listSites(db, world.id):
       population.append(f"- {site['name']}")
 

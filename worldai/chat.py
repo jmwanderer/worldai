@@ -16,7 +16,6 @@ import io
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
 import tiktoken
-import markdown
 
 from . import db_access
 from . import elements
@@ -484,8 +483,8 @@ class ChatSession:
     messages = []
     for message_set in self.history.message_sets():
       user = elements.textToHTML(message_set.getRequestContent())
-      assistant = markdown.markdown(message_set.getResponseContent())
-      print(assistant)
+      assistant = chat_functions.parseResponseText(
+        message_set.getResponseContent())
       
       messages.append({ "user": user,
                         "assistant": assistant
