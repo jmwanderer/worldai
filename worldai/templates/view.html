@@ -42,6 +42,26 @@
   {% endfor %}
 </ul>
 
+<h2>Significant Items:</h2>
+<ul>
+  {% for entry in item_list %}
+  <li>
+    <h3> {{ entry[1] }} </h3>
+    {{ entry[2] }}          
+  </li>
+  {% endfor %}
+</ul>
+
+<h2>Key Sites:</h2>
+<ul>
+  {% for entry in site_list %}
+  <li>
+    <h3> {{ entry[1] }} </h3>
+    {{ entry[2] }}          
+  </li>
+  {% endfor %}
+</ul>
+
 {% elif obj == 'character' %}      
 
 <h1>{{ character.getName() }}</h1>

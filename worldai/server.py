@@ -472,12 +472,30 @@ def view_props():
       character = elements.loadCharacter(get_db(), char_id)    
       char_list.append((char_id, char_name, character.getDescription()))
 
+    items = elements.listItems(get_db(), world.id)
+    item_list = []
+    for entry in items:
+      item_id = entry["id"]
+      item_name = entry["name"]
+      item = elements.loadItem(get_db(), item_id)    
+      item_list.append((item_id, item_name, item.getDescription()))
+
+    sites = elements.listSites(get_db(), world.id)
+    site_list = []
+    for entry in sites:
+      site_id = entry["id"]
+      site_name = entry["name"]
+      site = elements.loadSite(get_db(), site_id)    
+      site_list.append((site_id, site_name, site.getDescription()))
+      
     for image in world.getImages():
       url = flask.url_for('worldai.get_image', id=image)
       images.append(url)
     
     html = flask.render_template("view.html", obj='world', world=world,
-                                 character_list=char_list)
+                                 character_list=char_list,
+                                 item_list=item_list,
+                                 site_list=site_list)
 
   return flask.jsonify({ "html": html, "images": images })
   

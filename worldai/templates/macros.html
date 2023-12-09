@@ -1,0 +1,10 @@
+{# Define macro for list of URL images #}
+{% macro image_urls(element) %}
+<script>
+  const images = [
+      {% for image in element.getImages() %}
+      "{{ url_for('worldai.get_image', id=image) }}",
+      {% endfor %}
+  ];
+</script>
+{% endmacro %}

@@ -41,7 +41,6 @@
     const bearer_token = "Bearer {{auth_key}}";
 
   </script>
-  <script src="static/client.js">
-  </script>
+  <script src="{{ url_for('static', filename='client.js') }}"></script>    
 </html>
 

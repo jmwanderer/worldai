@@ -1,17 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>WorldAI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-    <link href='https://fonts.googleapis.com/css?family=Open Sans' rel='stylesheet'/>
-    <style>
-      body {
-	  font-family: 'Open Sans';
-      }
-    </style>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-  </head>
-
+  {% include "header.html" %}      
   <body>
     <div>
       <h1>{{ site.getName() }}</h1>
@@ -31,31 +20,9 @@
       {{ site.getDetailsHTML() | safe }}
 
     </div>
-    <script>
-      const images = [
-          {% for image in site.getImages() %}
-          "{{ url_for('worldai.get_image', id=image) }}",
-          {% endfor %}
-      ];
-      let image = document.getElementById("image");
-      let image_back = document.getElementById("image_back");
-      let image_fwd = document.getElementById("image_fwd");                  
-      let index = 0;
-      function setImageIndex(delta) {
-          let new_index = index + delta;
-          if (new_index >= 0 && new_index < images.length) {
-              index = new_index;
-              image.src = images[index]
-          }
-          image_back.disabled = (index == 0);
-          image_fwd.disabled = (index == images.length - 1);
-      }
-
-      if (image) {
-          image_back.onclick = () => setImageIndex(-1);
-          image_fwd.onclick = () => setImageIndex(1);
-          setImageIndex(0);
-      }
-    </script>
+  </body>
+  {% import 'macros.html' as macros %}
+  {{ macros.image_urls(site) }}
+  <script src="{{ url_for('static', filename='view.js') }}"></script>    
 </html>
 
