@@ -12,6 +12,7 @@ dependencies = [
   "tenacity",
   "termcolor",
   "tiktoken",
+  "markdown",
 ]
 
 [build-system]

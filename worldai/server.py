@@ -13,6 +13,7 @@ import werkzeug.utils
 import logging
 import click
 import openai
+import markdown
 
 from . import db_access
 from . import elements
@@ -370,7 +371,7 @@ def chat_api(session_id):
       user_msg = request.json.get("user")
       message = chat_session.chat_exchange(get_db(), user_msg)
       content = {
-        "assistant": elements.textToHTML(message['content']),
+        "assistant": markdown.markdown(message['content']),
         "changes": chat_session.madeModifications()
       }
       content['view'] = chat_session.get_view()
