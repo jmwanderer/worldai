@@ -48,12 +48,17 @@
           vertical-align: middle;
       }
 
-      .button-container {
+      .buttons {
           display: flex;
           flex-wrap: nowrap;
           width: 90%;
           margin: auto;
           text-align: center;          
+      }
+
+      .button {
+          float: left;
+          width: 50%;
       }
 
       #user {
@@ -76,9 +81,13 @@
           <div>
             <textarea id="user" name="user" rows="2"></textarea>
           </div>
-          <div class="button-container">
-            <button id="send">Send</button>
-            <button id="clear" onclick="clearThread()">Clear Thread</button>
+          <div class="buttons">
+            <div class="button">
+              <button id="send">Send</button>
+            </div>
+            <div class="button">
+              <button id="clear" onclick="clearThread()">Clear Thread</button>
+            </div>
           </div>
         </div>
       </div>

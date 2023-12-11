@@ -57,10 +57,16 @@ const loadAction = async() => {
 // Chat message exchange with server
 const postAction = async() => {
     if (in_progress) {
-        return
+        return;
     }
     in_progress = true;
-    text = user_input.value;
+
+    // Check for empty input.
+    text = user_input.value.trim();
+    if (text.length == 0) {
+        user_input.value = '';        
+        return;
+    }
     user_input.value = 'running...';
     user_input.disabled = true;
     send_button.disbled = true;
@@ -164,9 +170,7 @@ function setup_image_handlers() {
     image_fwd = document.getElementById("image_fwd");                  
     index = 0;
     
-    console.log("check image");                                      
     if (image) {
-        console.log("install image handlers");               
         image_back.onclick = () => setImageIndex(-1);
         image_fwd.onclick = () => setImageIndex(1);
         setImageIndex(0);
