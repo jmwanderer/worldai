@@ -88,7 +88,7 @@ class BasicTestCase(unittest.TestCase):
     values = self.callFunction('ReadWorld', '{ "id": "%s" }' % id1)
     self.assertIsNone(values.get("details"))
 
-    self.callFunction('ChangeState', '{ "state": "State_Edit_World" }')    
+    self.callFunction('ChangeState', '{ "state": "State_World" }')    
     
     self.assertCallAvailable('UpdateWorld')                  
     self.callFunction('UpdateWorld',
@@ -106,7 +106,7 @@ class BasicTestCase(unittest.TestCase):
     result = self.callFunction('CreateWorld', '{ "name": "world 1" }')
     self.assertIsNotNone(result["id"])
 
-    self.callFunction('ChangeState', '{ "state": "State_Edit_Characters" }')    
+    self.callFunction('ChangeState', '{ "state": "State_Characters" }')    
 
     # Read not existent character
     values = self.callFunction('ReadCharacter', '{ "id": "not_exist" }')
@@ -142,23 +142,23 @@ class BasicTestCase(unittest.TestCase):
                        
     self.callFunction('CreateWorld', '{ "name": "world 1" }')
 
-    # STATE EDIT WORLD
+    # STATE WORLD
     self.assertEqual(self.chatFunctions.current_state,
-                     chat_functions.STATE_EDIT_WORLD)
+                     chat_functions.STATE_WORLD)
     self.assertCallAvailable('UpdateWorld')    
     self.assertCallNotAvailable('ListWorlds')
     self.assertIsNotNone(self.chatFunctions.get_state_instructions())
     self.assertIn("description", self.chatFunctions.get_state_instructions())
-    self.callFunction('ChangeState', '{ "state": "State_View_World" }')
+    self.callFunction('ChangeState', '{ "state": "State_World" }')
 
-    # STATE VIEW WORLD
+    # STATE WORLD
     self.assertEqual(self.chatFunctions.current_state,
-                     chat_functions.STATE_VIEW_WORLD)
-    self.callFunction('ChangeState', '{ "state": "State_Edit_Characters" }')
+                     chat_functions.STATE_WORLD)
+    self.callFunction('ChangeState', '{ "state": "State_Characters" }')
 
-    # STATE EDIT CHARACTERS
+    # STATE CHARACTERS
     self.assertEqual(self.chatFunctions.current_state,
-                     chat_functions.STATE_EDIT_CHARACTERS)
+                     chat_functions.STATE_CHARACTERS)
     self.assertCallNotAvailable('UpdateWorld')
     self.assertCallAvailable('ListCharacters')
     self.assertCallAvailable('CreateCharacter')
@@ -167,9 +167,9 @@ class BasicTestCase(unittest.TestCase):
     result = self.callFunction('CreateCharacter','{ "name": "char 1" }')
     id = result["id"]
 
-    # STATE EDIT CHARACTER
+    # STATE CHARACTERS
     self.assertEqual(self.chatFunctions.current_state,
-                     chat_functions.STATE_EDIT_CHARACTERS)
+                     chat_functions.STATE_CHARACTERS)
     self.assertCallAvailable('UpdateCharacter')
 
     self.callFunction('UpdateCharacter',
@@ -183,9 +183,9 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(values["details"], "my details")
     self.assertEqual(values["name"], "my char 1")
 
-    self.callFunction('ChangeState', '{ "state": "State_View_World" }')    
+    self.callFunction('ChangeState', '{ "state": "State_World" }')    
     self.assertEqual(self.chatFunctions.current_state,
-                     chat_functions.STATE_VIEW_WORLD)
+                     chat_functions.STATE_WORLD)
     
     
   
