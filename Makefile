@@ -1,15 +1,6 @@
 .PHONY: test
-test: unittest systest 
-
-.PHONY: systest
-systest:
+test:
 	PYTHONPATH=. pytest
-
-.PHONY: unittest
-unittest:
-	python3 -m tests.test_elements
-	python3 -m tests.test_chat_functions
-	python3 -m tests.test_chat
 
 .PHONY: build
 build:
