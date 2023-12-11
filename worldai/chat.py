@@ -6,6 +6,7 @@ From: https://cookbook.openai.com/examples/how_to_call_functions_with_chat_model
 """
 
 import os
+import time
 import json
 import logging
 import openai
@@ -326,8 +327,6 @@ class MessageRecords:
         return True
     return False
     
-        
-
 
 def get_thread(db, session_id):
   c = db.execute("SELECT thread FROM threads WHERE id = ? ",
@@ -339,16 +338,18 @@ def get_thread(db, session_id):
   return None
 
 def save_thread(db, session_id, thread):
+  now = time.time()
   c = db.execute("SELECT count(*) FROM threads WHERE id = ? ",
                  (session_id,))
   if c.fetchone()[0] == 0:
     # INSERT
+    
     q = db.execute("INSERT INTO threads VALUES (?, ?, ?, ?)",
-                   (session_id, 0, 0, thread))
+                   (session_id, now, now, thread))
   else:
     # UPDATE
-    q = db.execute("UPDATE threads SET thread = ? WHERE id = ?",
-                   (thread, session_id))
+    q = db.execute("UPDATE threads SET thread = ?, updated = ? WHERE id = ?",
+                   (thread, now, session_id))
   db.commit()
 
 def delete_thread(db, session_id)  :
