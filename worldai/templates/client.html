@@ -2,36 +2,90 @@
 <html lang="en">
   <head>
     <title>WorldAI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
     <link href='https://fonts.googleapis.com/css?family=Open Sans' rel='stylesheet'/>
+
     <style>
       body {
 	  font-family: 'Open Sans';
       }
+
+      * {
+          box-sizing: border-box;
+      }
+
+      /* Top level div */
+      .container {
+          display: flex;
+          flex-wrap: nowrap;
+          height: 95vh;
+      }
+      
+      .column_left {
+          float: left;
+          width: 33%;
+          height: 100%;
+      }
+
+      .column_right {
+          float: right;
+          width: 66%;
+          height: 100%;
+          overflow-y: auto;          
+      }
+
+      #messages {
+          width: 95%;
+          height: 90%;
+          padding-top: 2em;
+          padding-left: 2em;
+          overflow-y: auto;
+          margin: auto;
+      }
+
+      .text_area {
+          width: 100%;
+          text-align: center;
+          vertical-align: middle;
+      }
+
+      .button-container {
+          display: flex;
+          flex-wrap: nowrap;
+          width: 90%;
+          margin: auto;
+          text-align: center;          
+      }
+
+      #user {
+          width: 80%;
+      }
+      
     </style>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+
    </head>
 
   <body onload="loadAction()">
-    <div style="display:flex;">
-      <div style='width:50%;height:90vh;'>    
-        <div id="messages" style="width:90%;height:80%;border:1px solid lightgrey;padding-top:2em;padding-left:2em;overflow-y:auto;">
+    <div class="container">
+
+      <div class="column_left">    
+        <div id="messages">
         </div>
+
         <br>
-        <div style='width:100%;text-align:center;vertical-align:middle;'>
+        <div class="text_area">
           <div>
-            <textarea id="user" name="user" cols="60" rows="2"></textarea>
+            <textarea id="user" name="user" rows="2"></textarea>
           </div>
-          <div>        
+          <div class="button-container">
             <button id="send">Send</button>
-          </div>
-          <div>        
             <button id="clear" onclick="clearThread()">Clear Thread</button>
           </div>
         </div>
       </div>
-      <div id="content" style='height:90%;overflow-y:auto;'>
+
+      <div id="content" class="column_right">
       </div>
+
     </div>    
   </body>
   <script>
