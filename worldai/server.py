@@ -232,7 +232,7 @@ def list_worlds():
   return flask.render_template("list_worlds.html", world_list=world_list)
 
 
-@bp.route('/view/world/<id>', methods=["GET"])
+@bp.route('/view/worlds/<id>', methods=["GET"])
 @login_required
 def view_world(id):
   """
