@@ -2,6 +2,11 @@
 <html lang="en">
   {% include "header.html" %}
   <body>
+    <ul class="navlist">
+      <li class="navitem">
+        <a class="nava"
+           href="{{ url_for('worldai.list_worlds') }}">All Worlds</a>
+    </ul>
     <div>
       <h1>{{ world.getName() }}</h1>
       <h2>Description:</h2>

@@ -2,6 +2,33 @@
 <html lang="en">
   {% include "header.html" %}  
   <body>
+    <div class="navdiv">
+      <div class="leftnav">
+        <ul class="navlist">
+          <li class="navitem">
+            <a class="nava"
+               href="{{ url_for('worldai.list_worlds') }}">All Worlds</a>
+          <li class="navitem">
+            <a class = "nava"
+               href="{{ url_for('worldai.view_world', id=world.id) }}">
+              {{ world.getName() }}
+            </a> 
+        </ul>
+      </div>
+      <div class="rightnav">
+        <ul class="navlist">
+          <li class="rnavitem">
+            <a class = "nava">            
+              Prev
+            </a>
+          <li class="rnavitem">
+            <a class = "nava">            
+              Next
+            </a>              
+        </ul>
+      </div>	 
+    </div>
+
     <div>
       <h1>{{ character.getName() }}</h1>
       <h2>Description:</h2>
