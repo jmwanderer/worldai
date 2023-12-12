@@ -140,7 +140,7 @@ You walk the user through the process of creating worlds. We go in the following
 
 We can be in one of the following states:
 - State_Worlds: We can open existing worlds and create new worlds
-- State_World: We can change the description and details of a world and create images of the world.
+- State_World: We can change the description, details, and plans of a world and create images of the world.
 - State_Characters: We can create new characters and change the description and details of a character and add images to a character
 - State_Items: We can create new items and change the description and details of an item and add images to an item
 - State_Sites: We can create new sites and change the description and details of a site and add images to a site
@@ -172,7 +172,7 @@ A world needs a short high level description refelcting the nature of the world.
 
 A world has details, that give more information about the world, the backstory, and includes a list of main characters, key sites, and special items.
 
-You can create an image for the world with CreateWorldImage, using information from the description and details to create a prompt. Use a large prompt for the image. Always check with the user before creating an image.
+Creating images using information from the description and details in the prompt.
 
 A world has characters, sites, and items that we develop and design.
 
@@ -197,7 +197,7 @@ Use information in the world details to guide character creation and design.
 
 Before creating a new character, check if it already exists by calling the ListCharacters function.
 
-You can create an image for the character with CreateCharacterImage, using information from the character description and detailed to create a prompt. Use a large prompt for the image. Always check with the user before creating an image.
+You can create an image for the character with CreateCharacterImage, using information from the character description and details in the.
 
 Save detailed information about the character in character details.
 
@@ -218,7 +218,7 @@ Use information in the world details to guide item creation and design.
 
 Before creating a new item, check if it already exists by calling the ListItems function.
 
-You can create an image for the item with CreateItemImage, using information from the item description and detailed to create a prompt. Use a large prompt for the image. Always check with the user before creating an image.
+You can create an image for the item with CreateItemImage, using information from the item description and details in the prompt.
 
 Save detailed information about the item in item details.
 
@@ -239,7 +239,7 @@ Use information in the world details to guide site creation and design.
 
 Before creating a new site, check if it already exists by calling the ListSites function.
 
-You can create an image for the site with CreateSiteImage, using information from the item description and detailed to create a prompt. Use a large prompt for the image. Always check with the user before creating an image.
+You can create an image for the site with CreateSiteImage, using information from the item description and details in the prompt.
 
 Save detailed information about the site in site details.
 
@@ -454,7 +454,9 @@ class ChatFunctions:
     if world is None:
       return self.funcError(f"no world '{id}'")      
     content = { "id": world.id,
-                **world.getProperties() }
+                **world.getProperties(),
+                "has_image": world.hasImage(), 
+               }
 
     # Supply information on the existing elements of the world.
     population = []
@@ -489,7 +491,9 @@ class ChatFunctions:
     character = elements.loadCharacter(db, id)
     if character is not None:
       content = { "id": character.id,
-                  **character.getProperties() }
+                  **character.getProperties(),
+                  "has_image": character.hasImage(),                   
+                 }
       self.current_state = STATE_CHARACTERS
       self.last_character_id  = character.id
     else:
@@ -534,7 +538,9 @@ class ChatFunctions:
     item = elements.loadItem(db, id)
     if item is not None:
       content = { "id": item.id,
-                  **item.getProperties() }
+                  **item.getProperties(),
+                  "has_image": item.hasImage(),                  
+                 }
       self.current_state = STATE_ITEMS
       self.last_item_id  = item.id
     else:
@@ -579,7 +585,9 @@ class ChatFunctions:
     site = elements.loadSite(db, id)
     if site is not None:
       content = { "id": site.id,
-                  **site.getProperties() }
+                  **site.getProperties(),
+                  "has_image": site.hasImage(),
+                 }
       self.current_state = STATE_SITES
       self.last_site_id  = site.id
     else:
@@ -881,6 +889,10 @@ all_functions = [
         "details": {
           "type": "string",
           "description": "Detailed information about the character.",
+        },
+        "personality": {
+          "type": "string",
+          "description": "Describes the personality of the character.",
         },
       },
       "required": [ "id"]      

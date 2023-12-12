@@ -27,11 +27,9 @@
       <ul>
         {% for entry in character_list %}
         <li>
-          <h3>
-            <a href="{{ url_for('worldai.view_character', wid=world.id, cid=entry[0]) }}"> 
+            <a href="{{ url_for('worldai.view_character', wid=world.id, cid=entry[0]) }}">
               {{ entry[1] }}
-            </a>
-          </h3>
+            </a> -
           {{ entry[2] }}          
         </li>
         {% endfor %}
@@ -41,11 +39,9 @@
       <ul>
         {% for entry in item_list %}
         <li>
-          <h3>
             <a href="{{ url_for('worldai.view_item', wid=world.id, iid=entry[0]) }}"> 
               {{ entry[1] }}
-            </a>
-          </h3>
+            </a> -
           {{ entry[2] }}          
         </li>
         {% endfor %}
@@ -55,11 +51,9 @@
       <ul>
         {% for entry in site_list %}
         <li>
-          <h3>
             <a href="{{ url_for('worldai.view_site', wid=world.id, sid=entry[0]) }}"> 
               {{ entry[1] }}
-            </a>
-          </h3>
+            </a> -
           {{ entry[2] }}          
         </li>
         {% endfor %}

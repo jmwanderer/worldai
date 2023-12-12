@@ -36,6 +36,7 @@ PROP_NAME = "name"
 PROP_DESCRIPTION = "description"
 PROP_DETAILS = "details"
 PROP_PLANS = "plans"
+PROP_PERSONALITY = "personality"
   
 
 class Element:
@@ -52,6 +53,9 @@ class Element:
 
   def myProps(self):
     return [ PROP_NAME, PROP_DESCRIPTION, PROP_DETAILS ]
+
+  def hasImage(self):
+    return len(self.images) > 0
   
   def setProperties(self, properties):
     """
@@ -169,6 +173,19 @@ class Character(Element):
   """
   def __init__(self, parent_id=''):
     super().__init__(ElementType.CHARACTER, parent_id)
+
+  def myProps(self):
+    return [ PROP_NAME, PROP_DESCRIPTION, PROP_DETAILS, PROP_PERSONALITY ]
+
+  def getPersonality(self):
+    return self.getProperty(PROP_PERSONALITY)
+
+  def getPersonalityHTML(self):
+    return textToHTML(self.getProperty(PROP_PERSONALITY))
+  
+  def setPersonality(self, value):
+    return self.setProperty(PROP_PERSONALITY, value)
+    
     
 class Site(Element):
   """

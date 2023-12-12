@@ -82,6 +82,7 @@ class BasicTestCase(unittest.TestCase):
     character.setName("char 2")
     character.setDescription("description")
     character.setDetails("details")
+    character.setPersonality("personality")    
     character = elements.createCharacter(self.db, character)
     self.assertIsNotNone(character)
 

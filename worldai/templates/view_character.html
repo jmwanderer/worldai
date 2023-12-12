@@ -19,6 +19,9 @@
       <h2>Detail Notes:</h2>
       {{ character.getDetailsHTML() | safe }}
 
+      <h2>Personality:</h2>
+      {{ character.getPersonalityHTML() | safe }}
+
     </div>
   </body>
   {% import 'macros.html' as macros %}
