@@ -82,7 +82,6 @@ def dump_token_usage(db):
 
 
 def parseResponseText(text):
-  print(text)
   md = markdown.Markdown()
   # Catch case of unordered list starting without a preceeding blank line
   prev_line_list = False
@@ -106,9 +105,7 @@ def parseResponseText(text):
     lines.append(line)
     prev_line_list = line_list
   text = "\n".join(lines)
-  print(text)  
   result = md.convert(text)
-  print(result)  
   return result
 
 STATE_WORLDS = "State_Worlds"
@@ -205,6 +202,7 @@ You can create an image for the character with CreateCharacterImage, using infor
 Save detailed information about the character in character details.
 
 To work on information about the world call ChangeState
+To work on items or sites, call ChangeState
 """,
 
   STATE_ITEMS:
@@ -225,6 +223,7 @@ You can create an image for the item with CreateItemImage, using information fro
 Save detailed information about the item in item details.
 
 To work on information about the world call ChangeState
+To work on characters or sites, call ChangeState
 """,
 
   STATE_SITES:
@@ -245,6 +244,7 @@ You can create an image for the site with CreateSiteImage, using information fro
 Save detailed information about the site in site details.
 
 To work on information about the world call ChangeState
+To work on characters or items, call ChangeState
 """,
 
 }
@@ -792,6 +792,10 @@ all_functions = [
         "details": {
           "type": "string",
           "description": "Detailed information about the virtual world.",
+        },
+        "plans": {
+          "type": "string",
+          "description": "Plans for developing characters, items, and sites.",
         },
       },
     },

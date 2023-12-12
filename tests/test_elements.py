@@ -60,10 +60,12 @@ class BasicTestCase(unittest.TestCase):
     world2 = elements.createWorld(self.db, world)
     world2.setProperties({ elements.PROP_NAME: "world 2",
                            elements.PROP_DESCRIPTION: "description"})
+    world2.setPlans("Characters:\n-Paige\n-Grant\n-Malia\n-Jake")
     elements.updateWorld(self.db, world)
     world2 = elements.loadWorld(self.db, world2.id)
     self.assertEqual(world2.getName(), "world 2")
-    self.assertIsNotNone(world)    
+    self.assertIsNotNone(world)
+    self.assertIsNotNone(world2.getPlans())
 
     # Create character
     character = elements.Character(world1.id)

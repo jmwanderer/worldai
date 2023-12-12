@@ -35,6 +35,7 @@ PROP_ID="id"
 PROP_NAME = "name"
 PROP_DESCRIPTION = "description"
 PROP_DETAILS = "details"
+PROP_PLANS = "plans"
   
 
 class Element:
@@ -141,12 +142,25 @@ def textToHTML(text):
     return None
   return text.replace("\n\n","<p>").replace("\n","<br>")
                        
+
 class World(Element):
   """
   Represents an instance of a World.
   """
   def __init__(self):
     super().__init__(ElementType.WORLD, '')
+
+  def myProps(self):
+    return [ PROP_NAME, PROP_DESCRIPTION, PROP_DETAILS, PROP_PLANS ]
+  
+  def getPlans(self):
+    return self.getProperty(PROP_PLANS)
+
+  def getPlansHTML(self):
+    return textToHTML(self.getProperty(PROP_PLANS))
+  
+  def setPlans(self, value):
+    return self.setProperty(PROP_PLANS, value)
 
     
 class Character(Element):
