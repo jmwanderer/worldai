@@ -127,6 +127,9 @@ class BasicTestCase(unittest.TestCase):
     # List worlds
     worlds = elements.listWorlds(self.db)
     self.assertEqual(len(worlds), 2)
+    (prev_world, next_world) = elements.getAdjacentETags(worlds[0], worlds)
+    self.assertIsNone(prev_world)
+    self.assertIsNotNone(next_world)
 
     # Read world
     world = elements.loadWorld(self.db, world1.id)

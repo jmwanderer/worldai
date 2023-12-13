@@ -2,13 +2,40 @@
 <html lang="en">
   {% include "header.html" %}
   <body>
-    <ul class="navlist">
-      <li class="navitem">
-        <a class="nava"
-           href="{{ url_for('worldai.list_worlds') }}">All Worlds</a>
-    </ul>
-    <div>
-      <h1>{{ world.getName() }}</h1>
+    <div class="navdiv">
+      <div class="leftnav">
+        <ul class="navlist">
+          <li class="navitem">
+            <a class="nava"
+               href="{{ url_for('worldai.list_worlds') }}">All Worlds</a>
+        </ul>
+      </div>
+      
+      <div class="rightnav">
+        <ul class="navlist">
+
+          {% if not nworld is none %}          
+          <li class="rnavitem">
+            <a class="nava"
+               href="{{ url_for('worldai.view_world', id=nworld.getID()) }}">
+              Next: {{ nworld.getName() }}
+            </a>
+          </li>
+          {% endif %}
+          
+          {% if not pworld is none %}
+          <li class="rnavitem">
+            <a class="nava"
+               href="{{ url_for('worldai.view_world', id=pworld.getID()) }}">
+              Prev: {{ pworld.getName() }}
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>  
+    
+    <h1>{{ world.getName() }}</h1>
       <h2>Description:</h2>
       {% if not world.getImageByIndex(0) is none %}      
       <div style="padding-left:2em;float:right;display:inline;">

@@ -242,6 +242,10 @@ def view_world(id):
   if world == None:
     return "World not found", 400
 
+  worlds = elements.listWorlds(get_db())
+  (pworld, nworld) = elements.getAdjacentETags(world.getETag(),
+                                               worlds)  
+
   characters = elements.listCharacters(get_db(), world.id)
   char_list = []
   for entry in characters:
@@ -269,7 +273,9 @@ def view_world(id):
   return flask.render_template("view_world.html", world=world,
                                character_list=char_list,
                                item_list=item_list,
-                               site_list=site_list)
+                               site_list=site_list,
+                               pworld=pworld,
+                               nworld=nworld)
 
 @bp.route('/view/worlds/<wid>/characters/<cid>', methods=["GET"])
 @login_required
@@ -283,9 +289,12 @@ def view_character(wid, cid):
   character = elements.loadCharacter(get_db(), cid)
   if character == None:
     return "Character not found", 400
+  characters = elements.listCharacters(get_db(), wid)
+  (pchar, nchar) = elements.getAdjacentETags(character.getETag(),
+                                               characters)  
 
   return flask.render_template("view_character.html", world=world,
-                               character=character)
+                               character=character, pchar=pchar, nchar=nchar)
 
 @bp.route('/view/worlds/<wid>/items/<iid>', methods=["GET"])
 @login_required
@@ -299,9 +308,12 @@ def view_item(wid, iid):
   item = elements.loadItem(get_db(), iid)
   if item == None:
     return "Item not found", 400
+  items = elements.listItems(get_db(), wid)
+  (pitem, nitem) = elements.getAdjacentETags(item.getETag(),
+                                             items)  
 
   return flask.render_template("view_item.html", world=world,
-                               item=item)
+                               item=item, nitem=nitem, pitem=pitem)
 
 @bp.route('/view/worlds/<wid>/sites/<sid>', methods=["GET"])
 @login_required
@@ -315,9 +327,12 @@ def view_site(wid, sid):
   site = elements.loadSite(get_db(), sid)
   if site == None:
     return "Site not found", 400
+  sites = elements.listSites(get_db(), wid)
+  (psite, nsite) = elements.getAdjacentETags(site.getETag(),
+                                             sites)  
 
   return flask.render_template("view_site.html", world=world,
-                               site=site)
+                               site=site, psite=psite, nsite=nsite)
 
 
 @bp.route('/images/<id>', methods=["GET"])

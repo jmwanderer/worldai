@@ -462,6 +462,25 @@ def deleteWorld(db, data_dir, world_id):
   db.commit()
 
   
-        
+def getAdjacentETags(etag, tag_list):
+  """
+  Return (prev, next) etags for the given etag in the list
+  """
+  index = 0
+  for entry in tag_list:
+    if entry.getID() == etag.getID():
+      break
+    index += 1
+
+  prev_entry = None
+  next_entry = None
+
+  if index < len(tag_list):
+    if index > 0:
+      prev_entry = tag_list[index - 1]
+    if index < len(tag_list) - 1:
+      next_entry = tag_list[index + 1]
+
+  return (prev_entry, next_entry)
     
 
