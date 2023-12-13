@@ -135,8 +135,8 @@ def dump_worlds():
   print("%d worlds listed" % len(worlds))
 
   for (entry) in worlds:
-    id = entry["id"]
-    name = entry["name"]
+    id = entry.getID()
+    name = entry.getName()
     print(f"World({id}): {name}")
   
     world = elements.loadWorld(get_db(), id)
@@ -146,8 +146,8 @@ def dump_worlds():
     print("Loading characters...")
     characters = elements.listCharacters(get_db(), world.id)
     for (char_entry) in characters:
-      id = char_entry["id"]
-      name = char_entry["name"]
+      id = char_entry.getID()
+      name = char_entry.getName()
       print(f"Character({id}): {name}")
 
       character = elements.loadCharacter(get_db(), id)
@@ -225,7 +225,7 @@ def list_worlds():
   world_list = []
   worlds = elements.listWorlds(get_db())
   for (entry) in worlds:
-    id = entry["id"]
+    id = entry.getID()
     world = elements.loadWorld(get_db(), id)
     world_list.append((id, world.getName(), world.getDescription()))
 
@@ -245,24 +245,24 @@ def view_world(id):
   characters = elements.listCharacters(get_db(), world.id)
   char_list = []
   for entry in characters:
-    char_id = entry["id"]
-    char_name = entry["name"]
+    char_id = entry.getID()
+    char_name = entry.getName()
     character = elements.loadCharacter(get_db(), char_id)    
     char_list.append((char_id, char_name, character.getDescription()))
 
   items = elements.listItems(get_db(), world.id)
   item_list = []
   for entry in items:
-    item_id = entry["id"]
-    item_name = entry["name"]
+    item_id = entry.getID()
+    item_name = entry.getName()
     item = elements.loadItem(get_db(), item_id)    
     item_list.append((item_id, item_name, item.getDescription()))
 
   sites = elements.listSites(get_db(), world.id)
   site_list = []
   for entry in sites:
-    site_id = entry["id"]
-    site_name = entry["name"]
+    site_id = entry.getID()
+    site_name = entry.getName()
     site = elements.loadSite(get_db(), site_id)    
     site_list.append((site_id, site_name, site.getDescription()))
     
@@ -406,7 +406,7 @@ def view_props():
     world_list = []
     worlds = elements.listWorlds(get_db())
     for (entry) in worlds:
-      id = entry["id"]
+      id = entry.getID()
       world = elements.loadWorld(get_db(), id)
       world_list.append((id, world.getName(), world.getDescription()))
     html = flask.render_template("view.html", obj="worlds",
@@ -467,24 +467,24 @@ def view_props():
     characters = elements.listCharacters(get_db(), world.id)
     char_list = []
     for entry in characters:
-      char_id = entry["id"]
-      char_name = entry["name"]
+      char_id = entry.getID()
+      char_name = entry.getName()
       character = elements.loadCharacter(get_db(), char_id)    
       char_list.append((char_id, char_name, character.getDescription()))
 
     items = elements.listItems(get_db(), world.id)
     item_list = []
     for entry in items:
-      item_id = entry["id"]
-      item_name = entry["name"]
+      item_id = entry.getID()
+      item_name = entry.getName()
       item = elements.loadItem(get_db(), item_id)    
       item_list.append((item_id, item_name, item.getDescription()))
 
     sites = elements.listSites(get_db(), world.id)
     site_list = []
     for entry in sites:
-      site_id = entry["id"]
-      site_name = entry["name"]
+      site_id = entry.getID()
+      site_name = entry.getName()
       site = elements.loadSite(get_db(), site_id)    
       site_list.append((site_id, site_name, site.getDescription()))
       

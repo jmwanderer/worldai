@@ -38,7 +38,26 @@ PROP_DETAILS = "details"
 PROP_PLANS = "plans"
 PROP_PERSONALITY = "personality"
   
+class ETag:
+  """
+  Contains the ID, type, and name of an element
+  """
+  def __init__(self, id, element_type, name):
+    self.id = id;
+    self.type = element_type
+    self.name = name
 
+
+  def getID(self):
+    return self.id
+
+  def getType(self):
+    return self.type
+
+  def getName(self):
+    return self.name
+
+  
 class Element:
   """
   Represents an element building block of a world
@@ -56,6 +75,9 @@ class Element:
 
   def hasImage(self):
     return len(self.images) > 0
+
+  def getETag(self):
+    return ETag(self.id, self.type, self.name)
   
   def setProperties(self, properties):
     """
@@ -250,7 +272,7 @@ class ElementStore:
     q = db.execute("SELECT id, name FROM elements WHERE " +
                    "type = ? AND parent_id = ?", (element_type, parent_id))
     for (id, name) in q.fetchall():
-      result.append({ "id": id, PROP_NAME :  name })
+      result.append(ETag(id, element_type, name))
 
     return result
 

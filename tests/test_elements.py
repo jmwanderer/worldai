@@ -150,7 +150,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(len(characters), 3)
 
     # Create character image
-    char_id = characters[0]["id"]
+    char_id = characters[0].getID()
     image = elements.Image()
     image.setPrompt("a prompt")
     image.setParentId(char_id)
@@ -169,7 +169,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(len(sites), 2)
     
     # Load site
-    site = elements.loadSite(self.db, sites[0]["id"])
+    site = elements.loadSite(self.db, sites[0].getID())
     self.assertIsNotNone(site)
 
     # List items
@@ -177,13 +177,13 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(len(items), 2)    
 
     # Load item
-    item = elements.loadItem(self.db, items[0]["id"])
+    item = elements.loadItem(self.db, items[0].getID())
     self.assertIsNotNone(item)
 
     # Update item
     item.setDescription("a new description")
     elements.updateItem(self.db, item)
-    item = elements.loadItem(self.db, items[0]["id"])
+    item = elements.loadItem(self.db, items[0].getID())
     self.assertIsNotNone(item)
     self.assertEqual(item.getDescription(), "a new description")
 

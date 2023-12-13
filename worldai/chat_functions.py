@@ -261,13 +261,13 @@ def checkDuplication(name, element_list):
   # Check if name is a substring of any existing name
   name = name.lower()
   for element in element_list:
-    if name in element[elements.PROP_NAME].lower():
-      return element[elements.PROP_ID]
+    if name in element.getName().lower():
+      return element.getID()
 
   # Check if any existing name is a substring of the new name
   for element in element_list:
-    if element[elements.PROP_NAME].lower() in name:
-      return element[elements.PROP_ID]
+    if element.getName().lower() in name:
+      return element.getID()
 
   return None
 
@@ -332,7 +332,8 @@ class ChatFunctions:
       result = self.FuncCreateWorld(db, arguments)
 
     elif function_name == "ListWorlds":
-      result = elements.listWorlds(db)
+      result = [ { "id": entry.getID(), "name": entry.getName() }
+                 for entry in elements.listWorlds(db) ]
 
     elif function_name == "UpdateWorld":
       result = self.FuncUpdateWorld(db, arguments)
@@ -341,7 +342,8 @@ class ChatFunctions:
       result = self.FuncReadWorld(db, arguments)
 
     elif function_name == "ListCharacters":
-      result = elements.listCharacters(db, self.current_world_id)
+      result = [{ "id": entry.getID(), "name": entry.getName() }            
+                for entry in elements.listCharacters(db, self.current_world_id)]
 
     elif function_name == "ReadCharacter":
       result = self.FuncReadCharacter(db, arguments)
@@ -353,7 +355,8 @@ class ChatFunctions:
       result = self.FuncUpdateCharacter(db, arguments)
 
     elif function_name == "ListItems":
-      result = elements.listItems(db, self.current_world_id)
+      result = [ { "id": entry.getID(), "name": entry.getName() } 
+                 for entry in elements.listItems(db, self.current_world_id) ]
 
     elif function_name == "ReadItem":
       result = self.FuncReadItem(db, arguments)
@@ -462,17 +465,17 @@ class ChatFunctions:
     population = []
     population.append("Characters:\n")
     for character in elements.listCharacters(db, world.id):
-      population.append(f"- {character['name']}")
+      population.append(f"- {character.getName()}")
     population.append("")
 
     population.append("Items:\n")        
     for item in elements.listItems(db, world.id):
-      population.append(f"- {item['name']}")
+      population.append(f"- {item.getName()}")
     population.append("")
     
     population.append("Sites:\n")        
     for site in elements.listSites(db, world.id):
-      population.append(f"- {site['name']}")
+      population.append(f"- {site.getName()}")
 
     content["elements"] = "\n".join(population)
 
