@@ -15,29 +15,10 @@
             </a> 
         </ul>
       </div>
-      <div class="rightnav">
-        <ul class="navlist">
-          {% if not nsite is none %}          
-          <li class="rnavitem">
-            <a class="nava"
-               href="{{ url_for('worldai.view_site', wid=world.id,
-                     sid=nsite.getID()) }}">
-              Next: {{ nsite.getName() }}
-            </a>
-          </li>
-          {% endif %}
-          
-          {% if not psite is none %}
-          <li class="rnavitem">
-            <a class="nava"
-               href="{{ url_for('worldai.view_site', wid=world.id,
-                     sid=psite.getID()) }}">
-              Prev: {{ psite.getName() }}
-            </a>
-          </li>
-          {% endif %}
-        </ul>
-      </div>	 
+
+      {% import 'macros.html' as macros %}
+      {{ macros.prev_next_nav('worldai.view_site', world, nsite, psite) }}
+      
     </div>
     <div>
       <h1>{{ site.getName() }}</h1>

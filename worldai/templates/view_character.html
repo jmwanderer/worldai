@@ -1,3 +1,4 @@
+{% import 'macros.html' as macros %}
 <!DOCTYPE html>
 <html lang="en">
   {% include "header.html" %}  
@@ -15,30 +16,8 @@
             </a> 
         </ul>
       </div>
-      <div class="rightnav">
-        <ul class="navlist">
-
-          {% if not nchar is none %}          
-          <li class="rnavitem">
-            <a class="nava"
-               href="{{ url_for('worldai.view_character',
-                     wid=world.id, cid=nchar.getID()) }}">
-              Next: {{ nchar.getName() }}
-            </a>
-          </li>
-          {% endif %}
-          
-          {% if not pchar is none %}
-          <li class="rnavitem">
-            <a class="nava"
-               href="{{ url_for('worldai.view_character',
-                                 wid=world.id, cid=pchar.getID()) }}">
-              Prev: {{ pchar.getName() }}
-            </a>
-          </li>
-          {% endif %}
-        </ul>
-      </div>	 
+      {{ macros.prev_next_nav('worldai.view_character',
+                               world, nchar, pchar) }}      
     </div>
 
     <div>
@@ -63,7 +42,6 @@
 
     </div>
   </body>
-  {% import 'macros.html' as macros %}
   {{ macros.image_urls(character) }}
   <script src="{{ url_for('static', filename='view.js') }}"></script>      
 </html>

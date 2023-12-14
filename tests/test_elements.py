@@ -42,7 +42,12 @@ class BasicTestCase(unittest.TestCase):
     f.close()
     self.assertEqual(len(data), 2366609)
     elements.deleteImage(self.db, self.user_dir.name, image.id)
-    
+
+  def testBasic(self):
+    self.assertEqual(elements.ElementType.WorldType(), "World")
+    self.assertEqual(elements.ElementType.CharacterType(), "Character")
+    self.assertEqual(elements.ElementType.ItemType(), "Item")
+    self.assertEqual(elements.ElementType.SiteType(), "Site")    
       
   def testCRU(self):
     # Create world
@@ -127,7 +132,7 @@ class BasicTestCase(unittest.TestCase):
     # List worlds
     worlds = elements.listWorlds(self.db)
     self.assertEqual(len(worlds), 2)
-    (prev_world, next_world) = elements.getAdjacentETags(worlds[0], worlds)
+    (prev_world, next_world) = elements.getAdjacentElements(worlds[0], worlds)
     self.assertIsNone(prev_world)
     self.assertIsNotNone(next_world)
 

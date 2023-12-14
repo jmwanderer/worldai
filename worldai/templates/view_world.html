@@ -10,29 +10,6 @@
                href="{{ url_for('worldai.list_worlds') }}">All Worlds</a>
         </ul>
       </div>
-      
-      <div class="rightnav">
-        <ul class="navlist">
-
-          {% if not nworld is none %}          
-          <li class="rnavitem">
-            <a class="nava"
-               href="{{ url_for('worldai.view_world', id=nworld.getID()) }}">
-              Next: {{ nworld.getName() }}
-            </a>
-          </li>
-          {% endif %}
-          
-          {% if not pworld is none %}
-          <li class="rnavitem">
-            <a class="nava"
-               href="{{ url_for('worldai.view_world', id=pworld.getID()) }}">
-              Prev: {{ pworld.getName() }}
-            </a>
-          </li>
-          {% endif %}
-        </ul>
-      </div>
     </div>  
     
     <h1>{{ world.getName() }}</h1>
@@ -59,7 +36,7 @@
       <ul>
         {% for entry in character_list %}
         <li>
-            <a href="{{ url_for('worldai.view_character', wid=world.id, cid=entry[0]) }}">
+            <a href="{{ url_for('worldai.view_character', wid=world.id, id=entry[0]) }}">
               {{ entry[1] }}
             </a> -
           {{ entry[2] }}          
@@ -71,7 +48,7 @@
       <ul>
         {% for entry in item_list %}
         <li>
-            <a href="{{ url_for('worldai.view_item', wid=world.id, iid=entry[0]) }}"> 
+            <a href="{{ url_for('worldai.view_item', wid=world.id, id=entry[0]) }}"> 
               {{ entry[1] }}
             </a> -
           {{ entry[2] }}          
@@ -83,7 +60,7 @@
       <ul>
         {% for entry in site_list %}
         <li>
-            <a href="{{ url_for('worldai.view_site', wid=world.id, sid=entry[0]) }}"> 
+            <a href="{{ url_for('worldai.view_site', wid=world.id, id=entry[0]) }}"> 
               {{ entry[1] }}
             </a> -
           {{ entry[2] }}          

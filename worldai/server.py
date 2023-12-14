@@ -243,8 +243,8 @@ def view_world(id):
     return "World not found", 400
 
   worlds = elements.listWorlds(get_db())
-  (pworld, nworld) = elements.getAdjacentETags(world.getETag(),
-                                               worlds)  
+  (pworld, nworld) = elements.getAdjacentElements(world.getIdName(),
+                                                  worlds)  
 
   characters = elements.listCharacters(get_db(), world.id)
   char_list = []
@@ -277,58 +277,58 @@ def view_world(id):
                                pworld=pworld,
                                nworld=nworld)
 
-@bp.route('/view/worlds/<wid>/characters/<cid>', methods=["GET"])
+@bp.route('/view/worlds/<wid>/characters/<id>', methods=["GET"])
 @login_required
-def view_character(wid, cid):
+def view_character(wid, id):
   """
   View a character
   """
   world = elements.loadWorld(get_db(), wid)
   if world == None:
     return "World not found", 400
-  character = elements.loadCharacter(get_db(), cid)
+  character = elements.loadCharacter(get_db(), id)
   if character == None:
     return "Character not found", 400
   characters = elements.listCharacters(get_db(), wid)
-  (pchar, nchar) = elements.getAdjacentETags(character.getETag(),
-                                               characters)  
+  (pchar, nchar) = elements.getAdjacentElements(character.getIdName(),
+                                                characters)  
 
   return flask.render_template("view_character.html", world=world,
                                character=character, pchar=pchar, nchar=nchar)
 
-@bp.route('/view/worlds/<wid>/items/<iid>', methods=["GET"])
+@bp.route('/view/worlds/<wid>/items/<id>', methods=["GET"])
 @login_required
-def view_item(wid, iid):
+def view_item(wid, id):
   """
   View a character
   """
   world = elements.loadWorld(get_db(), wid)
   if world == None:
     return "World not found", 400
-  item = elements.loadItem(get_db(), iid)
+  item = elements.loadItem(get_db(), id)
   if item == None:
     return "Item not found", 400
   items = elements.listItems(get_db(), wid)
-  (pitem, nitem) = elements.getAdjacentETags(item.getETag(),
-                                             items)  
+  (pitem, nitem) = elements.getAdjacentElements(item.getIdName(),
+                                                items)  
 
   return flask.render_template("view_item.html", world=world,
                                item=item, nitem=nitem, pitem=pitem)
 
-@bp.route('/view/worlds/<wid>/sites/<sid>', methods=["GET"])
+@bp.route('/view/worlds/<wid>/sites/<id>', methods=["GET"])
 @login_required
-def view_site(wid, sid):
+def view_site(wid, id):
   """
   View a site
   """
   world = elements.loadWorld(get_db(), wid)
   if world == None:
     return "World not found", 400
-  site = elements.loadSite(get_db(), sid)
+  site = elements.loadSite(get_db(), id)
   if site == None:
     return "Site not found", 400
   sites = elements.listSites(get_db(), wid)
-  (psite, nsite) = elements.getAdjacentETags(site.getETag(),
+  (psite, nsite) = elements.getAdjacentElements(site.getIdName(),
                                              sites)  
 
   return flask.render_template("view_site.html", world=world,
@@ -411,9 +411,12 @@ def view_props():
   - List of image urls
   """
   wid = request.json.get("wid")
-  cid = request.json.get("cid")
-  iid = request.json.get("iid")
-  sid = request.json.get("sid")
+  element_type = request.json.get("element_type")
+  id = request.json.get("id")
+  print(f"wid {wid}")
+  print(f"element_type {element_type}")
+  print(f"id {id}")
+  
   images = []
 
   if wid is None:
@@ -427,12 +430,12 @@ def view_props():
     html = flask.render_template("view.html", obj="worlds",
                                  world_list=world_list)
 
-  elif cid is not None:
+  elif element_type == elements.ElementType.CharacterType():
     # Character view
     world = elements.loadWorld(get_db(), wid)
     if world == None:
       return "World not found", 400
-    character = elements.loadCharacter(get_db(), cid)
+    character = elements.loadCharacter(get_db(), id)
     if character == None:
       return "Character not found", 400
     for image in character.getImages():
@@ -443,12 +446,12 @@ def view_props():
     html = flask.render_template("view.html", obj="character", world=world,
                                  character=character)
 
-  elif iid is not None:
+  elif element_type == elements.ElementType.ItemType():
     # Item view
     world = elements.loadWorld(get_db(), wid)
     if world == None:
       return "World not found", 400
-    item = elements.loadItem(get_db(), iid)
+    item = elements.loadItem(get_db(), id)
     if item == None:
       return "Item not found", 400
     for image in item.getImages():
@@ -458,12 +461,12 @@ def view_props():
     html = flask.render_template("view.html", obj="item", world=world,
                                  item=item)
 
-  elif sid is not None:
+  elif element_type == elements.ElementType.SiteType():
     # Site view
     world = elements.loadWorld(get_db(), wid)
     if world == None:
       return "World not found", 400
-    site = elements.loadSite(get_db(), sid)
+    site = elements.loadSite(get_db(), id)
     if site == None:
       return "Site not found", 400
     for image in site.getImages():
@@ -473,7 +476,7 @@ def view_props():
     html = flask.render_template("view.html", obj="site", world=world,
                                  site=site)
 
-  else:
+  elif element_type == elements.ElementType.WorldType():
     # World view
     world = elements.loadWorld(get_db(), wid)
     if world == None:
@@ -511,6 +514,8 @@ def view_props():
                                  character_list=char_list,
                                  item_list=item_list,
                                  site_list=site_list)
+  else:
+    return { "error": "malformed input" }        
 
   return flask.jsonify({ "html": html, "images": images })
   

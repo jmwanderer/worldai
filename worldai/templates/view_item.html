@@ -15,30 +15,9 @@
             </a> 
         </ul>
       </div>
-      <div class="rightnav">
-        <ul class="navlist">
-
-          {% if not nitem is none %}          
-          <li class="rnavitem">
-            <a class="nava"
-               href="{{ url_for('worldai.view_item',
-                     wid=world.id, iid=nitem.getID()) }}">
-              Next: {{ nitem.getName() }}
-            </a>
-          </li>
-          {% endif %}
-          
-          {% if not pitem is none %}
-          <li class="rnavitem">
-            <a class="nava"
-               href="{{ url_for('worldai.view_item', wid=world.id,
-                     iid=pitem.getID()) }}">
-              Prev: {{ pitem.getName() }}
-            </a>
-          </li>
-          {% endif %}
-        </ul>
-      </div>	 
+      {% import 'macros.html' as macros %}
+      {{ macros.prev_next_nav('worldai.view_item', world, nitem, pitem) }}
+      
     </div>
     <div>
       <h1>{{ item.getName() }}</h1>

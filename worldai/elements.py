@@ -27,6 +27,18 @@ class ElementType:
   def typeToName(element_type):
     return ElementType.typeNames[element_type]
 
+  def WorldType():
+    return ElementType.typeToName(ElementType.WORLD)
+
+  def CharacterType():
+    return ElementType.typeToName(ElementType.CHARACTER)
+
+  def SiteType():
+    return ElementType.typeToName(ElementType.SITE)
+
+  def ItemType():
+    return ElementType.typeToName(ElementType.ITEM)
+
 
 # Non-malable properties
 PROP_ID="id"
@@ -38,24 +50,41 @@ PROP_DETAILS = "details"
 PROP_PLANS = "plans"
 PROP_PERSONALITY = "personality"
   
-class ETag:
+class IdName:
   """
-  Contains the ID, type, and name of an element
+  Contains the ID, name of an element.
+  Used in list of elements.
   """
-  def __init__(self, id, element_type, name):
+  def __init__(self, id, name):
     self.id = id;
-    self.type = element_type
     self.name = name
-
 
   def getID(self):
     return self.id
 
-  def getType(self):
-    return self.type
-
   def getName(self):
     return self.name
+
+
+class ElemTag:
+  """
+  Contains the ID, type, and World ID of an element.
+  Represents an informat set used between the client an server.
+  (Wolrd ID and type can be looked up from the ID)
+  """
+  def __init__(self, wid, id, element_type):
+    self.world_id = wid;    
+    self.id = id;
+    self.type = element_type
+
+  def getID(self):
+    return self.id
+
+  def getWorldID(self):
+    return self.world_id
+
+  def getType(self):
+    return self.type
 
   
 class Element:
@@ -76,8 +105,8 @@ class Element:
   def hasImage(self):
     return len(self.images) > 0
 
-  def getETag(self):
-    return ETag(self.id, self.type, self.name)
+  def getIdName(self):
+    return IdName(self.id, self.name)
   
   def setProperties(self, properties):
     """
@@ -272,7 +301,7 @@ class ElementStore:
     q = db.execute("SELECT id, name FROM elements WHERE " +
                    "type = ? AND parent_id = ?", (element_type, parent_id))
     for (id, name) in q.fetchall():
-      result.append(ETag(id, element_type, name))
+      result.append(IdName(id, name))
 
     return result
 
@@ -462,24 +491,24 @@ def deleteWorld(db, data_dir, world_id):
   db.commit()
 
   
-def getAdjacentETags(etag, tag_list):
+def getAdjacentElements(id_name, id_name_list):
   """
-  Return (prev, next) etags for the given etag in the list
+  Return (prev, next) IdName entries for the given IdName in the list
   """
   index = 0
-  for entry in tag_list:
-    if entry.getID() == etag.getID():
+  for entry in id_name_list:
+    if entry.getID() == id_name.getID():
       break
     index += 1
 
   prev_entry = None
   next_entry = None
 
-  if index < len(tag_list):
+  if index < len(id_name_list):
     if index > 0:
-      prev_entry = tag_list[index - 1]
-    if index < len(tag_list) - 1:
-      next_entry = tag_list[index + 1]
+      prev_entry = id_name_list[index - 1]
+    if index < len(id_name_list) - 1:
+      next_entry = id_name_list[index + 1]
 
   return (prev_entry, next_entry)
     

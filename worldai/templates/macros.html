@@ -8,3 +8,29 @@
   ];
 </script>
 {% endmacro %}
+
+
+{# Macro for next / prev element navigation #}
+{% macro prev_next_nav(view, world, next, prev) %}
+<div class="rightnav">
+  <ul class="navlist">
+    {% if not next is none %}          
+    <li class="rnavitem">
+      <a class="nava"
+         href="{{ url_for(view, wid=world.id, id=next.getID()) }}">
+        Next: {{ next.getName() }}
+      </a>
+    </li>
+    {% endif %}
+    
+    {% if not prev is none %}
+    <li class="rnavitem">
+      <a class="nava"
+         href="{{ url_for(view, wid=world.id, id=prev.getID()) }}">
+        Prev: {{ prev.getName() }}
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</div>	 
+{% endmacro %}

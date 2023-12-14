@@ -368,7 +368,8 @@ class ChatFunctions:
       result = self.FuncUpdateItem(db, arguments)
       
     elif function_name == "ListSites":
-      result = elements.listSites(db, self.current_world_id)
+      result = [ { "id": entry.getID(), "name": entry.getName() } 
+                 for entry in elements.listSites(db, self.current_world_id) ]
 
     elif function_name == "ReadSite":
       result = self.FuncReadSite(db, arguments)

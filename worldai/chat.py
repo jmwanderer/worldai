@@ -46,7 +46,7 @@ def chat_completion_request(messages, tools=None,
       "https://api.openai.com/v1/chat/completions",
       headers=headers,
       json=json_data,
-      timeout=10,
+      timeout=20,
     )
     return response.json()
   except Exception as e:
@@ -498,12 +498,16 @@ class ChatSession:
     result = {}
     if self.chatFunctions.current_world_id is not None:
       result["wid"] = self.chatFunctions.current_world_id
+      result["element_type"] = elements.ElementType.WorldType()      
     if self.chatFunctions.last_character_id is not None:
-      result["cid"] = self.chatFunctions.last_character_id
+      result["id"] = self.chatFunctions.last_character_id
+      result["element_type"] = elements.ElementType.CharacterType()
     if self.chatFunctions.last_site_id is not None:
-      result["sid"] = self.chatFunctions.last_site_id
+      result["id"] = self.chatFunctions.last_site_id
+      result["element_type"] = elements.ElementType.SiteType()      
     if self.chatFunctions.last_item_id is not None:
-      result["iid"] = self.chatFunctions.last_item_id
+      result["id"] = self.chatFunctions.last_item_id
+      result["element_type"] = elements.ElementType.ItemType()
     return result
   
   def chat_exchange(self, db, user):
