@@ -14,23 +14,31 @@
 {% macro prev_next_nav(view, world, next, prev) %}
 <div class="rightnav">
   <ul class="navlist">
-    {% if not next is none %}          
     <li class="rnavitem">
+      {% if not next is none %}                
       <a class="nava"
          href="{{ url_for(view, wid=world.id, id=next.getID()) }}">
-        Next: {{ next.getName() }}
+        Next
       </a>
+      {% else %}
+      <a class="nava">
+        Next
+      </a>
+      {% endif %}
     </li>
-    {% endif %}
     
-    {% if not prev is none %}
     <li class="rnavitem">
+      {% if not prev is none %}
       <a class="nava"
          href="{{ url_for(view, wid=world.id, id=prev.getID()) }}">
-        Prev: {{ prev.getName() }}
+        Prev
       </a>
+      {% else %}
+      <a class="nava">
+        Prev
+      </a>
+      {% endif %}      
     </li>
-    {% endif %}
   </ul>
 </div>	 
 {% endmacro %}

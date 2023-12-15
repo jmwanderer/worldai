@@ -39,9 +39,6 @@
 <h2>Detail Notes:</h2>
 {{ world.getDetailsHTML() | safe }}
 
-<h2>Plans:</h2>
-{{ world.getPlansHTML() | safe }}
-
 <h2>Main Characters:</h2>
 <ul>
   {% for entry in character_list %}
@@ -77,6 +74,10 @@
   </li>
   {% endfor %}
 </ul>
+
+<h2>Plans:</h2>
+{{ world.getPlansHTML() | safe }}
+
 
 {% elif obj == 'character' %}
 

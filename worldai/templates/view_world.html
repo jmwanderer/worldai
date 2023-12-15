@@ -28,10 +28,6 @@
       <h2>Detail Notes:</h2>
       {{ world.getDetailsHTML() | safe }}
 
-      <h2>Plans:</h2>
-      {{ world.getPlansHTML() | safe }}
-
-
       <h2>Main Characters:</h2>
       <ul>
         {% for entry in character_list %}
@@ -67,8 +63,10 @@
         </li>
         {% endfor %}
       </ul>
-      
-    </div>
+
+      <h2>Plans:</h2>
+      {{ world.getPlansHTML() | safe }}
+  </div>
   </body>
   {% import 'macros.html' as macros %}
   {{ macros.image_urls(world) }}
