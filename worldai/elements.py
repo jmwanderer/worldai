@@ -91,6 +91,13 @@ class ElemTag:
     """
     return self.type
 
+  def jsonStr(self):
+    return json.dumps({
+      "wid": self.world_id,
+      "element_type": self.type,
+      "id": self.id,
+      })
+    
   
 class Element:
   """
@@ -112,6 +119,11 @@ class Element:
 
   def getIdName(self):
     return IdName(self.id, self.name)
+
+  def getElemTag(self):
+    wid = self.parent_id if self.type != ElementType.WORLD else self.id
+    return ElemTag(wid, self.id,
+                   ElementType.typeToName(self.type))
   
   def setProperties(self, properties):
     """
@@ -386,6 +398,10 @@ def getElemTag(db, id):
     wid = id
   return ElemTag(wid, id, ElementType.typeToName(type))
 
+def idNameToElemTag(db, idName):
+  if idName is None:
+    return None
+  return getElemTag(db, idName.getID())
 
 def listWorlds(db):
   """

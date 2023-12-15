@@ -435,7 +435,9 @@ def view_props():
     for (entry) in worlds:
       id = entry.getID()
       world = elements.loadWorld(get_db(), id)
-      world_list.append((id, world.getName(), world.getDescription()))
+      world_list.append((world.getElemTag(),
+                         world.getName(),
+                         world.getDescription()))
     html = flask.render_template("view.html", obj="worlds",
                                  world_list=world_list)
 
@@ -447,12 +449,22 @@ def view_props():
     character = elements.loadCharacter(get_db(), id)
     if character == None:
       return "Character not found", 400
+
+    # Setup next / prev
+    characters = elements.listCharacters(get_db(), world.id)
+    (pc, nc) = elements.getAdjacentElements(character.getIdName(),
+                                            characters)
+    # Change to elemTag
+    pc = elements.idNameToElemTag(get_db(), pc)
+    nc = elements.idNameToElemTag(get_db(), nc)    
+
     for image in character.getImages():
       url = flask.url_for('worldai.get_image', id=image)
       images.append(url)
-   
 
-    html = flask.render_template("view.html", obj="character", world=world,
+    html = flask.render_template("view.html", obj="character",
+                                 world=world,
+                                 next=nc, prev=pc,
                                  character=character)
 
   elif element_type == elements.ElementType.ItemType():
@@ -463,11 +475,22 @@ def view_props():
     item = elements.loadItem(get_db(), id)
     if item == None:
       return "Item not found", 400
+
+    # Setup next / prev
+    items = elements.listItems(get_db(), world.id)
+    (pi, ni) = elements.getAdjacentElements(item.getIdName(),
+                                            items)
+    # Change to elemTag
+    pi = elements.idNameToElemTag(get_db(), pi)
+    ni = elements.idNameToElemTag(get_db(), ni)    
+    
     for image in item.getImages():
       url = flask.url_for('worldai.get_image', id=image)
       images.append(url)
 
-    html = flask.render_template("view.html", obj="item", world=world,
+    html = flask.render_template("view.html", obj="item",
+                                 world=world,
+                                 next=ni, prev=pi,
                                  item=item)
 
   elif element_type == elements.ElementType.SiteType():
@@ -478,11 +501,21 @@ def view_props():
     site = elements.loadSite(get_db(), id)
     if site == None:
       return "Site not found", 400
+
+    # Setup next / prev
+    sites = elements.listSites(get_db(), world.id)
+    (ps, ns) = elements.getAdjacentElements(site.getIdName(),
+                                            sites)
+    # Change to elemTag
+    ps = elements.idNameToElemTag(get_db(), ps)
+    ns = elements.idNameToElemTag(get_db(), ns)    
+    
     for image in site.getImages():
       url = flask.url_for('worldai.get_image', id=image)
       images.append(url)
    
     html = flask.render_template("view.html", obj="site", world=world,
+                                 next=ns, prev=ps,
                                  site=site)
 
   elif element_type == elements.ElementType.WorldType():
@@ -497,7 +530,8 @@ def view_props():
       char_id = entry.getID()
       char_name = entry.getName()
       character = elements.loadCharacter(get_db(), char_id)    
-      char_list.append((char_id, char_name, character.getDescription()))
+      char_list.append((character.getElemTag(), char_name,
+                        character.getDescription()))
 
     items = elements.listItems(get_db(), world.id)
     item_list = []
@@ -505,7 +539,7 @@ def view_props():
       item_id = entry.getID()
       item_name = entry.getName()
       item = elements.loadItem(get_db(), item_id)    
-      item_list.append((item_id, item_name, item.getDescription()))
+      item_list.append((item.getElemTag(), item_name, item.getDescription()))
 
     sites = elements.listSites(get_db(), world.id)
     site_list = []
@@ -513,7 +547,7 @@ def view_props():
       site_id = entry.getID()
       site_name = entry.getName()
       site = elements.loadSite(get_db(), site_id)    
-      site_list.append((site_id, site_name, site.getDescription()))
+      site_list.append((site.getElemTag(), site_name, site.getDescription()))
       
     for image in world.getImages():
       url = flask.url_for('worldai.get_image', id=image)

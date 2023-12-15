@@ -3,6 +3,12 @@ const messages = document.getElementById("messages")
 const user_input = document.getElementById("user")
 const send_button = document.getElementById("send")
 
+function openView(view) {
+    // TODO: reconcile current view on chat exchange.
+    loadContent(view)
+}
+
+
 function addUserMessage(message) {
     messages.innerHTML +=
         '<p><b>You</b><br>' + message + '</p>';

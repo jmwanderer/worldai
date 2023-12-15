@@ -34,3 +34,39 @@
   </ul>
 </div>	 
 {% endmacro %}
+
+
+{# Macro for JS next / prev navigation #}
+{% macro js_element_nav(world, next, prev) %}
+<div class="leftnav">
+  <ul class="navlist">
+    <li class="navitem">
+      <a class="nava" href="#"
+         onclick="openView({{ world.getElemTag().jsonStr() }}); return false;">
+        {{ world.getName() }}
+      </a> 
+  </ul>
+</div>
+
+<div class="rightnav">
+  <ul class="navlist">
+    {% if not next is none %}          
+    <li class="rnavitem">
+      <a href="#" class="nava"
+         onclick="openView({{ next.jsonStr() }}); return false;">        
+        Next
+      </a>
+    </li>
+    {% endif %}
+    
+    {% if not prev is none %}
+    <li class="rnavitem">
+      <a href="#" class="nava"
+         onclick="openView({{ prev.jsonStr() }}); return false;">
+        Prev
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</div>	 
+{% endmacro %}
