@@ -30,10 +30,15 @@ def create_app(instance_path=None):
     SECRET_KEY='DEV',
     AUTH_KEY='auth',    
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY'),    
-    DATABASE=os.path.join(app.instance_path, 'worldai.sqlite'),    
+    DATABASE=os.path.join(app.instance_path, 'worldai.sqlite'),
+    TESTING=False,
   )
   app.config.from_prefixed_env()
   app.config.from_pyfile('config.py', silent=True)
+
+  if app.config["TESTING"]:
+    print("Test mode...")
+    chat.TESTING = True
 
   # Configure logging
   BASE_DIR = os.getcwd()

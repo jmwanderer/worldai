@@ -25,7 +25,11 @@ from . import chat_functions
 GPT_MODEL = "gpt-3.5-turbo-1106"
 # Can be higher, but save $$$ with some potential loss in perf
 MESSAGE_THRESHOLD=3_000
+TESTING = False
 
+TEST_RESPONSE="""
+{"id": "chatcmpl-8VpkBh4MOnvETZRZUphRo0QXk9tdN", "object": "chat.completion", "created": 1702597763, "model": "gpt-3.5-turbo-1106", "choices": [{"index": 0, "message": {"role": "assistant", "content": "Hello! How can I assist you today? If you have any questions or need assistance with world-building, character creation, or storytelling, feel free to ask!"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 2074, "completion_tokens": 33, "total_tokens": 2107}, "system_fingerprint": "fp_f3efa6edfc"}
+"""
 
 @retry(wait=wait_random_exponential(multiplier=1, max=40),
        stop=stop_after_attempt(3))
@@ -42,6 +46,9 @@ def chat_completion_request(messages, tools=None,
     json_data.update({"tool_choice": tool_choice})
 
   try:
+    if TESTING:
+      return json.loads(TEST_RESPONSE)
+    
     response = requests.post(
       "https://api.openai.com/v1/chat/completions",
       headers=headers,

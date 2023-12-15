@@ -1,4 +1,7 @@
 DROP TABLE IF EXISTS elements;
+DROP TABLE IF EXISTS images;
+DROP TABLE IF EXISTS token_usage;
+DROP TABLE IF EXISTS threads;
 
 CREATE TABLE elements (
   id TEXT PRIMARY KEY,

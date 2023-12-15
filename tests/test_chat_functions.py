@@ -13,7 +13,7 @@ class BasicTestCase(unittest.TestCase):
   def setUp(self):
     self.dir_name = os.path.dirname(__file__)
     path = os.path.join(self.dir_name, "../worldai/schema.sql")
-    self.db = sqlite3.connect("file::memory:")
+    self.db = sqlite3.connect(":memory:")
     with open(path) as f:
       self.db.executescript(f.read())
     self.user_dir = tempfile.TemporaryDirectory()

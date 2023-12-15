@@ -1,6 +1,7 @@
 import pytest
 import os
 import tempfile
+import worldai.db_access
 import worldai.server
 
 """
@@ -18,6 +19,13 @@ def app():
   app.config.update({
     "TESTING": True,
     })
+
+  # Populate with test data
+  path = os.path.join(os.path.dirname(__file__), "test_data.sql")
+  db = worldai.db_access.open_db()
+  with open(path) as f:
+    db.executescript(f.read())
+  db.close()
 
   yield app
 

@@ -689,6 +689,16 @@ class ChatFunctions:
   
 
 def image_get_request(prompt, dest_file):
+  # Testing stub. Just copy existing file.
+  if chat.TESTING:
+    self.dir_name = os.path.dirname(__file__)
+    path = os.path.join(self.dir_name, "static/logo.png")
+    with open(dest_file, "wb") as fout:
+      with open(path, "r") as fin:
+        fout.write(fin.read())
+    return True
+
+  # Functional code. Generate image and copy to dest_file.
   headers = {
     "Content-Type": "application/json",
     "Authorization": "Bearer " + openai.api_key,
@@ -698,6 +708,7 @@ def image_get_request(prompt, dest_file):
                "prompt": prompt }
   try:
     logging.info("post: %s", prompt)
+
     response = requests.post(
       "https://api.openai.com/v1/images/generations",
       headers=headers,
@@ -716,6 +727,7 @@ def image_get_request(prompt, dest_file):
     with open(dest_file, "wb") as f:
       response.raw.decode_content = True
       # Probably uses more memory than necessary
+      # TODO: make more efficient
       f.write(response.raw.read())
     return True
       
