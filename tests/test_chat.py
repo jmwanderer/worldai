@@ -160,6 +160,7 @@ class BasicChatTestCase(unittest.TestCase):
   def setUp(self):
     # Stub out the user input, completion request, and exec fuc routines
     self.request_count = 0
+    os.environ['OPENAI_API_KEY'] = "dummy key"    
 
     def chat_completion_request(messages, tools=None, tool_choice=None):
       # Return:
@@ -206,7 +207,8 @@ class ExtendedChatTestCase(unittest.TestCase):
     # Stub out the user input, completion request, and exec fuc routines
     self.msg_index = 0
     self.max_token_count = 0
-    self.encoder = tiktoken.encoding_for_model(chat.GPT_MODEL)        
+    self.encoder = tiktoken.encoding_for_model(chat.GPT_MODEL)
+    os.environ['OPENAI_API_KEY'] = "dummy key"
 
     def get_user_input():
       if self.msg_index == len(msg_thread):

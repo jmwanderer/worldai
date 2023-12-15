@@ -20,7 +20,7 @@ from . import chat
 from . import chat_functions
 
 
-def create_app(instance_path=None):
+def create_app(instance_path=None, test_config=None):
   if instance_path is None:
     app = Flask(__name__, instance_relative_config=True)
   else:
@@ -33,8 +33,11 @@ def create_app(instance_path=None):
     DATABASE=os.path.join(app.instance_path, 'worldai.sqlite'),
     TESTING=False,
   )
-  app.config.from_prefixed_env()
-  app.config.from_pyfile('config.py', silent=True)
+  if test_config is None:
+    app.config.from_prefixed_env()
+    app.config.from_pyfile('config.py', silent=True)
+  else:
+    app.config.from_mapping(test_config)
 
   if app.config["TESTING"]:
     print("Test mode...")

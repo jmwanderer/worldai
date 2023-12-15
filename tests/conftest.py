@@ -14,13 +14,15 @@ Test fixtures for WorldAI
 @pytest.fixture()
 def app():
   instance_path = tempfile.TemporaryDirectory()  
-  
-  app = worldai.server.create_app(instance_path=instance_path.name)
-  app.config.update({
-    "TESTING": True,
-    })
 
-  # Populate with test data
+  test_config = {
+    "TESTING": True,
+    "OPENAI_API_KEY": "dummy key",
+  }
+  app = worldai.server.create_app(instance_path=instance_path.name,
+                                  test_config=test_config)
+
+  # Populate DB with test data
   path = os.path.join(os.path.dirname(__file__), "test_data.sql")
   db = worldai.db_access.open_db()
   with open(path) as f:

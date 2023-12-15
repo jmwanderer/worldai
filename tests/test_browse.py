@@ -1,8 +1,6 @@
 """
 Test the basics in the HTML interface.
-TODO:
- - add create world, test access to world
- - same with character, site, item
+- Assumed a popualted database with specific IDs.
 """
 
 
