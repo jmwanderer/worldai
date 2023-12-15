@@ -70,7 +70,9 @@ class ElemTag:
   """
   Contains the ID, type, and World ID of an element.
   Represents an informat set used between the client an server.
-  (Wolrd ID and type can be looked up from the ID)
+  (World ID and type can be looked up from the ID)
+
+  The type field is the readable string, useful for GPT use.
   """
   def __init__(self, wid, id, element_type):
     self.world_id = wid;    
@@ -84,6 +86,9 @@ class ElemTag:
     return self.world_id
 
   def getType(self):
+    """
+    Return the type as a string
+    """
     return self.type
 
   
@@ -363,6 +368,24 @@ def listImages(db, parent_id):
                     "prompt": prompt,
                     "filename": filename })
   return result
+
+
+def getElemTag(db, id):
+  """
+  Build an element tag from an id.
+  Return null if not found
+  """
+  q = db.execute("SELECT parent_id, type from ELEMENTS where id = ?",
+                 (id,))
+  r = q.fetchone()
+  if r is None:
+      return None
+  wid = r[0]
+  type = r[1]
+  if type == ElementType.WORLD:
+    wid = id
+  return ElemTag(wid, id, ElementType.typeToName(type))
+
 
 def listWorlds(db):
   """

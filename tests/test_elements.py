@@ -59,6 +59,11 @@ class BasicTestCase(unittest.TestCase):
     world1 = elements.createWorld(self.db, world)
     self.assertIsNotNone(world)
 
+    tag = elements.getElemTag(self.db, world.id)
+    self.assertEqual(tag.getID(), world.id)
+    self.assertEqual(tag.getWorldID(), world.id)
+    self.assertEqual(tag.getType(), elements.ElementType.WorldType())
+
     # Create world
     world = elements.World()
     world.setName("w2")
@@ -81,6 +86,12 @@ class BasicTestCase(unittest.TestCase):
     character.updateProperties({ elements.PROP_DETAILS: "my details"})
     character = elements.createCharacter(self.db, character)
     self.assertIsNotNone(character)
+
+    tag = elements.getElemTag(self.db, character.id)
+    self.assertEqual(tag.getID(), character.id)
+    self.assertEqual(tag.getWorldID(), world1.id)
+    self.assertEqual(tag.getType(), elements.ElementType.CharacterType())
+    
 
     # Create character    
     character = elements.Character(world1.id)
