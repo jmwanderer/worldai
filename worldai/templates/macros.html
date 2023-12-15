@@ -50,23 +50,31 @@
 
 <div class="rightnav">
   <ul class="navlist">
-    {% if not next is none %}          
     <li class="rnavitem">
+      {% if not next is none %}          
       <a href="#" class="nava"
          onclick="openView({{ next.jsonStr() }}); return false;">        
         Next
       </a>
+      {% else %}
+      <a class="nava">
+        Next
+      </a>
+      {% endif %}      
     </li>
-    {% endif %}
-    
-    {% if not prev is none %}
+
     <li class="rnavitem">
+      {% if not prev is none %}
       <a href="#" class="nava"
          onclick="openView({{ prev.jsonStr() }}); return false;">
         Prev
       </a>
+      {% else %}
+      <a class="nava">
+        Prev
+      </a>
+      {% endif %}      
     </li>
-    {% endif %}
   </ul>
 </div>	 
 {% endmacro %}

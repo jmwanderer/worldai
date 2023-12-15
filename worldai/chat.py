@@ -499,6 +499,14 @@ class ChatSession:
           chat_functions.STATE_CHARACTERS):
       if not self.history.hasToolCall("ListCharacters", {}):
         tool_func = "ListCharacters"
+    elif (self.chatFunctions.current_state ==
+          chat_functions.STATE_ITEMS):
+      if not self.history.hasToolCall("ListItems", {}):
+        tool_func = "ListItems"
+    elif (self.chatFunctions.current_state ==
+          chat_functions.STATE_SITES):
+      if not self.history.hasToolCall("ListSites", {}):
+        tool_func = "ListSites"
 
     if tool_func is not None:
       return { "type": "function",

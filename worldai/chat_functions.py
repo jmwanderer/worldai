@@ -208,7 +208,7 @@ Use information in the world details to guide character creation and design.
 
 Before creating a new character, check if it already exists by calling the ListCharacters function.
 
-You can create an image for the character with CreateCharacterImage, using information from the character description and details in the.
+Create images for the character with CreateCharacterImage. Make a long prompt using the character description and details.
 
 Save detailed information about the character in character details.
 
@@ -229,7 +229,7 @@ Use information in the world details to guide item creation and design.
 
 Before creating a new item, check if it already exists by calling the ListItems function.
 
-You can create an image for the item with CreateItemImage, using information from the item description and details in the prompt.
+Create images for the item with CreateItemImage. Make a long prompt using the item description and details.
 
 Save detailed information about the item in item details.
 
@@ -250,7 +250,8 @@ Use information in the world details to guide site creation and design.
 
 Before creating a new site, check if it already exists by calling the ListSites function.
 
-You can create an image for the site with CreateSiteImage, using information from the item description and details in the prompt.
+Create images for the site with CreateSiteImage. Make a long prompt using the site description and details.
+
 
 Save detailed information about the site in site details.
 
@@ -575,7 +576,8 @@ class ChatFunctions:
     character.updateProperties(arguments)
     # TODO: check name collision
     elements.updateCharacter(db, character)
-    self.modified = True      
+    self.modified = True
+    self.last_character_id  = character.id    
     status = self.funcStatus("Updated character")
     status["id"] = id
     return status
@@ -622,7 +624,8 @@ class ChatFunctions:
     item.updateProperties(arguments)
     # TODO: check name collision
     elements.updateItem(db, item)
-    self.modified = True      
+    self.modified = True
+    self.last_item_id  = item.id    
     status = self.funcStatus("Updated item")
     status["id"] = id
     return status
@@ -669,6 +672,7 @@ class ChatFunctions:
     site.updateProperties(arguments)
     # TODO: check name collision
     elements.updateSite(db, site)
+    self.last_site_id  = site.id    
     self.modified = True      
     status = self.funcStatus("Updated site")
     status["id"] = id
