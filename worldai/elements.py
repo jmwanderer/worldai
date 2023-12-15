@@ -148,7 +148,7 @@ class Element:
   def getProperty(self, name):
     if name == PROP_NAME:
       return self.name
-    return self.properties.get(name, None)
+    return self.properties.get(name, "")
   
   def setProperty(self, name, value):
     if name == PROP_NAME:

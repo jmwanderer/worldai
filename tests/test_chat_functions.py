@@ -100,6 +100,13 @@ class BasicTestCase(unittest.TestCase):
     values = self.callFunction('ReadWorld', '{ "id": "%s" }' % id1)
     self.assertEqual(values["details"], "details")
 
+    # Test setting and getting plans
+    values = self.callFunction('ReadWorldPlans','{ "id": "%s" }' % id1)
+    self.assertEqual(values[elements.PROP_PLANS], "")
+    self.callFunction('UpdateWorldPlans','{ "plans": "my plans" }')
+    values = self.callFunction('ReadWorldPlans','{ "id": "%s" }' % id1)    
+    self.assertEqual(values[elements.PROP_PLANS], "my plans")
+    
     
   def test_exec_calls_characters(self):
     # Create a world for the characters
