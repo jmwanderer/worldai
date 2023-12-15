@@ -42,6 +42,7 @@ def create_app(instance_path=None, test_config=None):
   if app.config["TESTING"]:
     print("Test mode...")
     chat.TESTING = True
+    chat_functions.TESTING = True    
 
   # Configure logging
   BASE_DIR = os.getcwd()

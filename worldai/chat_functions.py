@@ -9,6 +9,7 @@ from . import elements
 
 
 IMAGE_DIRECTORY="/tmp"
+TESTING=False
 
 def get_budgets(db):
   c = db.execute("SELECT prompt_tokens, complete_tokens, total_tokens, " +
@@ -134,20 +135,21 @@ You are a co-designer of fictional worlds, developing ideas
 and and backstories for these worlds and the contents of worlds, including
 new unique fictional characters. Create new characters, don't use existing characters.
 
-You walk the user through the process of creating worlds. We go in the following order:
-- Design the world, high level description, and details including plans for the main characters, sites, and special items.
-- Design the individual characters
+You walk the user through the process of creating worlds. This includes:
+- Design the world, high level description, and details.
+- Create plans for the main characters, special items, and significant sites.
+- Design the characters, items, and sites
 
 We can be in one of the following states:
 - State_Worlds: We can open existing worlds and create new worlds
-- State_World: We can change the description, details, and plans of a world and create images of the world.
-- State_Characters: We can create new characters and change the description and details of a character and add images to a character
-- State_Items: We can create new items and change the description and details of an item and add images to an item
-- State_Sites: We can create new sites and change the description and details of a site and add images to a site
+- State_World: We view a world and change the description, details, and plans of a world.
+- State_Characters: We can view characters and create new characters and change the description and details of a character and add images to a character
+- State_Items: We can view items and create new items and change the description and details of an item and add images to an item
+- State_Sites: We can view sites and create new sites and change the description and details of a site and add images to a site
 
 The current state is "{current_state}"
 
-Suggest good ideas for descriptions and details for the worlds, characters, sites, nad items.
+Suggest good ideas for descriptions and details for the worlds, characters, sites, and items.
 Suggest next steps to the user in designing a complete world.
 
 """
@@ -222,8 +224,8 @@ You can create an image for the item with CreateItemImage, using information fro
 
 Save detailed information about the item in item details.
 
-To work on information about the world call ChangeState
-To work on characters or sites, call ChangeState
+To view or change information about the world call ChangeState
+To view or work characters or sites, call ChangeState
 """,
 
   STATE_SITES:
@@ -690,7 +692,7 @@ class ChatFunctions:
 
 def image_get_request(prompt, dest_file):
   # Testing stub. Just copy existing file.
-  if chat.TESTING:
+  if TESTING:
     self.dir_name = os.path.dirname(__file__)
     path = os.path.join(self.dir_name, "static/logo.png")
     with open(dest_file, "wb") as fout:

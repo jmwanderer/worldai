@@ -98,6 +98,25 @@ def print_log(value):
   print(value)
   logging.info(value)
 
+
+def log_chat_message(messages, assistant_message):
+  """
+  If enabled, write a timestamped file with messages
+  """
+  dir = os.path.join(chat_functions.IMAGE_DIRECTORY, "messages")
+  if not os.path.exists(dir):
+    os.makedirs(dir)
+
+  out = { "message": messages,
+          "assistant": assistant_message }
+  ts = time.time()
+  filename = f"message.{ts}.txt"
+  path = os.path.join(dir, filename)
+  f = open(path, "w")
+  f.write(json.dumps(out, indent=4))
+  f.close()
+
+  
 class MessageSetRecord:
   """
   Records a request / response message.
@@ -568,10 +587,17 @@ class ChatSession:
                           usage["total_tokens"])
         print_log("prompt tokens: %s" % usage["prompt_tokens"])
       else:
-        logging.error("no usage in response: %s" % json.dumps(response))
+        logging.error("no usage in response")
 
       # Process resulting message
-      assistant_message = response["choices"][0]["message"]    
+      # TODO: handle error messages.
+      if response.get("choices") is not None:
+        assistant_message = response["choices"][0]["message"]
+        log_chat_message(messages, assistant_message)        
+
+      elif response.get("error"):
+        log_chat_message(messages, response["error"])
+      
       tool_calls = assistant_message.get("tool_calls")
 
       if tool_calls: 
