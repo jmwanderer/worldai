@@ -799,7 +799,12 @@ all_functions = [
           "type": "string",
           "description": "The new state",
         },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for world intance.",
+        },
       },
+      "required": [ "state" ]            
     },
   },
   

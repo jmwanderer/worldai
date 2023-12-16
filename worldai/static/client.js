@@ -3,8 +3,11 @@ const messages = document.getElementById("messages")
 const user_input = document.getElementById("user")
 const send_button = document.getElementById("send")
 
+// A server side key defining the object in view
+current_view = null;
+
 function openView(view) {
-    // TODO: reconcile current view on chat exchange.
+    current_view = view
     loadContent(view)
 }
 
@@ -21,9 +24,6 @@ function addAssistantMessage(message) {
 
 // True if chat message is outstanding
 in_progress = false;
-
-// A server side key defining the object in view
-current_view = null;
 
 // Does the initial setup of the chat contents and
 // the curent object view
@@ -78,10 +78,13 @@ const postAction = async() => {
     send_button.disbled = true;
     addUserMessage(text);
     messages.scrollTop = messages.scrollHeight;
+
+    data = { "user": text,
+             "view": current_view }
     
     const response = await fetch(url, {
         method: 'POST',
-        body: '{ "user": "' + text + '"}',
+        body: JSON.stringify(data),
         headers: {
             'Content-Type': 'application/json',
             "Authorization": bearer_token            

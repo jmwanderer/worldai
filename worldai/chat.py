@@ -553,16 +553,18 @@ class ChatSession:
     self.chatFunctions.clearChanges()
     self.history.addRequestMessage(self.enc,
                                    {"role": "user", "content": user})
-
-    logging.info(f"world: {self.chatFunctions.current_world_id}")
-    logging.info(f"character: {self.chatFunctions.last_character_id}")
-
     call_count = 0
     done = False
     while not done:
+      logging.info(f"state: {self.chatFunctions.current_state}")
+      logging.info(f"world: {self.chatFunctions.current_world_id}")
+      logging.info(f"character: {self.chatFunctions.last_character_id}")
+      logging.info(f"item: {self.chatFunctions.last_item_id}")
+      logging.info(f"site: {self.chatFunctions.last_site_id}")    
+      
       messages = self.BuildMessages(self.history)
       tool_choice = self.checkToolChoice()
-      logging.info(f"state: {self.chatFunctions.current_state}")      
+
       call_count += 1
       print_log(f"[{call_count}]: Chat completion call...")
       # Limit tools call to 5

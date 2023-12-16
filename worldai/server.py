@@ -392,6 +392,8 @@ def chat_api(session_id):
   else:
     if request.json.get("user") is not None:
       user_msg = request.json.get("user")
+      view = request.json.get("view")
+      print(view)
       message = chat_session.chat_exchange(get_db(), user_msg)
       content = {
         "assistant": chat_functions.parseResponseText(message['content']),
@@ -422,9 +424,6 @@ def view_props():
   wid = request.json.get("wid")
   element_type = request.json.get("element_type")
   id = request.json.get("id")
-  print(f"wid {wid}")
-  print(f"element_type {element_type}")
-  print(f"id {id}")
   
   images = []
 
