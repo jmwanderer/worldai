@@ -77,7 +77,7 @@ class ElemTag:
   def __init__(self, wid=None, id=None, element_type=ElementType.NONE):
     self.world_id = wid;    
     self.id = id;
-    self.type = element_type
+    self.element_type = element_type
 
   def getID(self):
     return self.id
@@ -89,7 +89,7 @@ class ElemTag:
     """
     Return the type as a string
     """
-    return self.type
+    return self.element_type
 
   def noElement(self):
     return self.world_id is None
@@ -100,12 +100,23 @@ class ElemTag:
 
     return {
       "wid": self.world_id,
-      "element_type": self.type,
+      "element_type": self.element_type,
       "id": self.id,
     }
     
   def jsonStr(self):
-    return json.dumps(self.json())
+    tag = self.json()
+    return json.dumps(tag)
+
+  def WorldTag(world_id):
+    return ElemTag(world_id, world_id, ElementType.WorldType())
+
+  def JsonTag(tag):
+    if tag is None:
+      return None
+    if tag.get("wid") is None:
+      return ElemTag()
+    return ElemTag(tag["wid"], tag["id"], tag["element_type"])
     
   
 class Element:

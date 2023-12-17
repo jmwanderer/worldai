@@ -460,9 +460,15 @@ class ChatSession:
     current_instructions = chat_functions.GLOBAL_INSTRUCTIONS.format(
       current_state=self.chatFunctions.current_state)
 
+
+
     history.setSystemMessage({"role": "system",
-                              "content": current_instructions + "\n" +
-                              self.chatFunctions.get_state_instructions() })
+                              "content": current_instructions +
+                              "\n" +
+                              self.chatFunctions.get_state_instructions() +
+                              "\n" +
+                              self.chatFunctions.get_view_instructions()
+                              })
 
     functions = self.chatFunctions.get_available_tools()
     history.setFunctions(self.enc, functions)
@@ -492,6 +498,13 @@ class ChatSession:
     to make decisions.
     """
     tool_func = None
+
+    # Check the current view vs the next view
+    # 1. If world id does not match
+    #  1a. If not STATE_WORLDS .
+
+
+    # Check if the proper list is loaded for the current state.
     if self.chatFunctions.current_state == chat_functions.STATE_WORLDS:
       if not self.history.hasToolCall("ListWorlds", {}):
         tool_func = "ListWorlds"
@@ -531,8 +544,32 @@ class ChatSession:
   def get_view(self):
     return self.chatFunctions.current_view.json()
 
-  def set_view(self, view):
-    self.chatFunctions.next_view = view
+  def set_view(self, next_view):
+    """
+    Set the target view.
+    If same as current, this is a NO-OP
+    If not, will leave the current state in WORLDS or WORLD
+    """
+    next_view = elements.ElemTag.JsonTag(next_view)
+    if next_view is None or next_view == self.chatFunctions.current_view:
+      # View already matches
+      self.chatFunctions.next_view = None
+      return
+    
+    self.chatFunctions.next_view = next_view
+    world_id = self.chatFunctions.current_view.getWorldID()
+    
+    if next_view.getWorldID() != world_id:
+      # If the worlds do not match, change state and reset the view.      
+      self.chatFunctions.current_state = chat_functions.STATE_WORLDS
+      self.chatFunctions.current_world_name = None
+      self.chatFunctions.current_view = elements.ElemTag()
+
+    elif self.chatFunctions.current_view.getType() != next_view.getType():
+      # If current types don't match, reset state and view to WORLD
+      self.chatFunctions.current_state = chat_functions.STATE_WORLD
+      self.chatFunctions.current_view = elements.ElemTag.WorldTag(world_id)
+    
   
   def chat_exchange(self, db, user):
     function_call = False
@@ -553,10 +590,10 @@ class ChatSession:
       messages = self.BuildMessages(self.history)
       tool_choice = self.checkToolChoice()
 
-      call_count += 1
       print_log(f"[{call_count}]: Chat completion call...")
-      # Limit tools call to 5
-      if call_count < 6:
+      # Limit tools call to 10
+      if call_count < 10:
+        call_count += 1
         tools=self.chatFunctions.get_available_tools()
       else:
         tools = None

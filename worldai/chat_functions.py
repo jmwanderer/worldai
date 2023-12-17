@@ -115,6 +115,18 @@ STATE_CHARACTERS = "State_Characters"
 STATE_ITEMS = "State_Items"
 STATE_SITES = "State_Sites"
 
+def elemTypeToState(element_type):
+  if element_type == elements.ElementType.WORLD:
+    return STATE_WORLD
+  elif element_type == elements.ElementType.CHARACTER:
+    return STATE_CHARACTERS    
+  elif element_type == elements.ElementType.ITEM:
+    return STATE_ITEMS    
+  elif element_type == elements.ElementType.SITE:
+    return STATE_SITE
+  return STATE_WORLDS
+
+
 states = {
   STATE_WORLDS: [ "ListWorlds", "ReadWorld", "CreateWorld" ],
   STATE_WORLD: [ "UpdateWorld", "ReadWorld",
@@ -261,6 +273,7 @@ To work on characters or items, call ChangeState
 
 }
 
+
 def checkDuplication(name, element_list):
   """
   Check for any collisions between name and existing list
@@ -314,6 +327,26 @@ class ChatFunctions:
     value = instructions[self.current_state].format(
       current_world_name = self.current_world_name)
     return value
+
+  def get_view_instructions(self):
+    """
+    Generate instructions to help get the current view to the next view.
+    """
+    if self.next_view is None:
+      return ""
+    
+    # Consider reading a world
+    if self.current_view.getWorldID() != self.next_view.getWorldID():
+      return f"Load the world '{self.next_view.getWorldID()}'"
+    # Consider changing state
+    if self.current_view.getType() != self.next_view.getType():
+      state = elemTypeToState(self.next_view.getType())
+      return f"Change state to '{state}'"
+    # Consider loading an element
+    if self.current_view.getID() != self.next_view.getID():
+      return f"Load element '{self.next_view.getID()}'"
+    return ""
+    
 
   def get_available_tools(self):
     return self.get_available_tools_for_state(self.current_state)
@@ -417,9 +450,7 @@ class ChatFunctions:
       self.current_view = elements.ElemTag()
       self.current_world_name = None
     elif self.current_state == STATE_WORLD:
-      self.current_view = elements.ElemTag(self.getCurrentWorldID(),
-                                           self.getCurrentWorldID(),
-                                           elements.ElementType.WorldType())                           
+      self.current_view = elements.ElemTag.WorldTag(self.getCurrentWorldID())
     return result
 
   
