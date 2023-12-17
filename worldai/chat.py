@@ -422,8 +422,9 @@ class ChatSession:
     self.chatFunctions = pickle.load(f)
     if not hasattr(self.chatFunctions, "current_view"):
       self.chatFunctions.current_view = elements.ElemTag(self.chatFunctions.current_world_id,
-                                                         elements.ElementType.WORLD,
-                                                         self.chatFunctions.current_world_id)
+                                                         
+                                                         self.chatFunctions.current_world_id,
+                                                         elements.ElementType.WORLD)
 
   def save(self, f):
     pickle.dump(self.prompt_tokens, f)
@@ -533,20 +534,7 @@ class ChatSession:
   
 
   def get_view(self):
-    result = {}
-    if self.chatFunctions.getCurrentWorldID() is not None:
-      result["wid"] = self.chatFunctions.getCurrentWorldID()
-      result["element_type"] = elements.ElementType.WorldType()      
-    if self.chatFunctions.last_character_id is not None:
-      result["id"] = self.chatFunctions.last_character_id
-      result["element_type"] = elements.ElementType.CharacterType()
-    if self.chatFunctions.last_site_id is not None:
-      result["id"] = self.chatFunctions.last_site_id
-      result["element_type"] = elements.ElementType.SiteType()      
-    if self.chatFunctions.last_item_id is not None:
-      result["id"] = self.chatFunctions.last_item_id
-      result["element_type"] = elements.ElementType.ItemType()
-    return result
+    return self.chatFunctions.current_view.json()
 
   def set_view(self, view):
     self.chatFunctions.next_view = view
@@ -564,10 +552,7 @@ class ChatSession:
     done = False
     while not done:
       logging.info(f"state: {self.chatFunctions.current_state}")
-      logging.info(f"world: {self.chatFunctions.getCurrentWorldID()}")
-      logging.info(f"character: {self.chatFunctions.last_character_id}")
-      logging.info(f"item: {self.chatFunctions.last_item_id}")
-      logging.info(f"site: {self.chatFunctions.last_site_id}")    
+      logging.info("current view: ", self.chatFunctions.current_view.jsonStr())
       
       messages = self.BuildMessages(self.history)
       tool_choice = self.checkToolChoice()

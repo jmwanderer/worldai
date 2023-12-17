@@ -289,13 +289,10 @@ class ChatFunctions:
   def __init__(self):
     self.current_state = STATE_WORLDS
     self.current_world_name = None
-    self.last_character_id = None
-    self.last_item_id = None    
-    self.last_site_id = None
     self.modified = False
 
     # Tracks current world, current element
-    self.current_view = None
+    self.current_view = elements.ElemTag()
     
     # An ElemTag that describes a view we need to change into.
     # This happens when the user changes the view in the UI.
@@ -304,8 +301,7 @@ class ChatFunctions:
 
 
   def getCurrentWorldID(self):
-    if self.current_view is None:
-      return None
+    # May return None
     return self.current_view.getWorldID()
   
   def madeChanges(self):
@@ -417,17 +413,13 @@ class ChatFunctions:
           function_name == "CreateSiteImage"):          
       result = self.FuncCreateImage(db, arguments)
 
-    if self.current_state != STATE_CHARACTERS:
-      self.last_character_id = None
-    if self.current_state != STATE_ITEMS:
-      self.last_item_id = None
-    if self.current_state != STATE_SITES:
-      self.last_site_id = None
-
     if self.current_state == STATE_WORLDS:
-      self.current_view = None
+      self.current_view = elements.ElemTag()
       self.current_world_name = None
-      
+    elif self.current_state == STATE_WORLD:
+      self.current_view = elements.ElemTag(self.getCurrentWorldID(),
+                                           elements.ElementType.WORLD,
+                                           self.getCurrentWorldID())
     return result
 
   
@@ -444,7 +436,7 @@ class ChatFunctions:
 
     # Check is state is legal
     if ((state == STATE_WORLD or
-         state == STATE_CHARACTERS) and self.current_view is None):
+         state == STATE_CHARACTERS) and self.current_view.noElement()):
       return self.funcError(f"Must read or create a world for {state}")
     self.current_state = state
 
@@ -560,7 +552,7 @@ class ChatFunctions:
                   "has_image": character.hasImage(),                   
                  }
       self.current_state = STATE_CHARACTERS
-      self.last_character_id  = character.id
+      self.current_view  = character.getElemTag()
     else:
       return self.funcError(f"no character '{id}'")
     return content
@@ -576,7 +568,7 @@ class ChatFunctions:
 
     character.updateProperties(arguments)    
     character = elements.createCharacter(db, character)
-    self.last_character_id  = character.id
+    self.current_view  = character.getElemTag()
     self.current_state = STATE_CHARACTERS   
     status = self.funcStatus("Created character")
     status["id"] = character.id
@@ -591,7 +583,7 @@ class ChatFunctions:
     # TODO: check name collision
     elements.updateCharacter(db, character)
     self.modified = True
-    self.last_character_id  = character.id    
+    self.current_view  = character.getElemTag()
     status = self.funcStatus("Updated character")
     status["id"] = id
     return status
@@ -608,7 +600,7 @@ class ChatFunctions:
                   "has_image": item.hasImage(),                  
                  }
       self.current_state = STATE_ITEMS
-      self.last_item_id  = item.id
+      self.current_view = item.getElemTag()
     else:
       return self.funcError(f"no item '{id}'")
     return content
@@ -624,7 +616,7 @@ class ChatFunctions:
 
     item.updateProperties(arguments)    
     item = elements.createItem(db, item)
-    self.last_item_id  = item.id
+    self.current_view  = item.getElemTag()
     self.current_state = STATE_ITEMS   
     status = self.funcStatus("Created item")
     status["id"] = item.id
@@ -639,7 +631,7 @@ class ChatFunctions:
     # TODO: check name collision
     elements.updateItem(db, item)
     self.modified = True
-    self.last_item_id  = item.id    
+    self.current_view  = item.getElemTag()
     status = self.funcStatus("Updated item")
     status["id"] = id
     return status
@@ -656,7 +648,7 @@ class ChatFunctions:
                   "has_image": site.hasImage(),
                  }
       self.current_state = STATE_SITES
-      self.last_site_id  = site.id
+      self.current_view  = site.getElemTag()
     else:
       return self.funcError(f"no site '{id}'")
     return content
@@ -672,7 +664,7 @@ class ChatFunctions:
 
     site.updateProperties(arguments)    
     site = elements.createSite(db, site)
-    self.last_site_id  = site.id
+    self.current_view  = site.getElemTag()
     self.current_state = STATE_SITES   
     status = self.funcStatus("Created site")
     status["id"] = site.id
@@ -686,7 +678,7 @@ class ChatFunctions:
     site.updateProperties(arguments)
     # TODO: check name collision
     elements.updateSite(db, site)
-    self.last_site_id  = site.id    
+    self.current_view  = site.getElemTag()
     self.modified = True      
     status = self.funcStatus("Updated site")
     status["id"] = id
@@ -708,7 +700,7 @@ class ChatFunctions:
         return self.funcError(f"no character '{id}'")
         
       image.setParentId(id)
-      self.last_character_id = id
+      self.current_view = character.getElemTag()
     elif self.current_state == STATE_ITEMS:
       id = arguments["id"]
       item = elements.loadItem(db, id)
@@ -716,7 +708,7 @@ class ChatFunctions:
         return self.funcError(f"no item '{id}'")
         
       image.setParentId(id)
-      self.last_item_id = id
+      self.current_view = item.getElemTag()
       
     elif self.current_state == STATE_SITES:
       id = arguments["id"]
@@ -725,7 +717,7 @@ class ChatFunctions:
         return self.funcError(f"no site '{id}'")
         
       image.setParentId(id)
-      self.last_site_id = id
+      self.current_view = site.getElemTag()
 
     else:
       image.setParentId(self.getCurrentWorldID())

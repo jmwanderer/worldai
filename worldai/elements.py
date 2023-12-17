@@ -74,7 +74,7 @@ class ElemTag:
 
   The type field is the readable string, useful for GPT use.
   """
-  def __init__(self, wid, id, element_type):
+  def __init__(self, wid=None, id=None, element_type=ElementType.NONE):
     self.world_id = wid;    
     self.id = id;
     self.type = element_type
@@ -91,12 +91,21 @@ class ElemTag:
     """
     return self.type
 
-  def jsonStr(self):
-    return json.dumps({
+  def noElement(self):
+    return self.world_id is None
+
+  def json(self):
+    if self.world_id is None:
+      return {}
+
+    return {
       "wid": self.world_id,
       "element_type": self.type,
       "id": self.id,
-      })
+    }
+    
+  def jsonStr(self):
+    return json.dumps(self.json())
     
   
 class Element:
