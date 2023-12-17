@@ -116,14 +116,14 @@ STATE_ITEMS = "State_Items"
 STATE_SITES = "State_Sites"
 
 def elemTypeToState(element_type):
-  if element_type == elements.ElementType.WORLD:
+  if element_type == elements.ElementType.WorldType():
     return STATE_WORLD
-  elif element_type == elements.ElementType.CHARACTER:
+  elif element_type == elements.ElementType.CharacterType():
     return STATE_CHARACTERS    
-  elif element_type == elements.ElementType.ITEM:
+  elif element_type == elements.ElementType.ItemType():
     return STATE_ITEMS    
-  elif element_type == elements.ElementType.SITE:
-    return STATE_SITE
+  elif element_type == elements.ElementType.SiteType():
+    return STATE_SITES
   return STATE_WORLDS
 
 
@@ -131,7 +131,9 @@ states = {
   STATE_WORLDS: [ "ListWorlds", "ReadWorld", "CreateWorld" ],
   STATE_WORLD: [ "UpdateWorld", "ReadWorld",
                  "ReadWorldPlans", "UpdateWorldPlans",
-                 "CreateWorldImage", "ChangeState" ],
+                 "CreateWorldImage",
+                 "ReadCharacter", "ReadItem", "ReadSite",
+                 "ChangeState", ],
   STATE_CHARACTERS: [ "ListCharacters", "ReadCharacter",
                       "CreateCharacter", "UpdateCharacter",
                       "ReadWorldPlans", 
@@ -504,17 +506,17 @@ class ChatFunctions:
     population = []
     population.append("Existing Characters:\n")
     for character in elements.listCharacters(db, world.id):
-      population.append(f"- {character.getName()}")
+      population.append(f"- {character.getID()}: {character.getName()}")
     population.append("")
 
     population.append("Existing Items:\n")        
     for item in elements.listItems(db, world.id):
-      population.append(f"- {item.getName()}")
+      population.append(f"- {item.getID()}: {item.getName()}")
     population.append("")
     
     population.append("Existing Sites:\n")        
     for site in elements.listSites(db, world.id):
-      population.append(f"- {site.getName()}")
+      population.append(f"- {site.getID()}: {site.getName()}")
 
     content["elements"] = "\n".join(population)
 

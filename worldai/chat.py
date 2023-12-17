@@ -556,6 +556,43 @@ class ChatSession:
     self.chatFunctions.next_view = next_view
     # TODO: do something with this
     
+
+  def chat_message(self, db, user):
+    if not self.chatFunctions.next_view.noElement():
+      # TODO: handle failure
+      next_view = self.chatFunctions.next_view
+      current_view = self.chatFunctions.current_view
+      
+      if next_view.getWorldID() != current_view.getWorldID():
+        world = elements.loadWorld(db, next_view.getWorldID())
+        message = "Read world '%s'" % world.getName()
+        self.chat_exchange(db, message)
+
+      # Refresh current_view, may have changed
+      current_view = self.chatFunctions.current_view
+      new_state = chat_functions.elemTypeToState(next_view.getType())
+        
+      if next_view.getID() != current_view.getID():
+        message = None
+        if next_view.getType() == elements.ElementType.CharacterType():
+          character = elements.loadCharacter(db, next_view.getID())
+          message = "Read character '%s'" % character.getName()          
+
+        elif next_view.getType() == elements.ElementType.ItemType():
+          item = elements.loadItem(db, next_view.getID())
+          message = "Read item '%s'" % item.getName()
+
+        elif next_view.getType() == elements.ElementType.SiteType():
+          site = elements.loadSite(db, next_view.getID())
+          message = "Read site '%s'" % site.getName()
+
+        self.chatFunctions.current_state = new_state
+        if message is not None:
+          self.chat_exchange(db, message)
+      self.chatFunctions.next_view = elements.ElemTag()
+        
+    return self.chat_exchange(db, user)
+
   
   def chat_exchange(self, db, user):
     function_call = False
