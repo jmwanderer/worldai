@@ -420,6 +420,10 @@ class ChatSession:
     self.total_tokens = pickle.load(f)
     self.history = pickle.load(f)
     self.chatFunctions = pickle.load(f)
+    if not hasattr(self.chatFunctions, "current_view"):
+      self.chatFunctions.current_view = elements.ElemTag(self.chatFunctions.current_world_id,
+                                                         elements.ElementType.WORLD,
+                                                         self.chatFunctions.current_world_id)
 
   def save(self, f):
     pickle.dump(self.prompt_tokens, f)
@@ -437,7 +441,7 @@ class ChatSession:
     self.complete_tokens += complete
     self.total_tokens += total
 
-    world_id = self.chatFunctions.current_world_id
+    world_id = self.chatFunctions.getCurrentWorldID()
     if world_id is None:
       world_id = 0
     chat_functions.track_tokens(db, world_id, prompt, complete, total)
@@ -530,8 +534,8 @@ class ChatSession:
 
   def get_view(self):
     result = {}
-    if self.chatFunctions.current_world_id is not None:
-      result["wid"] = self.chatFunctions.current_world_id
+    if self.chatFunctions.getCurrentWorldID() is not None:
+      result["wid"] = self.chatFunctions.getCurrentWorldID()
       result["element_type"] = elements.ElementType.WorldType()      
     if self.chatFunctions.last_character_id is not None:
       result["id"] = self.chatFunctions.last_character_id
@@ -543,6 +547,9 @@ class ChatSession:
       result["id"] = self.chatFunctions.last_item_id
       result["element_type"] = elements.ElementType.ItemType()
     return result
+
+  def set_view(self, view):
+    self.chatFunctions.next_view = view
   
   def chat_exchange(self, db, user):
     function_call = False
@@ -557,7 +564,7 @@ class ChatSession:
     done = False
     while not done:
       logging.info(f"state: {self.chatFunctions.current_state}")
-      logging.info(f"world: {self.chatFunctions.current_world_id}")
+      logging.info(f"world: {self.chatFunctions.getCurrentWorldID()}")
       logging.info(f"character: {self.chatFunctions.last_character_id}")
       logging.info(f"item: {self.chatFunctions.last_item_id}")
       logging.info(f"site: {self.chatFunctions.last_site_id}")    

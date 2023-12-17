@@ -289,12 +289,25 @@ class ChatFunctions:
   def __init__(self):
     self.current_state = STATE_WORLDS
     self.current_world_name = None
-    self.current_world_id = None
     self.last_character_id = None
     self.last_item_id = None    
     self.last_site_id = None
     self.modified = False
 
+    # Tracks current world, current element
+    self.current_view = None
+    
+    # An ElemTag that describes a view we need to change into.
+    # This happens when the user changes the view in the UI.
+    # We need to sync the GPT to the new view
+    self.next_view = None
+
+
+  def getCurrentWorldID(self):
+    if self.current_view is None:
+      return None
+    return self.current_view.getWorldID()
+  
   def madeChanges(self):
     return self.modified
 
@@ -361,7 +374,7 @@ class ChatFunctions:
 
     elif function_name == "ListCharacters":
       result = [{ "id": entry.getID(), "name": entry.getName() }            
-                for entry in elements.listCharacters(db, self.current_world_id)]
+           for entry in elements.listCharacters(db, self.getCurrentWorldID())]
 
     elif function_name == "ReadCharacter":
       result = self.FuncReadCharacter(db, arguments)
@@ -374,7 +387,7 @@ class ChatFunctions:
 
     elif function_name == "ListItems":
       result = [ { "id": entry.getID(), "name": entry.getName() } 
-                 for entry in elements.listItems(db, self.current_world_id) ]
+             for entry in elements.listItems(db, self.getCurrentWorldID()) ]
 
     elif function_name == "ReadItem":
       result = self.FuncReadItem(db, arguments)
@@ -387,7 +400,7 @@ class ChatFunctions:
       
     elif function_name == "ListSites":
       result = [ { "id": entry.getID(), "name": entry.getName() } 
-                 for entry in elements.listSites(db, self.current_world_id) ]
+              for entry in elements.listSites(db, self.getCurrentWorldID()) ]
 
     elif function_name == "ReadSite":
       result = self.FuncReadSite(db, arguments)
@@ -412,7 +425,7 @@ class ChatFunctions:
       self.last_site_id = None
 
     if self.current_state == STATE_WORLDS:
-      self.current_world_id = None
+      self.current_view = None
       self.current_world_name = None
       
     return result
@@ -431,7 +444,7 @@ class ChatFunctions:
 
     # Check is state is legal
     if ((state == STATE_WORLD or
-         state == STATE_CHARACTERS) and self.current_world_id is None):
+         state == STATE_CHARACTERS) and self.current_view is None):
       return self.funcError(f"Must read or create a world for {state}")
     self.current_state = state
 
@@ -451,7 +464,7 @@ class ChatFunctions:
 
     world = elements.createWorld(db, world)
     self.current_state = STATE_WORLD
-    self.current_world_id = world.id
+    self.current_view = world.getElemTag()
     self.current_world_name = world.getName()
     self.modified = True      
     status = self.funcStatus("created world")
@@ -459,9 +472,9 @@ class ChatFunctions:
     return status
 
   def FuncUpdateWorld(self, db, arguments):
-    world = elements.loadWorld(db, self.current_world_id)
+    world = elements.loadWorld(db, self.getCurrentWorldID())
     if world is None:
-      return self.funcError(f"World not found {self.current_world_id}")
+      return self.funcError(f"World not found {self.getCurrentWorldID()}")
     world.updateProperties(arguments)
     # TODO: check name collision    
     elements.updateWorld(db, world)
@@ -505,28 +518,29 @@ class ChatFunctions:
 
     # Side affect, change state
     self.current_state = STATE_WORLD
-    self.current_world_id = world.id
+    self.current_view = world.getElemTag()
     self.current_world_name = world.getName()
       
     return content
 
   def FuncReadWorldPlans(self, db, arguments):
-    world = elements.loadWorld(db, self.current_world_id)
+    world = elements.loadWorld(db, self.getCurrentWorldID())
     if world is None:
-      return self.funcError(f"World not found {self.current_world_id}")
+      return self.funcError(f"World not found {self.getCurrentWorldID()}")
     content = { "id": world.id,
                elements.PROP_PLANS: world.getPlans() }
 
     # Side affect, change state
+    # TODO: this will not change here - remove it
     self.current_state = STATE_WORLD
-    self.current_world_id = world.id
+    self.current_view = world.getElemTag()
     self.current_world_name = world.getName()
     return content
 
   def FuncUpdateWorldPlans(self, db, arguments):
-    world = elements.loadWorld(db, self.current_world_id)
+    world = elements.loadWorld(db, self.getCurrentWorldID())
     if world is None:
-      return self.funcError(f"World not found {self.current_world_id}")
+      return self.funcError(f"World not found {self.getCurrentWorldID()}")
     world.setPlans(arguments[elements.PROP_PLANS])
     elements.updateWorld(db, world)
     self.modified = True
@@ -552,10 +566,10 @@ class ChatFunctions:
     return content
   
   def FuncCreateCharacter(self, db, arguments):
-    character = elements.Character(self.current_world_id)
+    character = elements.Character(self.getCurrentWorldID())
     character.setName(arguments["name"])
 
-    characters = elements.listCharacters(db, self.current_world_id)    
+    characters = elements.listCharacters(db, self.getCurrentWorldID())    
     name = checkDuplication(character.getName(), characters)
     if name is not None:
       return self.funcError(f"Similar name already exists: {name}")
@@ -600,10 +614,10 @@ class ChatFunctions:
     return content
   
   def FuncCreateItem(self, db, arguments):
-    item = elements.Item(self.current_world_id)
+    item = elements.Item(self.getCurrentWorldID())
     item.setName(arguments["name"])
 
-    items = elements.listItems(db, self.current_world_id)    
+    items = elements.listItems(db, self.getCurrentWorldID())    
     name = checkDuplication(item.getName(), items)
     if name is not None:
       return self.funcError(f"Similar name already exists: {name}")
@@ -648,10 +662,10 @@ class ChatFunctions:
     return content
   
   def FuncCreateSite(self, db, arguments):
-    site = elements.Site(self.current_world_id)
+    site = elements.Site(self.getCurrentWorldID())
     site.setName(arguments["name"])
 
-    sites = elements.listSites(db, self.current_world_id)    
+    sites = elements.listSites(db, self.getCurrentWorldID())    
     name = checkDuplication(site.getName(), sites)
     if name is not None:
       return self.funcError(f"Similar name already exists: {name}")
@@ -714,7 +728,7 @@ class ChatFunctions:
       self.last_site_id = id
 
     else:
-      image.setParentId(self.current_world_id)
+      image.setParentId(self.getCurrentWorldID())
 
     if image.parent_id is None:
       logging.info("create image error: empty parent_id")
@@ -729,7 +743,7 @@ class ChatFunctions:
     
     if result:
       logging.info("file create done, create image record")
-      count_image(db, self.current_world_id, 1)
+      count_image(db, self.getCurrentWorldID(), 1)
       image = elements.createImage(db, image)
       self.modified = True
       status = self.funcStatus("created image")
@@ -798,10 +812,6 @@ all_functions = [
         "state": {
           "type": "string",
           "description": "The new state",
-        },
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for world intance.",
         },
       },
       "required": [ "state" ]            
