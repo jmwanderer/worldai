@@ -420,11 +420,6 @@ class ChatSession:
     self.total_tokens = pickle.load(f)
     self.history = pickle.load(f)
     self.chatFunctions = pickle.load(f)
-    if not hasattr(self.chatFunctions, "current_view"):
-      self.chatFunctions.current_view = elements.ElemTag(self.chatFunctions.current_world_id,
-                                                         
-                                                         self.chatFunctions.current_world_id,
-                                                         elements.ElementType.WORLD)
 
   def save(self, f):
     pickle.dump(self.prompt_tokens, f)
@@ -552,7 +547,8 @@ class ChatSession:
     done = False
     while not done:
       logging.info(f"state: {self.chatFunctions.current_state}")
-      logging.info("current view: ", self.chatFunctions.current_view.jsonStr())
+      logging.info("current view: %s",
+                   self.chatFunctions.current_view.jsonStr())
       
       messages = self.BuildMessages(self.history)
       tool_choice = self.checkToolChoice()
