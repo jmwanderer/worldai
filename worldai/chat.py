@@ -184,9 +184,15 @@ class MessageSetRecord:
     self._updateTokenCount(enc, message)    
 
   def getResponseContent(self):
-    if self.response_message is None:
-      return ""
-    return self.response_message["content"]
+    results = []
+    for entry in self.tool_messages:
+      content = entry.get("content")
+      if content is not None:
+        print("extra response text! %s" % content)
+        results.append(content)
+    if self.response_message is not None:
+      results.append(self.response_message["content"])
+    return "\n\n".join(results)
 
   def addToolRequestMessage(self, enc, message):
     record = MessageSetRecord.ToolRequestMessage()
