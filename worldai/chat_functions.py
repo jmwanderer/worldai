@@ -418,8 +418,8 @@ class ChatFunctions:
       self.current_world_name = None
     elif self.current_state == STATE_WORLD:
       self.current_view = elements.ElemTag(self.getCurrentWorldID(),
-                                           elements.ElementType.WORLD,
-                                           self.getCurrentWorldID())
+                                           self.getCurrentWorldID(),
+                                           elements.ElementType.WorldType())                           
     return result
 
   

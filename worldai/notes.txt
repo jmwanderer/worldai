@@ -21,3 +21,15 @@ Potential
 - Perhaps add navigation in the right hand panel?
   sets current_world_is and last_xxx
 - task driven module
+
+
+Working notes
+---------
+import json
+# pip install pyyaml
+import yaml
+
+
+f = open("worldai/openapi.yml")
+s = yaml.safe_load(f)
+print(json.dumps(s, indent=4))
