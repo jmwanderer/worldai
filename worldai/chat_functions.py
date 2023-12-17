@@ -155,7 +155,7 @@ You walk the user through the process of creating worlds.
 When creating a world:
 1. Design the world with a name and a high level description.
 2. Create background details.
-3. Create worls plans suggesting main characters, special items, and significant sites.
+3. Create world plans suggesting main characters, special items, and significant sites.
 4. Using the world plans, create the characters
 5. Using the world plans, create the items
 6. Using the world plans, create the sites
@@ -183,7 +183,6 @@ To modify an existing world, ChangeState to State_World.
 To get a list of worlds, call ListWorlds
 Get a list of worlds before reading a world or creating a new one
 Before creating a new world, check if it already exists by using ListWorlds
-Always check with the user before creating an image.
 """,
 
   STATE_WORLD:
@@ -196,7 +195,7 @@ A world has details, that give more information about the world such as the back
 
 We have plans for the world that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadWorldPlans  
 
-Create images using information from the description and details in the prompt.
+Build image prompts using information from the description and details in the prompt.
 
 Save information about the world by calling UpdateWorld
 Save plans for the world by calling UpdateWorldPlans  
@@ -220,7 +219,7 @@ Use information in the world details to guide character creation and design.
 
 Before creating a new character, check if it already exists by calling the ListCharacters function.
 
-Create images for the character with CreateCharacterImage. Make a long prompt using the character description and details.
+When creating images for the character uing CreateCharacterImage, make a long prompt using the character description and details.
 
 Save detailed information about the character in character details.
 
@@ -241,7 +240,7 @@ Use information in the world details to guide item creation and design.
 
 Before creating a new item, check if it already exists by calling the ListItems function.
 
-Create images for the item with CreateItemImage. Make a long prompt using the item description and details.
+When creating images for the item with CreateItemImage, make a long prompt using the item description and details.
 
 Save detailed information about the item in item details.
 
@@ -262,7 +261,7 @@ Use information in the world details to guide site creation and design.
 
 Before creating a new site, check if it already exists by calling the ListSites function.
 
-Create images for the site with CreateSiteImage. Make a long prompt using the site description and details.
+When creating images for the site with CreateSiteImage, make a long prompt using the site description and details.
 
 
 Save detailed information about the site in site details.
@@ -310,7 +309,7 @@ class ChatFunctions:
     # An ElemTag that describes a view we need to change into.
     # This happens when the user changes the view in the UI.
     # We need to sync the GPT to the new view
-    self.next_view = None
+    self.next_view = elements.ElemTag()
 
 
   def getCurrentWorldID(self):
@@ -327,26 +326,6 @@ class ChatFunctions:
     value = instructions[self.current_state].format(
       current_world_name = self.current_world_name)
     return value
-
-  def get_view_instructions(self):
-    """
-    Generate instructions to help get the current view to the next view.
-    """
-    if self.next_view is None:
-      return ""
-    
-    # Consider reading a world
-    if self.current_view.getWorldID() != self.next_view.getWorldID():
-      return f"Load the world '{self.next_view.getWorldID()}'"
-    # Consider changing state
-    if self.current_view.getType() != self.next_view.getType():
-      state = elemTypeToState(self.next_view.getType())
-      return f"Change state to '{state}'"
-    # Consider loading an element
-    if self.current_view.getID() != self.next_view.getID():
-      return f"Load element '{self.next_view.getID()}'"
-    return ""
-    
 
   def get_available_tools(self):
     return self.get_available_tools_for_state(self.current_state)
@@ -523,17 +502,17 @@ class ChatFunctions:
     content["has_plans"] = len(world.getPlans()) > 0
     
     population = []
-    population.append("Characters:\n")
+    population.append("Existing Characters:\n")
     for character in elements.listCharacters(db, world.id):
       population.append(f"- {character.getName()}")
     population.append("")
 
-    population.append("Items:\n")        
+    population.append("Existing Items:\n")        
     for item in elements.listItems(db, world.id):
       population.append(f"- {item.getName()}")
     population.append("")
     
-    population.append("Sites:\n")        
+    population.append("Existing Sites:\n")        
     for site in elements.listSites(db, world.id):
       population.append(f"- {site.getName()}")
 

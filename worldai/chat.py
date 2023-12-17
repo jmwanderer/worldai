@@ -461,13 +461,10 @@ class ChatSession:
       current_state=self.chatFunctions.current_state)
 
 
-
     history.setSystemMessage({"role": "system",
                               "content": current_instructions +
                               "\n" +
-                              self.chatFunctions.get_state_instructions() +
-                              "\n" +
-                              self.chatFunctions.get_view_instructions()
+                              self.chatFunctions.get_state_instructions()
                               })
 
     functions = self.chatFunctions.get_available_tools()
@@ -498,11 +495,6 @@ class ChatSession:
     to make decisions.
     """
     tool_func = None
-
-    # Check the current view vs the next view
-    # 1. If world id does not match
-    #  1a. If not STATE_WORLDS .
-
 
     # Check if the proper list is loaded for the current state.
     if self.chatFunctions.current_state == chat_functions.STATE_WORLDS:
@@ -548,27 +540,15 @@ class ChatSession:
     """
     Set the target view.
     If same as current, this is a NO-OP
-    If not, will leave the current state in WORLDS or WORLD
     """
     next_view = elements.ElemTag.JsonTag(next_view)
-    if next_view is None or next_view == self.chatFunctions.current_view:
-      # View already matches
-      self.chatFunctions.next_view = None
+    if next_view == self.chatFunctions.current_view:
+      # View already matches - reset
+      self.chatFunctions.next_view = elements.ElemTag()
       return
     
     self.chatFunctions.next_view = next_view
-    world_id = self.chatFunctions.current_view.getWorldID()
-    
-    if next_view.getWorldID() != world_id:
-      # If the worlds do not match, change state and reset the view.      
-      self.chatFunctions.current_state = chat_functions.STATE_WORLDS
-      self.chatFunctions.current_world_name = None
-      self.chatFunctions.current_view = elements.ElemTag()
-
-    elif self.chatFunctions.current_view.getType() != next_view.getType():
-      # If current types don't match, reset state and view to WORLD
-      self.chatFunctions.current_state = chat_functions.STATE_WORLD
-      self.chatFunctions.current_view = elements.ElemTag.WorldTag(world_id)
+    # TODO: do something with this
     
   
   def chat_exchange(self, db, user):
@@ -586,6 +566,8 @@ class ChatSession:
       logging.info(f"state: {self.chatFunctions.current_state}")
       logging.info("current view: %s",
                    self.chatFunctions.current_view.jsonStr())
+      logging.info("next view: %s",
+                   self.chatFunctions.next_view.jsonStr())
       
       messages = self.BuildMessages(self.history)
       tool_choice = self.checkToolChoice()

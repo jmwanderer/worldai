@@ -112,9 +112,7 @@ class ElemTag:
     return ElemTag(world_id, world_id, ElementType.WorldType())
 
   def JsonTag(tag):
-    if tag is None:
-      return None
-    if tag.get("wid") is None:
+    if tag is None or tag.get("wid") is None:
       return ElemTag()
     return ElemTag(tag["wid"], tag["id"], tag["element_type"])
     
