@@ -1,19 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>WorldAI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-    <link href='https://fonts.googleapis.com/css?family=Open Sans' rel='stylesheet'/>
-    <style>
-      body {
-	  font-family: 'Open Sans';
-      }
-    </style>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-  </head>
-
-
+  {% include "header.html" %}  
   <body>
+    <div class="navdiv">
+      <div class="leftnav">
+        <ul class="navlist">
+          <li class="navitem">
+            <a class="nava"
+               href="{{ url_for('worldai.top_view') }}">Top</a>
+        </ul>
+      </div>
+    </div>  
+    
     <div>
       <h1>Worlds</h1>
       <ul>
