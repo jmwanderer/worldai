@@ -186,7 +186,7 @@ class MessageSetRecord:
   def getResponseContent(self):
     results = []
     for entry in self.tool_messages:
-      content = entry.get("content")
+      content = entry.request_message.get("content")
       if content is not None:
         print("extra response text! %s" % content)
         results.append(content)
