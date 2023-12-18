@@ -2,24 +2,15 @@ Plans
 -----
 
 - Revamp ChatExchange API messages
-- Change JSON OpenAPI to YAML
-- Introduce a JSON object id - wid, type, eid, ...
 - trim contents of message history in chat_session
-- move chat_session state into sqlite
 - consider changing state to mode
 - set budget for tokens and images (images done)
-- items and sites
-- plans / possibile chars etc in world text
 - more properties for characters, personality, etc
-- document chat_api and object api in openapi
-- add system / integration test coverage
 - update status of calls in client
 
 Potential
 ---------
 
-- Perhaps add navigation in the right hand panel?
-  sets current_world_is and last_xxx
 - task driven module
 
 
