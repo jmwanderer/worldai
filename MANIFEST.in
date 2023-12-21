@@ -1,8 +1,7 @@
-recursive-include worldai/static *
+graft worldai/static
 include worldai/templates/*
 include worldai/schema.sql
 include worldai/worldai.service
 global-exclude *.pyc
-exclude instance
-exclude worldai/ui
+prune worldai/ui
 
