@@ -631,11 +631,12 @@ def worlds_list():
       image_prop = { "id": "", "url": "" }
     else:
       image_prop = { "id": image_id,
-                     "url": flask.url_for('worldai.get_image', id=image_id) }
+                     "url": flask.url_for('worldai.get_image',
+                                          id=image_id, _external=True) }
     
     world_list.append({"id": id,
                        "name": world.getName(),
-                       "descripton": world.getDescription(),
+                       "description": world.getDescription(),
                        "image": image_prop })
 
   return flask.jsonify(world_list)
@@ -653,7 +654,7 @@ def worlds(wid):
 
   images = []
   for image in world.getImages():
-    url = flask.url_for('worldai.get_image', id=image)
+    url = flask.url_for('worldai.get_image', id=image, _external=True)
     images.append({ "id": image, "url": url})
 
   result = world.getJSONRep()
@@ -683,7 +684,7 @@ def characters_list(wid):
       
     character_list.append({"id": id,
                            "name": character.getName(),
-                           "descripton": character.getDescription(),
+                           "description": character.getDescription(),
                            "image": image_prop })
 
   return flask.jsonify(character_list)
@@ -700,7 +701,7 @@ def characters(wid, id):
 
   images = []
   for image in character.getImages():
-    url = flask.url_for('worldai.get_image', id=image)
+    url = flask.url_for('worldai.get_image', id=image, _external=True)
     images.append({ "id": image, "url": url})
   
   result = character.getJSONRep()
