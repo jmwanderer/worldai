@@ -13,3 +13,13 @@ dist/
 build/
 *.egg-info/
 
+# UI
+# dependencies
+/ui/node_modules
+/ui/.pnp
+.pnp.js
+#testing
+/ui/coverage
+# build
+/ui/build
+*.log

@@ -694,7 +694,7 @@ class ChatSession:
 def initializeApp():
   openai.api_key = os.environ['OPENAI_API_KEY']  
   BASE_DIR = os.getcwd()
-  log_file_name = os.path.join(BASE_DIR, 'log-chat.txt')
+  log_file_name = os.path.join(BASE_DIR, 'log-chat.log')
   FORMAT = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
   logging.basicConfig(filename=log_file_name,
                       level=logging.INFO,

@@ -46,7 +46,7 @@ def create_app(instance_path=None, test_config=None):
 
   # Configure logging
   BASE_DIR = os.getcwd()
-  log_file_name = os.path.join(BASE_DIR, 'log-serve.txt')
+  log_file_name = os.path.join(BASE_DIR, 'log-serve.log')
   FORMAT = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
   logging.basicConfig(filename=log_file_name,
                       level=logging.INFO,
