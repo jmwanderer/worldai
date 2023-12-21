@@ -12,6 +12,15 @@
     margin: 5px;
 }
 
+.App-world-list {
+    padding: 1em;
+    padding-top: 0em;
+}
+
+.App-world-item {
+    margin: 0.5em;
+}
+
 .App-message-screen {
     height: 80vmin;    
     border: 2px solid grey;

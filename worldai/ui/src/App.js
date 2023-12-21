@@ -311,9 +311,11 @@ function CharacterItem({ character, onClick }) {
                              style={{"maxWidth":"100px"}}/>
                     </td>
                     <td>
-                        { character.name }
-                        <br/>
-                        { character.description }
+                        <div className="App-world-item">                        
+                            <u>{ character.name }</u>
+                            <br/>
+                            { character.description }
+                        </div>
                     </td>
                 </tr>
             </tbody>
@@ -367,9 +369,11 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
 
     return (
         <div>
-            <BackArrow onClick={clickBack}/>            
-            { entries }
-        </div>
+            <BackArrow onClick={clickBack}/>                        
+            <div className="App-world-list">
+                { entries }
+            </div>
+        </div>            
     );
 }
 
@@ -389,9 +393,11 @@ function WorldItem({ world, onClick }) {
                              style={{"maxWidth":"100px"}}/>
                     </td>
                     <td>
-                        { world.name }
-                        <br/>
-                        { world.description }
+                        <div className="App-world-item">
+                            <u>{ world.name }</u>
+                            <br/>
+                            { world.description }
+                        </div>
                     </td>
                 </tr>
             </tbody>
@@ -436,7 +442,7 @@ function SelectWorld({setWorldId}) {
     );
 
     return (
-        <div>
+        <div className="App-world-list">
             { entries }
         </div>
     );
