@@ -15,11 +15,11 @@ build/
 
 # UI
 # dependencies
-/ui/node_modules
-/ui/.pnp
+worldai/ui/node_modules
+worldai/ui/.pnp
 .pnp.js
 #testing
-/ui/coverage
+worldai/ui/coverage
 # build
-/ui/build
+worldai/ui/build
 *.log
