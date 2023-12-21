@@ -14,6 +14,7 @@ build/
 *.egg-info/
 
 # UI
+worldai/static/ui
 # dependencies
 worldai/ui/node_modules
 worldai/ui/.pnp

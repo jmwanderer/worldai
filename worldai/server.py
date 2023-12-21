@@ -224,17 +224,20 @@ def top_view():
   """
   return flask.render_template("top.html")
 
-@bp.route('/react/<path:path>', methods=["GET"])
-def react(path):
+@bp.route('/ui/<path:path>', methods=["GET"])
+def react_ui(path):
   """
+  Serve react based files for the UI.
   """
-  return flask.send_from_directory("static/react", path)
+  return flask.send_from_directory("static/ui", path)
 
-@bp.route('/react', methods=["GET"])
+@bp.route('/ui', methods=["GET"])
 def react_base():
   """
+  Serve the index.html file for the root of the UI
   """
-  return flask.render_template("index.html")
+  return flask.send_from_directory("static/ui", "index.html")  
+
 
 
 @bp.route('/view/worlds', methods=["GET"])

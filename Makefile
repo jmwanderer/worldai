@@ -3,8 +3,14 @@ test:
 	PYTHONPATH=. pytest
 
 .PHONY: build
-build:
+build: build_ui
 	python3 -m build  --wheel
+
+.PHONY: build_ui
+build_ui:
+	cd worldai/ui && npm run build
+	mkdir -p worldai/static/ui
+	cp -r worldai/ui/build/* worldai/static/ui
 
 
 .PHONY: coverage
