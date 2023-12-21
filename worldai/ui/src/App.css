@@ -7,6 +7,11 @@
   pointer-events: none;
 }
 
+.App-back-arrow {
+    max-width: 50px;
+    margin: 5px;
+}
+
 .App-message-screen {
     height: 80vmin;    
     border: 2px solid grey;
@@ -17,18 +22,15 @@
 
 .App-chat-screen {
     text-align: center;
-    padding: 1em;
-    height: 95%;
-    padding: 1em;    
+    margin: 1em;
 }
 
 
 .App-message {
-    padding: 2px;
+    margin: 2px; 
 }
 
 .App-table {
-    height: 90%;
 }
 
 .App-tbody {
@@ -41,7 +43,8 @@
 }
 
 .App-char-screen {
-    padding: 1em;
+    margin: 1em;
+    margin-top: 0px;   
 }
 
 .App-user-input {
@@ -68,16 +71,6 @@
 }
 
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
 
 .App-header {
   background-color: #282c34;

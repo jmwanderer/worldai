@@ -3,19 +3,19 @@ import { useState } from 'react';
 import { useRef } from 'react';
 import { useEffect } from 'react';
 import './App.css';
+import back_image from './back.png';
 
 /*
  * TODO:
  * - fix auth to support access in non-dev build.
  * - support multiple images
  * - format lists of worlds and characters
- * - add back button
  * - add proper link to chat thread for a character
  */
 
 /*
  
-import elysia from './elysia.png';
+
   
 const character = {
     id: "id404bc8b4",
@@ -31,6 +31,14 @@ function Button({ text, onClick, disabled }) {
         <button disabled={disabled} onClick={onClick}>
             { text }
         </button>
+    );
+}
+
+function BackArrow({ onClick }) {
+    return (
+        <img src={back_image} alt="back"
+             onClick={onClick}
+             className="App-back-arrow"/>
     );
 }
 
@@ -104,7 +112,7 @@ function UserInput({value, onChange, onKeyDown, disabled}) {
 }
 
 
-function ChatScreen({ name }) {
+function ChatScreen({ name, worldId, characterId }) {
     const [chatHistory, setChatHistory] = useState([]);
     const [currentMessage,
            setCurrentMessage] = useState({ user: "", error: ""});
@@ -116,7 +124,8 @@ function ChatScreen({ name }) {
         const signal = controller.signal;
         async function getData() {
             // Get the chat history.        
-            const url = "/threads/123";
+            const url = "/threads/worlds/" + worldId +
+                  "/characters/" + characterId;
             try {
                 const response =
                       await fetch(url, {signal: signal,
@@ -133,7 +142,7 @@ function ChatScreen({ name }) {
         return () => {
             controller.abort();
         }
-    }, []);
+    }, [worldId, characterId]);
     
 
     function submitClick() {
@@ -144,7 +153,8 @@ function ChatScreen({ name }) {
 
         async function getData() {
             const data = { "user": user_msg }
-            const url = "/threads/123";
+            const url = "/threads/worlds/" + worldId +
+                  "/characters/" + characterId;
             // Post the user request
             try {            
                 const response = await fetch(url, {
@@ -225,7 +235,7 @@ function CharacterScreen({ character }) {
     );
 }
 
-function ChatCharacter({ worldId, characterId}) {
+function ChatCharacter({ worldId, characterId, setCharacterId}) {
     const [character, setCharacter] = useState(null);
     useEffect(() => {
         let ignore = false;
@@ -254,6 +264,11 @@ function ChatCharacter({ worldId, characterId}) {
         }
     }, [worldId, characterId]);
 
+
+    function clickBack() {
+        setCharacterId(null);
+    }
+
     let screen = (<tr/>);
     if (character) {
         screen = (
@@ -262,17 +277,21 @@ function ChatCharacter({ worldId, characterId}) {
                     <CharacterScreen character={character}/>
                 </td>
                 <td className="App-td">
-                    <ChatScreen name={character.name}/>
+                    <ChatScreen name={character.name}
+                                worldId={worldId}
+                                characterId={characterId}/>
                 </td>
             </tr>
         );
     }
 
-    
     return (
-        <table className="App-table">
-            <tbody className="App-tbody">{screen}</tbody>
-        </table>
+        <div>
+            <BackArrow onClick={clickBack}/>
+            <table className="App-table">
+                <tbody className="App-tbody">{screen}</tbody>
+            </table>
+        </div>
     );
 }
 
@@ -303,7 +322,7 @@ function CharacterItem({ character, onClick }) {
     
 }
 
-function SelectCharacter({ worldId, setCharacterId }) {
+function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
 
     const [characterList, setCharacterList] = useState([]);
     useEffect(() => {
@@ -335,6 +354,10 @@ function SelectCharacter({ worldId, setCharacterId }) {
     function selectCharacter(character_id) {
         setCharacterId(character_id);
     }
+
+    function clickBack() {
+        setWorldId(null);
+    }
     
     const entries = characterList.map(entry =>
         <CharacterItem key={entry.id}
@@ -344,6 +367,7 @@ function SelectCharacter({ worldId, setCharacterId }) {
 
     return (
         <div>
+            <BackArrow onClick={clickBack}/>            
             { entries }
         </div>
     );
@@ -428,10 +452,12 @@ function App() {
         screen = <SelectWorld setWorldId={setWorldId}/>
     } else if (!characterId) {
         screen = <SelectCharacter worldId={worldId}
-                                  setCharacterId={setCharacterId}/>
+                                  setCharacterId={setCharacterId}
+                                  setWorldId={setWorldId}/>
     } else {
         screen = <ChatCharacter worldId={worldId}
-                                characterId={characterId}/>
+                                characterId={characterId}
+                                setCharacterId={setCharacterId}/>
     }
                          
     return (

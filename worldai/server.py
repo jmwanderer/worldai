@@ -577,13 +577,14 @@ def view_props():
   return flask.jsonify({ "html": html, "images": images })
   
 
-
-@bp.route('/threads/<id>', methods=["GET","POST"])
+@bp.route('/threads/worlds/<wid>/characters/<id>', methods=["GET","POST"])
 @auth_required
-def threads(id):
+def threads(wid, id):
   """
-  Chat interface
+  Character chat interface
   """
+  # TODO:  Use session to look up a specific thread id
+  
   if request.method == "GET":
     content = { "messages": [
       { "id": "1001",      
