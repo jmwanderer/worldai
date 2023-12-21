@@ -1,5 +1,7 @@
 include worldai/static/*
-include worldai/templates/*
+recursive-include worldai/templates/*
 include worldai/schema.sql
 include worldai/worldai.service
 global-exclude *.pyc
+exclude instance
+
