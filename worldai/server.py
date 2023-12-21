@@ -224,6 +224,18 @@ def top_view():
   """
   return flask.render_template("top.html")
 
+@bp.route('/react/<path:path>', methods=["GET"])
+def react(path):
+  """
+  """
+  return flask.send_from_directory("static/react", path)
+
+@bp.route('/react', methods=["GET"])
+def react_base():
+  """
+  """
+  return flask.render_template("index.html")
+
 
 @bp.route('/view/worlds', methods=["GET"])
 @login_required
@@ -562,3 +574,37 @@ def view_props():
   return flask.jsonify({ "html": html, "images": images })
   
 
+
+@bp.route('/threads/<id>', methods=["GET","POST"])
+@auth_required
+def threads(id):
+  """
+  Chat interface
+  """
+  if request.method == "GET":
+    content = { "messages": [
+      { "id": "1001",      
+        "user": "Hi There",
+        "reply": "This is a reply message" },
+      { "id": "1002",      
+        "user": "How about this is a user message",
+        "reply": "This is still a reply message" },
+      { "id": "1003",      
+        "user": "Can you say anything else?",
+        "reply": "No, not really." },
+      { "id": "1004",      
+        "user": "Why not?",
+        "reply": "Just the way it is" },
+      ]}
+  elif request.json.get("user") is not None:
+      user_msg = request.json.get("user")
+      content = {
+        "id": os.urandom(4).hex(),
+        "user": user_msg,
+        "reply": "Hey, how is it going?"
+      }
+      time.sleep(2)
+  else:
+    content = { "error": "malformed input" }
+
+  return content
