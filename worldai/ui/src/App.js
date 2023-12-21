@@ -1,8 +1,9 @@
-import elysia from './elysia.png';
-import './App.css';
+import React from 'react';
 import { useState } from 'react';
 import { useRef } from 'react';
 import { useEffect } from 'react';
+import elysia from './elysia.png';
+import './App.css';
 
 
 const character = {
@@ -16,7 +17,7 @@ const character = {
 // Simple button. May change in the future.
 function Button({ text, onClick, disabled }) {
     return (
-            <button disabled={disabled} onClick={onClick}>
+        <button disabled={disabled} onClick={onClick}>
             { text }
         </button>
     );
@@ -25,12 +26,13 @@ function Button({ text, onClick, disabled }) {
 // Shows a single message exchange.
 function MessageExchange({ name, message }) {
     return (
-            <div>
+        <div>
             <div className="App-message">
-                  <b>You:</b> <br/> { message.user } </div>
+                <b>You:</b> <br/> { message.user }
+            </div>
             <div className="App-message">
             <b> {name}: </b> <br/> { message.reply} </div>
-            </div>
+        </div>
     );
 }
 
@@ -162,7 +164,7 @@ function ChatScreen() {
     }
 
     function handleKeyDown(e) {
-        if (chatState == "ready") {
+        if (chatState === "ready") {
             if (e.keyCode === 13) {
                 submitClick();
                 e.preventDefault();            

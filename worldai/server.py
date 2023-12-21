@@ -611,3 +611,99 @@ def threads(id):
     content = { "error": "malformed input" }
 
   return content
+
+
+@bp.route('/worlds', methods=["GET"])
+@auth_required
+def worlds_list():
+  """
+  API to access worldlist
+  """
+  world_list = []
+  worlds = elements.listWorlds(get_db())
+  for (entry) in worlds:
+    id = entry.getID()
+    world = elements.loadWorld(get_db(), id)
+
+    # May be None
+    image_id = world.getImageByIndex(0)
+    if image_id is None:
+      image_prop = { "id": "", "url": "" }
+    else:
+      image_prop = { "id": image_id,
+                     "url": flask.url_for('worldai.get_image', id=image_id) }
+    
+    world_list.append({"id": id,
+                       "name": world.getName(),
+                       "descripton": world.getDescription(),
+                       "image": image_prop })
+
+  return flask.jsonify(world_list)
+
+
+@bp.route('/worlds/<wid>', methods=["GET"])
+@auth_required
+def worlds(wid):
+  """
+  API to access a world
+  """
+  world = elements.loadWorld(get_db(), wid)
+  if world == None:
+    return { "error", "World not found"}, 400
+
+  images = []
+  for image in world.getImages():
+    url = flask.url_for('worldai.get_image', id=image)
+    images.append({ "id": image, "url": url})
+
+  result = world.getJSONRep()
+  result["images"] = images
+  
+  return result
+
+
+@bp.route('/worlds/<wid>/characters', methods=["GET"])
+@auth_required
+def characters_list(wid):
+  """
+  API to get the list of characters for a world
+  """
+  character_list = []
+  characters = elements.listCharacters(get_db(), wid)
+  for (entry) in characters:
+    id = entry.getID()
+    character = elements.loadCharacter(get_db(), id)
+    # May be None
+    image_id = character.getImageByIndex(0)
+    if image_id is None:
+      image_prop = { "id": "", "url": "" }
+    else:
+      image_prop = { "id": image_id,
+                     "url": flask.url_for('worldai.get_image', id=image_id) }
+      
+    character_list.append({"id": id,
+                           "name": character.getName(),
+                           "descripton": character.getDescription(),
+                           "image": image_prop })
+
+  return flask.jsonify(character_list)
+
+@bp.route('/worlds/<wid>/characters/<id>', methods=["GET"])
+@auth_required
+def characters(wid, id):
+  """
+  API to access a character
+  """
+  character = elements.loadCharacter(get_db(), id)
+  if character == None or character.parent_id != wid:
+    return { "error", "Character not found"}, 400
+
+  images = []
+  for image in character.getImages():
+    url = flask.url_for('worldai.get_image', id=image)
+    images.append({ "id": image, "url": url})
+  
+  result = character.getJSONRep()
+  result["images"] = images
+
+  return result

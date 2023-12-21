@@ -175,6 +175,15 @@ class Element:
     """
     return json.dumps(self.properties)
 
+  def getJSONRep(self):
+    """
+    Return a map of properties including id and name,
+    excluse internals of type and parent id.
+    """
+    return { "id": self.id,
+             "name": self.getName(),
+             **self.properties }
+
   def getProperty(self, name):
     if name == PROP_NAME:
       return self.name
