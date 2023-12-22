@@ -166,9 +166,9 @@ When creating a world:
 We can be in one of the following states:
 - State_Worlds: We can open existing worlds and create new worlds
 - State_World: We view a world and change the description, details, and plans of a world.
-- State_Characters: We can view characters and create new characters and change the description and details of a character and add images to a character
-- State_Items: We can view items and create new items and change the description and details of an item and add images to an item
-- State_Sites: We can view sites and create new sites and change the description and details of a site and add images to a site
+- State_Characters: We can view characters and create new characters and change the description and details of a character.
+- State_Items: We can view items and create new items and change the description and details of an item.
+- State_Sites: We can view sites and create new sites and change the description and details of a site.
 
 The current state is "{current_state}"
 
@@ -198,14 +198,14 @@ A world has details, that give more information about the world such as the back
 
 We have plans for the world that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadWorldPlans  
 
-Build image prompts using information from the description and details in the prompt.
+Build prompts to create images using information from the description and details in the prompt.
 
 Save information about the world by calling UpdateWorld
 Save plans for the world by calling UpdateWorldPlans  
 
-To view, create, update, or make images for characters, change state to State_Characters.
-To view, create, update, or make images for items, change state to State_Items.
-To view, create, update, or make images for sites, change state to State_Sites.  
+To view, create, or update characters, change state to State_Characters.
+To view, create, or update items, change state to State_Items.
+To view, create, or update sites, change state to State_Sites.  
 
   """,
 
@@ -222,7 +222,7 @@ Use information in the world details to guide character creation and design.
 
 Before creating a new character, check if it already exists by calling the ListCharacters function.
 
-When creating images for the character uing CreateCharacterImage, make a long prompt using the character description and details.
+When creating images for the character using CreateCharacterImage, make a long prompt using the character description and details.
 
 Save detailed information about the character in character details.
 
