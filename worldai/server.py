@@ -648,7 +648,8 @@ def worlds_list():
     # May be None
     image_id = world.getImageByIndex(0)
     if image_id is None:
-      image_prop = { "id": "", "url": "" }
+      url = flask.url_for('static', filename="qmark.png", _external=True)
+      image_prop = { "id": "0", "url": url }     
     else:
       image_prop = { "id": image_id,
                      "url": flask.url_for('worldai.get_image',
@@ -676,6 +677,9 @@ def worlds(wid):
   for image in world.getImages():
     url = flask.url_for('worldai.get_image', id=image, _external=True)
     images.append({ "id": image, "url": url})
+  else:
+    url = flask.url_for('static', filename="qmark.png", _external=True)    
+    images.append({ "id": "0", "url": url})    
 
   result = world.getJSONRep()
   result["images"] = images
@@ -697,7 +701,8 @@ def characters_list(wid):
     # May be None
     image_id = character.getImageByIndex(0)
     if image_id is None:
-      image_prop = { "id": "", "url": "" }
+      url = flask.url_for('static', filename="qmark.png", _external=True)
+      image_prop = { "id": "0", "url": url }
     else:
       image_prop = { "id": image_id,
                      "url": flask.url_for('worldai.get_image', id=image_id) }
@@ -723,6 +728,9 @@ def characters(wid, id):
   for image in character.getImages():
     url = flask.url_for('worldai.get_image', id=image, _external=True)
     images.append({ "id": image, "url": url})
+  else:
+    url = flask.url_for('static', filename="qmark.png", _external=True)    
+    images.append({ "id": "0", "url": url})    
   
   result = character.getJSONRep()
   result["images"] = images

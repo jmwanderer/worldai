@@ -7,10 +7,7 @@ import back_image from './back.png';
 
 /*
  * TODO:
- * - fix auth to support access in non-dev build.
  * - support multiple images
- * - format lists of worlds and characters
- * - add proper link to chat thread for a character
  */
 
 /*
