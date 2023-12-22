@@ -14,6 +14,67 @@ def test_no_access(client):
 def bearer_token(app):
   return "Bearer " + app.config['AUTH_KEY']
 
+
+
+def test_world_chars(client, app):
+  response = client.get("/worlds",
+                       headers= {
+                         "Authorization": bearer_token(app)})
+  assert response.status_code == 200
+  assert len(response.json) > 0
+  world_id = response.json[0]["id"]
+
+  response = client.get(f"/worlds/{world_id}",
+                        headers= {
+                          "Authorization": bearer_token(app)})
+  assert response.status_code == 200
+  assert len(response.json) > 0
+
+  response = client.get(f"/worlds/{world_id}/characters",
+                        headers= {
+                          "Authorization": bearer_token(app)})
+  assert response.status_code == 200
+  assert len(response.json) > 0
+  id = response.json[0]["id"]
+
+  response = client.get(f"/worlds/{world_id}/characters/{id}",
+                        headers= {
+                          "Authorization": bearer_token(app)})
+  assert response.status_code == 200
+  assert id == response.json["id"]
+  
+
+def test_character_chat(client, app):
+  response = client.get("/worlds",
+                       headers= {
+                         "Authorization": bearer_token(app)})
+  world_id = response.json[0]["id"]
+  response = client.get(f"/worlds/{world_id}/characters",
+                        headers= {
+                          "Authorization": bearer_token(app)})
+  char_id = response.json[0]["id"]
+
+  # Post chat
+  response = client.post(f"/threads/worlds/{world_id}/characters/{char_id}",
+                         headers={
+                           'Content-Type': 'application/json',
+                           "Authorization": bearer_token(app),
+                         },
+                         json={
+                           "user": "hi there!",
+                         })
+  assert response.status_code == 200
+  assert response.json["id"] is not None
+
+
+  # Get chat history
+  response = client.get(f"/threads/worlds/{world_id}/characters/{char_id}",
+                        headers= {
+                          "Authorization": bearer_token(app)})
+  assert response.status_code == 200
+  assert len(response.json) > 0
+
+
 thread="43998a028378e5df81c12b69"
 
 def test_chat_get(client, app):

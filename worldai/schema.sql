@@ -33,6 +33,15 @@ CREATE TABLE threads (
   thread BLOB
 );
 
+CREATE TABLE character_threads (
+  session_id TEXT NOT NULL,
+  world_id TEXT NOT NULL,
+  character_id TEXT NOT NULL,
+  thread_id TEXT NOT NULL,
+  PRIMARY KEY (session_id, world_id, character_id),
+  FOREIGN KEY (thread_id) REFERENCES threads(id)
+);
+
 
 
 
