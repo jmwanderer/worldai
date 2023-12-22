@@ -1,4 +1,6 @@
 import os
+import random
+import json
 import os.path
 import pathlib
 import time
@@ -18,6 +20,7 @@ from . import db_access
 from . import elements
 from . import chat
 from . import chat_functions
+from . import threads
 
 
 def create_app(instance_path=None, test_config=None):
@@ -583,37 +586,46 @@ def view_props():
   return flask.jsonify({ "html": html, "images": images })
   
 
+def get_random_message():
+  messages = [
+    "Hey, how is it going?",
+    "I don't know, what do you think?",
+    "Isn't Jim a pretty great guy?",
+    "Well, I guess I agree.",
+    "I am not sure about that.",
+    "I wonder what is on TV right now?" ]
+  return random.choice(messages)
+
 @bp.route('/threads/worlds/<wid>/characters/<id>', methods=["GET","POST"])
 @auth_required
-def threads(wid, id):
+def threads_api(wid, id):
   """
   Character chat interface
   """
   # TODO:  Use session to look up a specific thread id
   session_id = get_session_id()
 
+  thread = threads.get_character_thread(get_db(), session_id, wid, id)
+  if thread is None:
+    history = []
+  else:
+    history = json.loads(thread)
+  
+
   if request.method == "GET":
-    content = { "messages": [
-      { "id": "1001",      
-        "user": "Hi There",
-        "reply": "This is a reply message" },
-      { "id": "1002",      
-        "user": "How about this is a user message",
-        "reply": "This is still a reply message" },
-      { "id": "1003",      
-        "user": "Can you say anything else?",
-        "reply": "No, not really." },
-      { "id": "1004",      
-        "user": "Why not?",
-        "reply": "Just the way it is" },
-      ]}
+    content = { "messages": history }
+
   elif request.json.get("user") is not None:
       user_msg = request.json.get("user")
+      reply = get_random_message()
       content = {
         "id": os.urandom(4).hex(),
         "user": user_msg,
-        "reply": "Hey, how is it going?"
+        "reply": reply
       }
+      history.append(content)
+      thread = json.dumps(history)
+      threads.save_character_thread(get_db(), session_id, wid, id, thread)
       time.sleep(2)
   else:
     content = { "error": "malformed input" }
