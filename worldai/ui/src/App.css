@@ -7,6 +7,11 @@
   pointer-events: none;
 }
 
+.App-thumb {
+    maxWidth: 100px;
+    margin: 0.5em;
+}
+
 .App-back-arrow {
     max-width: 50px;
     margin: 5px;
@@ -22,7 +27,7 @@
 }
 
 .App-message-screen {
-    height: 80vmin;    
+    height: 75vmin;
     border: 2px solid grey;
     text-align: left;
     padding: 1em;
@@ -49,6 +54,10 @@
 .App-td {
     width: 40%;
     
+}
+
+.App-item {
+    vertical-align: top;
 }
 
 .App-char-screen {

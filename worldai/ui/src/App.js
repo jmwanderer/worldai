@@ -307,11 +307,11 @@ function CharacterItem({ character, onClick }) {
         <table>
             <tbody>
                 <tr onClick={handleClick}>
-                    <td>
-                        <img src={character.image.url} alt="person"
-                             style={{"maxWidth":"100px"}}/>
+                    <td className="App-item">
+                        <img className="App-thumb"
+                             src={character.image.url} alt="person"/>
                     </td>
-                    <td>
+                    <td className="App-item">
                         <div className="App-world-item">                        
                             <u>{ character.name }</u>
                             <br/>
@@ -389,11 +389,11 @@ function WorldItem({ world, onClick }) {
         <table>
             <tbody>
                 <tr onClick={handleClick}>
-                    <td>
-                        <img src={world.image.url} alt="world"
-                             style={{"maxWidth":"100px"}}/>
+                    <td className="App-item">
+                        <img className="App-thumb"
+                             src={world.image.url} alt="world"/>
                     </td>
-                    <td>
+                    <td className="App-item">
                         <div className="App-world-item">
                             <u>{ world.name }</u>
                             <br/>
