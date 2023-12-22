@@ -4,6 +4,7 @@ import openai
 import requests
 import logging
 import markdown
+from PIL import Image
 
 from . import elements
 
@@ -749,13 +750,27 @@ class ChatFunctions:
       logging.info("file create done, create image record")
       count_image(db, self.getCurrentWorldID(), 1)
       image = elements.createImage(db, image)
+      create_image_thumbnail(image)
       self.modified = True
       status = self.funcStatus("created image")
       status["id"] = image.id
       return status
     return self.funcError("problem generating image")
   
-
+def create_image_thumbnail(image_element):
+  """
+  Take an image element and create a thumbnail in the
+  IMAGE_DIRECTORY
+  """
+  in_file = os.path.join(IMAGE_DIRECTORY, image_element.getFilename())
+  out_file = os.path.join(IMAGE_DIRECTORY, image_element.getThumbName())
+  image = Image.open(in_file)
+  MAX_SIZE=(100, 100)
+  image.thumbnail(MAX_SIZE)
+  image.save(out_file)
+  
+  
+    
 def image_get_request(prompt, dest_file):
   # Testing stub. Just copy existing file.
   if TESTING:

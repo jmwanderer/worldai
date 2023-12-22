@@ -13,6 +13,7 @@ dependencies = [
   "termcolor",
   "tiktoken",
   "markdown",
+  "Pillow",  
 ]
 
 [build-system]

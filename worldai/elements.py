@@ -370,6 +370,10 @@ class Image:
     if self.filename is None:
       self.filename = os.urandom(12).hex() + ".png"
     return self.filename
+
+  def getThumbName(self):
+    filename = self.getFilename()
+    return filename[0:-4] + ".thmb" + filename[-4:]
   
 def createImage(db, image):
   image.id = "id%s" % os.urandom(4).hex()
@@ -406,6 +410,27 @@ def listImages(db, parent_id):
     result.append({ "id": id,
                     "prompt": prompt,
                     "filename": filename })
+  return result
+
+def getImages(db, parent_id=None):
+  """
+  Return a list of image elements.
+  If parent_id is None, return all images.
+  Otherwise, return images for specified element.
+  """
+  result = []
+  if parent_id is not None:
+    q = db.execute("SELECT id, parent_id, prompt, filename FROM images " +
+                   "WHERE parent_id = ?", (parent_id,))
+  else:
+    q = db.execute("SELECT id, parent_id, prompt, filename FROM images")
+    
+  for (id, parent_id, prompt, filename) in q.fetchall():
+    image = Image(id)
+    image.parent_id = parent_id
+    image.prompt = prompt
+    image.filename = filename    
+    result.append(image)
   return result
 
 

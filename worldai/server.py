@@ -94,6 +94,26 @@ def close_db(e=None):
 
 bp = Blueprint('worldai', __name__, cli_group=None)
 
+@bp.cli.command('create-image-thumb')
+@click.argument('id')
+def create_image_thumb(id):
+  """Create a thumbnail for an image."""
+  image = elements.getImage(get_db(), id)
+  if image is not None:
+    chat_functions.create_image_thumbnail(image)
+    click.echo('Created thumbnail [%s] %s.' % (image.id, image.getThumbName()))
+  else:
+    click.echo(f'Error, no such image id:{id}')
+
+@bp.cli.command('create-thumbs')
+def create_image_thumbs():
+  """Create a thumbnail for all images."""
+  images = elements.getImages(get_db())
+  for image in images:
+    chat_functions.create_image_thumbnail(image)
+    click.echo('Created thumbnail [%s] %s.' % (image.id, image.getThumbName()))
+
+
 @bp.cli.command('delete-image')
 @click.argument('id')
 def delete_image(id):
@@ -101,7 +121,7 @@ def delete_image(id):
   image = elements.getImage(get_db(), id)
   if image is not None:
     elements.deleteImage(get_db(), current_app.instance_path, id)
-    click.echo('Deleted image [%s] %s.' % (image.id, image.getName()))
+    click.echo('Deleted image [%s].' % image.id)
   else:
     click.echo(f'Error, no such image id:{id}')
 
@@ -373,6 +393,21 @@ def get_image(id):
     return "Image not found", 400
 
   image_file = os.path.join(current_app.instance_path, image.filename)
+  if not os.path.isfile(image_file):
+    return "Image file not found", 400
+  return flask.send_file(image_file, mimetype="image/webp")
+
+@bp.route('/images/<id>/thumb', methods=["GET"])
+@login_required
+def get_image_thumb(id):
+  """
+  Return an image
+  """
+  image = elements.getImage(get_db(), id)
+  if image is None:
+    return "Image not found", 400
+
+  image_file = os.path.join(current_app.instance_path, image.getThumbName())
   if not os.path.isfile(image_file):
     return "Image file not found", 400
   return flask.send_file(image_file, mimetype="image/webp")
@@ -652,7 +687,7 @@ def worlds_list():
       image_prop = { "id": "0", "url": url }     
     else:
       image_prop = { "id": image_id,
-                     "url": flask.url_for('worldai.get_image',
+                     "url": flask.url_for('worldai.get_image_thumb',
                                           id=image_id, _external=True) }
     
     world_list.append({"id": id,
@@ -705,7 +740,8 @@ def characters_list(wid):
       image_prop = { "id": "0", "url": url }
     else:
       image_prop = { "id": image_id,
-                     "url": flask.url_for('worldai.get_image', id=image_id) }
+                     "url": flask.url_for('worldai.get_image_thumb',
+                                          id=image_id) }
       
     character_list.append({"id": id,
                            "name": character.getName(),
