@@ -25,7 +25,10 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
-    <script>const key = "{{ auth_key }}"</script>
+    <script>
+      const auth_key = "{{ auth_key }}";
+      const url_pre = "{{ url_for('worldai.top_view') }}";
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

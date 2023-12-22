@@ -11,6 +11,7 @@ build_ui:
 	cd worldai/ui && npm run build
 	mkdir -p worldai/static/ui
 	cp -r worldai/ui/build/* worldai/static/ui
+	cp worldai/ui/build/index.html worldai/templates
 
 
 .PHONY: coverage

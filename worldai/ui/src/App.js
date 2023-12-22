@@ -7,20 +7,23 @@ import back_image from './back.png';
 
 /*
  * TODO:
+ * - get auth token
+ * - get a url prefix for fetch
  * - support multiple images
  */
 
-/*
- 
-
-  
-const character = {
-    id: "id404bc8b4",
-    name: "Elysia",
-    description: "A skilled archer with a mysterious past, on a personal quest to find a legendary artifact that has the power to restore balance to the world.",
-    image: elysia
+/*global url_pre, auth_key*/
+let URL="/"
+if (url_pre.substring(0,2) !== "{{") {
+    URL=url_pre;
 }
-*/
+console.log("URL Prefix: " + URL);
+
+let AUTH_KEY="auth"
+if (auth_key.substring(0,2) !== "{{") {
+    AUTH_KEY=auth_key
+}
+console.log("AUTH Key: " + AUTH_KEY);    
 
 // Simple button. May change in the future.
 function Button({ text, onClick, disabled }) {
@@ -120,16 +123,17 @@ function ChatScreen({ name, worldId, characterId }) {
         const controller = new AbortController();
         const signal = controller.signal;
         async function getData() {
-            // Get the chat history.        
-            const url = "/threads/worlds/" + worldId +
+            // Get the chat history.
+            const url = URL + "threads/worlds/" + worldId +
                   "/characters/" + characterId;
             try {
                 const response =
-                      await fetch(url, {signal: signal,
-                                        headers: {
-                                            "Authorization": "Bearer auth"
-                                        }
-                                       });
+                      await fetch(url,
+                                  {signal: signal,
+                                   headers: {
+                                       "Authorization": "Bearer " + AUTH_KEY
+                                   }
+                                  });
                 const values = await response.json();
                 setChatHistory(values["messages"]);
             } catch {
@@ -150,7 +154,7 @@ function ChatScreen({ name, worldId, characterId }) {
 
         async function getData() {
             const data = { "user": user_msg }
-            const url = "/threads/worlds/" + worldId +
+            const url = URL + "threads/worlds/" + worldId +
                   "/characters/" + characterId;
             // Post the user request
             try {            
@@ -159,7 +163,7 @@ function ChatScreen({ name, worldId, characterId }) {
                     body: JSON.stringify(data),
                     headers: {
                         'Content-Type': 'application/json',
-                        "Authorization": "Bearer auth"
+                        "Authorization": "Bearer " + AUTH_KEY
                     }
                 });
                 const values = await response.json();
@@ -239,13 +243,13 @@ function ChatCharacter({ worldId, characterId, setCharacterId}) {
 
         async function getData() {
             // Load the character
-            const url = "/worlds/" + worldId +
+            const url = URL + "worlds/" + worldId +
                   "/characters/" + characterId;
             try {
                 const response =
                       await fetch(url, {
                           headers: {
-                              "Authorization": "Bearer auth"
+                              "Authorization": "Bearer " + AUTH_KEY
                           }
                       });
                 const value = await response.json();
@@ -329,12 +333,12 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
 
         async function getData() {
             // Get the list of worlds
-            const url = "/worlds/" + worldId + "/characters";
+            const url = URL + "worlds/" + worldId + "/characters";
             try {
                 const response =
                       await fetch(url, {
                           headers: {
-                              "Authorization": "Bearer auth"
+                              "Authorization": "Bearer " + AUTH_KEY
                           }
                       });
                 const values = await response.json();
@@ -409,12 +413,12 @@ function SelectWorld({setWorldId}) {
 
         async function getData() {
             // Get the list of worlds
-            const url = "/worlds";
+            const url = URL + "worlds";
             try {
                 const response =
                       await fetch(url, {
                           headers: {
-                              "Authorization": "Bearer auth"
+                              "Authorization": "Bearer " + AUTH_KEY
                           }
                       });
                 const values = await response.json();

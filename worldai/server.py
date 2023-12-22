@@ -234,13 +234,13 @@ def react_ui(path):
   """
   return flask.send_from_directory("static/ui", path)
 
-@bp.route('/ui', methods=["GET"])
+@bp.route('/ui/', methods=["GET"])
 def react_base():
   """
   Serve the index.html file for the root of the UI
   """
-  return flask.send_from_directory("static/ui", "index.html")  
-
+  return flask.render_template("index.html",
+                               auth_key=current_app.config['AUTH_KEY'])
 
 
 @bp.route('/view/worlds', methods=["GET"])
