@@ -374,6 +374,17 @@ def get_image(id):
     return "Image file not found", 400
   return flask.send_file(image_file, mimetype="image/webp")
 
+def get_session_id():
+  """
+  Return an ID for the current session.
+  Create one if needed.
+  """
+  session_id = session.get('session_id')
+  if session_id is None:
+    session_id = os.urandom(12).hex()
+    session['session_id'] = session_id
+  return session_id
+
 
 @bp.route('/client', methods=["GET"])
 @login_required
@@ -381,12 +392,7 @@ def view_client():
   """
   Client view
   """
-  session_id = session.get('session_id')
-  if session_id is None:
-    session_id = os.urandom(12).hex()
-    session['session_id'] = session_id
-
-
+  session_id = get_session_id()
   return flask.render_template("client.html",
                                session_id=session_id,
                                auth_key=current_app.config['AUTH_KEY'])
@@ -584,7 +590,8 @@ def threads(wid, id):
   Character chat interface
   """
   # TODO:  Use session to look up a specific thread id
-  
+  session_id = get_session_id()
+
   if request.method == "GET":
     content = { "messages": [
       { "id": "1001",      

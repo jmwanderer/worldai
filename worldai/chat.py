@@ -21,6 +21,7 @@ import tiktoken
 from . import db_access
 from . import elements
 from . import chat_functions
+from . import threads
 
 GPT_MODEL = "gpt-3.5-turbo-1106"
 # Can be higher, but save $$$ with some potential loss in perf
@@ -360,34 +361,6 @@ class MessageRecords:
     return False
     
 
-def get_thread(db, session_id):
-  c = db.execute("SELECT thread FROM threads WHERE id = ? ",
-                 (session_id,))
-  r = c.fetchone()
-  if r is not None:
-    thread = r[0]
-    return thread
-  return None
-
-def save_thread(db, session_id, thread):
-  now = time.time()
-  c = db.execute("SELECT count(*) FROM threads WHERE id = ? ",
-                 (session_id,))
-  if c.fetchone()[0] == 0:
-    # INSERT
-    
-    q = db.execute("INSERT INTO threads VALUES (?, ?, ?, ?)",
-                   (session_id, now, now, thread))
-  else:
-    # UPDATE
-    q = db.execute("UPDATE threads SET thread = ?, updated = ? WHERE id = ?",
-                   (thread, now, session_id))
-  db.commit()
-
-def delete_thread(db, session_id)  :
-  q = db.execute("DELETE FROM threads WHERE id = ?",
-                   (session_id,))
-  db.commit()
 
   
 class ChatSession:
@@ -403,7 +376,7 @@ class ChatSession:
 
   def loadChatSession(db, session_id):
     chat_session = ChatSession(session_id)
-    thread = get_thread(db, session_id)
+    thread = threads.get_thread(db, session_id)
     if thread is not None:
       f = io.BytesIO(thread)
       chat_session.load(f)
@@ -414,11 +387,11 @@ class ChatSession:
     f = io.BytesIO()
     self.save(f)
     thread = f.getvalue()
-    save_thread(db, self.id, thread)
+    threads.save_thread(db, self.id, thread)
     f.close()
 
   def deleteChatSession(self, db):
-    delete_thread(db, self.id)
+    threads.delete_thread(db, self.id)
     
   def load(self, f):
     self.prompt_tokens = pickle.load(f)
