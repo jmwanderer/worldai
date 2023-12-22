@@ -65,7 +65,7 @@ function CurrentMessage({ content, chatState}) {
         if (current !== null) {
             current.scrollIntoView({behavior: "smooth"});
         }
-    });
+    }, [content]);
               
     let user = "";
     if (content.user.length > 0) {
