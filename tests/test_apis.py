@@ -14,8 +14,6 @@ def test_no_access(client):
 def bearer_token(app):
   return "Bearer " + app.config['AUTH_KEY']
 
-
-
 def test_world_chars(client, app):
   response = client.get("/worlds",
                        headers= {
@@ -90,6 +88,23 @@ def test_chat_get(client, app):
   })
   assert response.status_code == 200
   assert response.json['view'] is not None
+  assert len(response.json['messages']) == 0
+  
+  response = client.post(f"/chat/{thread}",
+                         headers={
+                           'Content-Type': 'application/json',
+                           "Authorization": bearer_token(app),
+                         },
+                         json={
+                           "user": "hi there!",
+                         })
+  assert response.status_code == 200
+  
+  response = client.get(f"/chat/{thread}", headers={
+    "Authorization": bearer_token(app),
+  })
+  assert response.status_code == 200
+  assert response.json['view'] is not None
   assert len(response.json['messages']) > 0
 
   
@@ -109,6 +124,17 @@ def test_chat_post(client, app):
   
 
 def test_chat_cmd_clear(client, app):
+  response = client.post(f"/chat/{thread}",
+                         headers={
+                           'Content-Type': 'application/json',
+                           "Authorization": bearer_token(app),
+                         },
+                         json={
+                           "user": "hi there!",
+                         })
+  assert response.status_code == 200
+
+  
   response = client.get(f"/chat/{thread}", headers={
     "Authorization": bearer_token(app),
   })

@@ -1,4 +1,5 @@
 from worldai import chat
+from worldai import message_records
 
 import unittest
 import unittest.mock
@@ -38,7 +39,7 @@ def getToolResponseMessage():
 class RecordsTestCase(unittest.TestCase):
   def testMessageRecords(self):
     enc = tiktoken.encoding_for_model(chat.GPT_MODEL)    
-    records = chat.MessageRecords()
+    records = message_records.MessageRecords()
     records.setSystemMessage(getSystemMessage())
     records.addRequestMessage(enc, getUserMessage())
     records.addResponseMessage(enc, getAssistantMessage())
@@ -82,7 +83,7 @@ class ExtendedRecordsTestCase(unittest.TestCase):
     
   def testMessageRecords(self):
     enc = ExtendedRecordsTestCase.Encode()
-    records = chat.MessageRecords()
+    records = message_records.MessageRecords()
     records.setSystemMessage(getSystemMessage())
     records.addRequestMessage(enc, getUserMessage())
 
