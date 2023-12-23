@@ -355,6 +355,12 @@ class ChatFunctions:
     """
     tool_func = None
 
+    logging.info(f"state: {self.current_state}")
+    logging.info("current view: %s",
+                 self.current_view.jsonStr())
+    logging.info("next view: %s",
+                 self.next_view.jsonStr())
+      
     # Check if the proper list is loaded for the current state.
     if self.current_state == STATE_WORLDS:
       if not history.hasToolCall("ListWorlds", {}):

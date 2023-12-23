@@ -193,9 +193,6 @@ class ChatSession:
     pickle.dump(self.history, f)
     pickle.dump(self.chatFunctions, f)
 
-  def functions(self):
-    return self.chatFunctions
-
   def track_tokens(self, db, prompt, complete, total):
     self.prompt_tokens += prompt
     self.complete_tokens += complete
@@ -268,18 +265,14 @@ class ChatSession:
     call_count = 0
     done = False
     while not done:
-      logging.info(f"state: {self.chatFunctions.current_state}")
-      logging.info("current view: %s",
-                   self.chatFunctions.current_view.jsonStr())
-      logging.info("next view: %s",
-                   self.chatFunctions.next_view.jsonStr())
-      
       messages = self.BuildMessages(self.history)
+
+      # See if we need to call any functions.
       tool_choice = self.chatFunctions.checkToolChoice(self.history)
 
       print_log(f"[{call_count}]: Chat completion call...")
-      # Limit tools call to 10
-      if call_count < 10:
+      # Limit tools call to 6
+      if call_count < 6:
         call_count += 1
         tools=self.chatFunctions.get_available_tools()
       else:
