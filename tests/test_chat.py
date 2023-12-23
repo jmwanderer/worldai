@@ -1,4 +1,5 @@
 from worldai import chat
+from worldai import design_chat
 from worldai import chat_cli
 from worldai import chat_functions
 from worldai import message_records
@@ -129,19 +130,16 @@ class SaveLoadTestCase(unittest.TestCase):
     self.db.close()    
 
   def testLoadSave(self):
-    session = chat.ChatSession.loadChatSession(self.db,
-                                               chat_functions.ChatFunctions(),
-                                               "1")
+    session = design_chat.DesignChatSession.loadChatSession(self.db, "1")    
     self.assertIsNotNone(session)
-
     session.saveChatSession(self.db)
 
-    session = chat.ChatSession.loadChatSession(self.db,
-                                               chat_functions.ChatFunctions(),
-                                               "1")
+    session = design_chat.DesignChatSession.loadChatSession(self.db, "1")
     self.assertIsNotNone(session)
 
-    session.deleteChatSession(self.db)    
+    session.deleteChatSession(self.db)
+
+
 
     
 

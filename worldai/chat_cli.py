@@ -3,6 +3,7 @@ import logging
 import openai
 
 from . import chat
+from . import design_chat
 from . import chat_functions
 from . import db_access
 
@@ -28,7 +29,7 @@ def initializeApp():
 def chat_loop():
   initializeApp()
   db = db_access.open_db()
-  chat_session = chat.ChatSession(chat_functions.ChatFunctions())
+  chat_session = design_chat.DesignChatSession()
   logging.info("\nstartup*****************");
   print("Welcome to the world builder!\n")
   print("You can create and design worlds with main characters, key sites, and special items.")
@@ -44,15 +45,12 @@ def chat_loop():
     if len(user) == 0:
       continue
 
-    assistant_message = chat_session.chat_exchange(db, user)
+    assistant_message = chat_session.chat_message(db, user)
       
     chat.pretty_print_message(assistant_message)               
 
   #pretty_print_conversation(BuildMessages(message_history))
   print("Tokens")
-  print(f"This session - prompt: {chat_session.prompt_tokens}, "+
-        f"complete: {chat_session.complete_tokens}, " +
-        f"total: {chat_session.total_tokens}")
   
   print("\nRunning total")
   chat_functions.dump_token_usage(db)

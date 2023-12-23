@@ -317,6 +317,11 @@ class ChatFunctions:
       result.append(tool)
     return result
 
+  def track_tokens(self, db, prompt, complete, total):
+    world_id = self.getCurrentWorldID()
+    if world_id is None:
+      world_id = 0
+    track_tokens(db, world_id, prompt, complete, total)
 
   def get_view(self):
     return self.current_view.json()
@@ -333,6 +338,37 @@ class ChatFunctions:
       return
     
     self.next_view = next_view
+
+
+  def checkToolChoice(self, history):
+    """
+    Determine if we need to fetch additional information
+    to act on requests.
+
+    Use the current state and the presense of included messages
+    to make decisions.
+    """
+    tool_func = None
+
+    # Check if the proper list is loaded for the current state.
+    if self.current_state == STATE_WORLDS:
+      if not history.hasToolCall("ListWorlds", {}):
+        tool_func = "ListWorlds"
+    elif self.current_state == STATE_CHARACTERS:
+      if not history.hasToolCall("ListCharacters", {}):
+        tool_func = "ListCharacters"
+    elif self.current_state == STATE_ITEMS:
+      if not history.hasToolCall("ListItems", {}):
+        tool_func = "ListItems"
+    elif self.current_state == STATE_SITES:
+      if not history.hasToolCall("ListSites", {}):
+        tool_func = "ListSites"
+
+    if tool_func is not None:
+      return { "type": "function",
+               "function": { "name": tool_func }}
+    return None
+    
 
     
   def execute_function_call(self, db, function_name, arguments):

@@ -156,8 +156,6 @@ class ChatSession:
     self.total_tokens = 0
     self.enc = tiktoken.encoding_for_model(GPT_MODEL)
     self.history = message_records.MessageRecords()
-    # TODO: Track in functions?
-    self.madeChanges = False
 
   def loadChatSession(db, chatFunctions, session_id):
     chat_session = ChatSession(chatFunctions, session_id)
@@ -195,18 +193,11 @@ class ChatSession:
   def functions(self):
     return self.chatFunctions
 
-  def madeModifications(self):
-    return self.madeChanges
-  
   def track_tokens(self, db, prompt, complete, total):
     self.prompt_tokens += prompt
     self.complete_tokens += complete
     self.total_tokens += total
-
-    world_id = self.chatFunctions.getCurrentWorldID()
-    if world_id is None:
-      world_id = 0
-    chat_functions.track_tokens(db, world_id, prompt, complete, total)
+    self.chatFunctions.track_tokens(db, prompt, complete, total)
     logging.info(f"prompt: {prompt}, complete: {complete}, total: {total}")
 
   def execute_function_call(self, db, function_name, function_args):
@@ -252,37 +243,6 @@ class ChatSession:
 
 
     
-  def checkToolChoice(self):
-    """
-    Determine if we need to fetch additional information
-    to act on requests.
-
-    Use the current state and the presense of included messages
-    to make decisions.
-    """
-    tool_func = None
-
-    # Check if the proper list is loaded for the current state.
-    if self.chatFunctions.current_state == chat_functions.STATE_WORLDS:
-      if not self.history.hasToolCall("ListWorlds", {}):
-        tool_func = "ListWorlds"
-    elif (self.chatFunctions.current_state ==
-          chat_functions.STATE_CHARACTERS):
-      if not self.history.hasToolCall("ListCharacters", {}):
-        tool_func = "ListCharacters"
-    elif (self.chatFunctions.current_state ==
-          chat_functions.STATE_ITEMS):
-      if not self.history.hasToolCall("ListItems", {}):
-        tool_func = "ListItems"
-    elif (self.chatFunctions.current_state ==
-          chat_functions.STATE_SITES):
-      if not self.history.hasToolCall("ListSites", {}):
-        tool_func = "ListSites"
-
-    if tool_func is not None:
-      return { "type": "function",
-               "function": { "name": tool_func }}
-    return None
     
 
   def chat_history(self):
@@ -298,42 +258,6 @@ class ChatSession:
     return { "messages": messages }
   
 
-
-  def chat_message(self, db, user):
-    if not self.chatFunctions.next_view.noElement():
-      # TODO: handle failure
-      next_view = self.chatFunctions.next_view
-      current_view = self.chatFunctions.current_view
-      
-      if next_view.getWorldID() != current_view.getWorldID():
-        world = elements.loadWorld(db, next_view.getWorldID())
-        message = "Read world '%s'" % world.getName()
-        self.chat_exchange(db, message)
-
-      # Refresh current_view, may have changed
-      current_view = self.chatFunctions.current_view
-      new_state = chat_functions.elemTypeToState(next_view.getType())
-        
-      if next_view.getID() != current_view.getID():
-        message = None
-        if next_view.getType() == elements.ElementType.CharacterType():
-          character = elements.loadCharacter(db, next_view.getID())
-          message = "Read character '%s'" % character.getName()          
-
-        elif next_view.getType() == elements.ElementType.ItemType():
-          item = elements.loadItem(db, next_view.getID())
-          message = "Read item '%s'" % item.getName()
-
-        elif next_view.getType() == elements.ElementType.SiteType():
-          site = elements.loadSite(db, next_view.getID())
-          message = "Read site '%s'" % site.getName()
-
-        self.chatFunctions.current_state = new_state
-        if message is not None:
-          self.chat_exchange(db, message)
-      self.chatFunctions.next_view = elements.ElemTag()
-        
-    return self.chat_exchange(db, user)
 
   
   def chat_exchange(self, db, user):
@@ -355,7 +279,7 @@ class ChatSession:
                    self.chatFunctions.next_view.jsonStr())
       
       messages = self.BuildMessages(self.history)
-      tool_choice = self.checkToolChoice()
+      tool_choice = self.chatFunctions.checkToolChoice(self.history)
 
       print_log(f"[{call_count}]: Chat completion call...")
       # Limit tools call to 10
@@ -428,6 +352,5 @@ class ChatSession:
         done = True
         
     # Return result
-    self.madeChanges = self.chatFunctions.madeChanges() 
     return assistant_message
 

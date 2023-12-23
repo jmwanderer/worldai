@@ -20,6 +20,7 @@ from . import db_access
 from . import elements
 from . import chat
 from . import chat_functions
+from . import design_chat
 from . import threads
 
 
@@ -442,25 +443,24 @@ def chat_api(session_id):
   """
   Chat interface
   """
-  chat_session = chat.ChatSession.loadChatSession(get_db(),
-                                                  chat_functions.ChatFunctions(),
-                                                  session_id)
+  chat_session = design_chat.DesignChatSession.loadChatSession(get_db(),
+                                                               session_id)
   deleteSession = False
   
   if request.method == "GET":
       content = chat_session.chat_history()
-      content['view'] = chat_session.functions().get_view()
+      content['view'] = chat_session.get_view()
   else:
     if request.json.get("user") is not None:
       user_msg = request.json.get("user")
       view = request.json.get("view")
-      chat_session.functions().set_view(view)
+      chat_session.set_view(view)
       message = chat_session.chat_message(get_db(), user_msg)
       content = {
         "assistant": chat.parseResponseText(message['content']),
-        "changes": chat_session.madeModifications()
+        "changes": chat_session.madeChanges()
       }
-      content['view'] = chat_session.functions().get_view()
+      content['view'] = chat_session.get_view()
     elif request.json.get("command") is not None:
       content= { "status": "ok" }
       deleteSession = True
