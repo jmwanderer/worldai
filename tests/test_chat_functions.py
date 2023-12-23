@@ -1,4 +1,5 @@
 from worldai import elements
+from worldai import chat_functions
 from worldai import design_functions
 
 import unittest
@@ -24,29 +25,29 @@ class BasicTestCase(unittest.TestCase):
     self.user_dir.cleanup()
 
   def test_token_tracking(self):
-    design_functions.track_tokens(self.db, 1, 100, 100, 100)
-    design_functions.count_image(self.db, 1, 1)
-    self.assertTrue(design_functions.check_token_budgets(self.db))
-    self.assertTrue(design_functions.check_image_budget(self.db))    
+    chat_functions.track_tokens(self.db, 1, 100, 100, 100)
+    chat_functions.count_image(self.db, 1, 1)
+    self.assertTrue(chat_functions.check_token_budgets(self.db))
+    self.assertTrue(chat_functions.check_image_budget(self.db))    
 
-    design_functions.track_tokens(self.db, 2, 100, 100, 100)
-    design_functions.count_image(self.db, 2, 1)
+    chat_functions.track_tokens(self.db, 2, 100, 100, 100)
+    chat_functions.count_image(self.db, 2, 1)
 
-    self.assertTrue(design_functions.check_token_budgets(self.db))
-    self.assertTrue(design_functions.check_image_budget(self.db))    
+    self.assertTrue(chat_functions.check_token_budgets(self.db))
+    self.assertTrue(chat_functions.check_image_budget(self.db))    
 
     # Add a budget
     self.db.execute("INSERT INTO token_usage VALUES (?, 500, 500, 500, 5)",
                     ("limits",))
     self.db.commit()
-    self.assertTrue(design_functions.check_token_budgets(self.db))
-    self.assertTrue(design_functions.check_image_budget(self.db))
+    self.assertTrue(chat_functions.check_token_budgets(self.db))
+    self.assertTrue(chat_functions.check_image_budget(self.db))
 
-    design_functions.track_tokens(self.db, 1, 300, 300, 300)
-    design_functions.count_image(self.db, 1, 3)
+    chat_functions.track_tokens(self.db, 1, 300, 300, 300)
+    chat_functions.count_image(self.db, 1, 3)
 
-    self.assertFalse(design_functions.check_token_budgets(self.db))
-    self.assertFalse(design_functions.check_image_budget(self.db))
+    self.assertFalse(chat_functions.check_token_budgets(self.db))
+    self.assertFalse(chat_functions.check_image_budget(self.db))
 
     
 

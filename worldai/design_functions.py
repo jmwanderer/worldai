@@ -6,80 +6,11 @@ import logging
 from PIL import Image
 
 from . import elements
+from . import chat_functions
 
 
 IMAGE_DIRECTORY="/tmp"
 TESTING=False
-
-def get_budgets(db):
-  c = db.execute("SELECT prompt_tokens, complete_tokens, total_tokens, " +
-                 " images FROM token_usage WHERE world_id = ?",
-                 ("limits",))
-  r = c.fetchone()
-  if r is None:
-    return { "prompt_tokens": 5_000_000,
-             "complete_tokens": 2_000_000,
-             "images": 100 }
-  else:
-    (prompt, complete, total, images) = r
-    return { "prompt_tokens": prompt,
-             "complete_tokens": complete,
-             "images": images }
-
-def check_token_budgets(db):
-  budgets = get_budgets(db)
-  q = db.execute("SELECT SUM(prompt_tokens), SUM(complete_tokens) "+
-                 "FROM token_usage WHERE world_id != ?",
-                 ("limits",))
-  (prompt_tokens, complete_tokens) = q.fetchone()
-  return (prompt_tokens < budgets["prompt_tokens"] and
-          complete_tokens < budgets["complete_tokens"])
-  
-def check_image_budget(db):
-  budgets = get_budgets(db)
-  q = db.execute("SELECT SUM(images) FROM token_usage WHERE world_id != ?",
-                 ("limits",))
-  (images,) = q.fetchone()
-  return images < budgets["images"]
-
-def ensure_token_entry(db, world_id):
-  q = db.execute("SELECT COUNT(*) FROM token_usage WHERE world_id = ?",
-                 (world_id,))
-  if q.fetchone()[0] == 0:
-    db.execute("INSERT INTO token_usage VALUES (?, 0, 0, 0, 0)", (world_id,))
-  
-def count_image(db, world_id, count):
-  ensure_token_entry(db, world_id)
-
-  db.execute("UPDATE token_usage SET images = images + ? " +
-             "WHERE world_id = ?",
-             (count, world_id))
-  db.commit()
-  
-def track_tokens(db, world_id, prompt_tokens, complete_tokens, total_tokens):
-  ensure_token_entry(db, world_id)  
-
-  db.execute("UPDATE token_usage SET prompt_tokens = prompt_tokens + ?, " +
-             "complete_tokens = complete_tokens + ?, " +
-             "total_tokens = total_tokens + ? WHERE world_id = ?",
-             (prompt_tokens, complete_tokens, total_tokens, world_id))
-  db.commit()
-
-def dump_token_usage(db):
-  q = db.execute("SELECT world_id, prompt_tokens, complete_tokens, "+
-                 "total_tokens FROM token_usage")
-  for (world_id, prompt_tokens, complete_tokens, total_tokens) in q.fetchall():
-    print(f"world({world_id}): prompt: {prompt_tokens}, complete: " +
-          f"{complete_tokens}, total: {total_tokens}")
-
-  print()    
-  q = db.execute("SELECT SUM(prompt_tokens), SUM(complete_tokens), "+
-                 "SUM(total_tokens) FROM token_usage WHERE world_id != ?",
-                 ("limits",))
-  (prompt_tokens, complete_tokens, total_tokens) = q.fetchone()
-  print(f"total: prompt: {prompt_tokens}, complete: " +
-        f"{complete_tokens}, total: {total_tokens}")
-
 
 
 STATE_WORLDS = "State_Worlds"
@@ -271,12 +202,12 @@ def checkDuplication(name, element_list):
   return None
 
 
-class ChatFunctions:
+class ChatFunctions(chat_functions.BaseChatFunctions):
 
   def __init__(self):
+    chat_functions.BaseChatFunctions.__init__(self)
     self.current_state = STATE_WORLDS
     self.current_world_name = None
-    self.modified = False
 
     # Tracks current world, current element
     self.current_view = elements.ElemTag()
@@ -291,12 +222,6 @@ class ChatFunctions:
     # May return None
     return self.current_view.getWorldID()
   
-  def madeChanges(self):
-    return self.modified
-
-  def clearChanges(self):
-    self.modified = False
-
   def get_instructions(self):
     global_instructions = GLOBAL_INSTRUCTIONS.format(
       current_state=self.current_state)
@@ -326,7 +251,7 @@ class ChatFunctions:
     world_id = self.getCurrentWorldID()
     if world_id is None:
       world_id = 0
-    track_tokens(db, world_id, prompt, complete, total)
+    chat_functions.track_tokens(db, world_id, prompt, complete, total)
 
   def get_view(self):
     return self.current_view.json()
@@ -470,13 +395,6 @@ class ChatFunctions:
     elif self.current_state == STATE_WORLD:
       self.current_view = elements.ElemTag.WorldTag(self.getCurrentWorldID())
     return result
-
-  
-  def funcError(self, error_string):
-    return { "error": error_string }
-
-  def funcStatus(self, status_string):
-    return { "status": status_string }
 
   def FuncChangeState(self, db, arguments):
     state = arguments["state"]
@@ -733,10 +651,9 @@ class ChatFunctions:
     status["id"] = id
     return status
 
-  
   def FuncCreateImage(self, db, arguments):
     # Check if the budget allows
-    if not check_image_budget(db):
+    if not chat_function.check_image_budget(db):
       return self.funcError("No budget available for image creation")
     
     image = elements.Image()
@@ -784,7 +701,7 @@ class ChatFunctions:
     
     if result:
       logging.info("file create done, create image record")
-      count_image(db, self.getCurrentWorldID(), 1)
+      chat_functions.count_image(db, self.getCurrentWorldID(), 1)
       image = elements.createImage(db, image)
       create_image_thumbnail(image)
       self.modified = True

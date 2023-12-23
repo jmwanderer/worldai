@@ -4,6 +4,7 @@ import openai
 
 from . import chat
 from . import design_chat
+from . import chat_functions
 from . import design_functions
 from . import db_access
 
@@ -53,7 +54,7 @@ def chat_loop():
   print("Tokens")
   
   print("\nRunning total")
-  design_functions.dump_token_usage(db)
+  chat_functions.dump_token_usage(db)
   db.close()
 
 if __name__ ==  '__main__':
