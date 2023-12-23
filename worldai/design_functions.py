@@ -202,7 +202,7 @@ def checkDuplication(name, element_list):
   return None
 
 
-class ChatFunctions(chat_functions.BaseChatFunctions):
+class DesignFunctions(chat_functions.BaseChatFunctions):
 
   def __init__(self):
     chat_functions.BaseChatFunctions.__init__(self)

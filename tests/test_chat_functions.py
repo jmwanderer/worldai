@@ -18,7 +18,7 @@ class BasicTestCase(unittest.TestCase):
     with open(path) as f:
       self.db.executescript(f.read())
     self.user_dir = tempfile.TemporaryDirectory()
-    self.chatFunctions = design_functions.ChatFunctions()
+    self.chatFunctions = design_functions.DesignFunctions()
     
   def tearDown(self):
     self.db.close()

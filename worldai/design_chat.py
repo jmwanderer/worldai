@@ -1,15 +1,16 @@
 from worldai import chat
+from worldai import elements
 from worldai import design_functions
 
 """
 Module for the Design Chat Session
-- uses ChatSession and ChatFunctions
+- uses ChatSession and DesignFunctions
 """
 
 class DesignChatSession:
   def __init__(self, chat_session=None):
     if chat_session is None:
-      self.chatFunctions = design_functions.ChatFunctions()
+      self.chatFunctions = design_functions.DesignFunctions()
       self.chat = chat.ChatSession(self.chatFunctions)
     else:
       self.chatFunctions = chat_session.chatFunctions
@@ -17,7 +18,7 @@ class DesignChatSession:
 
 
   def loadChatSession(db, session_id):
-    functions = design_functions.ChatFunctions()    
+    functions = design_functions.DesignFunctions()    
     chat_session = chat.ChatSession.loadChatSession(db, functions, session_id)
     return DesignChatSession(chat_session)
 
@@ -48,7 +49,7 @@ class DesignChatSession:
       if next_view.getWorldID() != current_view.getWorldID():
         world = elements.loadWorld(db, next_view.getWorldID())
         message = "Read world '%s'" % world.getName()
-        self.chat_exchange(db, message)
+        self.chat.chat_exchange(db, message)
 
       # Refresh current_view, may have changed
       current_view = self.chatFunctions.current_view
@@ -70,7 +71,7 @@ class DesignChatSession:
 
         self.chatFunctions.current_state = new_state
         if message is not None:
-          self.chat_exchange(db, message)
+          self.chat.chat_exchange(db, message)
       self.chatFunctions.next_view = elements.ElemTag()
         
     return self.chat.chat_exchange(db, user)
