@@ -13,6 +13,7 @@ import openai
 import requests
 import pickle
 import io
+import markdown
 
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
@@ -95,9 +96,6 @@ def pretty_print_message(message):
                   f"({message['name']}): {message['content']}\n",
                   role_to_color[message["role"]]))
 
-def get_user_input():
-  return input("> ").strip()
-
 def print_log(value):
   print(value)
   logging.info(value)
@@ -120,6 +118,34 @@ def log_chat_message(messages, assistant_message):
   f.write(json.dumps(out, indent=4))
   f.close()
 
+
+def parseResponseText(text):
+  md = markdown.Markdown()
+  # Catch case of unordered list starting without a preceeding blank line
+  prev_line_list = False
+  lines = []
+
+  line_list = False
+  # Fix up non-standard markdown lists.
+  for line in text.splitlines():
+    if line.startswith("  ") and len(line) > 2:
+      # Need 4 spaces indent, not 2.
+      if line[2] == '-' or line[2].isdigit():
+        line = "  " + line
+    elif line.startswith("   ") and len(line) > 3:
+      # Need 4 spaces indent, not 3.
+      if line[3] == '-' or line[3].isdigit():
+        line = " " + line
+    line_list = len(line) > 0 and line[0].isdigit()
+    line_list = line_list or line.startswith("-")
+    if line_list and not prev_line_list:
+      lines.append("")
+    lines.append(line)
+    prev_line_list = line_list
+  text = "\n".join(lines)
+  result = md.convert(text)
+  return result
+  
   
 class ChatSession:
   def __init__(self, id=None):
@@ -128,8 +154,10 @@ class ChatSession:
     self.total_tokens = 0
     self.enc = tiktoken.encoding_for_model(GPT_MODEL)
     self.history = message_records.MessageRecords()
+    # TODO: Take in __init__????
     self.chatFunctions = chat_functions.ChatFunctions()
     self.id = id
+    # TODO: Track in functions?
     self.madeChanges = False
 
   def loadChatSession(db, session_id):
@@ -260,8 +288,7 @@ class ChatSession:
     messages = []
     for message_set in self.history.message_sets():
       user = elements.textToHTML(message_set.getRequestContent())
-      assistant = chat_functions.parseResponseText(
-        message_set.getResponseContent())
+      assistant = parseResponseText(message_set.getResponseContent())
       
       messages.append({ "user": user,
                         "assistant": assistant
@@ -419,60 +446,4 @@ class ChatSession:
     # Return result
     self.madeChanges = self.chatFunctions.madeChanges() 
     return assistant_message
-
-
-
-def initializeApp():
-  openai.api_key = os.environ['OPENAI_API_KEY']  
-  BASE_DIR = os.getcwd()
-  log_file_name = os.path.join(BASE_DIR, 'log-chat.log')
-  FORMAT = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
-  logging.basicConfig(filename=log_file_name,
-                      level=logging.INFO,
-                      format=FORMAT,)
-
-  dir = os.path.split(os.path.split(__file__)[0])[0]
-  dir = os.path.join(dir, 'instance')
-  chat_functions.IMAGE_DIRECTORY = dir
-  print(f"dir: {dir}")
-  DATABASE=os.path.join(dir, 'worldai.sqlite')
-  db_access.init_config(DATABASE)
-  
-def chat_loop():
-  initializeApp()
-  db = db_access.open_db()
-  chat_session = ChatSession()
-  logging.info("\nstartup*****************");
-  print("Welcome to the world builder!\n")
-  print("You can create and design worlds with main characters, key sites, and special items.")
-  print("")
-
-  while True:
-    try:
-      user = get_user_input()
-    except EOFError:
-      break
-    if user == 'exit':
-      break
-    if len(user) == 0:
-      continue
-
-    assistant_message = chat_session.chat_exchange(db, user)
-      
-    pretty_print_message(assistant_message)               
-
-  #pretty_print_conversation(BuildMessages(message_history))
-  print("Tokens")
-  print(f"This session - prompt: {chat_session.prompt_tokens}, "+
-        f"complete: {chat_session.complete_tokens}, " +
-        f"total: {chat_session.total_tokens}")
-  
-  print("\nRunning total")
-  chat_functions.dump_token_usage(db)
-  db.close()
-  
-
-if __name__ ==  '__main__':
-  chat_loop()
-
 

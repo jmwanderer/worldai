@@ -455,7 +455,7 @@ def chat_api(session_id):
       chat_session.set_view(view)
       message = chat_session.chat_message(get_db(), user_msg)
       content = {
-        "assistant": chat_functions.parseResponseText(message['content']),
+        "assistant": chat.parseResponseText(message['content']),
         "changes": chat_session.madeModifications()
       }
       content['view'] = chat_session.get_view()

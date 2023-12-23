@@ -1,4 +1,5 @@
 from worldai import chat
+from worldai import chat_cli
 from worldai import message_records
 
 import unittest
@@ -194,12 +195,12 @@ class BasicChatTestCase(unittest.TestCase):
       pass
     
     chat.chat_completion_request = chat_completion_request
-    chat.get_user_input = get_user_input
+    chat_cli.get_user_input = get_user_input
     chat.ChatSession.execute_function_call = get_function_result
     chat.ChatSession.track_tokens = track_tokens
 
   def testChatLoop(self):
-    chat.chat_loop()
+    chat_cli.chat_loop()
 
 
 class ExtendedChatTestCase(unittest.TestCase):
@@ -240,7 +241,7 @@ class ExtendedChatTestCase(unittest.TestCase):
       pass
 
     chat.chat_completion_request = chat_completion_request
-    chat.get_user_input = get_user_input
+    chat_cli.get_user_input = get_user_input
     chat.ChatSession.execute_function_call = get_function_result
     chat.ChatSession.track_tokens = track_tokens
 
@@ -253,13 +254,13 @@ class ExtendedChatTestCase(unittest.TestCase):
   def testSimpleChatLoop(self):
     # No buffer management needed
     chat.MESSAGE_THRESHOLD=6_000
-    chat.chat_loop()
+    chat_cli.chat_loop()
     self.assertLess(self.max_token_count, chat.MESSAGE_THRESHOLD)
     
 
   def testComplexChatLoop(self):
     # No buffer management needed
-    chat.chat_loop()
+    chat_cli.chat_loop()
     self.assertLess(self.max_token_count, chat.MESSAGE_THRESHOLD)    
     
 

@@ -3,7 +3,6 @@ import os
 import openai
 import requests
 import logging
-import markdown
 from PIL import Image
 
 from . import elements
@@ -82,33 +81,6 @@ def dump_token_usage(db):
         f"{complete_tokens}, total: {total_tokens}")
 
 
-
-def parseResponseText(text):
-  md = markdown.Markdown()
-  # Catch case of unordered list starting without a preceeding blank line
-  prev_line_list = False
-  lines = []
-
-  line_list = False
-  # Fix up non-standard markdown lists.
-  for line in text.splitlines():
-    if line.startswith("  ") and len(line) > 2:
-      # Need 4 spaces indent, not 2.
-      if line[2] == '-' or line[2].isdigit():
-        line = "  " + line
-    elif line.startswith("   ") and len(line) > 3:
-      # Need 4 spaces indent, not 3.
-      if line[3] == '-' or line[3].isdigit():
-        line = " " + line
-    line_list = len(line) > 0 and line[0].isdigit()
-    line_list = line_list or line.startswith("-")
-    if line_list and not prev_line_list:
-      lines.append("")
-    lines.append(line)
-    prev_line_list = line_list
-  text = "\n".join(lines)
-  result = md.convert(text)
-  return result
 
 STATE_WORLDS = "State_Worlds"
 STATE_WORLD = "State_World"
