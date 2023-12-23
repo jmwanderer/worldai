@@ -1,5 +1,5 @@
 from worldai import chat
-from worldai import chat_functions
+from worldai import design_functions
 
 """
 Module for the Design Chat Session
@@ -9,7 +9,7 @@ Module for the Design Chat Session
 class DesignChatSession:
   def __init__(self, chat_session=None):
     if chat_session is None:
-      self.chatFunctions = chat_functions.ChatFunctions()
+      self.chatFunctions = design_functions.ChatFunctions()
       self.chat = chat.ChatSession(self.chatFunctions)
     else:
       self.chatFunctions = chat_session.chatFunctions
@@ -17,7 +17,7 @@ class DesignChatSession:
 
 
   def loadChatSession(db, session_id):
-    functions = chat_functions.ChatFunctions()    
+    functions = design_functions.ChatFunctions()    
     chat_session = chat.ChatSession.loadChatSession(db, functions, session_id)
     return DesignChatSession(chat_session)
 
@@ -52,7 +52,7 @@ class DesignChatSession:
 
       # Refresh current_view, may have changed
       current_view = self.chatFunctions.current_view
-      new_state = chat_functions.elemTypeToState(next_view.getType())
+      new_state = design_functions.elemTypeToState(next_view.getType())
         
       if next_view.getID() != current_view.getID():
         message = None

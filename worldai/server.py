@@ -19,7 +19,7 @@ import openai
 from . import db_access
 from . import elements
 from . import chat
-from . import chat_functions
+from . import design_functions
 from . import design_chat
 from . import threads
 
@@ -46,7 +46,7 @@ def create_app(instance_path=None, test_config=None):
   if app.config["TESTING"]:
     print("Test mode...")
     chat.TESTING = True
-    chat_functions.TESTING = True    
+    design_functions.TESTING = True    
 
   # Configure logging
   BASE_DIR = os.getcwd()
@@ -71,7 +71,7 @@ def create_app(instance_path=None, test_config=None):
     os.makedirs(app.instance_path)
   except OSError as err:
     pass
-  chat_functions.IMAGE_DIRECTORY = app.instance_path
+  design_functions.IMAGE_DIRECTORY = app.instance_path
   chat.MESSAGE_DIRECTORY = app.instance_path
   
   app.register_blueprint(bp)
@@ -102,7 +102,7 @@ def create_image_thumb(id):
   """Create a thumbnail for an image."""
   image = elements.getImage(get_db(), id)
   if image is not None:
-    chat_functions.create_image_thumbnail(image)
+    design_functions.create_image_thumbnail(image)
     click.echo('Created thumbnail [%s] %s.' % (image.id, image.getThumbName()))
   else:
     click.echo(f'Error, no such image id:{id}')
@@ -112,7 +112,7 @@ def create_image_thumbs():
   """Create a thumbnail for all images."""
   images = elements.getImages(get_db())
   for image in images:
-    chat_functions.create_image_thumbnail(image)
+    design_functions.create_image_thumbnail(image)
     click.echo('Created thumbnail [%s] %s.' % (image.id, image.getThumbName()))
 
 

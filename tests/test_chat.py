@@ -1,7 +1,7 @@
 from worldai import chat
 from worldai import design_chat
 from worldai import chat_cli
-from worldai import chat_functions
+from worldai import design_functions
 from worldai import message_records
 
 

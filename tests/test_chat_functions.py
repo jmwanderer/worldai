@@ -1,5 +1,5 @@
 from worldai import elements
-from worldai import chat_functions
+from worldai import design_functions
 
 import unittest
 import tempfile
@@ -17,36 +17,36 @@ class BasicTestCase(unittest.TestCase):
     with open(path) as f:
       self.db.executescript(f.read())
     self.user_dir = tempfile.TemporaryDirectory()
-    self.chatFunctions = chat_functions.ChatFunctions()
+    self.chatFunctions = design_functions.ChatFunctions()
     
   def tearDown(self):
     self.db.close()
     self.user_dir.cleanup()
 
   def test_token_tracking(self):
-    chat_functions.track_tokens(self.db, 1, 100, 100, 100)
-    chat_functions.count_image(self.db, 1, 1)
-    self.assertTrue(chat_functions.check_token_budgets(self.db))
-    self.assertTrue(chat_functions.check_image_budget(self.db))    
+    design_functions.track_tokens(self.db, 1, 100, 100, 100)
+    design_functions.count_image(self.db, 1, 1)
+    self.assertTrue(design_functions.check_token_budgets(self.db))
+    self.assertTrue(design_functions.check_image_budget(self.db))    
 
-    chat_functions.track_tokens(self.db, 2, 100, 100, 100)
-    chat_functions.count_image(self.db, 2, 1)
+    design_functions.track_tokens(self.db, 2, 100, 100, 100)
+    design_functions.count_image(self.db, 2, 1)
 
-    self.assertTrue(chat_functions.check_token_budgets(self.db))
-    self.assertTrue(chat_functions.check_image_budget(self.db))    
+    self.assertTrue(design_functions.check_token_budgets(self.db))
+    self.assertTrue(design_functions.check_image_budget(self.db))    
 
     # Add a budget
     self.db.execute("INSERT INTO token_usage VALUES (?, 500, 500, 500, 5)",
                     ("limits",))
     self.db.commit()
-    self.assertTrue(chat_functions.check_token_budgets(self.db))
-    self.assertTrue(chat_functions.check_image_budget(self.db))
+    self.assertTrue(design_functions.check_token_budgets(self.db))
+    self.assertTrue(design_functions.check_image_budget(self.db))
 
-    chat_functions.track_tokens(self.db, 1, 300, 300, 300)
-    chat_functions.count_image(self.db, 1, 3)
+    design_functions.track_tokens(self.db, 1, 300, 300, 300)
+    design_functions.count_image(self.db, 1, 3)
 
-    self.assertFalse(chat_functions.check_token_budgets(self.db))
-    self.assertFalse(chat_functions.check_image_budget(self.db))
+    self.assertFalse(design_functions.check_token_budgets(self.db))
+    self.assertFalse(design_functions.check_image_budget(self.db))
 
     
 
@@ -151,7 +151,7 @@ class BasicTestCase(unittest.TestCase):
 
     # STATE WORLD
     self.assertEqual(self.chatFunctions.current_state,
-                     chat_functions.STATE_WORLD)
+                     design_functions.STATE_WORLD)
     self.assertCallAvailable('UpdateWorld')    
     self.assertCallNotAvailable('ListWorlds')
     self.assertIsNotNone(self.chatFunctions.get_state_instructions())
@@ -160,12 +160,12 @@ class BasicTestCase(unittest.TestCase):
 
     # STATE WORLD
     self.assertEqual(self.chatFunctions.current_state,
-                     chat_functions.STATE_WORLD)
+                     design_functions.STATE_WORLD)
     self.callFunction('ChangeState', '{ "state": "State_Characters" }')
 
     # STATE CHARACTERS
     self.assertEqual(self.chatFunctions.current_state,
-                     chat_functions.STATE_CHARACTERS)
+                     design_functions.STATE_CHARACTERS)
     self.assertCallNotAvailable('UpdateWorld')
     self.assertCallAvailable('ListCharacters')
     self.assertCallAvailable('CreateCharacter')
@@ -176,7 +176,7 @@ class BasicTestCase(unittest.TestCase):
 
     # STATE CHARACTERS
     self.assertEqual(self.chatFunctions.current_state,
-                     chat_functions.STATE_CHARACTERS)
+                     design_functions.STATE_CHARACTERS)
     self.assertCallAvailable('UpdateCharacter')
 
     self.callFunction('UpdateCharacter',
@@ -192,7 +192,7 @@ class BasicTestCase(unittest.TestCase):
 
     self.callFunction('ChangeState', '{ "state": "State_World" }')    
     self.assertEqual(self.chatFunctions.current_state,
-                     chat_functions.STATE_WORLD)
+                     design_functions.STATE_WORLD)
     
     
   

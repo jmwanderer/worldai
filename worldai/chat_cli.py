@@ -4,7 +4,7 @@ import openai
 
 from . import chat
 from . import design_chat
-from . import chat_functions
+from . import design_functions
 from . import db_access
 
 def get_user_input():
@@ -21,7 +21,7 @@ def initializeApp():
 
   dir = os.path.split(os.path.split(__file__)[0])[0]
   dir = os.path.join(dir, 'instance')
-  chat_functions.IMAGE_DIRECTORY = dir
+  design_functions.IMAGE_DIRECTORY = dir
   print(f"dir: {dir}")
   DATABASE=os.path.join(dir, 'worldai.sqlite')
   db_access.init_config(DATABASE)
@@ -53,7 +53,7 @@ def chat_loop():
   print("Tokens")
   
   print("\nRunning total")
-  chat_functions.dump_token_usage(db)
+  design_functions.dump_token_usage(db)
   db.close()
 
 if __name__ ==  '__main__':
