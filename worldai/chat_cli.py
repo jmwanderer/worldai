@@ -28,7 +28,7 @@ def initializeApp():
 def chat_loop():
   initializeApp()
   db = db_access.open_db()
-  chat_session = chat.ChatSession()
+  chat_session = chat.ChatSession(chat_functions.ChatFunctions())
   logging.info("\nstartup*****************");
   print("Welcome to the world builder!\n")
   print("You can create and design worlds with main characters, key sites, and special items.")

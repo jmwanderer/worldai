@@ -1,6 +1,8 @@
 from worldai import chat
 from worldai import chat_cli
+from worldai import chat_functions
 from worldai import message_records
+
 
 import unittest
 import unittest.mock
@@ -114,8 +116,6 @@ class ExtendedRecordsTestCase(unittest.TestCase):
     # Count number of size 1 messages
     self.assertEqual(records.getThreadTokenCount(enc), 86)
 
-
-
 class SaveLoadTestCase(unittest.TestCase):
 
   def setUp(self):
@@ -129,12 +129,16 @@ class SaveLoadTestCase(unittest.TestCase):
     self.db.close()    
 
   def testLoadSave(self):
-    session = chat.ChatSession.loadChatSession(self.db, "1")
+    session = chat.ChatSession.loadChatSession(self.db,
+                                               chat_functions.ChatFunctions(),
+                                               "1")
     self.assertIsNotNone(session)
 
     session.saveChatSession(self.db)
 
-    session = chat.ChatSession.loadChatSession(self.db, "1")
+    session = chat.ChatSession.loadChatSession(self.db,
+                                               chat_functions.ChatFunctions(),
+                                               "1")
     self.assertIsNotNone(session)
 
     session.deleteChatSession(self.db)    

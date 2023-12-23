@@ -148,20 +148,19 @@ def parseResponseText(text):
   
   
 class ChatSession:
-  def __init__(self, id=None):
+  def __init__(self, chatFunctions, id=None):
+    self.id = id
+    self.chatFunctions = chatFunctions        
     self.prompt_tokens = 0
     self.complete_tokens = 0
     self.total_tokens = 0
     self.enc = tiktoken.encoding_for_model(GPT_MODEL)
     self.history = message_records.MessageRecords()
-    # TODO: Take in __init__????
-    self.chatFunctions = chat_functions.ChatFunctions()
-    self.id = id
     # TODO: Track in functions?
     self.madeChanges = False
 
-  def loadChatSession(db, session_id):
-    chat_session = ChatSession(session_id)
+  def loadChatSession(db, chatFunctions, session_id):
+    chat_session = ChatSession(chatFunctions, session_id)
     thread = threads.get_thread(db, session_id)
     if thread is not None:
       f = io.BytesIO(thread)
@@ -192,7 +191,9 @@ class ChatSession:
     pickle.dump(self.total_tokens, f)
     pickle.dump(self.history, f)
     pickle.dump(self.chatFunctions, f)
-    
+
+  def functions(self):
+    return self.chatFunctions
 
   def madeModifications(self):
     return self.madeChanges
@@ -297,23 +298,6 @@ class ChatSession:
     return { "messages": messages }
   
 
-  def get_view(self):
-    return self.chatFunctions.current_view.json()
-
-  def set_view(self, next_view):
-    """
-    Set the target view.
-    If same as current, this is a NO-OP
-    """
-    next_view = elements.ElemTag.JsonTag(next_view)
-    if next_view == self.chatFunctions.current_view:
-      # View already matches - reset
-      self.chatFunctions.next_view = elements.ElemTag()
-      return
-    
-    self.chatFunctions.next_view = next_view
-    # TODO: do something with this
-    
 
   def chat_message(self, db, user):
     if not self.chatFunctions.next_view.noElement():

@@ -318,6 +318,23 @@ class ChatFunctions:
     return result
 
 
+  def get_view(self):
+    return self.current_view.json()
+
+  def set_view(self, next_view):
+    """
+    Set the target view.
+    If same as current, this is a NO-OP
+    """
+    next_view = elements.ElemTag.JsonTag(next_view)
+    if next_view == self.current_view:
+      # View already matches - reset
+      self.next_view = elements.ElemTag()
+      return
+    
+    self.next_view = next_view
+
+    
   def execute_function_call(self, db, function_name, arguments):
     """
     Dispatch function for function_name
