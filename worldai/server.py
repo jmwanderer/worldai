@@ -72,6 +72,7 @@ def create_app(instance_path=None, test_config=None):
   except OSError as err:
     pass
   chat_functions.IMAGE_DIRECTORY = app.instance_path
+  chat.MESSAGE_DIRECTORY = app.instance_path
   
   app.register_blueprint(bp)
 

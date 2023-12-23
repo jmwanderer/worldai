@@ -296,6 +296,11 @@ class ChatFunctions:
 
   def clearChanges(self):
     self.modified = False
+
+  def get_instructions(self):
+    global_instructions = GLOBAL_INSTRUCTIONS.format(
+      current_state=self.current_state)
+    return global_instructions + "\n" + self.get_state_instructions()
   
   def get_state_instructions(self):
     value = instructions[self.current_state].format(

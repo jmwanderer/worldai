@@ -21,13 +21,15 @@ import tiktoken
 
 from . import db_access
 from . import elements
-from . import chat_functions
 from . import threads
 from . import message_records
 
 GPT_MODEL = "gpt-3.5-turbo-1106"
 # Can be higher, but save $$$ with some potential loss in perf
 MESSAGE_THRESHOLD=3_000
+
+# If set, dump chat messages there.
+MESSAGE_DIRECTORY = None
 
 # Test code used when running integration tests
 # TODO: mock out for integration tests
@@ -105,18 +107,19 @@ def log_chat_message(messages, assistant_message):
   """
   If enabled, write a timestamped file with messages
   """
-  dir = os.path.join(chat_functions.IMAGE_DIRECTORY, "messages")
-  if not os.path.exists(dir):
-    os.makedirs(dir)
+  if MESSAGE_DIRECTORY is not None:
+    dir = os.path.join(MESSAGE_DIRECTORY, "messages")
+    if not os.path.exists(dir):
+      os.makedirs(dir)
 
-  out = { "message": messages,
-          "assistant": assistant_message }
-  ts = time.time()
-  filename = f"message.{ts}.txt"
-  path = os.path.join(dir, filename)
-  f = open(path, "w")
-  f.write(json.dumps(out, indent=4))
-  f.close()
+    out = { "message": messages,
+            "assistant": assistant_message }
+    ts = time.time()
+    filename = f"message.{ts}.txt"
+    path = os.path.join(dir, filename)
+    f = open(path, "w")
+    f.write(json.dumps(out, indent=4))
+    f.close()
 
 
 def parseResponseText(text):
@@ -213,15 +216,8 @@ class ChatSession:
     messages = []
     history.clearIncluded()
     
-    # System instructions
-    current_instructions = chat_functions.GLOBAL_INSTRUCTIONS.format(
-      current_state=self.chatFunctions.current_state)
-
-
     history.setSystemMessage({"role": "system",
-                              "content": current_instructions +
-                              "\n" +
-                              self.chatFunctions.get_state_instructions()
+                              "content": self.chatFunctions.get_instructions()
                               })
 
     functions = self.chatFunctions.get_available_tools()
