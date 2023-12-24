@@ -1,6 +1,9 @@
-from worldai import chat
-from worldai import elements
-from worldai import design_functions
+import io
+
+from . import chat
+from . import elements
+from . import design_functions
+from . import threads
 
 """
 Module for the Design Chat Session
@@ -18,17 +21,24 @@ class DesignChatSession:
 
 
   def loadChatSession(db, session_id):
-    functions = design_functions.DesignFunctions()    
-    chat_session = chat.ChatSession.loadChatSession(db,
-                                                    session_id,
-                                                    functions)
+    functions = design_functions.DesignFunctions()
+    chat_session = chat.ChatSession(session_id, functions)    
+    thread = threads.get_thread(db, session_id)
+    if thread is not None:
+      f = io.BytesIO(thread)
+      chat_session.load(f)
+      f.close()
     return DesignChatSession(chat_session)
 
   def saveChatSession(self, db):
-    self.chat.saveChatSession(db)
+    f = io.BytesIO()
+    self.chat.save(f)
+    thread = f.getvalue()
+    threads.save_thread(db, self.chat.id, thread)
+    f.close()
 
   def deleteChatSession(self, db):
-    self.chat.deleteChatSession(db)
+    threads.delete_thread(db, self.chat.id)    
 
   def chat_history(self):
     return self.chat.chat_history()

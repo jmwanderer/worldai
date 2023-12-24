@@ -8,6 +8,8 @@ import os
 
 """
 Module for the Character Chat Session
+TODO: figure out how to format chat text in React UI
+      right now, just surpressing html. 
 """
 
 class CharacterChat:

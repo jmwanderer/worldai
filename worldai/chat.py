@@ -21,7 +21,6 @@ import tiktoken
 
 from . import db_access
 from . import elements
-from . import threads
 from . import message_records
 from . import chat_functions
 
@@ -172,25 +171,6 @@ class ChatSession:
     self.enc = tiktoken.encoding_for_model(GPT_MODEL)
     self.history = message_records.MessageRecords()
 
-  def loadChatSession(db, session_id, chatFunctions=None):
-    chat_session = ChatSession(session_id, chatFunctions)
-    thread = threads.get_thread(db, session_id)
-    if thread is not None:
-      f = io.BytesIO(thread)
-      chat_session.load(f)
-      f.close()
-    return chat_session
-
-  def saveChatSession(self, db):
-    f = io.BytesIO()
-    self.save(f)
-    thread = f.getvalue()
-    threads.save_thread(db, self.id, thread)
-    f.close()
-
-  def deleteChatSession(self, db):
-    threads.delete_thread(db, self.id)
-    
   def load(self, f):
     self.prompt_tokens = pickle.load(f)
     self.complete_tokens = pickle.load(f)
