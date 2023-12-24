@@ -217,7 +217,7 @@ class ChatSession:
                                                     function_name,
                                                     function_args)
     
-  def BuildMessages(self, history):
+  def BuildMessages(self, history, instructions):
     """
     Take a MessageRecords instance
     Return a list of messages that fit context size
@@ -226,7 +226,7 @@ class ChatSession:
     history.clearIncluded()
     
     history.setSystemMessage({"role": "system",
-                              "content": self.chatFunctions.get_instructions()
+                              "content": instructions,
                               })
 
     functions = self.chatFunctions.get_available_tools()
@@ -250,11 +250,15 @@ class ChatSession:
     
     
 
-  def chat_history(self):
+  def chat_history(self, to_html=True):
     messages = []
     for message_set in self.history.message_sets():
-      user = elements.textToHTML(message_set.getRequestContent())
-      assistant = parseResponseText(message_set.getResponseContent())
+      if to_html:
+        user = elements.textToHTML(message_set.getRequestContent())
+        assistant = parseResponseText(message_set.getResponseContent())
+      else:
+        user = message_set.getRequestContent()
+        assistant = message_set.getResponseContent()
       
       messages.append({ "user": user,
                         "assistant": assistant
@@ -277,7 +281,8 @@ class ChatSession:
     call_count = 0
     done = False
     while not done:
-      messages = self.BuildMessages(self.history)
+      instructions = self.chatFunctions.get_instructions(db)      
+      messages = self.BuildMessages(self.history, instructions)
 
       # See if we need to call any functions.
       tool_choice = self.chatFunctions.checkToolChoice(self.history)

@@ -222,7 +222,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     # May return None
     return self.current_view.getWorldID()
   
-  def get_instructions(self):
+  def get_instructions(self, db):
     global_instructions = GLOBAL_INSTRUCTIONS.format(
       current_state=self.current_state)
     return global_instructions + "\n" + self.get_state_instructions()

@@ -16,7 +16,7 @@ class BaseChatFunctions:
   def clearChanges(self):
     self.modified = False
 
-  def get_instructions(self):
+  def get_instructions(self, db):
     return ""
 
   def get_available_tools(self):

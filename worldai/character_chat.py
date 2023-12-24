@@ -1,6 +1,7 @@
-from worldai import chat
-from worldai import elements
-from worldai import threads
+from . import chat
+from . import elements
+from . import threads
+from . import character_functions
 
 import io
 import os
@@ -12,12 +13,13 @@ Module for the Character Chat Session
 class CharacterChat:
   def __init__(self, chat_session, world_id, character_id):
     self.chat = chat_session
-    self.chat = chat_session
     self.world_id = world_id
     self.character_id = character_id
 
   def loadChatSession(db, session_id, wid, cid):
-    chat_session = chat.ChatSession(id=session_id)
+    functions = character_functions.CharacterFunctions(wid, cid)     
+    chat_session = chat.ChatSession(id=session_id,
+                                    chatFunctions=functions)
     thread = threads.get_character_thread(db, session_id, wid, cid)
     if thread is not None:
       f = io.BytesIO(thread)
@@ -45,7 +47,7 @@ class CharacterChat:
 
   def chat_history(self):
     history = []
-    for message in self.chat.chat_history()["messages"]:
+    for message in self.chat.chat_history(to_html=False)["messages"]:
       history.append({ "id": os.urandom(4).hex(),
                        "user": message["user"],
                        "reply": message["assistant"]
