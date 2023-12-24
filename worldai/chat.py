@@ -23,6 +23,15 @@ from . import db_access
 from . import elements
 from . import threads
 from . import message_records
+from . import chat_functions
+
+# TODO:
+# Update chat messages:
+#  1. Add a message id
+#  2. change assistant to reply
+#
+# Serialize threads in json, not pickle
+#
 
 GPT_MODEL = "gpt-3.5-turbo-1106"
 # Can be higher, but save $$$ with some potential loss in perf
@@ -151,17 +160,20 @@ def parseResponseText(text):
   
   
 class ChatSession:
-  def __init__(self, chatFunctions, id=None):
+  def __init__(self, id=None, chatFunctions=None):
     self.id = id
-    self.chatFunctions = chatFunctions        
+    if chatFunctions is None:
+      self.chatFunctions = chat_functions.BaseChatFunctions()
+    else:
+      self.chatFunctions = chatFunctions        
     self.prompt_tokens = 0
     self.complete_tokens = 0
     self.total_tokens = 0
     self.enc = tiktoken.encoding_for_model(GPT_MODEL)
     self.history = message_records.MessageRecords()
 
-  def loadChatSession(db, chatFunctions, session_id):
-    chat_session = ChatSession(chatFunctions, session_id)
+  def loadChatSession(db, session_id, chatFunctions=None):
+    chat_session = ChatSession(session_id, chatFunctions)
     thread = threads.get_thread(db, session_id)
     if thread is not None:
       f = io.BytesIO(thread)

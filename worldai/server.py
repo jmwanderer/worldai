@@ -21,6 +21,7 @@ from . import elements
 from . import chat
 from . import design_functions
 from . import design_chat
+from . import character_chat
 from . import threads
 
 
@@ -75,6 +76,7 @@ def create_app(instance_path=None, test_config=None):
   chat.MESSAGE_DIRECTORY = app.instance_path
   
   app.register_blueprint(bp)
+  app.teardown_appcontext(close_db)  
 
   @app.errorhandler(Exception)
   def handle_exception(e):
@@ -643,31 +645,25 @@ def threads_api(wid, id):
   # TODO:  Use session to look up a specific thread id
   session_id = get_session_id()
 
-  thread = threads.get_character_thread(get_db(), session_id, wid, id)
-  if thread is None:
-    history = []
-  else:
-    history = json.loads(thread)
+  chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
+                                                              session_id,
+                                                              wid, id)
   
-
   if request.method == "GET":
+    history = chat_session.chat_history()    
     content = { "messages": history }
-
   elif request.json.get("user") is not None:
       user_msg = request.json.get("user")
-      reply = get_random_message()
+      reply = chat_session.chat_message(get_db(), user_msg)
       content = {
         "id": os.urandom(4).hex(),
         "user": user_msg,
-        "reply": reply
+        "reply": reply["content"]
       }
-      history.append(content)
-      thread = json.dumps(history)
-      threads.save_character_thread(get_db(), session_id, wid, id, thread)
-      time.sleep(2)
   else:
     content = { "error": "malformed input" }
 
+  chat_session.saveChatSession(get_db())
   return content
 
 

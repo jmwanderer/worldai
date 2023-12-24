@@ -20,7 +20,7 @@ class BaseChatFunctions:
     return ""
 
   def get_available_tools(self):
-    return []
+    return None
 
   def track_tokens(self, db, prompt, complete, total):
     world_id = 0

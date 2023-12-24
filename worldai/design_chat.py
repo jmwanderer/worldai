@@ -11,7 +11,7 @@ class DesignChatSession:
   def __init__(self, chat_session=None):
     if chat_session is None:
       self.chatFunctions = design_functions.DesignFunctions()
-      self.chat = chat.ChatSession(self.chatFunctions)
+      self.chat = chat.ChatSession(chatFunctions=self.chatFunctions)
     else:
       self.chatFunctions = chat_session.chatFunctions
       self.chat = chat_session
@@ -19,7 +19,9 @@ class DesignChatSession:
 
   def loadChatSession(db, session_id):
     functions = design_functions.DesignFunctions()    
-    chat_session = chat.ChatSession.loadChatSession(db, functions, session_id)
+    chat_session = chat.ChatSession.loadChatSession(db,
+                                                    session_id,
+                                                    functions)
     return DesignChatSession(chat_session)
 
   def saveChatSession(self, db):
