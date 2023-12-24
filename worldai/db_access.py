@@ -11,6 +11,8 @@ def init_config(database):
 def open_db():
   db = sqlite3.connect(
     DATABASE)
+  # Enforce foreign keys
+  db.execute("PRAGMA foreign_keys = 1;")
   return db
 
 def check_init_db():

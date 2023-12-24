@@ -40,6 +40,8 @@ CREATE TABLE character_threads (
   thread_id TEXT NOT NULL,
   PRIMARY KEY (session_id, world_id, character_id),
   FOREIGN KEY (thread_id) REFERENCES threads(id)
+  FOREIGN KEY (world_id) REFERENCES elements(id)
+  FOREIGN KEY (character_id) REFERENCES elements(id)    
 );
 
 
