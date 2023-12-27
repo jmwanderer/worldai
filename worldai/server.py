@@ -645,10 +645,10 @@ def threads_api(wid, id):
   """
   # TODO:  Use session to look up a specific thread id
   session_id = get_session_id()
-  wstate = world_state.loadWorldState(get_db(), session_id, wid)
 
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
   chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
-                                                              wstate.id,
+                                                              wstate_id,
                                                               wid,
                                                               id)
   

@@ -12,35 +12,54 @@ class WorldState:
   """
   Represents an instantation of a world
   """
-  def __init__(self, session_id, world_id):
-    self.id = None
-    self.session_id = session_id    
-    self.world_id = world_id
+  def __init__(self, wstate_id):
+    self.id = wstate_id
+    self.session_id = None
+    self.world_id = None
     self.goal_state = "{}"
 
 
-def loadWorldState(db, session_id, world_id):
+def getWorldStateID(db, session_id, world_id):
   """
-  Get or create a world state.
+  Get an ID for a World State record - create if needed.
   """
+  id = None
   now = time.time()  
-  state = WorldState(session_id, world_id)
   c = db.cursor()  
   c.execute("BEGIN EXCLUSIVE")
-  c.execute("SELECT id, goal_state FROM world_state " +
+  c.execute("SELECT id FROM world_state " +
                  "WHERE session_id = ? and world_id = ?",
                  (session_id, world_id))
   r = c.fetchone()
   if r is None:
-    state.id = "id%s" % os.urandom(4).hex()
+    id = "id%s" % os.urandom(4).hex()
     c.execute("INSERT INTO world_state (id, session_id, world_id, created, " +
               "updated, goal_state) VALUES (?, ?, ?, ?, ?, ?)",
-              (state.id, state.session_id, state.world_id,
-               now, now, state.goal_state))
+              (id, session_id, world_id,
+               now, now, "{}"))
   else:
-    state.id = r[0]
-    state.goal_state = r[1]
+    id = r[0]
   db.commit()    
+  return id
+
+  
+def loadWorldState(db, wstate_id):
+  """
+  Get or create a world state.
+  """
+  now = time.time()  
+  state = None
+  c = db.cursor()  
+  c.execute("SELECT session_id, world_id, goal_state FROM world_state " +
+                 "WHERE id = ?",
+                 (wstate_id,))
+
+  r = c.fetchone()
+  if r is not None:
+    state = WorldState(wstate_id)
+    state.session_id = r[0]
+    state.world_id = r[1]
+    state.goal_state = r[2]
   return state
     
 
