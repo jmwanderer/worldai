@@ -751,7 +751,11 @@ def characters_list(wid):
   API to get the list of characters for a world
   """
   character_list = []
+  session_id = get_session_id()
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)  
   characters = elements.listCharacters(get_db(), wid)
+  
   for (entry) in characters:
     id = entry.getID()
     character = elements.loadCharacter(get_db(), id)
@@ -765,10 +769,12 @@ def characters_list(wid):
                      "url": flask.url_for('worldai.get_image_thumb',
                                           id=image_id) }
       
-    character_list.append({"id": id,
-                           "name": character.getName(),
-                           "description": character.getDescription(),
-                           "image": image_prop })
+    character_list.append(
+      {"id": id,
+       "name": character.getName(),
+       "description": character.getDescription(),
+       "givenSupport": wstate.hasCharacterSupport(id),
+       "image": image_prop })
 
   return flask.jsonify(character_list)
 
@@ -778,6 +784,9 @@ def characters(wid, id):
   """
   API to access a character
   """
+  session_id = get_session_id()
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)  
   character = elements.loadCharacter(get_db(), id)
   if character == None or character.parent_id != wid:
     return { "error", "Character not found"}, 400
@@ -792,5 +801,6 @@ def characters(wid, id):
   
   result = character.getJSONRep()
   result["images"] = images
+  result["givenSupport"] = wstate.hasCharacterSupport(id)
 
   return result

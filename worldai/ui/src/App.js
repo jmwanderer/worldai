@@ -44,11 +44,17 @@ function BackArrow({ onClick }) {
 
 // Shows a single message exchange.
 function MessageExchange({ name, message }) {
+    let user_message = "";
+
+    if (message.user.length > 0) {
+        user_message = (
+            <div className="App-message">            
+                <b>You:</b> <br/> { message.user }
+            </div>);
+    }
     return (
         <div>
-            <div className="App-message">
-                <b>You:</b> <br/> { message.user }
-            </div>
+            { user_message }
             <div className="App-message">
                 <b> {name}: </b>
                 <br/>
@@ -112,7 +118,7 @@ function UserInput({value, onChange, onKeyDown, disabled}) {
 }
 
 
-function ChatScreen({ name, worldId, characterId }) {
+function ChatScreen({ name, worldId, characterId, onChange}) {
     const [chatHistory, setChatHistory] = useState([]);
     const [currentMessage,
            setCurrentMessage] = useState({ user: "", error: ""});
@@ -136,6 +142,11 @@ function ChatScreen({ name, worldId, characterId }) {
                                   });
                 const values = await response.json();
                 setChatHistory(values["messages"]);
+                if (values["messages"].length == 0) {
+                    console.log("run hello");
+                    setUserInput("hello");
+                    submitClick();
+                }
             } catch {
             }
         }
@@ -174,6 +185,7 @@ function ChatScreen({ name, worldId, characterId }) {
                                    error: "Something went wrong."});
             }
             setChatState("ready")
+            onChange()
         }
         getData();
     }
@@ -232,12 +244,16 @@ function CharacterScreen({ character }) {
             <div>
                 {character.description}
             </div>
+            <p>
+                Have support: { character.givenSupport ? "Yes" : "No" }
+            </p>
         </div>
     );
 }
 
 function ChatCharacter({ worldId, characterId, setCharacterId}) {
     const [character, setCharacter] = useState(null);
+    const [refresh, setRefresh] = useState(null);    
     useEffect(() => {
         let ignore = false;
 
@@ -263,11 +279,15 @@ function ChatCharacter({ worldId, characterId, setCharacterId}) {
         return () => {
             ignore = true;
         }
-    }, [worldId, characterId]);
+    }, [worldId, characterId, refresh]);
 
 
     function clickBack() {
         setCharacterId(null);
+    }
+
+    function handleUpdate() {
+        setRefresh(refresh + 1);
     }
 
     let screen = (<tr/>);
@@ -280,7 +300,9 @@ function ChatCharacter({ worldId, characterId, setCharacterId}) {
                 <td className="App-td">
                     <ChatScreen name={character.name}
                                 worldId={worldId}
-                                characterId={characterId}/>
+                                characterId={characterId}
+                                onChange={handleUpdate}
+                    />
                 </td>
             </tr>
         );
@@ -297,7 +319,7 @@ function ChatCharacter({ worldId, characterId, setCharacterId}) {
 }
 
 
-function CharacterItem({ character, progress, onClick }) {
+function CharacterItem({ character, onClick }) {
 
     function handleClick() {
         onClick(character.id);
@@ -318,7 +340,7 @@ function CharacterItem({ character, progress, onClick }) {
                 </div>
             </td>
             <td className="App-item">
-                { progress ? "Done" : "Not Done" }
+                { character.givenSupport ? "Done" : "Not Done" }
             </td>
         </tr>
     );
@@ -328,7 +350,6 @@ function CharacterItem({ character, progress, onClick }) {
 function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
 
     const [characterList, setCharacterList] = useState([]);
-    const [progressList, setProgressList] = useState([]);    
 
     useEffect(() => {
         let ignore = false;
@@ -350,27 +371,8 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
             } catch {
             }
         }
-
-        async function getProgressData() {
-            // Get the status of progress in the world
-            const url = URL + "state/worlds/" + worldId +"/progress";
-            try {
-                const response =
-                      await fetch(url, {
-                          headers: {
-                              "Authorization": "Bearer " + AUTH_KEY
-                          }
-                      });
-                const values = await response.json();
-                if (!ignore && "CharacterChallengeDone" in values) {
-                    setProgressList(values["CharacterChallengeDone"]);
-                }
-            } catch {
-            }
-        }
         
         getCharacterData();
-        getProgressData();            
         return () => {
             ignore = true;
         }
@@ -387,7 +389,6 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
     const entries = characterList.map(entry =>
         <CharacterItem key={entry.id}
                        character={entry}
-                       progress={progressList.includes(entry.id)}
                        onClick={selectCharacter}/>
     );
 

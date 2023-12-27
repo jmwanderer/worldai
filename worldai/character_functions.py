@@ -14,9 +14,18 @@ You reside in the world {world_name}.
 You are described as follows:
 {description}
 
+When offering a greeting, inquire as to the business of the user.
+
+{support}
+
 Your world is described as follows:
 {world_description}
 
+"""
+
+SUPPORT="""
+The user may want your support. First ensure the user explains why
+they deserve your support, and give spport only if you agree.
 """
 
 CHARACTER_DETAILS="""
@@ -48,12 +57,19 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
   def get_instructions(self, db):
     world = elements.loadWorld(db, self.world_id)        
     character = elements.loadCharacter(db, self.character_id)
+    wstate = world_state.loadWorldState(db, self.wstate_id)
+
+    # Build message about supporting the user
+    support = SUPPORT
+    if wstate.hasCharacterSupport(self.character_id):
+      support = "You have given the user your support."
 
     instructions = []
     instructions.append(INSTRUCTIONS.format(
       name=character.getName(),
       world_name=world.getName(),
       description=character.getDescription(),
+      support=support,
       world_description=world.getDescription()))
 
     if len(character.getDetails()) > 0:
@@ -92,26 +108,26 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     # Default response value
     result = '{ "error": "' + f"no such function: {function_name}" + '" }'
 
-    if function_name == "ChallengeCompleted":
-      result = self.FuncChallengeCompleted(db)
+    if function_name == "GiveSupport":
+      result = self.FuncGiveSupport(db)
 
     return result
 
-  def FuncChallengeCompleted(self, db):
+  def FuncGiveSupport(self, db):
     """
     Record that the player completed the challenge for the current character.
     """
     # TODO: this is where we need lock for updating
     wstate = world_state.loadWorldState(db, self.wstate_id)
-    wstate.markCharacterChallenge(self.character_id)
+    wstate.markCharacterSupport(self.character_id)
     world_state.saveWorldState(db, wstate)
     return self.funcStatus("OK")
 
 
 all_functions = [
   {
-    "name": "ChallengeCompleted",
-    "description": "Note that the user completed the challenge",
+    "name": "GiveSupport",
+    "description": "Give the user your support in their efforts.",
     "parameters": {
       "type": "object",
       "properties": {

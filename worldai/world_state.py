@@ -8,7 +8,7 @@ import time
 import os
 import json
 
-PROP_CHAR_CHALLENGE_DONE = "CharacterChallengeDone"
+PROP_CHAR_SUPPORT = "CharacterSupport"
 
 class WorldState:
   """
@@ -26,11 +26,17 @@ class WorldState:
   def set_goal_state_str(self, str):
     self.goal_state = json.loads(str)
 
-  def markCharacterChallenge(self, char_id):
-    if self.goal_state.get(PROP_CHAR_CHALLENGE_DONE) is None:
-      self.goal_state[PROP_CHAR_CHALLENGE_DONE] = []
-    if not char_id in self.goal_state[PROP_CHAR_CHALLENGE_DONE]:
-      self.goal_state[PROP_CHAR_CHALLENGE_DONE].append(char_id)
+  def markCharacterSupport(self, char_id):
+    if self.goal_state.get(PROP_CHAR_SUPPORT) is None:
+      self.goal_state[PROP_CHAR_SUPPORT] = []
+    if not char_id in self.goal_state[PROP_CHAR_SUPPORT]:
+      self.goal_state[PROP_CHAR_SUPPORT].append(char_id)
+
+  def hasCharacterSupport(self, char_id):
+    if self.goal_state.get(PROP_CHAR_SUPPORT) is not None:
+      if char_id in self.goal_state[PROP_CHAR_SUPPORT]:
+        return True
+    return False
 
   def updateGoalState(self, db):
     # pass TODO
