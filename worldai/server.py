@@ -674,14 +674,14 @@ def threads_api(wid, id):
 
 @bp.route('/state/worlds/<wid>/progress', methods=["GET"])
 @auth_required
-def world_state_progress():
+def world_state_progress(wid):
   """
   API to access to the state for a specific world
   """
   session_id = get_session_id()
 
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
-  wstate = world_state.loadWorldState(self.db, wstate_id)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)
   if wstate is None:
     # TODO: use utility functions
     return { "error", "World not found"}, 400

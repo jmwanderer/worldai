@@ -297,30 +297,30 @@ function ChatCharacter({ worldId, characterId, setCharacterId}) {
 }
 
 
-function CharacterItem({ character, onClick }) {
+function CharacterItem({ character, progress, onClick }) {
 
     function handleClick() {
         onClick(character.id);
     }
 
     return (
-        <table>
-            <tbody>
-                <tr onClick={handleClick}>
-                    <td className="App-item">
-                        <img className="App-thumb"
-                             src={character.image.url} alt="person"/>
-                    </td>
-                    <td className="App-item">
-                        <div className="App-world-item">                        
-                            <u>{ character.name }</u>
-                            <br/>
+        <tr onClick={handleClick}>
+            <td className="App-item">
+                <img className="App-thumb"
+                     src={character.image.url} alt="person"/>
+            </td>
+            <td className="App-item">
+                <div className="App-world-item">                        
+                    <u>{ character.name }</u>
+                    <br/>
                             { character.description }
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                    <br/>
+                </div>
+            </td>
+            <td className="App-item">
+                { progress ? "Done" : "Not Done" }
+            </td>
+        </tr>
     );
     
 }
@@ -328,11 +328,13 @@ function CharacterItem({ character, onClick }) {
 function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
 
     const [characterList, setCharacterList] = useState([]);
+    const [progressList, setProgressList] = useState([]);    
+
     useEffect(() => {
         let ignore = false;
 
-        async function getData() {
-            // Get the list of worlds
+        async function getCharacterData() {
+            // Get the status of progress in the world
             const url = URL + "worlds/" + worldId + "/characters";
             try {
                 const response =
@@ -348,7 +350,27 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
             } catch {
             }
         }
-        getData();
+
+        async function getProgressData() {
+            // Get the status of progress in the world
+            const url = URL + "state/worlds/" + worldId +"/progress";
+            try {
+                const response =
+                      await fetch(url, {
+                          headers: {
+                              "Authorization": "Bearer " + AUTH_KEY
+                          }
+                      });
+                const values = await response.json();
+                if (!ignore && "CharacterChallengeDone" in values) {
+                    setProgressList(values["CharacterChallengeDone"]);
+                }
+            } catch {
+            }
+        }
+        
+        getCharacterData();
+        getProgressData();            
         return () => {
             ignore = true;
         }
@@ -365,6 +387,7 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
     const entries = characterList.map(entry =>
         <CharacterItem key={entry.id}
                        character={entry}
+                       progress={progressList.includes(entry.id)}
                        onClick={selectCharacter}/>
     );
 
@@ -372,7 +395,11 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
         <div>
             <BackArrow onClick={clickBack}/>                        
             <div className="App-world-list">
-                { entries }
+                <table>
+                    <tbody>
+                        { entries }
+                    </tbody>
+                </table>
             </div>
         </div>            
     );
