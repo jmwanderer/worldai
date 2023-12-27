@@ -666,7 +666,6 @@ def threads_api(wid, id):
   else:
     content = { "error": "malformed input" }
 
-  world_state.saveWorldState(get_db(), wstate)
   chat_session.saveChatSession(get_db())
   return content
 

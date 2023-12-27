@@ -23,41 +23,37 @@ def loadWorldState(db, session_id, world_id):
   """
   Get or create a world state.
   """
+  now = time.time()  
   state = WorldState(session_id, world_id)
-    
-  q = db.execute("SELECT id, goal_state FROM world_state " +
+  c = db.cursor()  
+  c.execute("BEGIN EXCLUSIVE")
+  c.execute("SELECT id, goal_state FROM world_state " +
                  "WHERE session_id = ? and world_id = ?",
                  (session_id, world_id))
-  r = q.fetchone()
-  if r is None:
-    state.id = "id%s" % os.urandom(4).hex()
-  else:
-    state.id = r[0]
-    state.goal_state = r[1]
-  return state
-    
-
-def saveWorldState(db, state):
-  """
-  Save world state. May create or update.
-  """
-  now = time.time()
-  c = db.cursor()
-  c.execute("BEGIN EXCLUSIVE")
-  c.execute("SELECT id FROM world_state WHERE session_id = ? AND world_id = ?",
-            (state.session_id, state.world_id))
   r = c.fetchone()
   if r is None:
-    # INSERT
+    state.id = "id%s" % os.urandom(4).hex()
     c.execute("INSERT INTO world_state (id, session_id, world_id, created, " +
               "updated, goal_state) VALUES (?, ?, ?, ?, ?, ?)",
               (state.id, state.session_id, state.world_id,
                now, now, state.goal_state))
   else:
-    # UPDATE
-    # Support changing the session_id (Still figuring that out)
-    c.execute("UPDATE world_state SET session_id = ?, " +
-              "updated = ?, goal_state = ? WHERE id = ?",
-              (state.session_id,  now, state.goal_state, state.id))
+    state.id = r[0]
+    state.goal_state = r[1]
+  db.commit()    
+  return state
+    
+
+def saveWorldState(db, state):
+  """
+  Update world state.
+  """
+  now = time.time()
+  c = db.cursor()
+  c.execute("BEGIN EXCLUSIVE")  
+  # Support changing the session_id (Still figuring that out)
+  c.execute("UPDATE world_state SET session_id = ?, " +
+            "updated = ?, goal_state = ? WHERE id = ?",
+            (state.session_id,  now, state.goal_state, state.id))
   db.commit()
     
