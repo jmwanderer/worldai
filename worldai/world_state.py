@@ -8,6 +8,8 @@ import time
 import os
 import json
 
+PROP_CHAR_CHALLENGE_DONE = "CharacterChallengeDone"
+
 class WorldState:
   """
   Represents an instantation of a world
@@ -16,7 +18,23 @@ class WorldState:
     self.id = wstate_id
     self.session_id = None
     self.world_id = None
-    self.goal_state = "{}"
+    self.goal_state = {}
+
+  def get_goal_state_str(self):
+    return json.dumps(self.goal_state)
+
+  def set_goal_state_str(self, str):
+    self.goal_state = json.loads(str)
+
+  def markCharacterChallenge(self, char_id):
+    if self.goal_state.get(PROP_CHAR_CHALLENGE_DONE) is None:
+      self.goal_state[PROP_CHAR_CHALLENGE_DONE] = []
+    if not char_id in self.goal_state[PROP_CHAR_CHALLENGE_DONE]:
+      self.goal_state[PROP_CHAR_CHALLENGE_DONE].append(char_id)
+
+  def updateGoalState(self, db):
+    # pass TODO
+    pass
 
 
 def getWorldStateID(db, session_id, world_id):
@@ -59,7 +77,7 @@ def loadWorldState(db, wstate_id):
     state = WorldState(wstate_id)
     state.session_id = r[0]
     state.world_id = r[1]
-    state.goal_state = r[2]
+    state.set_goal_state_str(r[2])
   return state
     
 
@@ -73,6 +91,6 @@ def saveWorldState(db, state):
   # Support changing the session_id (Still figuring that out)
   c.execute("UPDATE world_state SET session_id = ?, " +
             "updated = ?, goal_state = ? WHERE id = ?",
-            (state.session_id,  now, state.goal_state, state.id))
+            (state.session_id,  now, state.get_goal_state_str(), state.id))
   db.commit()
     

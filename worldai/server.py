@@ -238,6 +238,7 @@ def login():
     if auth != current_app.config['AUTH_KEY']:
       flask.flash("Authorization key does not match")
       return flask.redirect(flask.url_for('worldai.login'))
+    session.permanent = True    
     session['auth_key'] = auth
     return flask.redirect(flask.url_for('worldai.top_view'))
 
@@ -425,6 +426,7 @@ def get_session_id():
   session_id = session.get('session_id')
   if session_id is None:
     session_id = os.urandom(12).hex()
+    session.permanent = True        
     session['session_id'] = session_id
   return session_id
 
@@ -643,10 +645,10 @@ def threads_api(wid, id):
   """
   Character chat interface
   """
-  # TODO:  Use session to look up a specific thread id
   session_id = get_session_id()
 
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  # TODO: this is where we need lock for updating  
   chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
                                                               wstate_id,
                                                               wid,
@@ -668,6 +670,24 @@ def threads_api(wid, id):
 
   chat_session.saveChatSession(get_db())
   return content
+
+
+@bp.route('/state/worlds/<wid>/progress', methods=["GET"])
+@auth_required
+def world_state_progress():
+  """
+  API to access to the state for a specific world
+  """
+  session_id = get_session_id()
+
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(self.db, wstate_id)
+  if wstate is None:
+    # TODO: use utility functions
+    return { "error", "World not found"}, 400
+  
+  return wstate.goal_state
+  
 
 
 @bp.route('/worlds', methods=["GET"])

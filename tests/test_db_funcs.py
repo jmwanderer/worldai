@@ -67,11 +67,11 @@ class BasicTestCase(unittest.TestCase):
     wstate_id = world_state.getWorldStateID(self.db, session_id, world_id)
     state = world_state.loadWorldState(self.db, wstate_id)
     self.assertIsNotNone(state)    
-    self.assertEqual(state.goal_state, "{}")    
+    self.assertEqual(state.get_goal_state_str(), "{}")    
 
-    state.goal_state = json.dumps({ "code_words": [ "1" ] })
+    state.goal_state = { "code_words": [ "1" ] }
     world_state.saveWorldState(self.db, state)
 
     state = world_state.loadWorldState(self.db, wstate_id)
     
-    self.assertNotEqual(state.goal_state, "{}")
+    self.assertNotEqual(state.get_goal_state_str(), "{}")

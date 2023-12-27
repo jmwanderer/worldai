@@ -5,6 +5,7 @@ import logging
 
 from . import elements
 from . import chat_functions
+from . import world_state
 
 INSTRUCTIONS="""
 You have the persona of a fictional character.
@@ -38,8 +39,9 @@ Your presonality can be described as:
 
 class CharacterFunctions(chat_functions.BaseChatFunctions):
 
-  def __init__(self, world_id, character_id):
+  def __init__(self, wstate_id, world_id, character_id):
     chat_functions.BaseChatFunctions.__init__(self)
+    self.wstate_id = wstate_id    
     self.world_id = world_id
     self.character_id = character_id
 
@@ -68,3 +70,53 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         personality=character.getPersonality()))
 
     return "\n".join(instructions)
+
+  def get_available_tools(self):
+    result = []
+    for function in all_functions:
+      tool = { "type": "function",
+               "function": function }   
+      result.append(tool)
+    return result
+
+
+  def execute_function_call(self, db, function_name, arguments):
+    """
+    Dispatch function for function_name
+    Takes:
+      function_name - string
+      arguments - dict build from json.loads
+    Returns
+      dict ready for json.dumps
+    """
+    # Default response value
+    result = '{ "error": "' + f"no such function: {function_name}" + '" }'
+
+    if function_name == "ChallengeCompleted":
+      result = self.FuncChallengeCompleted(db)
+
+    return result
+
+  def FuncChallengeCompleted(self, db):
+    """
+    Record that the player completed the challenge for the current character.
+    """
+    # TODO: this is where we need lock for updating
+    wstate = world_state.loadWorldState(db, self.wstate_id)
+    wstate.markCharacterChallenge(self.character_id)
+    world_state.saveWorldState(db, wstate)
+    return self.funcStatus("OK")
+
+
+all_functions = [
+  {
+    "name": "ChallengeCompleted",
+    "description": "Note that the user completed the challenge",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+]
+  
