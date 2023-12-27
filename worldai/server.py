@@ -23,6 +23,7 @@ from . import design_functions
 from . import design_chat
 from . import character_chat
 from . import threads
+from . import world_state
 
 
 def create_app(instance_path=None, test_config=None):
@@ -644,10 +645,12 @@ def threads_api(wid, id):
   """
   # TODO:  Use session to look up a specific thread id
   session_id = get_session_id()
+  wstate = world_state.loadWorldState(get_db(), session_id, wid)
 
   chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
-                                                              session_id,
-                                                              wid, id)
+                                                              wstate.id,
+                                                              wid,
+                                                              id)
   
   if request.method == "GET":
     history = chat_session.chat_history()    
@@ -663,6 +666,7 @@ def threads_api(wid, id):
   else:
     content = { "error": "malformed input" }
 
+  world_state.saveWorldState(get_db(), wstate)
   chat_session.saveChatSession(get_db())
   return content
 

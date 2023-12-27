@@ -160,6 +160,7 @@ def parseResponseText(text):
   
 class ChatSession:
   def __init__(self, id=None, chatFunctions=None):
+    # TODO: remove id
     self.id = id
     if chatFunctions is None:
       self.chatFunctions = chat_functions.BaseChatFunctions()

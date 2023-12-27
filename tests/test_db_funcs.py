@@ -1,7 +1,9 @@
 from worldai import threads
+from worldai import world_state
 import unittest
 import tempfile
 import os
+import json
 import sqlite3
 
 
@@ -24,8 +26,6 @@ class BasicTestCase(unittest.TestCase):
   def testThreads(self):
     thread = "this is binary data"
     session_id = "id_session_1"
-    wid = "id123"
-    cid = "id456"
 
     # Simple threads
     self.assertIsNone(threads.get_thread(self.db, session_id))
@@ -35,19 +35,39 @@ class BasicTestCase(unittest.TestCase):
     threads.delete_thread(self.db, session_id)
     self.assertIsNone(threads.get_thread(self.db, session_id))
 
+
+  def testCharacterThreads(self):
+    thread = "this is binary data"
+    world_state_id = "id123"
+    cid = "id456"
+
     # Character threads
     self.assertIsNone(threads.get_character_thread(self.db,
-                                                   session_id,
-                                                   wid,
+                                                   world_state_id,
                                                    cid))
-    threads.save_character_thread(self.db, session_id, wid, cid, thread)
+
+    threads.save_character_thread(self.db, world_state_id, cid, thread)
     result = threads.get_character_thread(self.db,
-                                          session_id,
-                                          wid,
+                                          world_state_id,
                                           cid)
     self.assertEqual(result, thread)    
-    threads.delete_character_thread(self.db, session_id, wid, cid)
+    threads.delete_character_thread(self.db, world_state_id, cid)
     self.assertIsNone(threads.get_character_thread(self.db,
-                                                   session_id,
-                                                   wid,
+                                                   world_state_id,
                                                    cid))
+
+  def testWorldState(self):
+    session_id = "1234"
+    world_id = "ida76"
+
+    state = world_state.loadWorldState(self.db,
+                                       session_id, world_id)
+    self.assertEqual(state.goal_state, "{}")
+
+    state.goal_state = json.dumps({ "code_words": [ "1" ] })
+    world_state.saveWorldState(self.db, state)
+
+    state = world_state.loadWorldState(self.db,
+                                       session_id, world_id)
+    
+    self.assertNotEqual(state.goal_state, "{}")

@@ -2,6 +2,8 @@ DROP TABLE IF EXISTS elements;
 DROP TABLE IF EXISTS images;
 DROP TABLE IF EXISTS token_usage;
 DROP TABLE IF EXISTS threads;
+DROP TABLE IF EXISTS character_threads;
+DROP TABLE IF EXISTS world_state;
 
 CREATE TABLE elements (
   id TEXT PRIMARY KEY,
@@ -33,16 +35,26 @@ CREATE TABLE threads (
   thread BLOB
 );
 
-CREATE TABLE character_threads (
+CREATE TABLE world_state (
+  id TEXT PRIMARY KEY,
   session_id TEXT NOT NULL,
   world_id TEXT NOT NULL,
+  created INTEGER NOT NULL,
+  updated INTEGER NOT NULL,
+  goal_state TEXT NOT NULL,
+  FOREIGN KEY (world_id) REFERENCES elements(id)
+);
+ 
+CREATE TABLE character_threads (
   character_id TEXT NOT NULL,
   thread_id TEXT NOT NULL,
-  PRIMARY KEY (session_id, world_id, character_id),
+  world_state_id TEXT NOT NULL,
+  PRIMARY KEY (world_state_id, character_id),
+  FOREIGN KEY (world_state_id) REFERENCES world_state(id),
+  FOREIGN KEY (character_id) REFERENCES elements(id),
   FOREIGN KEY (thread_id) REFERENCES threads(id)
-  FOREIGN KEY (world_id) REFERENCES elements(id)
-  FOREIGN KEY (character_id) REFERENCES elements(id)    
 );
+
 
 
 
