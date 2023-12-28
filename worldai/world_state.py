@@ -9,6 +9,9 @@ import os
 import json
 
 PROP_CHAR_SUPPORT = "CharacterSupport"
+PROP_LOCATION = "Location"
+PROP_CHAT_WHO = "CharacterChat"
+PROP_ITEMS = "ItemList"
 
 class WorldState:
   """
@@ -18,7 +21,12 @@ class WorldState:
     self.id = wstate_id
     self.session_id = None
     self.world_id = None
-    self.goal_state = {}
+    # TODO: conisder splitting this up
+    self.goal_state = { PROP_CHAR_SUPPORT: [],
+                        PROP_LOCATION: "",
+                        PROP_CHAT_WHO: "",
+                        PROP_ITEMS: []
+                       }
 
   def get_goal_state_str(self):
     return json.dumps(self.goal_state)
@@ -27,16 +35,36 @@ class WorldState:
     self.goal_state = json.loads(str)
 
   def markCharacterSupport(self, char_id):
-    if self.goal_state.get(PROP_CHAR_SUPPORT) is None:
-      self.goal_state[PROP_CHAR_SUPPORT] = []
     if not char_id in self.goal_state[PROP_CHAR_SUPPORT]:
       self.goal_state[PROP_CHAR_SUPPORT].append(char_id)
 
   def hasCharacterSupport(self, char_id):
-    if self.goal_state.get(PROP_CHAR_SUPPORT) is not None:
-      if char_id in self.goal_state[PROP_CHAR_SUPPORT]:
-        return True
+    if char_id in self.goal_state[PROP_CHAR_SUPPORT]:
+      return True
     return False
+
+  def addItem(self, item_id):
+    if not item_id in self.goal_state[PROP_ITEMS]:
+      self.goal_state[PROP_ITEMS].append(item_id)
+
+  def setChatCharacter(self, char_id=None):
+    if char_id is None:
+      char_id = ""
+    self.goal_state[PROP_CHAT_WHO] = char_id
+      
+  def getChatCharacter(self):
+    """
+    Returns character ID or empty string.
+    """
+    return self.goal_state[PROP_CHAT_WHO]
+
+  def setLocation(self, site_id=None):
+    if site_id is None:
+      site_id = ""
+    self.goal_state[PROP_LOCATION] = site_id
+
+  def getLocation(self):
+    return self.goal_state[PROP_LOCATION]
 
   def updateGoalState(self, db):
     # pass TODO
@@ -57,10 +85,11 @@ def getWorldStateID(db, session_id, world_id):
   r = c.fetchone()
   if r is None:
     id = "id%s" % os.urandom(4).hex()
+    state = WorldState(id)
     c.execute("INSERT INTO world_state (id, session_id, world_id, created, " +
               "updated, goal_state) VALUES (?, ?, ?, ?, ?, ?)",
               (id, session_id, world_id,
-               now, now, "{}"))
+               now, now, state.get_goal_state_str()))
   else:
     id = r[0]
   db.commit()    

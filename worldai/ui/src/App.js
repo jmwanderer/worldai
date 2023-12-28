@@ -143,7 +143,6 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
                 const values = await response.json();
                 setChatHistory(values["messages"]);
                 if (values["messages"].length == 0) {
-                    console.log("run hello");
                     setUserInput("hello");
                     submitClick();
                 }

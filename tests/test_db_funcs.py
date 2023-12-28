@@ -60,18 +60,36 @@ class BasicTestCase(unittest.TestCase):
     session_id = "1234"
     world_id = "ida76"
     wstate_id = "xxx"
+    char_id = "id123"
+    item_id = "id456"
+    site_id = "id789"            
 
     state = world_state.loadWorldState(self.db, wstate_id)
     self.assertIsNone(state)
 
     wstate_id = world_state.getWorldStateID(self.db, session_id, world_id)
     state = world_state.loadWorldState(self.db, wstate_id)
-    self.assertIsNotNone(state)    
-    self.assertEqual(state.get_goal_state_str(), "{}")    
+    self.assertIsNotNone(state)
 
-    state.goal_state = { "code_words": [ "1" ] }
+    self.assertEqual(len(state.goal_state[world_state.PROP_CHAR_SUPPORT]), 0)
+    self.assertFalse(state.hasCharacterSupport(char_id))
+
+    state.markCharacterSupport(char_id)
+    self.assertTrue(state.hasCharacterSupport(char_id))
+
+    self.assertEqual(len(state.getChatCharacter()), 0)
+    state.setChatCharacter(char_id)
+
+    self.assertEqual(len(state.goal_state[world_state.PROP_ITEMS]), 0)
+    state.addItem(item_id)
+
+    self.assertEqual(len(state.getLocation()), 0)    
+    state.setLocation(site_id)
+    
     world_state.saveWorldState(self.db, state)
 
     state = world_state.loadWorldState(self.db, wstate_id)
-    
-    self.assertNotEqual(state.get_goal_state_str(), "{}")
+    self.assertTrue(state.hasCharacterSupport(char_id))
+    self.assertEqual(len(state.goal_state[world_state.PROP_ITEMS]), 1)
+    self.assertNotEqual(len(state.getLocation()), 0)
+    self.assertNotEqual(len(state.getChatCharacter()), 0)            
