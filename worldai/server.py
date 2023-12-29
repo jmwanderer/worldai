@@ -639,6 +639,22 @@ def get_random_message():
     "I wonder what is on TV right now?" ]
   return random.choice(messages)
 
+
+
+@bp.route('/initdata', methods=["GET"])
+@auth_required
+def get_init_data():
+  """
+  Initial load of information for clients
+  """
+  # Returns session id and world id last loaded
+  session_id = get_session_id()
+  world_id = session.get('world_id', "")
+
+  return { "session_id": session_id,
+           "world_id": world_id }
+
+
 @bp.route('/threads/worlds/<wid>/characters/<id>', methods=["GET","POST"])
 @auth_required
 def threads_api(wid, id):
@@ -730,6 +746,8 @@ def worlds(wid):
   if world == None:
     return { "error", "World not found"}, 400
 
+  # Save last opened in session
+  session['world_id'] = wid
   images = []
   for image in world.getImages():
     url = flask.url_for('worldai.get_image', id=image, _external=True)
@@ -750,6 +768,9 @@ def characters_list(wid):
   """
   API to get the list of characters for a world
   """
+  # Save last opened in session
+  session['world_id'] = wid
+  
   character_list = []
   session_id = get_session_id()
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)

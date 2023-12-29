@@ -142,7 +142,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
                                   });
                 const values = await response.json();
                 setChatHistory(values["messages"]);
-                if (values["messages"].length == 0) {
+                if (values["messages"].length === 0) {
                     setUserInput("hello");
                     submitClick();
                 }
@@ -382,7 +382,7 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
     }
 
     function clickBack() {
-        setWorldId(null);
+        setWorldId("");
     }
     
     const entries = characterList.map(entry =>
@@ -480,9 +480,38 @@ function SelectWorld({setWorldId}) {
 function App() {
     const [worldId, setWorldId] = useState(null);
     const [characterId, setCharacterId] = useState(null);
+    useEffect(() => {
+        let ignore = false;
+
+        async function getData() {
+            // Get initial load data
+            const url = URL + "initdata";
+            try {
+                const response =
+                      await fetch(url, {
+                          headers: {
+                              "Authorization": "Bearer " + AUTH_KEY
+                          }
+                      });
+                const values = await response.json();
+                if (!ignore) {
+                    console.log("worldid: " + values['world_id']);
+                    setWorldId(values['world_id']);
+                }
+            } catch {
+            }
+        }
+        getData();
+        return () => {
+            ignore = true;
+        }
+    }, []);
+    console.log("App: " + worldId)
 
     let screen = ""
-    if (!worldId) {
+    if (worldId === null) {
+        screen = <p>Loading...</p>
+    } else if (worldId === "") {
         screen = <SelectWorld setWorldId={setWorldId}/>
     } else if (!characterId) {
         screen = <SelectCharacter worldId={worldId}
