@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRef } from 'react';
 import { useEffect } from 'react';
 import './App.css';
-import back_image from './back.png';
+import close_image from './close.png';
 
 /*
  * TODO:
@@ -34,11 +34,11 @@ function Button({ text, onClick, disabled }) {
     );
 }
 
-function BackArrow({ onClick }) {
+function CloseButton({ onClick }) {
     return (
-        <img src={back_image} alt="back"
+        <img src={close_image} alt="close"
              onClick={onClick}
-             className="App-back-arrow"/>
+             className="App-close"/>
     );
 }
 
@@ -281,7 +281,7 @@ function ChatCharacter({ worldId, characterId, setCharacterId}) {
     }, [worldId, characterId, refresh]);
 
 
-    function clickBack() {
+    function clickClose() {
         setCharacterId(null);
     }
 
@@ -309,7 +309,7 @@ function ChatCharacter({ worldId, characterId, setCharacterId}) {
 
     return (
         <div>
-            <BackArrow onClick={clickBack}/>
+            <CloseButton onClick={clickClose}/>
             <table className="App-table">
                 <tbody className="App-tbody">{screen}</tbody>
             </table>
@@ -381,7 +381,7 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
         setCharacterId(character_id);
     }
 
-    function clickBack() {
+    function clickClose() {
         setWorldId("");
     }
     
@@ -393,7 +393,7 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
 
     return (
         <div>
-            <BackArrow onClick={clickBack}/>                        
+            <CloseButton onClick={clickClose}/>
             <div className="App-world-list">
                 <table>
                     <tbody>

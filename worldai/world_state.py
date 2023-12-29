@@ -46,6 +46,14 @@ class WorldState:
   def addItem(self, item_id):
     if not item_id in self.goal_state[PROP_ITEMS]:
       self.goal_state[PROP_ITEMS].append(item_id)
+      return True
+    return False
+
+  def removeItem(self, item_id):
+    if item_id in self.goal_state[PROP_ITEMS]:
+      self.goal_state[PROP_ITEMS].remove(item_id)
+      return True
+    return False
 
   def setChatCharacter(self, char_id=None):
     if char_id is None:

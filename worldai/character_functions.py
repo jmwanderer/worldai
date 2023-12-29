@@ -110,6 +110,10 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
     if function_name == "GiveSupport":
       result = self.FuncGiveSupport(db)
+    elif function_name == "GiveItem":
+      result = self.FuncGiveItem(db, arguments)
+    if function_name == "TakeItem":
+      result = self.FuncTakeItem(db, arguments)
 
     return result
 
@@ -123,6 +127,31 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     world_state.saveWorldState(db, wstate)
     return self.funcStatus("OK")
 
+  def FuncGiveItem(self, db, args):
+    """
+    """
+    # TODO: this is where we need lock for updating
+    item_id = args["item_id"]
+    print(f"give item {item_id}")
+    wstate = world_state.loadWorldState(db, self.wstate_id)
+    if not wstate.addItem(item_id):
+      return self.funcError("Already has the item")
+    world_state.saveWorldState(db, wstate)
+    return self.funcStatus("OK")
+
+  def FuncTakeItem(self, db, args):
+    """
+    Record that the player completed the challenge for the current character.
+    """
+    # TODO: this is where we need lock for updating
+    item_id = args["item_id"]
+    print(f"take item {item_id}")    
+    wstate = world_state.loadWorldState(db, self.wstate_id)
+    if not wstate.removeItem(item_id):
+      return self.funcError("Does not have item")
+    world_state.saveWorldState(db, wstate)
+    return self.funcStatus("OK")
+
 
 all_functions = [
   {
@@ -132,6 +161,34 @@ all_functions = [
       "type": "object",
       "properties": {
       },
+    },
+  },
+  {
+    "name": "GiveItem",
+    "description": "Give the user an item.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "description": "Unique identifier of the item.",
+        },
+      },
+      "required": [ "item_id" ],
+    },
+  },
+  {
+    "name": "TakeItem",
+    "description": "Take an item from the user.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "description": "Unique identifier of the item.",
+        },
+      },
+      "required": [ "item_id" ],
     },
   },
 ]
