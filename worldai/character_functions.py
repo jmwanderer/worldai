@@ -14,7 +14,8 @@ You reside in the world {world_name}.
 You are described as follows:
 {description}
 
-When offering a greeting, inquire as to the business of the user.
+When you first meet the user, offer a nuetral greeting, not assistance.
+You do not yet know if this user is a friend or an enemy.
 
 {support}
 
@@ -28,6 +29,10 @@ The user has the following items:
 
 Your world is described as follows:
 {world_description}
+
+When taking an item from the user, call TakeItem
+When giving an item to the user, call GiveItem
+To offer your support to the user, call GiveSupport
 
 """
 
@@ -161,8 +166,13 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     item_id = args["item_id"]
     print(f"give item {item_id}")
     wstate = world_state.loadWorldState(db, self.wstate_id)
+
+    if not wstate.removeCharacterItem(self.character_id, item_id):
+      return self.funcError("You do not have this item")
+    
     if not wstate.addItem(item_id):
       return self.funcError("Already has the item")
+    
     world_state.saveWorldState(db, wstate)
     return self.funcStatus("OK")
 
@@ -175,7 +185,9 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     print(f"take item {item_id}")    
     wstate = world_state.loadWorldState(db, self.wstate_id)
     if not wstate.removeItem(item_id):
-      return self.funcError("Does not have item")
+      return self.funcError("User does not have this item")
+
+    wstate.addCharacterItem(self.character_id, item_id)
     world_state.saveWorldState(db, wstate)
     return self.funcStatus("OK")
 
