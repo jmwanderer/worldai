@@ -230,7 +230,6 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
 
 
 function CharacterScreen({ character }) {
-    // TODO: support zero images.
     return (
         <div className="App-char-screen">
             Name: {character.name}
@@ -346,7 +345,7 @@ function CharacterItem({ character, onClick }) {
     
 }
 
-function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
+function SelectCharacter({ worldId, setCharacterId, setSiteId }) {
 
     const [characterList, setCharacterList] = useState([]);
 
@@ -382,7 +381,7 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
     }
 
     function clickClose() {
-        setWorldId("");
+        setSiteId(null);
     }
     
     const entries = characterList.map(entry =>
@@ -405,6 +404,157 @@ function SelectCharacter({ worldId, setCharacterId, setWorldId }) {
     );
 }
 
+
+function Site({ worldId, siteId, setSiteId }) {
+    const [site, setSite] = useState(null);
+
+    useEffect(() => {
+        let ignore = false;
+
+        async function getData() {
+            // Load the site
+            const url = URL + "worlds/" + worldId +
+                  "/sites/" + siteId;
+            try {
+                const response =
+                      await fetch(url, {
+                          headers: {
+                              "Authorization": "Bearer " + AUTH_KEY
+                          }
+                      });
+                const value = await response.json();
+                if (!ignore) {
+                    setSite(value);
+                }
+            } catch {
+            }
+        }
+        getData();
+        return () => {
+            ignore = true;
+        }
+    }, [worldId, siteId]);
+
+    function clickClose() {
+        setSiteId(null);
+    }
+
+    if (site) {
+        return (
+            <div className="App-char-screen">
+                Name: {site.name}
+                <div>
+                    <img src={site.images[0].url}
+                         alt="site"
+                         className="App-img"/>
+                </div>
+                Notes:<br/>
+                <div>
+                    {site.description}
+                </div>
+            </div>);
+    } else {
+        return <div className="App-char-screen"></div>
+    }
+}
+    
+
+
+function SiteItem({ site, onClick }) {
+    function handleClick() {
+        onClick(site.id);
+    }
+    return (
+        <div onClick={handleClick}>
+            <div>
+                <img className="App-thumb"
+                     src={site.image.url} alt="site"/>
+            </div>
+            <div>
+                <u>{ site.name }</u>
+            </div>
+        </div>);
+}    
+
+function World({ worldId, setWorldId }) {
+    const [siteList, setSiteList] = useState([]);
+    const [siteId, setSiteId] = useState(null);    
+    const [characterId, setCharacterId] = useState(null);
+    
+    useEffect(() => {
+        let ignore = false;
+
+        async function getSiteData() {
+            // Get the status of progress in the world
+            const url = URL + "worlds/" + worldId + "/sites";
+            try {
+                const response =
+                      await fetch(url, {
+                          headers: {
+                              "Authorization": "Bearer " + AUTH_KEY
+                          }
+                      });
+                const values = await response.json();
+                if (!ignore) {
+                    setSiteList(values);
+                }
+            } catch {
+            }
+        }
+        
+        getSiteData();
+        return () => {
+            ignore = true;
+        }
+    }, [worldId]);
+
+    function clickClose() {
+        setWorldId("");
+    }
+
+    function selectSite(site_id) {
+        setSiteId(site_id);
+    }
+
+    let screen = ""
+    if (!siteId) {
+        // Show sites
+        const entries = siteList.map(entry =>
+            <SiteItem key={entry.id}
+                      site={entry}
+                      onClick={selectSite}/>
+        );
+        screen = <div>
+                     <CloseButton onClick={clickClose}/>
+                     <div className="App-sites">
+                         { entries }
+                     </div>
+                 </div>
+    } else {
+        screen = <Site worldId={worldId}
+                       siteId={siteId}
+                       setSiteId={setSiteId}/>
+    }
+
+/*    
+        if (!characterId) {
+        screen = <SelectCharacter worldId={worldId}
+                                  setCharacterId={setCharacterId}
+                                  setSiteId={setSiteId}/>
+    } else {
+        screen = <ChatCharacter worldId={worldId}
+                                characterId={characterId}
+                                setCharacterId={setCharacterId}/>
+                                }
+                                */
+    
+
+    return (
+        <div>
+            { screen }
+        </div>            
+    );
+}
 
 function WorldItem({ world, onClick }) {
 
@@ -479,7 +629,6 @@ function SelectWorld({setWorldId}) {
     
 function App() {
     const [worldId, setWorldId] = useState(null);
-    const [characterId, setCharacterId] = useState(null);
     useEffect(() => {
         let ignore = false;
 
@@ -513,16 +662,10 @@ function App() {
         screen = <p>Loading...</p>
     } else if (worldId === "") {
         screen = <SelectWorld setWorldId={setWorldId}/>
-    } else if (!characterId) {
-        screen = <SelectCharacter worldId={worldId}
-                                  setCharacterId={setCharacterId}
-                                  setWorldId={setWorldId}/>
     } else {
-        screen = <ChatCharacter worldId={worldId}
-                                characterId={characterId}
-                                setCharacterId={setCharacterId}/>
-    }
-                         
+        screen = <World worldId={worldId}
+                        setWorldId={setWorldId}/>
+    }        
     return (
         <div className="App">
             <header className="App-header">
