@@ -697,8 +697,8 @@ def worlds_list():
   world_list = []
   worlds = elements.listWorlds(get_db())
   for (entry) in worlds:
-    id = entry.getID()
-    world = elements.loadWorld(get_db(), id)
+    wid = entry.getID()
+    world = elements.loadWorld(get_db(), wid)
 
     # May be None
     image_id = world.getImageByIndex(0)
@@ -709,8 +709,7 @@ def worlds_list():
       image_prop = { "id": image_id,
                      "url": flask.url_for('worldai.get_image_thumb',
                                           id=image_id, _external=True) }
-    
-    world_list.append({"id": id,
+    world_list.append({"id": wid,
                        "name": world.getName(),
                        "description": world.getDescription(),
                        "image": image_prop })
@@ -770,6 +769,9 @@ def characters_list(wid):
   
   character_list = []
   session_id = get_session_id()
+  world = elements.loadWorld(get_db(), wid)  
+  if world is None:
+    return { "error", "World not found"}, 400
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
   wstate = world_state.loadWorldState(get_db(), wstate_id)  
   characters = elements.listCharacters(get_db(), wid)
@@ -827,6 +829,9 @@ def site_list(wid):
   """
   # Save last opened in session
   session['world_id'] = wid
+  world = elements.loadWorld(get_db(), wid)
+  if world is None:
+    return { "error", "World not found"}, 400
 
   site_list = []
   session_id = get_session_id()
@@ -852,6 +857,9 @@ def site(wid, sid):
   API to load info and state for a site
   """
   session_id = get_session_id()
+  world = elements.loadWorld(get_db(), wid)  
+  if world is None:
+    return { "error", "World not found"}, 400
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
   wstate = world_state.loadWorldState(get_db(), wstate_id)  
   site = elements.loadSite(get_db(), sid)

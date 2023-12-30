@@ -5,6 +5,14 @@ import { useEffect } from 'react';
 import './App.css';
 import close_image from './close.png';
 
+import Button from 'react-bootstrap/Button';
+import Card from 'react-bootstrap/Card';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import Image from 'react-bootstrap/Image';
+import Stack from 'react-bootstrap/Stack';
+
 /*
  * TODO:
  * - get auth token
@@ -25,14 +33,6 @@ if (auth_key.substring(0,2) !== "{{") {
 }
 console.log("AUTH Key: " + AUTH_KEY);    
 
-// Simple button. May change in the future.
-function Button({ text, onClick, disabled }) {
-    return (
-        <button disabled={disabled} onClick={onClick}>
-            { text }
-        </button>
-    );
-}
 
 function CloseButton({ onClick }) {
     return (
@@ -556,6 +556,7 @@ function World({ worldId, setWorldId }) {
     );
 }
 
+
 function WorldItem({ world, onClick }) {
 
     function handleClick() {
@@ -563,23 +564,23 @@ function WorldItem({ world, onClick }) {
     }
     
     return (
-        <table>
-            <tbody>
-                <tr onClick={handleClick}>
-                    <td className="App-item">
-                        <img className="App-thumb"
-                             src={world.image.url} alt="world"/>
-                    </td>
-                    <td className="App-item">
-                        <div className="App-world-item">
-                            <u>{ world.name }</u>
-                            <br/>
+        <div class="card mb-3" onClick={handleClick} >
+            <div class="row no gutters">
+                <div class="col-md-2">
+                    <img src={world.image.url} class="card-img" alt="world"/>
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            { world.name }
+                        </h5>
+                        <p class="card-text" style={{ textAlign: "left" }}>
                             { world.description }
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -620,9 +621,9 @@ function SelectWorld({setWorldId}) {
     );
 
     return (
-        <div className="App-world-list">
+        <Stack gap={3}>
             { entries }
-        </div>
+        </Stack>
     );
 }
     
@@ -644,12 +645,12 @@ function App() {
                       });
                 const values = await response.json();
                 if (!ignore) {
-                    console.log("worldid: " + values['world_id']);
                     setWorldId(values['world_id']);
                 }
             } catch {
             }
         }
+        
         getData();
         return () => {
             ignore = true;
@@ -675,4 +676,20 @@ function App() {
     );
 }
 
+function AxApp() {
+    return (
+        <div className="App">
+            <header className="App-header">
+                <div className='alert alert-primary' role='alert'>
+                    <p style={{display:"none"}} className='d-block'>
+                        Bootstrap is installed
+                    </p>
+                    <p className='d-none'>
+                        Bootstrap not installed
+                    </p>
+                </div>
+            </header>
+        </div>
+    );
+}
 export default App;

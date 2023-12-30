@@ -1,102 +1,25 @@
 .App {
-    height: 100%;
+  text-align: center;
 }
 
-.App-img {
+.App-logo {
   height: 40vmin;
   pointer-events: none;
 }
 
-.App-thumb {
-    maxWidth: 100px;
-    margin: 0.5em;
-}
-
-.App-back-arrow {
-    max-width: 50px;
-    margin: 5px;
-}
-
-.App-world-list {
-    padding: 1em;
-    padding-top: 0em;
-}
-
-.App-world-item {
-    margin: 0.5em;
-}
-
-.App-message-screen {
-    height: 75vmin;
-    border: 2px solid grey;
-    text-align: left;
-    padding: 1em;
-    overflow: auto;
-}
-
-.App-chat-screen {
-    text-align: center;
-    margin: 1em;
-}
-
-
-.App-message {
-    margin: 2px; 
-}
-
-.App-table {
-}
-
-.App-tbody {
-    vertical-align: top;
-}
-
-.App-td {
-    width: 40%;
-    
-}
-
-.App-item {
-    vertical-align: top;
-}
-
-.App-char-screen {
-    margin: 1em;
-    margin-top: 0px;   
-}
-
-.App-user-input {
-    width: 80%;
-    margin: 1em;        
-}
-
-.App-running {
-    animation-name: fadeInOut;
-    animation-duration: 3s;
-    animation--iteration-count: infinite;
-}
-
-@keyframes fadeInOut {
-    from {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0;        
-    }
-    to {
-        opacity: 1;        
-    }
-}
-
-.App-sites{
-    display:grid;
-    grid-template-columns: 200px 200px 200px;
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
 }
 
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
-  font-size: calc(10px + 1vmin);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   color: white;
 }
 

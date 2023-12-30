@@ -149,6 +149,7 @@ def getWorldStateID(db, session_id, world_id):
     initialize = True
     id = "id%s" % os.urandom(4).hex()
     state = WorldState(id)
+    print(f"world id {world_id}")
     c.execute("INSERT INTO world_state (id, session_id, world_id, created, " +
               "updated, player_state, character_state) " +
               "VALUES (?, ?, ?, ?, ?, ?, ?)",
