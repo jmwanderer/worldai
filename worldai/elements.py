@@ -65,6 +65,11 @@ class IdName:
   def getName(self):
     return self.name
 
+  def getJSON(self):
+    return { "id": self.id,
+             "name": self.name }
+  
+
 
 class ElemTag:
   """

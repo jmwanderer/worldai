@@ -18,6 +18,14 @@ When offering a greeting, inquire as to the business of the user.
 
 {support}
 
+You are currently located in {location}
+
+You have the following items:
+{char_items}
+
+The user has the following items:
+{user_items}
+
 Your world is described as follows:
 {world_description}
 
@@ -64,12 +72,31 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     if wstate.hasCharacterSupport(self.character_id):
       support = "You have given the user your support."
 
+    location = "unknown"
+    site_id = wstate.getCharacterLocation(self.character_id)
+    if len(site_id) > 0:
+      site = elements.loadSite(db, site_id)
+      location = site.getName()
+    
+    character_items = []
+    for item_id in wstate.getCharacterItems(self.character_id):
+      item = elements.loadItem(db, item_id)
+      character_items.append(item.getIdName().getJSON())
+
+    user_items = []
+    for item_id in wstate.getItems():
+      item = elements.loadItem(db, item_id)
+      user_items.append(item.getIdName().getJSON())
+
     instructions = []
     instructions.append(INSTRUCTIONS.format(
       name=character.getName(),
       world_name=world.getName(),
       description=character.getDescription(),
       support=support,
+      location=location,
+      char_items=character_items,
+      user_items=user_items,
       world_description=world.getDescription()))
 
     if len(character.getDetails()) > 0:

@@ -71,7 +71,7 @@ class BasicTestCase(unittest.TestCase):
     state = world_state.loadWorldState(self.db, wstate_id)
     self.assertIsNotNone(state)
 
-    self.assertEqual(len(state.goal_state[world_state.PROP_CHAR_SUPPORT]), 0)
+    self.assertEqual(len(state.player_state[world_state.PROP_CHAR_SUPPORT]), 0)
     self.assertFalse(state.hasCharacterSupport(char_id))
 
     state.markCharacterSupport(char_id)
@@ -80,16 +80,27 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(len(state.getChatCharacter()), 0)
     state.setChatCharacter(char_id)
 
-    self.assertEqual(len(state.goal_state[world_state.PROP_ITEMS]), 0)
+    self.assertEqual(len(state.player_state[world_state.PROP_ITEMS]), 0)
     state.addItem(item_id)
 
     self.assertEqual(len(state.getLocation()), 0)    
     state.setLocation(site_id)
-    
+
+    state.setCharacterLocation(char_id, site_id)
+
+    self.assertEqual(site_id, state.getCharacterLocation(char_id))
+
+    self.assertTrue(state.addCharacterItem(char_id, item_id))
+    self.assertEqual(1, len(state.getCharacterItems(char_id)))
+
     world_state.saveWorldState(self.db, state)
 
     state = world_state.loadWorldState(self.db, wstate_id)
     self.assertTrue(state.hasCharacterSupport(char_id))
-    self.assertEqual(len(state.goal_state[world_state.PROP_ITEMS]), 1)
+    self.assertEqual(len(state.player_state[world_state.PROP_ITEMS]), 1)
     self.assertNotEqual(len(state.getLocation()), 0)
-    self.assertNotEqual(len(state.getChatCharacter()), 0)            
+    self.assertNotEqual(len(state.getChatCharacter()), 0) 
+
+    self.assertTrue(state.removeCharacterItem(char_id, item_id))
+    self.assertEqual(0, len(state.getCharacterItems(char_id)))
+    self.assertEqual(site_id, state.getCharacterLocation(char_id))
