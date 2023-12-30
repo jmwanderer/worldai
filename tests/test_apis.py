@@ -40,6 +40,19 @@ def test_world_chars(client, app):
                           "Authorization": bearer_token(app)})
   assert response.status_code == 200
   assert id == response.json["id"]
+
+  response = client.get(f"/worlds/{world_id}/sites",
+                        headers= {
+                          "Authorization": bearer_token(app)})
+  assert response.status_code == 200
+  assert len(response.json) > 0
+  id = response.json[0]["id"]
+
+  response = client.get(f"/worlds/{world_id}/sites/{id}",
+                        headers= {
+                          "Authorization": bearer_token(app)})
+  assert response.status_code == 200
+  assert id == response.json["id"]
   
 
 def test_character_chat(client, app):

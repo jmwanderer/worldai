@@ -688,24 +688,6 @@ def threads_api(wid, id):
   return content
 
 
-@bp.route('/state/worlds/<wid>/progress', methods=["GET"])
-@auth_required
-def world_state_progress(wid):
-  """
-  API to access to the state for a specific world
-  """
-  session_id = get_session_id()
-
-  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
-  wstate = world_state.loadWorldState(get_db(), wstate_id)
-  if wstate is None:
-    # TODO: use utility functions
-    return { "error", "World not found"}, 400
-  
-  return wstate.goal_state
-  
-
-
 @bp.route('/worlds', methods=["GET"])
 @auth_required
 def worlds_list():
@@ -761,6 +743,21 @@ def worlds(wid):
   
   return result
 
+def getElementThumbProperty(element):
+  """
+  Return a property referencing an image for an element
+  """
+  # May be None
+  image_id = element.getImageByIndex(0)
+  if image_id is None:
+    url = flask.url_for('static', filename="qmark.png", _external=True)
+    image_prop = { "id": "0", "url": url }
+  else:
+    image_prop = { "id": image_id,
+                   "url": flask.url_for('worldai.get_image_thumb',
+                                        id=image_id) }
+  return image_prop
+
 
 @bp.route('/worlds/<wid>/characters', methods=["GET"])
 @auth_required
@@ -777,18 +774,10 @@ def characters_list(wid):
   wstate = world_state.loadWorldState(get_db(), wstate_id)  
   characters = elements.listCharacters(get_db(), wid)
   
-  for (entry) in characters:
+  for entry in characters:
     id = entry.getID()
     character = elements.loadCharacter(get_db(), id)
-    # May be None
-    image_id = character.getImageByIndex(0)
-    if image_id is None:
-      url = flask.url_for('static', filename="qmark.png", _external=True)
-      image_prop = { "id": "0", "url": url }
-    else:
-      image_prop = { "id": image_id,
-                     "url": flask.url_for('worldai.get_image_thumb',
-                                          id=image_id) }
+    image_prop = getElementThumbProperty(character)
       
     character_list.append(
       {"id": id,
@@ -798,6 +787,17 @@ def characters_list(wid):
        "image": image_prop })
 
   return flask.jsonify(character_list)
+
+def getElementImageProps(element):
+  images = []
+  for image in element.getImages():
+    url = flask.url_for('worldai.get_image', id=image, _external=True)
+    images.append({ "id": image, "url": url})
+  else:
+    url = flask.url_for('static', filename="qmark.png", _external=True)    
+    images.append({ "id": "0", "url": url})
+  return images
+
 
 @bp.route('/worlds/<wid>/characters/<id>', methods=["GET"])
 @auth_required
@@ -812,16 +812,57 @@ def characters(wid, id):
   if character == None or character.parent_id != wid:
     return { "error", "Character not found"}, 400
 
-  images = []
-  for image in character.getImages():
-    url = flask.url_for('worldai.get_image', id=image, _external=True)
-    images.append({ "id": image, "url": url})
-  else:
-    url = flask.url_for('static', filename="qmark.png", _external=True)    
-    images.append({ "id": "0", "url": url})    
-  
+  images = getElementImageProps(character)
   result = character.getJSONRep()
   result["images"] = images
   result["givenSupport"] = wstate.hasCharacterSupport(id)
 
   return result
+
+@bp.route('/worlds/<wid>/sites', methods=["GET"])
+@auth_required
+def site_list(wid):
+  """
+  Get a list of sites
+  """
+  # Save last opened in session
+  session['world_id'] = wid
+
+  site_list = []
+  session_id = get_session_id()
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)  
+  sites = elements.listSites(get_db(), wid)
+
+  for entry in sites:
+    id = entry.getID()
+    site = elements.loadSite(get_db(), id)
+    image_prop = getElementThumbProperty(site)
+    site_list.append(
+      {"id": id,
+       "name": site.getName(),
+       "description": site.getDescription(),
+       "image": image_prop })
+  return site_list
+
+@bp.route('/worlds/<wid>/sites/<sid>', methods=["GET"])
+@auth_required
+def site(wid, sid):
+  """
+  API to load info and state for a site
+  """
+  session_id = get_session_id()
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)  
+  site = elements.loadSite(get_db(), sid)
+  if site == None:
+    return { "error", "Site not found"}, 400
+
+  # TODO: add wstate to result
+  images = getElementImageProps(site)
+  result = site.getJSONRep()
+  result["images"] = images
+  result["characters"] = wstate.getCharactersAtLocation(sid)
+
+  return result
+

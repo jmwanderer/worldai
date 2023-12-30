@@ -59,7 +59,14 @@ class WorldState:
     return self.get_char(char_id)[PROP_LOCATION]
 
   def setCharacterLocation(self, char_id, site_id):
-    self.get_char(char_id)[PROP_LOCATION] = site_id    
+    self.get_char(char_id)[PROP_LOCATION] = site_id
+
+  def getCharactersAtLocation(self, site_id):
+    result = []
+    for char_id in self.character_state.keys():
+      if self.getCharacterLocation(char_id) == site_id:
+        result.append(char_id)
+    return result
 
   def getCharacterItems(self, char_id):
     return self.get_char(char_id)[PROP_ITEMS]
