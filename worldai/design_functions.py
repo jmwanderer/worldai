@@ -653,7 +653,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
   def FuncCreateImage(self, db, arguments):
     # Check if the budget allows
-    if not chat_function.check_image_budget(db):
+    if not chat_functions.check_image_budget(db):
       return self.funcError("No budget available for image creation")
     
     image = elements.Image()

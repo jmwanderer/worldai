@@ -3,15 +3,18 @@ import { useState } from 'react';
 import { useRef } from 'react';
 import { useEffect } from 'react';
 import './App.css';
-import close_image from './close.png';
 
 import Button from 'react-bootstrap/Button';
+import CloseButton from 'react-bootstrap/CloseButton';
 import Card from 'react-bootstrap/Card';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Image from 'react-bootstrap/Image';
 import Stack from 'react-bootstrap/Stack';
+
+import Nav from 'react-bootstrap/Nav';
+import Navbar from 'react-bootstrap/Navbar';
 
 /*
  * TODO:
@@ -34,13 +37,6 @@ if (auth_key.substring(0,2) !== "{{") {
 console.log("AUTH Key: " + AUTH_KEY);    
 
 
-function CloseButton({ onClick }) {
-    return (
-        <img src={close_image} alt="close"
-             onClick={onClick}
-             className="App-close"/>
-    );
-}
 
 // Shows a single message exchange.
 function MessageExchange({ name, message }) {
@@ -466,19 +462,20 @@ function SiteItem({ site, onClick }) {
     }
     return (
         <div onClick={handleClick}>
-            <div>
-                <img className="App-thumb"
-                     src={site.image.url} alt="site"/>
-            </div>
-            <div>
-                <u>{ site.name }</u>
-            </div>
+            <Card  className="m-2">
+                <Card.Img src={site.image.url} style={{ width: '12rem'}}/>
+                <Card.Title>
+                    { site.name }
+                </Card.Title>
+            </Card>
         </div>);
 }    
 
 function World({ worldId, setWorldId }) {
+    const [world, setWorld] = useState(null);            
     const [siteList, setSiteList] = useState([]);
-    const [siteId, setSiteId] = useState(null);    
+    const [siteId, setSiteId] = useState(null);
+
     const [characterId, setCharacterId] = useState(null);
     
     useEffect(() => {
@@ -501,8 +498,27 @@ function World({ worldId, setWorldId }) {
             } catch {
             }
         }
+
+        async function getWorldData() {
+            // Get the status of progress in the world
+            const url = URL + "worlds/" + worldId;
+            try {
+                const response =
+                      await fetch(url, {
+                          headers: {
+                              "Authorization": "Bearer " + AUTH_KEY
+                          }
+                      });
+                const values = await response.json();
+                if (!ignore) {
+                    setWorld(values);
+                }
+            } catch {
+            }
+        }
         
         getSiteData();
+        getWorldData();        
         return () => {
             ignore = true;
         }
@@ -516,20 +532,33 @@ function World({ worldId, setWorldId }) {
         setSiteId(site_id);
     }
 
+    if (world === null || siteList === null) {
+        return (<div></div>);
+    }
+
     let screen = ""
     if (!siteId) {
         // Show sites
-        const entries = siteList.map(entry =>
-            <SiteItem key={entry.id}
-                      site={entry}
-                      onClick={selectSite}/>
-        );
-        screen = <div>
-                     <CloseButton onClick={clickClose}/>
-                     <div className="App-sites">
-                         { entries }
-                     </div>
-                 </div>
+        const rows = []
+        for (let row = 0; row < siteList.length / 3; row++) {
+            let cols = []
+            for (let col = 0; col < 3; col++) {
+                let index = row * 3 + col;
+                if (index < siteList.length) {
+                    cols.push(<Col>
+                                  <SiteItem key={siteList[index].id}
+                                            site={siteList[index]}
+                                            onClick={selectSite}/>
+                              </Col>)
+                } else {
+                    cols.push(<Col></Col>)
+                }
+            }
+            rows.push(<Row>  { cols } </Row>)
+        }
+        screen = <Container>
+                     { rows }
+                 </Container>                     
     } else {
         screen = <Site worldId={worldId}
                        siteId={siteId}
@@ -546,11 +575,25 @@ function World({ worldId, setWorldId }) {
                                 characterId={characterId}
                                 setCharacterId={setCharacterId}/>
                                 }
-                                */
+*/
+    
     
 
     return (
         <div>
+            <h2>
+                World: {world.name}
+            </h2>
+            <Navbar expand="lg" className="bg-body-tertiary">
+                <Container>
+                    <CloseButton onClick={clickClose}/>
+                    <Nav>
+                        <Nav.Link>Inventory</Nav.Link>
+                        <Nav.Link>Characters</Nav.Link>
+                        <Nav.Link>Items</Nav.Link>                        
+                    </Nav>
+                </Container>
+            </Navbar>
             { screen }
         </div>            
     );
