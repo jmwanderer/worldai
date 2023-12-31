@@ -694,6 +694,9 @@ def worlds_list():
   """
   API to access worldlist
   """
+  # Reset last opened world
+  if session.get('world_id'):
+    del session['world_id']  
   world_list = []
   worlds = elements.listWorlds(get_db())
   for (entry) in worlds:
@@ -873,4 +876,38 @@ def site(wid, sid):
   result["characters"] = wstate.getCharactersAtLocation(sid)
 
   return result
+
+@bp.route('/worlds/<wid>/items', methods=["GET"])
+@auth_required
+def items_list(wid):
+  """
+  API to get the items for a world
+  """
+  # Save last opened in session
+  session['world_id'] = wid
+  
+  item_list = []
+  session_id = get_session_id()
+  world = elements.loadWorld(get_db(), wid)  
+  if world is None:
+    return { "error", "World not found"}, 400
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)  
+  items = elements.listItems(get_db(), wid)
+  
+  for entry in items:
+    id = entry.getID()
+    item = elements.loadItem(get_db(), id)
+    image_prop = getElementThumbProperty(item)
+      
+    item_list.append(
+      {"id": id,
+       "name": item.getName(),
+       "description": item.getDescription(),
+       "have_item":  wstate.hasItem(id),
+       "image": image_prop })
+
+  return item_list
+
+
 

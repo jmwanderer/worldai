@@ -104,6 +104,9 @@ class WorldState:
       return True
     return False
 
+  def hasItem(self, item_id):
+    return item_id in self.player_state[PROP_ITEMS]
+
   def getItems(self):
     return self.player_state[PROP_ITEMS]
 

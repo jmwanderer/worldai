@@ -313,32 +313,9 @@ function ChatCharacter({ worldId, characterId, setCharacterId}) {
 }
 
 
-function CharacterItem({ character, onClick }) {
 
-    function handleClick() {
-        onClick(character.id);
-    }
-
-    return (
-        <tr onClick={handleClick}>
-            <td className="App-item">
-                <img className="App-thumb"
-                     src={character.image.url} alt="person"/>
-            </td>
-            <td className="App-item">
-                <div className="App-world-item">                        
-                    <u>{ character.name }</u>
-                    <br/>
-                            { character.description }
-                    <br/>
-                </div>
-            </td>
-            <td className="App-item">
-                { character.givenSupport ? "Done" : "Not Done" }
-            </td>
-        </tr>
-    );
-    
+function CharacterItem() {
+    return <p></p>
 }
 
 function SelectCharacter({ worldId, setCharacterId, setSiteId }) {
@@ -469,12 +446,228 @@ function SiteItem({ site, onClick }) {
                 </Card.Title>
             </Card>
         </div>);
-}    
+}
+
+
+function SiteGrid({siteList, onClick}) {
+    const rows = []
+    for (let row = 0; row < siteList.length / 3; row++) {
+        let cols = []
+        for (let col = 0; col < 3; col++) {
+            let index = row * 3 + col;
+            if (index < siteList.length) {
+                cols.push(<Col>
+                              <SiteItem key={siteList[index].id}
+                                        site={siteList[index]}
+                                        onClick={onClick}/>
+                          </Col>)
+            } else {
+                cols.push(<Col></Col>)
+            }
+        }
+        rows.push(<Row>  { cols } </Row>)
+    }
+    return (<Container>
+                { rows }
+            </Container>);
+}
+
+function CloseBar({ onClose=onClose}) {
+    return (
+        <Navbar expand="lg" className="bg-body-tertiary">
+            <Container>
+                <CloseButton onClick={onClose}/>
+            </Container>
+        </Navbar>);
+}
+
+function Navigation({ onClose=onClose, setView=setView}) {
+
+    function setCharactersView() {
+        setView("characters");        
+    }
+    
+    function setItemsView() {
+        setView("items");        
+    }
+
+    
+    return (
+        <Navbar expand="lg" className="bg-body-tertiary">
+            <Container>
+                <CloseButton onClick={onClose}/>
+                <Nav>
+                    <Nav.Link onClick={setCharactersView}>
+                        Characters
+                    </Nav.Link>
+                    <Nav.Link onClick={setItemsView}>
+                        Items
+                    </Nav.Link>                        
+                </Nav>
+            </Container>
+        </Navbar>);
+}
+
+
+function CharacterListEntry({ character }) {
+
+    let has_support = "";
+    if (character.givenSupport) {
+        has_support = <i class="bi-heart" style={{ fontSize: "4rem"}}/>
+    }
+
+    return (
+        <div class="card mb-3 mx-4">
+            <div class="row no gutters">
+                <div class="col-md-2">
+                    <img src={character.image.url} class="card-img"
+                         alt="character"/>
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            { character.name }
+                        </h5>
+                        <p class="card-text" style={{ textAlign: "left" }}>
+                            { character.description }
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-2" style={{ justifyContent: "center" }}>
+                    { has_support }
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function CharacterList({ worldId }) {
+
+    const [characterList, setCharacterList] = useState([]);
+
+    useEffect(() => {
+        let ignore = false;
+
+        async function getCharacterData() {
+            // Get the status of progress in the world
+            const url = URL + "worlds/" + worldId + "/characters";
+            try {
+                const response =
+                      await fetch(url, {
+                          headers: {
+                              "Authorization": "Bearer " + AUTH_KEY
+                          }
+                      });
+                const values = await response.json();
+                if (!ignore) {
+                    setCharacterList(values);
+                }
+            } catch {
+            }
+        }
+        
+        getCharacterData();
+        return () => {
+            ignore = true;
+        }
+    }, [worldId]);
+
+    
+    const entries = characterList.map(entry =>
+        <CharacterListEntry key={entry.id}
+                            character={entry}/>
+    );
+
+    return (
+        <Stack className="mt-3">
+            { entries }
+        </Stack>
+    );
+}
+
+function ItemListEntry({ item }) {
+
+    let in_inventory = "";
+    if (item.have_item) {
+        in_inventory = <i class="bi-check" style={{ fontSize: "4rem"}}/>
+    }
+    
+    return (
+        <div class="card mb-3 mx-4">
+            <div class="row no gutters">
+                <div class="col-md-2">
+                    <img src={item.image.url} class="card-img"
+                         alt="item"/>
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            { item.name }
+                        </h5>
+                        <p class="card-text" style={{ textAlign: "left" }}>
+                            { item.description }
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    { in_inventory }
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function ItemList({ worldId }) {
+
+    const [itemList, setItemList] = useState([]);
+
+    useEffect(() => {
+        let ignore = false;
+
+        async function getItemData() {
+            // Get the status of progress in the world
+            const url = URL + "worlds/" + worldId + "/items";
+            try {
+                const response =
+                      await fetch(url, {
+                          headers: {
+                              "Authorization": "Bearer " + AUTH_KEY
+                          }
+                      });
+                const values = await response.json();
+                if (!ignore) {
+                    setItemList(values);
+                }
+            } catch {
+            }
+        }
+        
+        getItemData();
+        return () => {
+            ignore = true;
+        }
+    }, [worldId]);
+
+    
+    const entries = itemList.map(entry =>
+        <ItemListEntry key={entry.id}
+                       item={entry}/>
+    );
+
+    return (
+        <Stack className="mt-3">
+            { entries }
+        </Stack>
+    );
+}
+
+
 
 function World({ worldId, setWorldId }) {
     const [world, setWorld] = useState(null);            
     const [siteList, setSiteList] = useState([]);
     const [siteId, setSiteId] = useState(null);
+    const [view, setView] = useState(null);
 
     const [characterId, setCharacterId] = useState(null);
     
@@ -528,42 +721,60 @@ function World({ worldId, setWorldId }) {
         setWorldId("");
     }
 
+    function clearView() {
+        setView("");
+    }
+
     function selectSite(site_id) {
         setSiteId(site_id);
     }
 
+    // Wait until data loads
     if (world === null || siteList === null) {
         return (<div></div>);
     }
 
-    let screen = ""
-    if (!siteId) {
-        // Show sites
-        const rows = []
-        for (let row = 0; row < siteList.length / 3; row++) {
-            let cols = []
-            for (let col = 0; col < 3; col++) {
-                let index = row * 3 + col;
-                if (index < siteList.length) {
-                    cols.push(<Col>
-                                  <SiteItem key={siteList[index].id}
-                                            site={siteList[index]}
-                                            onClick={selectSite}/>
-                              </Col>)
-                } else {
-                    cols.push(<Col></Col>)
-                }
-            }
-            rows.push(<Row>  { cols } </Row>)
-        }
-        screen = <Container>
-                     { rows }
-                 </Container>                     
-    } else {
-        screen = <Site worldId={worldId}
-                       siteId={siteId}
-                       setSiteId={setSiteId}/>
+    if (view === "characters") {
+        return (
+            <div>
+                <h2>
+                    {world.name} Characters
+                </h2>
+                <CloseBar onClose={clearView}/>
+                <CharacterList worldId={worldId}/>
+            </div>
+        );        
+    } else if (view === "items") {
+        return (
+            <div>
+                <h2>
+                    {world.name} Items
+                </h2>
+                <CloseBar onClose={clearView}/>
+                <ItemList worldId={worldId}/>                
+            </div>
+        );        
     }
+
+    // Show a specific site
+    if (siteId) {
+        return (<Site worldId={worldId}
+                      siteId={siteId}
+                      setSiteId={setSiteId}/>);
+    }
+
+    // Show world view
+    // Show sites
+    return (
+        <div>
+            <h2>
+                {world.name}
+            </h2>
+            <Navigation onClose={clickClose} setView={setView}/>
+            <SiteGrid siteList={siteList} onClick={selectSite}/>
+        </div>            
+    );
+    
 
 /*    
         if (!characterId) {
@@ -577,26 +788,6 @@ function World({ worldId, setWorldId }) {
                                 }
 */
     
-    
-
-    return (
-        <div>
-            <h2>
-                World: {world.name}
-            </h2>
-            <Navbar expand="lg" className="bg-body-tertiary">
-                <Container>
-                    <CloseButton onClick={clickClose}/>
-                    <Nav>
-                        <Nav.Link>Inventory</Nav.Link>
-                        <Nav.Link>Characters</Nav.Link>
-                        <Nav.Link>Items</Nav.Link>                        
-                    </Nav>
-                </Container>
-            </Navbar>
-            { screen }
-        </div>            
-    );
 }
 
 
@@ -607,7 +798,7 @@ function WorldItem({ world, onClick }) {
     }
     
     return (
-        <div class="card mb-3" onClick={handleClick} >
+        <div class="card mb-3 mx-4" onClick={handleClick} >
             <div class="row no gutters">
                 <div class="col-md-2">
                     <img src={world.image.url} class="card-img" alt="world"/>
@@ -664,7 +855,7 @@ function SelectWorld({setWorldId}) {
     );
 
     return (
-        <Stack gap={3}>
+        <Stack className="mt-3">
             { entries }
         </Stack>
     );
