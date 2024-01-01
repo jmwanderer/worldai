@@ -245,7 +245,7 @@ function CharacterScreen({ character }) {
     );
 }
 
-function ChatCharacter({ worldId, characterId, setCharacterId}) {
+function ChatCharacter({ worldId, characterId, onClose}) {
     const [character, setCharacter] = useState(null);
     const [refresh, setRefresh] = useState(null);    
     useEffect(() => {
@@ -276,10 +276,6 @@ function ChatCharacter({ worldId, characterId, setCharacterId}) {
     }, [worldId, characterId, refresh]);
 
 
-    function clickClose() {
-        setCharacterId(null);
-    }
-
     function handleUpdate() {
         setRefresh(refresh + 1);
     }
@@ -304,7 +300,7 @@ function ChatCharacter({ worldId, characterId, setCharacterId}) {
 
     return (
         <div>
-            <CloseButton onClick={clickClose}/>
+            <CloseButton onClick={onClose}/>
             <table className="App-table">
                 <tbody className="App-tbody">{screen}</tbody>
             </table>
@@ -314,9 +310,6 @@ function ChatCharacter({ worldId, characterId, setCharacterId}) {
 
 
 
-function CharacterItem() {
-    return <p></p>
-}
 
 function SelectCharacter({ worldId, setCharacterId, setSiteId }) {
 
@@ -378,15 +371,54 @@ function SelectCharacter({ worldId, setCharacterId, setSiteId }) {
 }
 
 
-function Site({ worldId, siteId, setSiteId }) {
-    const [site, setSite] = useState(null);
+function CharacterItem({ character, onClick }) {
+    function handleClick() {
+        onClick(character.id);
+    }
+    return (
+        <div onClick={handleClick}>
+            <Card>
+                <Card.Img src={character.image.url}/>
+                  
+                <Card.Title>
+                    {character.name }
+                </Card.Title>
+            </Card>
+        </div>);
+}
 
+function SitePeople({ site, setCharacterId}) {
+
+    const people = site.characters.map(entry =>
+        <Col md={2}>
+            <CharacterItem key={entry.id}
+                           character={entry}
+                           onClick={setCharacterId}/>
+        </Col>
+    );
+    
+    return ( <Container>
+                 <Row style={{ textAlign: "left" }}>
+                     <h5>Present:</h5>
+                 </Row>
+                 <Row>                 
+                     { people }
+                 </Row>
+             </Container>
+           );
+}
+
+function Site({ world, siteId, onClose }) {
+    const [site, setSite] = useState(null);
+    const [view, setView] = useState(null);
+    const [characterId, setCharacterId] = useState(null);
+    
     useEffect(() => {
         let ignore = false;
 
         async function getData() {
             // Load the site
-            const url = URL + "worlds/" + worldId +
+            const url = URL + "worlds/" + world.id +
                   "/sites/" + siteId;
             try {
                 const response =
@@ -406,29 +438,58 @@ function Site({ worldId, siteId, setSiteId }) {
         return () => {
             ignore = true;
         }
-    }, [worldId, siteId]);
+    }, [world, siteId]);
+
+    function clearView() {
+        setView(null)
+    }
+
+    function clearCharacterId() {
+        setCharacterId(null)
+    }
 
     function clickClose() {
-        setSiteId(null);
+        onClose()
     }
 
-    if (site) {
-        return (
-            <div className="App-char-screen">
-                Name: {site.name}
-                <div>
-                    <img src={site.images[0].url}
-                         alt="site"
-                         className="App-img"/>
-                </div>
-                Notes:<br/>
-                <div>
-                    {site.description}
-                </div>
-            </div>);
-    } else {
-        return <div className="App-char-screen"></div>
+    if (!site) {
+        return <div/>        
     }
+
+    if (view) {
+        return (<DetailsView view={view} world={ world }
+                             onClose={clearView}/>);
+    }
+
+    if (characterId) {
+        return (
+            <ChatCharacter worldId={world.id}
+                           characterId={characterId}
+                           onClose={clearCharacterId}/>
+        );
+    }
+    
+    return (
+        <Container>
+            <Navigation onClose={clickClose} setView={ setView }/>
+            <Container>
+                <Row>
+                    <Col>
+                        <Image src={site.images[0].url}
+                               style={{ height: '40vmin'}}/>
+                    </Col>
+                    <Col style={{ textAlign: "left" }}>
+                        <h2>{site.name}</h2>
+                        <h5>{site.description}</h5>
+                    </Col>                        
+                </Row>
+                <Row>
+                    <SitePeople site={site}
+                                setCharacterId={setCharacterId}/>
+                </Row>
+            </Container>                            
+        </Container>            
+    );
 }
     
 
@@ -440,7 +501,7 @@ function SiteItem({ site, onClick }) {
     return (
         <div onClick={handleClick}>
             <Card  className="m-2">
-                <Card.Img src={site.image.url} style={{ width: '12rem'}}/>
+                <Card.Img src={site.image.url}/>
                 <Card.Title>
                     { site.name }
                 </Card.Title>
@@ -661,6 +722,30 @@ function ItemList({ worldId }) {
     );
 }
 
+function DetailsView({view, world, onClose}) {
+
+    if (view === "characters") {
+        return (
+            <div>
+                <h2>
+                    {world.name} Characters
+                </h2>
+                <CloseBar onClose={onClose}/>
+                <CharacterList worldId={world.id}/>
+            </div>
+        );        
+    } else {
+        return (
+            <div>
+                <h2>
+                    {world.name} Items
+                </h2>
+                <CloseBar onClose={onClose}/>
+                <ItemList worldId={world.id}/>                
+            </div>
+        );        
+    }
+}
 
 
 function World({ worldId, setWorldId }) {
@@ -669,7 +754,6 @@ function World({ worldId, setWorldId }) {
     const [siteId, setSiteId] = useState(null);
     const [view, setView] = useState(null);
 
-    const [characterId, setCharacterId] = useState(null);
     
     useEffect(() => {
         let ignore = false;
@@ -725,6 +809,10 @@ function World({ worldId, setWorldId }) {
         setView("");
     }
 
+    function clearSite() {
+        setSiteId(null);
+    }
+
     function selectSite(site_id) {
         setSiteId(site_id);
     }
@@ -734,33 +822,15 @@ function World({ worldId, setWorldId }) {
         return (<div></div>);
     }
 
-    if (view === "characters") {
-        return (
-            <div>
-                <h2>
-                    {world.name} Characters
-                </h2>
-                <CloseBar onClose={clearView}/>
-                <CharacterList worldId={worldId}/>
-            </div>
-        );        
-    } else if (view === "items") {
-        return (
-            <div>
-                <h2>
-                    {world.name} Items
-                </h2>
-                <CloseBar onClose={clearView}/>
-                <ItemList worldId={worldId}/>                
-            </div>
-        );        
+    if (view) {
+        return (<DetailsView view={view} world={ world } onClose={clearView}/>);
     }
 
     // Show a specific site
     if (siteId) {
-        return (<Site worldId={worldId}
+        return (<Site world={world}
                       siteId={siteId}
-                      setSiteId={setSiteId}/>);
+                      onClose={clearSite}/>);
     }
 
     // Show world view
@@ -910,20 +980,4 @@ function App() {
     );
 }
 
-function AxApp() {
-    return (
-        <div className="App">
-            <header className="App-header">
-                <div className='alert alert-primary' role='alert'>
-                    <p style={{display:"none"}} className='d-block'>
-                        Bootstrap is installed
-                    </p>
-                    <p className='d-none'>
-                        Bootstrap not installed
-                    </p>
-                </div>
-            </header>
-        </div>
-    );
-}
 export default App;

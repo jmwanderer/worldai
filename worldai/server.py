@@ -706,7 +706,9 @@ def worlds_list():
     # May be None
     image_id = world.getImageByIndex(0)
     if image_id is None:
-      url = flask.url_for('static', filename="qmark.png", _external=True)
+      url = flask.url_for('static',
+                          filename="question-square-fill.svg",
+                          _external=True)
       image_prop = { "id": "0", "url": url }     
     else:
       image_prop = { "id": image_id,
@@ -737,7 +739,9 @@ def worlds(wid):
     url = flask.url_for('worldai.get_image', id=image, _external=True)
     images.append({ "id": image, "url": url})
   else:
-    url = flask.url_for('static', filename="qmark.png", _external=True)    
+    url = flask.url_for('static',
+                        filename="question-square-fill.svg",
+                        _external=True)    
     images.append({ "id": "0", "url": url})    
 
   result = world.getJSONRep()
@@ -752,7 +756,9 @@ def getElementThumbProperty(element):
   # May be None
   image_id = element.getImageByIndex(0)
   if image_id is None:
-    url = flask.url_for('static', filename="qmark.png", _external=True)
+    url = flask.url_for('static',
+                        filename="question-square-fill.svg",
+                        _external=True)
     image_prop = { "id": "0", "url": url }
   else:
     image_prop = { "id": image_id,
@@ -798,8 +804,11 @@ def getElementImageProps(element):
   for image in element.getImages():
     url = flask.url_for('worldai.get_image', id=image, _external=True)
     images.append({ "id": image, "url": url})
-  else:
-    url = flask.url_for('static', filename="qmark.png", _external=True)    
+
+  if len(images) == 0:
+    url = flask.url_for('static',
+                        filename="question-square-fill.svg",
+                        _external=True)    
     images.append({ "id": "0", "url": url})
   return images
 
@@ -869,12 +878,24 @@ def site(wid, sid):
   if site == None:
     return { "error", "Site not found"}, 400
 
-  # TODO: add wstate to result
   images = getElementImageProps(site)
   result = site.getJSONRep()
   result["images"] = images
-  result["characters"] = wstate.getCharactersAtLocation(sid)
 
+  characters = []
+  cid_list = wstate.getCharactersAtLocation(sid)
+  for cid in cid_list:
+    character = elements.loadCharacter(get_db(), cid)
+    # TODO: make more DRY
+    image_prop = getElementThumbProperty(character)
+    characters.append(
+      {"id": cid,
+       "name": character.getName(),
+       "description": character.getDescription(),
+       "givenSupport": wstate.hasCharacterSupport(id),
+       "image": image_prop })
+
+  result["characters"] = characters
   return result
 
 @bp.route('/worlds/<wid>/items', methods=["GET"])
