@@ -304,7 +304,7 @@ function CharacterItem({ character, onClick }) {
         onClick(character.id);
     }
     return (
-        <div onClick={handleClick}>
+        <div onClick={handleClick} class="mt-2">
             <Card>
                 <Card.Img src={character.image.url}/>
                   
@@ -325,10 +325,7 @@ function SitePeople({ site, setCharacterId}) {
         </Col>
     );
     
-    return ( <Container>
-                 <Row style={{ textAlign: "left" }}>
-                     <h5>Present:</h5>
-                 </Row>
+    return ( <Container class="mt-2">
                  <Row>                 
                      { people }
                  </Row>
@@ -404,8 +401,10 @@ function Site({ world, siteId, onClose }) {
             </Row>
             <Row style={{ textAlign: "left" }}>
                 <Col xs={6}>
-                    <Image src={site.images[0].url}
-                           style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+                    <Stack style={{ textAlign: "left" }}>                    
+                        <Image src={site.images[0].url}
+                               style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+                    </Stack>
                 </Col>
                 <Col xs={6}>
                     <h2>{site.name}</h2>
@@ -420,47 +419,6 @@ function Site({ world, siteId, onClose }) {
     );
 }
     
-
-
-function SiteItem({ site, onClick }) {
-    function handleClick() {
-        onClick(site.id);
-    }
-    return (
-        <div onClick={handleClick}>
-            <Card  className="m-2">
-                <Card.Img src={site.image.url}/>
-                <Card.Title>
-                    { site.name }
-                </Card.Title>
-            </Card>
-        </div>);
-}
-
-
-function SiteGrid({siteList, onClick}) {
-    const rows = []
-    for (let row = 0; row < siteList.length / 3; row++) {
-        let cols = []
-        for (let col = 0; col < 3; col++) {
-            let index = row * 3 + col;
-            if (index < siteList.length) {
-                cols.push(<Col key={row + ":" + col}>
-                              <SiteItem key={siteList[index].id}
-                                        site={siteList[index]}
-                                        onClick={onClick}/>
-                          </Col>)
-            } else {
-                cols.push(<Col key={row + ":" + col}></Col>)
-            }
-        }
-        rows.push(<Row key={row} style={{ minWidth: "80vmin"}}>
-                  { cols } </Row>)
-    }
-    return (<Container>
-                { rows }
-            </Container>);
-}
 
 function CloseBar({ onClose }) {
     return (
@@ -677,6 +635,45 @@ function DetailsView({view, world, onClose}) {
 }
 
 
+
+
+function SiteItem({ site, onClick }) {
+    function handleClick() {
+        onClick(site.id);
+    }
+    return (
+        <div onClick={handleClick}  class="mt-2">
+            <Card>
+                <Card.Img src={site.image.url}/>
+                <Card.Title>
+                    { site.name }
+                </Card.Title>
+            </Card>
+        </div>);
+}
+
+
+
+function WorldSites({ siteList, onClick }) {
+
+    const sites = siteList.map(entry =>
+        <Col key={entry.id} md={2}>
+            <SiteItem key={entry.id}
+                           site={entry}
+                           onClick={onClick}/>
+        </Col>
+    );
+    
+    return ( <Container class="mt-2">
+                 <Row>                 
+                     { sites }
+                 </Row>
+             </Container>
+           );
+}
+
+
+
 function World({ worldId, setWorldId }) {
     const [world, setWorld] = useState(null);            
     const [siteList, setSiteList] = useState([]);
@@ -765,28 +762,25 @@ function World({ worldId, setWorldId }) {
     // Show world view
     // Show sites
     return (
-        <div>
-            <h2>
-                {world.name}
-            </h2>
-            <Navigation onClose={clickClose} setView={setView}/>
-            <SiteGrid siteList={siteList} onClick={selectSite}/>
-        </div>            
+        <Container>
+            <Row>
+                <Navigation onClose={clickClose} setView={ setView }/>
+            </Row>
+            <Row style={{ textAlign: "left" }}>
+                <Col xs={6}>
+                    <Image src={world.images[0].url}
+                           style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+                </Col>
+                <Col xs={6}>
+                    <h2>{world.name}</h2>
+                    <h5>{world.description}</h5>
+                </Col>                        
+            </Row>
+            <Row>
+                <WorldSites siteList={siteList} onClick={selectSite}/>
+            </Row>
+        </Container>            
     );
-    
-
-/*    
-        if (!characterId) {
-        screen = <SelectCharacter worldId={worldId}
-                                  setCharacterId={setCharacterId}
-                                  setSiteId={setSiteId}/>
-    } else {
-        screen = <ChatCharacter worldId={worldId}
-                                characterId={characterId}
-                                setCharacterId={setCharacterId}/>
-                                }
-*/
-    
 }
 
 

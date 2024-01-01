@@ -1,11 +1,13 @@
 Plans
 -----
 
+- multi-image support in client
+- fix adding new characters and items after wstate is created
+
 - Revamp ChatExchange API messages
 - trim contents of message history in chat_session
 - consider changing state to mode
 - set budget for tokens and images (images done)
-- more properties for characters, personality, etc
 - update status of calls in client
 
 Potential
