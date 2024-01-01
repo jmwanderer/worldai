@@ -83,6 +83,16 @@ class WorldState:
       return True
     return False
 
+  def hasCharacterItem(self, char_id, item_id):
+    return item_id in self.get_char(char_id)[PROP_ITEMS]
+
+  def findCharacterItem(self, item_id):
+    # Iterate though characters
+    for char_id in self.character_state.keys():
+      if self.hasCharacterItem(char_id, item_id):
+        return char_id
+    return None
+
   def markCharacterSupport(self, char_id):
     if not char_id in self.player_state[PROP_CHAR_SUPPORT]:
       self.player_state[PROP_CHAR_SUPPORT].append(char_id)
@@ -164,43 +174,50 @@ def getWorldStateID(db, session_id, world_id):
     id = r[0]
   db.commit()
 
-  if initialize:
-    wstate = initializeWorldState(db, id)
-    if wstate is not None:
-      saveWorldState(db, wstate)
   return id
 
-def initializeWorldState(db, wstate_id):
-  # Setup locations and item assignments.
-  wstate = loadWorldState(db, wstate_id)
-  if wstate is None:
-    return None
 
+def checkWorldState(db, wstate):
+  # Ensure all characters and items are assigned.
+  # Initializes everything on first load. Will also
+  # set locations for newly added items and characters.
+  
+  changed = False
+  
   characters = elements.listCharacters(db, wstate.world_id)
   sites = elements.listSites(db, wstate.world_id)
   items = elements.listItems(db, wstate.world_id)
 
   if len(sites) > 0:
+    # Assign player to site
+    if wstate.getLocation() == "":
+      site = random.choice(sites)
+      wstate.setLocation(site.getID())
+      changed = True
+      print("assign player to location %s" % site.getName())
+    
     # Assign characters to sites
     for character in characters:
-      site = random.choice(sites)
-      wstate.setCharacterLocation(character.getID(), site.getID())
-      print("assign %s to location %s" % (character.getName(),
-                                          site.getName()))
-
-    site = random.choice(sites)
-    wstate.setLocation(site.getID())    
-    print("assign player to location %s" % site.getName())
+      if wstate.getCharacterLocation(character.getID()) == "":
+        site = random.choice(sites)
+        wstate.setCharacterLocation(character.getID(), site.getID())
+        changed = True
+        print("assign %s to location %s" % (character.getName(),
+                                            site.getName()))
     
   if len(characters) > 0:
     # Assign items to characters
     for item in items:
-      character = random.choice(characters)      
-      wstate.addCharacterItem(character.getID(), item.getID())
-      print("give item %s to %s" % (item.getName(), character.getName()))
-  return wstate
-  
-  
+      if ((wstate.findCharacterItem(item.getID()) is None) and
+          (not wstate.hasItem(item.getID()))):
+        character = random.choice(characters)      
+        wstate.addCharacterItem(character.getID(), item.getID())
+        print("give item %s to %s" % (item.getName(), character.getName()))
+        changed = True
+        
+  return changed
+
+
 def loadWorldState(db, wstate_id):
   """
   Get or create a world state.
@@ -214,12 +231,16 @@ def loadWorldState(db, wstate_id):
 
   r = c.fetchone()
   if r is not None:
-    state = WorldState(wstate_id)
-    state.session_id = r[0]
-    state.world_id = r[1]
-    state.set_player_state_str(r[2])
-    state.set_character_state_str(r[3])    
-  return state
+    wstate = WorldState(wstate_id)
+    wstate.session_id = r[0]
+    wstate.world_id = r[1]
+    wstate.set_player_state_str(r[2])
+    wstate.set_character_state_str(r[3])
+
+    if checkWorldState(db, wstate):
+      saveWorldState(db, wstate)
+    
+  return wstate
     
 
 def saveWorldState(db, state):
