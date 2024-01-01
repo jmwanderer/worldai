@@ -738,7 +738,8 @@ def worlds(wid):
   for image in world.getImages():
     url = flask.url_for('worldai.get_image', id=image, _external=True)
     images.append({ "id": image, "url": url})
-  else:
+
+  if len(images) == 0:
     url = flask.url_for('static',
                         filename="question-square-fill.svg",
                         _external=True)    

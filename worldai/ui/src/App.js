@@ -12,6 +12,7 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Image from 'react-bootstrap/Image';
 import Stack from 'react-bootstrap/Stack';
+import Carousel from 'react-bootstrap/Carousel';
 
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
@@ -220,13 +221,26 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
 }
 
 
+function CharacterImages({character}) {
+    const items = character.images.map(entry =>
+        <Carousel.Item>
+            <Image src={entry.url}
+                   style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+        </Carousel.Item>);
+            
+    return (
+        <Carousel interval={null} style={{ textAlign: "center" }}>
+            { items }
+        </Carousel>            
+    );
+}
+
+
 function CharacterScreen({ character }) {
     return (
         <Stack style={{ textAlign: "left" }}>
             <h3>{character.name}</h3>
-            <Image src={character.images[0].url}
-                   style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
-
+            <CharacterImages character={character}/>
             <h4>Notes:</h4>
             <h5>{character.description}</h5>
             <p>
@@ -333,6 +347,21 @@ function SitePeople({ site, setCharacterId}) {
            );
 }
 
+function SiteImages({ site }) {
+    const items = site.images.map(entry =>
+        <Carousel.Item>
+            <Image src={entry.url}
+                   style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+        </Carousel.Item>);
+
+    return (
+        <Carousel interval={null}>
+            { items }
+        </Carousel>            
+    );
+}
+
+
 function Site({ world, siteId, onClose }) {
     const [site, setSite] = useState(null);
     const [view, setView] = useState(null);
@@ -399,14 +428,13 @@ function Site({ world, siteId, onClose }) {
             <Row>
                 <Navigation onClose={clickClose} setView={ setView }/>
             </Row>
-            <Row style={{ textAlign: "left" }}>
+            <Row>
                 <Col xs={6}>
-                    <Stack style={{ textAlign: "left" }}>                    
-                        <Image src={site.images[0].url}
-                               style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+                    <Stack>
+                        <SiteImages site={site}/>
                     </Stack>
                 </Col>
-                <Col xs={6}>
+                <Col xs={6} style={{ textAlign: "left" }}>
                     <h2>{site.name}</h2>
                     <h5>{site.description}</h5>
                 </Col>                        
@@ -672,6 +700,21 @@ function WorldSites({ siteList, onClick }) {
            );
 }
 
+function WorldImages({world}) {
+    const items = world.images.map(entry =>
+        <Carousel.Item>
+            <Image src={entry.url}
+                   style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+        </Carousel.Item>);
+            
+    return (
+        <Carousel interval={null}>
+            { items }
+        </Carousel>            
+    );
+}
+
+
 
 
 function World({ worldId, setWorldId }) {
@@ -766,12 +809,11 @@ function World({ worldId, setWorldId }) {
             <Row>
                 <Navigation onClose={clickClose} setView={ setView }/>
             </Row>
-            <Row style={{ textAlign: "left" }}>
+            <Row >
                 <Col xs={6}>
-                    <Image src={world.images[0].url}
-                           style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+                    <WorldImages world={world}/>
                 </Col>
-                <Col xs={6}>
+                <Col xs={6} style={{ textAlign: "left" }}>
                     <h2>{world.name}</h2>
                     <h5>{world.description}</h5>
                 </Col>                        
