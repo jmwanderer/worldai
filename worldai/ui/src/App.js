@@ -49,7 +49,7 @@ function MessageExchange({ name, message }) {
             </div>);
     }
     return (
-        <div>
+        <div className="p-2">
             { user_message }
             <div className="App-message">
                 <b> {name}: </b>
@@ -82,7 +82,7 @@ function CurrentMessage({ content, chatState}) {
         error = <div> Error: { content.error } </div>;
     }
     return (
-        <div ref={divRef}>
+        <div className="p-2" ref={divRef}>
             { user }
             { running}
             { error }
@@ -96,18 +96,18 @@ function MessageScreen({chatHistory, currentMessage, chatState, name}) {
     );
 
     return (
-        <div className="App-message-screen">
+        <Stack className="border m-2" style={{ textAlign: "left" }}>
             { entries }
             <CurrentMessage content={currentMessage}
                             chatState={chatState}/>
-        </div>
+        </Stack>
     );
 }
 
 function UserInput({value, onChange, onKeyDown, disabled}) {
     return (
-        <textarea
-            value={value} className="App-user-input"
+        <textarea className="m-2"
+            value={value} 
             disabled={disabled}
             onChange={onChange} onKeyDown={onKeyDown}/>
     );
@@ -120,7 +120,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
            setCurrentMessage] = useState({ user: "", error: ""});
     const [userInput, setUserInput] = useState("")
     const [chatState, setChatState] = useState("ready")
-    
+
     useEffect(() => {
         const controller = new AbortController();
         const signal = controller.signal;
@@ -140,6 +140,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
                 setChatHistory(values["messages"]);
                 if (values["messages"].length === 0) {
                     setUserInput("hello");
+                    // TODO: figure out the right way to do this
                     submitClick();
                 }
             } catch {
@@ -150,7 +151,6 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
             controller.abort();
         }
     }, [worldId, characterId]);
-    
 
     function submitClick() {
         let user_msg = userInput
@@ -185,10 +185,6 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
         getData();
     }
 
-    function clearClick() {
-        setChatHistory([]);
-    }
-
     function handleInputChange(e) {
         setUserInput(e.target.value);
     }
@@ -204,44 +200,38 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
 
     let disabled = (chatState !== "ready");
     return (
-        <div className="App-chat-screen">
+        <Stack>
             <MessageScreen chatHistory={chatHistory}
                            currentMessage={currentMessage}
                            chatState={chatState}
                            name={name}/>
+            <UserInput value={userInput}
+                       onChange={handleInputChange}
+                       onKeyDown={handleKeyDown}/>
             <div>
-                <UserInput value={userInput}
-                           onChange={handleInputChange}
-                           onKeyDown={handleKeyDown}/>
+                <Button disabled={disabled}
+                        onClick={submitClick}
+                        text="Submit">
+                    Submit
+                </Button>
             </div>
-            <Button disabled={disabled}
-                    onClick={clearClick}
-                    text="Clear Thread"/>
-            <Button disabled={disabled}
-                    onClick={submitClick}
-                    text="Submit"/>      
-        </div>
+        </Stack>
     );
 }
 
 
 function CharacterScreen({ character }) {
     return (
-        <div className="App-char-screen">
-            Name: {character.name}
-            <div>
-                <img src={character.images[0].url}
-                     alt="person"
-                     className="App-img"/>
-            </div>
-            Notes:<br/>
-            <div>
-                {character.description}
-            </div>
+        <Stack style={{ textAlign: "left" }}>
+            <h3>{character.name}</h3>
+            <Image src={character.images[0].url}
+                   style={{ height: '40vmin'}}/>          
+            <h4>Notes:</h4>
+            <h5>{character.description}</h5>
             <p>
                 Have support: { character.givenSupport ? "Yes" : "No" }
             </p>
-        </div>
+        </Stack>
     );
 }
 
@@ -280,95 +270,32 @@ function ChatCharacter({ worldId, characterId, onClose}) {
         setRefresh(refresh + 1);
     }
 
-    let screen = (<tr/>);
-    if (character) {
-        screen = (
-            <tr>            
-                <td className="App-td">
+    if (!character) {
+        return <div/>
+    }
+
+    return (
+        <Container>
+            <Row>
+                <Col>
+                    <CloseBar onClose={onClose}/>
+                </Col>
+            </Row>
+            <Row>
+                <Col xs={6}>
                     <CharacterScreen character={character}/>
-                </td>
-                <td className="App-td">
+                </Col>
+                <Col xs={6}>
                     <ChatScreen name={character.name}
                                 worldId={worldId}
                                 characterId={characterId}
-                                onChange={handleUpdate}
-                    />
-                </td>
-            </tr>
+                                onChange={handleUpdate}/>
+                </Col>
+            </Row>
+        </Container>
         );
-    }
-
-    return (
-        <div>
-            <CloseButton onClick={onClose}/>
-            <table className="App-table">
-                <tbody className="App-tbody">{screen}</tbody>
-            </table>
-        </div>
-    );
 }
 
-
-
-
-function SelectCharacter({ worldId, setCharacterId, setSiteId }) {
-
-    const [characterList, setCharacterList] = useState([]);
-
-    useEffect(() => {
-        let ignore = false;
-
-        async function getCharacterData() {
-            // Get the status of progress in the world
-            const url = URL + "worlds/" + worldId + "/characters";
-            try {
-                const response =
-                      await fetch(url, {
-                          headers: {
-                              "Authorization": "Bearer " + AUTH_KEY
-                          }
-                      });
-                const values = await response.json();
-                if (!ignore) {
-                    setCharacterList(values);
-                }
-            } catch {
-            }
-        }
-        
-        getCharacterData();
-        return () => {
-            ignore = true;
-        }
-    }, [worldId]);
-
-    function selectCharacter(character_id) {
-        setCharacterId(character_id);
-    }
-
-    function clickClose() {
-        setSiteId(null);
-    }
-    
-    const entries = characterList.map(entry =>
-        <CharacterItem key={entry.id}
-                       character={entry}
-                       onClick={selectCharacter}/>
-    );
-
-    return (
-        <div>
-            <CloseButton onClick={clickClose}/>
-            <div className="App-world-list">
-                <table>
-                    <tbody>
-                        { entries }
-                    </tbody>
-                </table>
-            </div>
-        </div>            
-    );
-}
 
 
 function CharacterItem({ character, onClick }) {
@@ -390,7 +317,7 @@ function CharacterItem({ character, onClick }) {
 function SitePeople({ site, setCharacterId}) {
 
     const people = site.characters.map(entry =>
-        <Col md={2}>
+        <Col key={entry.id} md={2}>
             <CharacterItem key={entry.id}
                            character={entry}
                            onClick={setCharacterId}/>
@@ -517,23 +444,23 @@ function SiteGrid({siteList, onClick}) {
         for (let col = 0; col < 3; col++) {
             let index = row * 3 + col;
             if (index < siteList.length) {
-                cols.push(<Col>
+                cols.push(<Col key={row + ":" + col}>
                               <SiteItem key={siteList[index].id}
                                         site={siteList[index]}
                                         onClick={onClick}/>
                           </Col>)
             } else {
-                cols.push(<Col></Col>)
+                cols.push(<Col key={row + ":" + col}></Col>)
             }
         }
-        rows.push(<Row>  { cols } </Row>)
+        rows.push(<Row key={row}>  { cols } </Row>)
     }
     return (<Container>
                 { rows }
             </Container>);
 }
 
-function CloseBar({ onClose=onClose}) {
+function CloseBar({ onClose }) {
     return (
         <Navbar expand="lg" className="bg-body-tertiary">
             <Container>
@@ -542,7 +469,7 @@ function CloseBar({ onClose=onClose}) {
         </Navbar>);
 }
 
-function Navigation({ onClose=onClose, setView=setView}) {
+function Navigation({ onClose, setView}) {
 
     function setCharactersView() {
         setView("characters");        
