@@ -576,7 +576,7 @@ def deleteWorld(db, data_dir, world_id):
   logging.info("delete world: [%s] %s",  world.id, world.getName())
   characters = listCharacters(db, world.id)
   for entry in characters:
-    deleteCharacter(db, data_dir, entry["id"])
+    deleteCharacter(db, data_dir, entry.getID())
 
   images = listImages(db, world.id)    
   for image in images:
