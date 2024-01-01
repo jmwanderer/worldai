@@ -200,7 +200,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
 
     let disabled = (chatState !== "ready");
     return (
-        <Stack style={{ height: "100%"}}>
+        <Stack style={{ height: "100%" }}>
             <MessageScreen chatHistory={chatHistory}
                            currentMessage={currentMessage}
                            chatState={chatState}
@@ -224,7 +224,8 @@ function CharacterScreen({ character }) {
     return (
         <Stack style={{ textAlign: "left" }}>
             <h3>{character.name}</h3>
-            <Image src={character.images[0].url}/>
+            <Image src={character.images[0].url}
+                   style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
 
             <h4>Notes:</h4>
             <h5>{character.description}</h5>
@@ -275,13 +276,13 @@ function ChatCharacter({ worldId, characterId, onClose}) {
     }
 
     return (
-        <Container style={{ height: "100vmin"}}>
+        <Container>
             <Row>
                 <Col>
                     <CloseBar onClose={onClose}/>
                 </Col>
             </Row>
-            <Row style={{ height: "95vmin"}}>
+            <Row>
                 <Col xs={6}>
                     <CharacterScreen character={character}/>
                 </Col>
@@ -398,23 +399,23 @@ function Site({ world, siteId, onClose }) {
     
     return (
         <Container>
-            <Navigation onClose={clickClose} setView={ setView }/>
-            <Container>
-                <Row>
-                    <Col>
-                        <Image src={site.images[0].url}
-                               style={{ height: '40vmin'}}/>
-                    </Col>
-                    <Col style={{ textAlign: "left" }}>
-                        <h2>{site.name}</h2>
-                        <h5>{site.description}</h5>
-                    </Col>                        
-                </Row>
-                <Row>
-                    <SitePeople site={site}
-                                setCharacterId={setCharacterId}/>
-                </Row>
-            </Container>                            
+            <Row>
+                <Navigation onClose={clickClose} setView={ setView }/>
+            </Row>
+            <Row style={{ textAlign: "left" }}>
+                <Col xs={6}>
+                    <Image src={site.images[0].url}
+                           style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+                </Col>
+                <Col xs={6}>
+                    <h2>{site.name}</h2>
+                    <h5>{site.description}</h5>
+                </Col>                        
+            </Row>
+            <Row>
+                <SitePeople site={site}
+                            setCharacterId={setCharacterId}/>
+            </Row>
         </Container>            
     );
 }
@@ -453,7 +454,8 @@ function SiteGrid({siteList, onClick}) {
                 cols.push(<Col key={row + ":" + col}></Col>)
             }
         }
-        rows.push(<Row key={row}>  { cols } </Row>)
+        rows.push(<Row key={row} style={{ minWidth: "80vmin"}}>
+                  { cols } </Row>)
     }
     return (<Container>
                 { rows }
