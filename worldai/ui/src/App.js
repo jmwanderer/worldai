@@ -200,7 +200,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
 
     let disabled = (chatState !== "ready");
     return (
-        <Stack>
+        <Stack style={{ height: "100%"}}>
             <MessageScreen chatHistory={chatHistory}
                            currentMessage={currentMessage}
                            chatState={chatState}
@@ -224,8 +224,8 @@ function CharacterScreen({ character }) {
     return (
         <Stack style={{ textAlign: "left" }}>
             <h3>{character.name}</h3>
-            <Image src={character.images[0].url}
-                   style={{ height: '40vmin'}}/>          
+            <Image src={character.images[0].url}/>
+
             <h4>Notes:</h4>
             <h5>{character.description}</h5>
             <p>
@@ -275,13 +275,13 @@ function ChatCharacter({ worldId, characterId, onClose}) {
     }
 
     return (
-        <Container>
+        <Container style={{ height: "100vmin"}}>
             <Row>
                 <Col>
                     <CloseBar onClose={onClose}/>
                 </Col>
             </Row>
-            <Row>
+            <Row style={{ height: "95vmin"}}>
                 <Col xs={6}>
                     <CharacterScreen character={character}/>
                 </Col>
