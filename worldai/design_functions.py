@@ -34,23 +34,23 @@ def elemTypeToState(element_type):
 
 states = {
   STATE_WORLDS: [ "ListWorlds", "ReadWorld", "CreateWorld" ],
-  STATE_WORLD: [ "ReadWorld", "ReadWorldPlans", 
+  STATE_WORLD: [ "ReadWorld", "ReadPlanningNotes", 
                  "ReadCharacter", "ReadItem", "ReadSite",
                  "ChangeState", "EditWorld" ],
   STATE_WORLD_EDIT: [ "UpdateWorld", "ReadWorld",
-                      "ReadWorldPlans", "UpdateWorldPlans",
+                      "ReadPlanningNotes", "UpdatePlanningNotes",
                       "CreateWorldImage", "ChangeState" ],
   STATE_CHARACTERS: [ "ListCharacters", "ReadCharacter",
                       "CreateCharacter", "UpdateCharacter",
-                      "ReadWorldPlans", 
+                      "ReadPlanningNotes", 
                       "CreateCharacterImage", "ChangeState" ],
   STATE_ITEMS: [ "ListItems", "ReadItem",
                  "CreateItem", "UpdateItem",
-                 "ReadWorldPlans",                  
+                 "ReadPlanningNotes",                  
                  "CreateItemImage", "ChangeState" ],
   STATE_SITES: [ "ListSites", "ReadSite",
                  "CreateSite", "UpdateSite",
-                 "ReadWorldPlans",                  
+                 "ReadPlanningNotes",                  
                  "CreateSiteImage", "ChangeState" ],
 }
 
@@ -62,19 +62,14 @@ You are a co-designer of fictional worlds, developing ideas
 and and backstories for these worlds and the contents of worlds, including
 new unique fictional characters. Create new characters, don't use existing characters.
 
-You walk the user through the process of creating worlds.
-When creating a world:
-1. Design the world with a name and a high level description.
-2. Create background details.
-3. Create WorldPlans suggesting main characters, special items, and significant sites.
-4. Using the WorldPlans, create the characters
-5. Using the WorldPlans, create the items
-6. Using the WorldPlans, create the sites
+We design the world with a name and a high level description and create background details
+
+We use Planning Notes for plans on characters, items, and sites.
 
 We can be in one of the following states:
 - State_Worlds: We can open existing worlds and create new worlds
-- State_World: We view a world description, details, and WorldPlans.
-- State_World_Edit: We change a world description, details, and WorldPlans.
+- State_World: We view a world description, details, and PlanningNotes.
+- State_World_Edit: We change a world description, details, and PlanningNotes.
 - State_Characters: We can view characters and create new characters and change the description and details of a character.
 - State_Items: We can view items and create new items and change the description and details of an item.
 - State_Sites: We can view sites and create new sites and change the description and details of a site.
@@ -101,7 +96,7 @@ Before creating a new world, check if it already exists by using ListWorlds
   """
 We are working on the world "{current_world_name}"
 
-A world has plans that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadWorldPlans  
+A world has plans that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadPlanningNotes  
 
 Modify world attributes by calling EditWorld
 
@@ -119,7 +114,7 @@ A world needs a short high level description refelcting the nature of the world.
 
 A world has details, that give more information about the world such as the backstory.
 
-A world has plans that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadWorldPlans, update the plans with UpdateWorldPlans.
+A world has plans that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadPlanningNotes, update the plans with UpdatePlanningNotes.
 
 Build prompts to create images using information from the description and details in the prompt.
 
@@ -357,11 +352,11 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     elif function_name == "ReadWorld":
       result = self.FuncReadWorld(db, arguments)
 
-    elif function_name == "ReadWorldPlans":
-      result = self.FuncReadWorldPlans(db, arguments)
+    elif function_name == "ReadPlanningNotes":
+      result = self.FuncReadPlanningNotes(db, arguments)
 
-    elif function_name == "UpdateWorldPlans":
-      result = self.FuncUpdateWorldPlans(db, arguments)
+    elif function_name == "UpdatePlanningNotes":
+      result = self.FuncUpdatePlanningNotes(db, arguments)
 
     elif function_name == "ListCharacters":
       result = [{ "id": entry.getID(), "name": entry.getName() }            
@@ -501,7 +496,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       
     return content
 
-  def FuncReadWorldPlans(self, db, arguments):
+  def FuncReadPlanningNotes(self, db, arguments):
     world = elements.loadWorld(db, self.getCurrentWorldID())
     if world is None:
       return self.funcError(f"World not found {self.getCurrentWorldID()}")
@@ -515,7 +510,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.current_world_name = world.getName()
     return content
 
-  def FuncUpdateWorldPlans(self, db, arguments):
+  def FuncUpdatePlanningNotes(self, db, arguments):
     world = elements.loadWorld(db, self.getCurrentWorldID())
     if world is None:
       return self.funcError(f"World not found {self.getCurrentWorldID()}")
@@ -906,7 +901,7 @@ all_functions = [
   },
 
   {
-    "name": "ReadWorldPlans",
+    "name": "ReadPlanningNotes",
     "description": "Read in the plans specific virtual world.",
     "parameters": {
       "type": "object",
@@ -916,7 +911,7 @@ all_functions = [
   },
 
   {
-    "name": "UpdateWorldPlans",
+    "name": "UpdatePlanningNotes",
     "description": "Update the plans of the virtual world.",
     "parameters": {
       "type": "object",
