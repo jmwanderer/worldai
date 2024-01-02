@@ -90,7 +90,10 @@ class BasicTestCase(unittest.TestCase):
     self.assertIsNone(values.get("details"))
 
     self.callFunction('ChangeState', '{ "state": "State_World" }')    
-    
+
+    self.assertCallAvailable('EditWorld')
+    self.callFunction('EditWorld', '{}')
+
     self.assertCallAvailable('UpdateWorld')                  
     self.callFunction('UpdateWorld',
                       '{ "name": "world 1", ' +
@@ -104,6 +107,7 @@ class BasicTestCase(unittest.TestCase):
     # Test setting and getting plans
     values = self.callFunction('ReadWorldPlans','{ "id": "%s" }' % id1)
     self.assertEqual(values[elements.PROP_PLANS], "")
+    self.callFunction('EditWorld', '{}')    
     self.callFunction('UpdateWorldPlans','{ "plans": "my plans" }')
     values = self.callFunction('ReadWorldPlans','{ "id": "%s" }' % id1)    
     self.assertEqual(values[elements.PROP_PLANS], "my plans")
@@ -153,7 +157,7 @@ class BasicTestCase(unittest.TestCase):
     # STATE WORLD
     self.assertEqual(self.chatFunctions.current_state,
                      design_functions.STATE_WORLD)
-    self.assertCallAvailable('UpdateWorld')    
+    self.assertCallNotAvailable('UpdateWorld')    
     self.assertCallNotAvailable('ListWorlds')
     self.assertIsNotNone(self.chatFunctions.get_state_instructions())
     self.assertIn("description", self.chatFunctions.get_state_instructions())

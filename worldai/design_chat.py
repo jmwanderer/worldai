@@ -85,7 +85,7 @@ class DesignChatSession:
         if message is not None:
           self.chat.chat_exchange(db, message)
       self.chatFunctions.next_view = elements.ElemTag()
-        
+
     return self.chat.chat_exchange(db, user)
 
     

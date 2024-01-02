@@ -1,8 +1,12 @@
 Plans
 -----
 
-- multi-image support in client
-- fix adding new characters and items after wstate is created
+- Persist player location
+- consider items at sites, not with a character?
+- consider allowing characters to
+  - change location
+  - teach skills
+  - give / take coin
 
 - Revamp ChatExchange API messages
 - trim contents of message history in chat_session

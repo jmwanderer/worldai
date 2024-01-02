@@ -223,7 +223,7 @@ def loadWorldState(db, wstate_id):
   Get or create a world state.
   """
   now = time.time()  
-  state = None
+  wstate = None
   c = db.cursor()  
   c.execute("SELECT session_id, world_id, player_state, character_state " +
             "FROM world_state WHERE id = ?",

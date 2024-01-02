@@ -15,6 +15,7 @@ TESTING=False
 
 STATE_WORLDS = "State_Worlds"
 STATE_WORLD = "State_World"
+STATE_WORLD_EDIT = "State_World_Edit"
 STATE_CHARACTERS = "State_Characters"
 STATE_ITEMS = "State_Items"
 STATE_SITES = "State_Sites"
@@ -33,11 +34,12 @@ def elemTypeToState(element_type):
 
 states = {
   STATE_WORLDS: [ "ListWorlds", "ReadWorld", "CreateWorld" ],
-  STATE_WORLD: [ "UpdateWorld", "ReadWorld",
-                 "ReadWorldPlans", "UpdateWorldPlans",
-                 "CreateWorldImage",
+  STATE_WORLD: [ "ReadWorld", "ReadWorldPlans", 
                  "ReadCharacter", "ReadItem", "ReadSite",
-                 "ChangeState", ],
+                 "ChangeState", "EditWorld" ],
+  STATE_WORLD_EDIT: [ "UpdateWorld", "ReadWorld",
+                      "ReadWorldPlans", "UpdateWorldPlans",
+                      "CreateWorldImage", "ChangeState" ],
   STATE_CHARACTERS: [ "ListCharacters", "ReadCharacter",
                       "CreateCharacter", "UpdateCharacter",
                       "ReadWorldPlans", 
@@ -50,7 +52,10 @@ states = {
                  "CreateSite", "UpdateSite",
                  "ReadWorldPlans",                  
                  "CreateSiteImage", "ChangeState" ],
-  }
+}
+
+
+
   
 GLOBAL_INSTRUCTIONS = """
 You are a co-designer of fictional worlds, developing ideas
@@ -61,14 +66,15 @@ You walk the user through the process of creating worlds.
 When creating a world:
 1. Design the world with a name and a high level description.
 2. Create background details.
-3. Create world plans suggesting main characters, special items, and significant sites.
-4. Using the world plans, create the characters
-5. Using the world plans, create the items
-6. Using the world plans, create the sites
+3. Create WorldPlans suggesting main characters, special items, and significant sites.
+4. Using the WorldPlans, create the characters
+5. Using the WorldPlans, create the items
+6. Using the WorldPlans, create the sites
 
 We can be in one of the following states:
 - State_Worlds: We can open existing worlds and create new worlds
-- State_World: We view a world and change the description, details, and plans of a world.
+- State_World: We view a world description, details, and WorldPlans.
+- State_World_Edit: We change a world description, details, and WorldPlans.
 - State_Characters: We can view characters and create new characters and change the description and details of a character.
 - State_Items: We can view items and create new items and change the description and details of an item.
 - State_Sites: We can view sites and create new sites and change the description and details of a site.
@@ -94,17 +100,10 @@ Before creating a new world, check if it already exists by using ListWorlds
   STATE_WORLD:
   """
 We are working on the world "{current_world_name}"
-  
-A world needs a short high level description refelcting the nature of the world.
 
-A world has details, that give more information about the world such as the backstory.
+A world has plans that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadWorldPlans  
 
-We have plans for the world that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadWorldPlans  
-
-Build prompts to create images using information from the description and details in the prompt.
-
-Save information about the world by calling UpdateWorld
-Save plans for the world by calling UpdateWorldPlans  
+Modify world attributes by calling EditWorld
 
 To view, create, or update characters, change state to State_Characters.
 To view, create, or update items, change state to State_Items.
@@ -112,6 +111,23 @@ To view, create, or update sites, change state to State_Sites.
 
   """,
 
+  STATE_WORLD_EDIT:
+  """
+We are working on the world "{current_world_name}"
+  
+A world needs a short high level description refelcting the nature of the world.
+
+A world has details, that give more information about the world such as the backstory.
+
+A world has plans that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadWorldPlans, update the plans with UpdateWorldPlans.
+
+Build prompts to create images using information from the description and details in the prompt.
+
+Save information about the world by calling UpdateWorld
+
+To view information about characters, items, or sites, change the state to State_World
+  """,
+  
   STATE_CHARACTERS:
 """
 We are working on world "{current_world_name}"
@@ -305,8 +321,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
                "function": { "name": tool_func }}
     return None
     
-
-    
   def execute_function_call(self, db, function_name, arguments):
     """
     Dispatch function for function_name
@@ -322,6 +336,11 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     if function_name not in states[self.current_state]:
       result = self.funcError(f"No available function {function_name}. " +
                               "Perhaps call ChangeState")
+
+    elif function_name == "EditWorld":
+      self.current_state = STATE_WORLD_EDIT
+      result = self.funcStatus("edit enabled")
+
     elif function_name == "ChangeState":
       result = self.FuncChangeState(db, arguments)
 
@@ -727,10 +746,10 @@ def create_image_thumbnail(image_element):
 def image_get_request(prompt, dest_file):
   # Testing stub. Just copy existing file.
   if TESTING:
-    self.dir_name = os.path.dirname(__file__)
-    path = os.path.join(self.dir_name, "static/logo.png")
+    dir_name = os.path.dirname(__file__)
+    path = os.path.join(dir_name, "static/logo.png")
     with open(dest_file, "wb") as fout:
-      with open(path, "r") as fin:
+      with open(path, "rb") as fin:
         fout.write(fin.read())
     return True
 
@@ -775,6 +794,15 @@ def image_get_request(prompt, dest_file):
 
 
 all_functions = [
+  {
+    "name": "EditWorld",
+    "description": "Enable editing of world properties.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
   {
     "name": "ChangeState",
     "description": "Change the current state for a new activity.",
