@@ -856,10 +856,12 @@ def site_list(wid):
     id = entry.getID()
     site = elements.loadSite(get_db(), id)
     image_prop = getElementThumbProperty(site)
+      
     site_list.append(
       {"id": id,
        "name": site.getName(),
        "description": site.getDescription(),
+       "present": wstate.getLocation() == id,
        "image": image_prop })
   return site_list
 
@@ -874,7 +876,7 @@ def site(wid, sid):
   if world is None:
     return { "error", "World not found"}, 400
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
-  wstate = world_state.loadWorldState(get_db(), wstate_id)  
+  wstate = world_state.loadWorldState(get_db(), wstate_id)
   site = elements.loadSite(get_db(), sid)
   if site == None:
     return { "error", "Site not found"}, 400
@@ -945,4 +947,45 @@ def items_list(wid):
   return item_list
 
 
+@bp.route('/worlds/<wid>/command', methods=["POST"])
+@auth_required
+def command(wid):
+  """
+  API to make player changes
+  """
+  session_id = get_session_id()
+  world = elements.loadWorld(get_db(), wid)  
+  if world is None:
+    return { "error", "World not found"}, 400
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)
 
+  result = { "status": "error" }  
+  changed = False
+  command = request.json
+
+  if (command.get("name") == "go"):
+    site_id = command.get("to")
+    # Verify location
+    site = elements.loadSite(get_db(), site_id)
+    if site is not None:
+      wstate.setLocation(site_id)
+    else:
+      wstate.setLocation(None)      
+    changed = True
+    result = { "status": "ok" }
+
+  elif (command.get("name") == "take"):
+    item_id = command.get("item")
+    # Verify 
+    if wstate.getItemLocation(item_id) == wstate.getLocation():
+      wstate.addItem(item_id)
+      changed = True
+      result = { "status": "ok" }
+
+  if changed:
+    world_state.saveWorldState(get_db(), wstate)
+    
+  return result
+          
+  

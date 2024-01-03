@@ -223,9 +223,10 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
 
 function CharacterImages({character}) {
     const items = character.images.map(entry =>
-        <Carousel.Item>
+        <Carousel.Item key={entry.url}>
             <Image src={entry.url}
-                   style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+                   style={{ maxWidth: "50vmin", maxHeight: "50vmin",
+                            minHeight: "30vmin"}}/>                            
         </Carousel.Item>);
             
     return (
@@ -318,7 +319,7 @@ function CharacterItem({ character, onClick }) {
         onClick(character.id);
     }
     return (
-        <div onClick={handleClick} class="mt-2" style={{ height: "100%"}}>
+        <div onClick={handleClick} className="mt-2" style={{ height: "100%"}}>
             <Card style={{ height: "100%"}}>
                 <Card.Img src={character.image.url}/>
                   
@@ -339,7 +340,7 @@ function SitePeople({ site, setCharacterId}) {
         </Col>
     );
     
-    return ( <Container class="mt-2">
+    return ( <Container className="mt-2">
                  <Row>                 
                      { people }
                  </Row>
@@ -354,7 +355,7 @@ function ItemCard({ item, onClick }) {
         }
     }
     return (
-        <div onClick={handleClick} class="mt-2" style={{ height: "100%"}}>
+        <div onClick={handleClick} className="mt-2" style={{ height: "100%"}}>
             <Card style={{ height: "100%"}}>
                 <Card.Img src={item.image.url}/>
                   
@@ -366,15 +367,16 @@ function ItemCard({ item, onClick }) {
 }
 
 
-function SiteItems({ site, setCharacterId}) {
+function SiteItems({ site, setItemId}) {
     const items = site.items.map(entry =>
         <Col key={entry.id} md={2}>
             <ItemCard key={entry.id}
-                      item={entry}/>
+                      item={entry}
+                      onClick={setItemId}/>
         </Col>
     );
     
-    return ( <Container class="mt-2">
+    return ( <Container className="mt-2">
                  <Row>       
                      { items }
                  </Row>
@@ -385,9 +387,10 @@ function SiteItems({ site, setCharacterId}) {
 
 function SiteImages({ site }) {
     const items = site.images.map(entry =>
-        <Carousel.Item>
+        <Carousel.Item key={entry.url}>
             <Image src={entry.url}
-                   style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+                   style={{ maxWidth: "50vmin", maxHeight: "50vmin",
+                            minHeight: "30vmin"}}/>
         </Carousel.Item>);
 
     return (
@@ -402,6 +405,7 @@ function Site({ world, siteId, onClose }) {
     const [site, setSite] = useState(null);
     const [view, setView] = useState(null);
     const [characterId, setCharacterId] = useState(null);
+    const [itemId, setItemId] = useState(null);    
     
     useEffect(() => {
         let ignore = false;
@@ -428,7 +432,29 @@ function Site({ world, siteId, onClose }) {
         return () => {
             ignore = true;
         }
-    }, [world, siteId]);
+    }, [world, siteId, itemId]);
+
+    async function takeItem(item_id) {
+        // Set player location
+        const url = URL + "worlds/" + world.id + "/command";
+        const data = { "name": "take",
+                       "item": item_id }
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json',
+                    "Authorization": "Bearer " + AUTH_KEY
+                }
+            });
+            await response.json();
+            setItemId(item_id);
+        } catch {
+            console.log("ERROR");
+        }
+    }
+    
 
     function clearView() {
         setView(null)
@@ -480,7 +506,8 @@ function Site({ world, siteId, onClose }) {
                             setCharacterId={setCharacterId}/>
             </Row>
             <Row>
-                <SiteItems site={site}/>
+                <SiteItems site={site}
+                           setItemId={takeItem}/>
             </Row>
         </Container>            
     );
@@ -528,27 +555,27 @@ function CharacterListEntry({ character }) {
 
     let has_support = "";
     if (character.givenSupport) {
-        has_support = <i class="bi-heart" style={{ fontSize: "4rem"}}/>
+        has_support = <i className="bi-heart" style={{ fontSize: "4rem"}}/>
     }
 
     return (
-        <div class="card mb-3 container">
-            <div class="row">
-                <div class="col-2">
-                    <img src={character.image.url} class="card-img"
+        <div className="card mb-3 container">
+            <div className="row">
+                <div className="col-2">
+                    <img src={character.image.url} className="card-img"
                          alt="character"/>
                 </div>
-                <div class="col-8">
-                    <div class="card-body">
-                        <h5 class="card-title">
+                <div className="col-8">
+                    <div className="card-body">
+                        <h5 className="card-title">
                             { character.name }
                         </h5>
-                        <p class="card-text" style={{ textAlign: "left" }}>
+                        <p className="card-text" style={{ textAlign: "left" }}>
                             { character.description }
                         </p>
                     </div>
                 </div>
-                <div class="col-2">
+                <div className="col-2">
                     { has_support }
                 </div>
             </div>
@@ -604,27 +631,27 @@ function ItemListEntry({ item }) {
 
     let in_inventory = "";
     if (item.have_item) {
-        in_inventory = <i class="bi-check" style={{ fontSize: "4rem"}}/>
+        in_inventory = <i className="bi-check" style={{ fontSize: "4rem"}}/>
     }
     
     return (
-        <div class="card mb-3 container">            
-            <div class="row">
-                <div class="col-2">
-                    <img src={item.image.url} class="card-img"
+        <div className="card mb-3 container">            
+            <div className="row">
+                <div className="col-2">
+                    <img src={item.image.url} className="card-img"
                          alt="item"/>
                 </div>
-                <div class="col-8">
-                    <div class="card-body">
-                        <h5 class="card-title">
+                <div className="col-8">
+                    <div className="card-body">
+                        <h5 className="card-title">
                             { item.name }
                         </h5>
-                        <p class="card-text" style={{ textAlign: "left" }}>
+                        <p className="card-text" style={{ textAlign: "left" }}>
                             { item.description }
                         </p>
                     </div>
                 </div>
-                <div class="col-2">
+                <div className="col-2">
                     { in_inventory }
                 </div>
             </div>
@@ -709,7 +736,7 @@ function SiteItem({ site, onClick }) {
         onClick(site.id);
     }
     return (
-        <div onClick={handleClick}  class="mt-2" style={{ height: "100%"}}>
+        <div onClick={handleClick}  className="mt-2" style={{ height: "100%"}}>
             <Card style={{ height: "100%"}}>
                 <Card.Img src={site.image.url}/>
                 <Card.Title>
@@ -731,7 +758,7 @@ function WorldSites({ siteList, onClick }) {
         </Col>
     );
     
-    return ( <Container class="mt-2">
+    return ( <Container className="mt-2">
                  <Row>                 
                      { sites }
                  </Row>
@@ -741,9 +768,10 @@ function WorldSites({ siteList, onClick }) {
 
 function WorldImages({world}) {
     const items = world.images.map(entry =>
-        <Carousel.Item>
+        <Carousel.Item key={entry.url}>
             <Image src={entry.url}
-                   style={{ maxWidth: "50vmin", maxHeight: "50vmin" }}/>
+                   style={{ maxWidth: "50vmin", maxHeight: "50vmin",
+                            minHeight: "30vmin"}}/>
         </Carousel.Item>);
             
     return (
@@ -779,13 +807,17 @@ function World({ worldId, setWorldId }) {
                 const values = await response.json();
                 if (!ignore) {
                     setSiteList(values);
+                    values.forEach(item => {
+                        if (item.present) {
+                            setSiteId(item.id);
+                        }});
                 }
             } catch {
             }
         }
 
         async function getWorldData() {
-            // Get the status of progress in the world
+            // Get the details of the world
             const url = URL + "worlds/" + worldId;
             try {
                 const response =
@@ -818,12 +850,34 @@ function World({ worldId, setWorldId }) {
     }
 
     function clearSite() {
+        goToSite(""); 
         setSiteId(null);
     }
 
     function selectSite(site_id) {
+        goToSite(site_id);
         setSiteId(site_id);
     }
+
+    async function goToSite(site_id) {
+        // Set player location
+        const url = URL + "worlds/" + worldId + "/command";
+        const data = { "name": "go",
+                       "to": site_id }
+        try {
+            await fetch(url, {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json',
+                    "Authorization": "Bearer " + AUTH_KEY
+                }
+            });
+        } catch {
+            console.log("ERROR");
+        }
+    }
+
 
     // Wait until data loads
     if (world === null || siteList === null) {
@@ -872,17 +926,17 @@ function WorldItem({ world, onClick }) {
     }
     
     return (
-        <div class="card mb-3 container" onClick={handleClick} >
-            <div class="row">
-                <div class="col-2">
-                    <img src={world.image.url} class="card-img" alt="world"/>
+        <div className="card mb-3 container" onClick={handleClick} >
+            <div className="row">
+                <div className="col-2">
+                    <img src={world.image.url} className="card-img" alt="world"/>
                 </div>
-                <div class="col-8">
-                    <div class="card-body">
-                        <h5 class="card-title">
+                <div className="col-8">
+                    <div className="card-body">
+                        <h5 className="card-title">
                             { world.name }
                         </h5>
-                        <p class="card-text" style={{ textAlign: "left" }}>
+                        <p className="card-text" style={{ textAlign: "left" }}>
                             { world.description }
                         </p>
                     </div>

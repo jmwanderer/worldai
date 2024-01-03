@@ -114,6 +114,10 @@ class WorldState:
     # Set the location of an item
     self.get_item(item_id)[PROP_LOCATION] = site_id
 
+  def getItemLocation(self, item_id):
+    # Set the location of an item
+    return self.get_item(item_id)[PROP_LOCATION]
+
   def getItemsAtLocation(self, site_id):
     # Return list of item_ids at a specific site
     result = []
@@ -202,13 +206,6 @@ def checkWorldState(db, wstate):
   items = elements.listItems(db, wstate.world_id)
 
   if len(sites) > 0:
-    # Assign player to site
-    if wstate.getLocation() == "":
-      site = random.choice(sites)
-      wstate.setLocation(site.getID())
-      changed = True
-      print("assign player to location %s" % site.getName())
-    
     # Assign characters to sites
     for character in characters:
       if wstate.getCharacterLocation(character.getID()) == "":
