@@ -42,7 +42,8 @@ CREATE TABLE world_state (
   created INTEGER NOT NULL,
   updated INTEGER NOT NULL,
   player_state TEXT NOT NULL,
-  character_state TEXT NOT NULL,  
+  character_state TEXT NOT NULL,
+  item_state TEXT NOT NULL,          
   FOREIGN KEY (world_id) REFERENCES elements(id)
 );
  

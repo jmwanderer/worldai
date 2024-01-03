@@ -895,8 +895,21 @@ def site(wid, sid):
        "description": character.getDescription(),
        "givenSupport": wstate.hasCharacterSupport(id),
        "image": image_prop })
-
   result["characters"] = characters
+  
+  items = []
+  iid_list = wstate.getItemsAtLocation(sid)
+  for iid in iid_list:
+    item = elements.loadItem(get_db(), iid)
+    # TODO: make more DRY
+    image_prop = getElementThumbProperty(item)
+    items.append(
+      {"id": iid,
+       "name": item.getName(),
+       "description": item.getDescription(),
+       "image": image_prop })
+  result["items"] = items
+
   return result
 
 @bp.route('/worlds/<wid>/items', methods=["GET"])

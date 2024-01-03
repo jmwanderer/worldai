@@ -167,11 +167,10 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     print(f"give item {item_id}")
     wstate = world_state.loadWorldState(db, self.wstate_id)
 
-    if not wstate.removeCharacterItem(self.character_id, item_id):
+    if not wstate.hasCharacterItem(self.character_id, item_id):
       return self.funcError("You do not have this item")
     
-    if not wstate.addItem(item_id):
-      return self.funcError("Already has the item")
+    wstate.addItem(item_id)
     
     world_state.saveWorldState(db, wstate)
     return self.funcStatus("OK")
@@ -184,7 +183,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     item_id = args["item_id"]
     print(f"take item {item_id}")    
     wstate = world_state.loadWorldState(db, self.wstate_id)
-    if not wstate.removeItem(item_id):
+    if not wstate.hasItem(item_id):
       return self.funcError("User does not have this item")
 
     wstate.addCharacterItem(self.character_id, item_id)

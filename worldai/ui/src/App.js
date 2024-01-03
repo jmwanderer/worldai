@@ -347,6 +347,42 @@ function SitePeople({ site, setCharacterId}) {
            );
 }
 
+function ItemCard({ item, onClick }) {
+    function handleClick() {
+        if (onClick) {
+            onClick(item.id);
+        }
+    }
+    return (
+        <div onClick={handleClick} class="mt-2" style={{ height: "100%"}}>
+            <Card style={{ height: "100%"}}>
+                <Card.Img src={item.image.url}/>
+                  
+                <Card.Title>
+                    {item.name }
+                </Card.Title>
+            </Card>
+        </div>);
+}
+
+
+function SiteItems({ site, setCharacterId}) {
+    const items = site.items.map(entry =>
+        <Col key={entry.id} md={2}>
+            <ItemCard key={entry.id}
+                      item={entry}/>
+        </Col>
+    );
+    
+    return ( <Container class="mt-2">
+                 <Row>       
+                     { items }
+                 </Row>
+             </Container>
+           );
+}
+
+
 function SiteImages({ site }) {
     const items = site.images.map(entry =>
         <Carousel.Item>
@@ -439,9 +475,12 @@ function Site({ world, siteId, onClose }) {
                     <h5>{site.description}</h5>
                 </Col>                        
             </Row>
-            <Row>
+            <Row className="mb-2">
                 <SitePeople site={site}
                             setCharacterId={setCharacterId}/>
+            </Row>
+            <Row>
+                <SiteItems site={site}/>
             </Row>
         </Container>            
     );

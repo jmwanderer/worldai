@@ -15,6 +15,7 @@ PROP_CHAR_SUPPORT = "CharacterSupport"
 PROP_LOCATION = "Location"
 PROP_CHAT_WHO = "CharacterChat"
 PROP_ITEMS = "ItemList"
+PLAYER_ID = "id0"
 
 class WorldState:
   """
@@ -24,18 +25,18 @@ class WorldState:
     self.id = wstate_id
     self.session_id = None
     self.world_id = None
-    # TODO: conisder splitting this up
+
     self.player_state = { PROP_CHAR_SUPPORT: [],
                           PROP_LOCATION: "",
                           PROP_CHAT_WHO: "",
-                          PROP_ITEMS: []
                          }
 
-    self.character_state = { }
-    # char_id: { PROP_LOCATION: "",
-    #            PROP_ITEMS: [] }
-    
+    # site_id: { PROP_LOCATION: "" }
+    self.item_state = { }
 
+    # char_id: { PROP_LOCATION: "" }
+    self.character_state = { }
+    
   def get_player_state_str(self):
     return json.dumps(self.player_state)
 
@@ -48,12 +49,23 @@ class WorldState:
   def set_character_state_str(self, str):
     self.character_state = json.loads(str)
 
+  def get_item_state_str(self):
+    return json.dumps(self.item_state)
+
+  def set_item_state_str(self, str):
+    self.item_state = json.loads(str)
+
   def get_char(self, char_id):
     if not char_id in self.character_state:
       self.character_state[char_id] = {
-        PROP_LOCATION: "",
-        PROP_ITEMS: [] }
+        PROP_LOCATION: "" }
     return self.character_state[char_id]
+
+  def get_item(self, item_id):
+    if not item_id in self.item_state:
+      self.item_state[item_id] = {
+        PROP_LOCATION: "" }
+    return self.item_state[item_id]
 
   def getCharacterLocation(self, char_id):
     return self.get_char(char_id)[PROP_LOCATION]
@@ -69,29 +81,46 @@ class WorldState:
     return result
 
   def getCharacterItems(self, char_id):
-    return self.get_char(char_id)[PROP_ITEMS]
+    result = []
+    for item_id in self.item_state.keys():
+      if self.item_state[item_id][PROP_LOCATION] == char_id:
+        result.append(item_id)
+    return result
 
   def addCharacterItem(self, char_id, item_id):
-    if item_id not in self.get_char(char_id)[PROP_ITEMS]:
-      self.get_char(char_id)[PROP_ITEMS].append(item_id)
-      return True
-    return False
-
-  def removeCharacterItem(self, char_id, item_id):
-    if item_id in self.get_char(char_id)[PROP_ITEMS]:
-      self.get_char(char_id)[PROP_ITEMS].remove(item_id)
-      return True
-    return False
+    self.get_item(item_id)[PROP_LOCATION] = char_id
 
   def hasCharacterItem(self, char_id, item_id):
-    return item_id in self.get_char(char_id)[PROP_ITEMS]
+    # True if a character has an item
+    return self.get_item(item_id)[PROP_LOCATION] == char_id
 
-  def findCharacterItem(self, item_id):
-    # Iterate though characters
-    for char_id in self.character_state.keys():
-      if self.hasCharacterItem(char_id, item_id):
-        return char_id
-    return None
+  def addItem(self, item_id):
+    # Give an item to the player
+    self.get_item(item_id)[PROP_LOCATION] = PLAYER_ID
+
+  def hasItem(self, item_id):
+    # True if player has this item
+    return self.get_item(item_id)[PROP_LOCATION] == PLAYER_ID
+
+  def getItems(self):
+    # Return a list of item ids possesed by the player
+    result = []
+    for item_id in self.item_state.keys():
+      if self.item_state[item_id][PROP_LOCATION] == PLAYER_ID:
+        result.append(item_id)
+    return result
+
+  def setItemLocation(self, item_id, site_id):
+    # Set the location of an item
+    self.get_item(item_id)[PROP_LOCATION] = site_id
+
+  def getItemsAtLocation(self, site_id):
+    # Return list of item_ids at a specific site
+    result = []
+    for item_id in self.item_state.keys():
+      if self.item_state[item_id][PROP_LOCATION] == site_id:
+        result.append(item_id)
+    return result
 
   def markCharacterSupport(self, char_id):
     if not char_id in self.player_state[PROP_CHAR_SUPPORT]:
@@ -102,23 +131,6 @@ class WorldState:
       return True
     return False
 
-  def addItem(self, item_id):
-    if not item_id in self.player_state[PROP_ITEMS]:
-      self.player_state[PROP_ITEMS].append(item_id)
-      return True
-    return False
-
-  def removeItem(self, item_id):
-    if item_id in self.player_state[PROP_ITEMS]:
-      self.player_state[PROP_ITEMS].remove(item_id)
-      return True
-    return False
-
-  def hasItem(self, item_id):
-    return item_id in self.player_state[PROP_ITEMS]
-
-  def getItems(self):
-    return self.player_state[PROP_ITEMS]
 
   def setChatCharacter(self, char_id=None):
     if char_id is None:
@@ -164,12 +176,13 @@ def getWorldStateID(db, session_id, world_id):
     state = WorldState(id)
     print(f"world id {world_id}")
     c.execute("INSERT INTO world_state (id, session_id, world_id, created, " +
-              "updated, player_state, character_state) " +
-              "VALUES (?, ?, ?, ?, ?, ?, ?)",
+              "updated, player_state, character_state, item_state) " +
+              "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
               (id, session_id, world_id,
                now, now,
                state.get_player_state_str(),
-               state.get_character_state_str()))
+               state.get_character_state_str(),
+               state.get_item_state_str()))
   else:
     id = r[0]
   db.commit()
@@ -204,15 +217,17 @@ def checkWorldState(db, wstate):
         changed = True
         print("assign %s to location %s" % (character.getName(),
                                             site.getName()))
-    
-  if len(characters) > 0:
-    # Assign items to characters
-    for item in items:
-      if ((wstate.findCharacterItem(item.getID()) is None) and
-          (not wstate.hasItem(item.getID()))):
-        character = random.choice(characters)      
-        wstate.addCharacterItem(character.getID(), item.getID())
-        print("give item %s to %s" % (item.getName(), character.getName()))
+
+    places = []
+    places.extend(characters)
+    places.extend(sites)
+    if len(places) > 0:
+      # Set item location - character or location
+      for item in items:
+        if wstate.item_state.get(item.getID()) is None:
+          place = random.choice(places)
+          wstate.setItemLocation(item.getID(), place.getID())
+          print("place item %s: %s" % (item.getName(), place.getName()))
         changed = True
         
   return changed
@@ -225,8 +240,8 @@ def loadWorldState(db, wstate_id):
   now = time.time()  
   wstate = None
   c = db.cursor()  
-  c.execute("SELECT session_id, world_id, player_state, character_state " +
-            "FROM world_state WHERE id = ?",
+  c.execute("SELECT session_id, world_id, player_state, character_state, " +
+            "item_state FROM world_state WHERE id = ?",
             (wstate_id,))
 
   r = c.fetchone()
@@ -236,6 +251,7 @@ def loadWorldState(db, wstate_id):
     wstate.world_id = r[1]
     wstate.set_player_state_str(r[2])
     wstate.set_character_state_str(r[3])
+    wstate.set_item_state_str(r[4])    
 
     if checkWorldState(db, wstate):
       saveWorldState(db, wstate)
@@ -252,11 +268,13 @@ def saveWorldState(db, state):
   c.execute("BEGIN EXCLUSIVE")  
   # Support changing the session_id (Still figuring that out)
   c.execute("UPDATE world_state SET session_id = ?, " +
-            "updated = ?, player_state = ?, character_state = ? WHERE id = ?",
+            "updated = ?, player_state = ?, character_state = ?, " +
+            "item_state = ? WHERE id = ?",
             (state.session_id,
              now,
              state.get_player_state_str(),
-             state.get_character_state_str(),             
+             state.get_character_state_str(),
+             state.get_item_state_str(),
              state.id))
   db.commit()
     
