@@ -8,6 +8,10 @@ Plans
   - teach skills
   - give / take coin
 
+- a task generator
+  - number of characters, items, sites
+  - complete characters, items, sites
+
 - Revamp ChatExchange API messages
 - trim contents of message history in chat_session
 - consider changing state to mode

@@ -318,8 +318,8 @@ function CharacterItem({ character, onClick }) {
         onClick(character.id);
     }
     return (
-        <div onClick={handleClick} class="mt-2">
-            <Card>
+        <div onClick={handleClick} class="mt-2" style={{ height: "100%"}}>
+            <Card style={{ height: "100%"}}>
                 <Card.Img src={character.image.url}/>
                   
                 <Card.Title>
@@ -493,13 +493,13 @@ function CharacterListEntry({ character }) {
     }
 
     return (
-        <div class="card mb-3 mx-4">
-            <div class="row no gutters">
-                <div class="col-md-2">
+        <div class="card mb-3 container">
+            <div class="row">
+                <div class="col-2">
                     <img src={character.image.url} class="card-img"
                          alt="character"/>
                 </div>
-                <div class="col-md-8">
+                <div class="col-8">
                     <div class="card-body">
                         <h5 class="card-title">
                             { character.name }
@@ -509,7 +509,7 @@ function CharacterListEntry({ character }) {
                         </p>
                     </div>
                 </div>
-                <div class="col-md-2" style={{ justifyContent: "center" }}>
+                <div class="col-2">
                     { has_support }
                 </div>
             </div>
@@ -569,13 +569,13 @@ function ItemListEntry({ item }) {
     }
     
     return (
-        <div class="card mb-3 mx-4">
-            <div class="row no gutters">
-                <div class="col-md-2">
+        <div class="card mb-3 container">            
+            <div class="row">
+                <div class="col-2">
                     <img src={item.image.url} class="card-img"
                          alt="item"/>
                 </div>
-                <div class="col-md-8">
+                <div class="col-8">
                     <div class="card-body">
                         <h5 class="card-title">
                             { item.name }
@@ -585,7 +585,7 @@ function ItemListEntry({ item }) {
                         </p>
                     </div>
                 </div>
-                <div class="col-md-2">
+                <div class="col-2">
                     { in_inventory }
                 </div>
             </div>
@@ -670,8 +670,8 @@ function SiteItem({ site, onClick }) {
         onClick(site.id);
     }
     return (
-        <div onClick={handleClick}  class="mt-2">
-            <Card>
+        <div onClick={handleClick}  class="mt-2" style={{ height: "100%"}}>
+            <Card style={{ height: "100%"}}>
                 <Card.Img src={site.image.url}/>
                 <Card.Title>
                     { site.name }
@@ -833,12 +833,12 @@ function WorldItem({ world, onClick }) {
     }
     
     return (
-        <div class="card mb-3 mx-4" onClick={handleClick} >
-            <div class="row no gutters">
-                <div class="col-md-2">
+        <div class="card mb-3 container" onClick={handleClick} >
+            <div class="row">
+                <div class="col-2">
                     <img src={world.image.url} class="card-img" alt="world"/>
                 </div>
-                <div class="col-md-8">
+                <div class="col-8">
                     <div class="card-body">
                         <h5 class="card-title">
                             { world.name }
