@@ -50,12 +50,13 @@ class CharacterChat:
     for message in self.chat.chat_history(to_html=False)["messages"]:
       history.append({ "id": os.urandom(4).hex(),
                        "user": message["user"],
-                       "reply": message["assistant"]
+                       "reply": message["assistant"],
+                       "updates": message.get("updates", "")
                       })
     return history
 
   def chat_message(self, db, user):
-    return self.chat.chat_exchange(db, user)    
+    return self.chat.chat_exchange(db, user, to_html=False)    
         
 
 

@@ -42,11 +42,18 @@ console.log("AUTH Key: " + AUTH_KEY);
 // Shows a single message exchange.
 function MessageExchange({ name, message }) {
     let user_message = "";
+    let updates_message = "";    
 
     if (message.user.length > 0) {
         user_message = (
             <div className="App-message">            
                 <b>You:</b> <br/> { message.user }
+            </div>);
+    }
+    if (message.updates && message.updates.length > 0) {
+        updates_message = (
+            <div className="App-message">            
+                <i>{ message.updates }</i>
             </div>);
     }
     return (
@@ -57,6 +64,7 @@ function MessageExchange({ name, message }) {
                 <br/>
                 { message.reply}
             </div>
+            { updates_message }
         </div>
     );
 }
@@ -138,6 +146,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
                                    }
                                   });
                 const values = await response.json();
+                console.log(values["messages"]);
                 setChatHistory(values["messages"]);
                 if (values["messages"].length === 0) {
                     setUserInput("hello");
@@ -174,6 +183,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
                     }
                 });
                 const values = await response.json();
+                console.log(values);
                 setChatHistory([...chatHistory, values])
                 setCurrentMessage({user: "", error: "" });
             } catch (e) {

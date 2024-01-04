@@ -228,29 +228,21 @@ class ChatSession:
     return messages
 
 
-    
-    
-
+  def getMessageContent(self, message_set, to_html=True):
+    content = message_set.getMessageContent()
+    if to_html:
+      content["user"] = elements.textToHTML(content["user"])
+      content["assistant"] = parseResponseText(content["assistant"])
+    return content
+  
   def chat_history(self, to_html=True):
     messages = []
     for message_set in self.history.message_sets():
-      if to_html:
-        user = elements.textToHTML(message_set.getRequestContent())
-        assistant = parseResponseText(message_set.getResponseContent())
-      else:
-        user = message_set.getRequestContent()
-        assistant = message_set.getResponseContent()
-      
-      messages.append({ "user": user,
-                        "assistant": assistant
-                       })
-
+      messages.append(self.getMessageContent(message_set, to_html))
     return { "messages": messages }
   
-
-
   
-  def chat_exchange(self, db, user):
+  def chat_exchange(self, db, user, to_html=True):
     function_call = False
     assistant_message = None
     messages = []
@@ -312,6 +304,7 @@ class ChatSession:
         log_chat_message(messages, response["error"])
       
       tool_calls = assistant_message.get("tool_calls")
+      status_text = None
 
       if tool_calls: 
         # Make requested calls to tools.
@@ -325,19 +318,30 @@ class ChatSession:
                                                          function_name,
                                                          function_args)
           logging.info("function call result: %s" % str(function_response))
+          # Handle 2 different formats of return values
+          content = None
+          if isinstance(function_response, dict):
+            content = function_response.get("response")
+            status_text = function_response.get("text")
+          if content is None:
+            content = function_response
       
           self.history.addToolResponseMessage(
             self.enc,
             { "tool_call_id": tool_call["id"],
               "role": "tool",
               "name": function_name,
-              "content": json.dumps(function_response)
-             })
+              "content": json.dumps(content)
+             }, status_text)
       else:
         # Otherwise, just a response from the assistant, we are done.
         self.history.addResponseMessage(self.enc, assistant_message)
         done = True
         
     # Return result
-    return assistant_message
+    
+    result = self.getMessageContent(self.history.current_message_set(),
+                                    to_html)
+    return result
+
 

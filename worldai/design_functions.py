@@ -344,8 +344,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
     elif function_name == "ListWorlds":
       result = [ { "id": entry.getID(), "name": entry.getName() }
-                 for entry in elements.listWorlds(db) ]
-
+                   for entry in elements.listWorlds(db) ]
+      
     elif function_name == "UpdateWorld":
       result = self.FuncUpdateWorld(db, arguments)
 

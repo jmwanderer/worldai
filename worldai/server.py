@@ -462,10 +462,17 @@ def chat_api(session_id):
       view = request.json.get("view")
       chat_session.set_view(view)
       message = chat_session.chat_message(get_db(), user_msg)
+      assistant_message = message["assistant"]
+      text = message.get("updates")
+
       content = {
-        "assistant": chat.parseResponseText(message['content']),
+        "assistant": chat.parseResponseText(assistant_message),
         "changes": chat_session.madeChanges()
       }
+
+      if text is not None:
+        content['updates'] = text
+        
       content['view'] = chat_session.get_view()
     elif request.json.get("command") is not None:
       content= { "status": "ok" }
@@ -676,10 +683,13 @@ def threads_api(wid, id):
   elif request.json.get("user") is not None:
       user_msg = request.json.get("user")
       reply = chat_session.chat_message(get_db(), user_msg)
+      assistant_message = reply["assistant"]
+      text = reply.get("updates", "")
       content = {
         "id": os.urandom(4).hex(),
         "user": user_msg,
-        "reply": reply["content"]
+        "reply": assistant_message,
+        "updates": text
       }
   else:
     content = { "error": "malformed input" }

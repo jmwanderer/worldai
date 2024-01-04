@@ -6,6 +6,8 @@ Supports building a message history for a target size.
 Supports ensuring required tool calls / information gets populated.
 """
 
+
+
 class MessageSetRecord:
   """
   Records a request / response message.
@@ -30,7 +32,10 @@ class MessageSetRecord:
   class ToolRequestMessage:
     def __init__(self):
       self.request_message = None
+      # json format of response
       self.response_messages = []
+      # text status - functions can return descriptions
+      self.response_texts = []      
 
   def _recursiveValueCount(enc, elements):
     count = 0
@@ -76,22 +81,38 @@ class MessageSetRecord:
     results = []
     for entry in self.tool_messages:
       content = entry.request_message.get("content")
+      # Note tool messages can also have content
       if content is not None:
-        print("extra response text! %s" % content)
         results.append(content)
     if self.response_message is not None:
       results.append(self.response_message["content"])
     return "\n\n".join(results)
 
+  def getStatusText(self):
+    # Return any status text to present to the user.
+    results = []
+    for entry in self.tool_messages:
+      results.extend(entry.response_texts)
+    return ", ".join(results)
+
+  def getMessageContent(self):
+    # Return a JSON record of full message content
+    # that can be returned to the client.
+    return { "user": self.getRequestContent(),
+             "assistant": self.getResponseContent(),
+             "updates": self.getStatusText() };
+  
   def addToolRequestMessage(self, enc, message):
     record = MessageSetRecord.ToolRequestMessage()
     record.request_message = message
     self.tool_messages.append(record)
     self._updateTokenCount(enc, message)    
 
-  def addToolResponseMessage(self, enc, message):
+  def addToolResponseMessage(self, enc, message, text):
     record = self.tool_messages[-1]
     record.response_messages.append(message)
+    if text is not None:
+      record.response_texts.append(text)
     self._updateTokenCount(enc, message)        
 
   def getTokenCount(self):
@@ -190,9 +211,9 @@ class MessageRecords:
     if self.current_message is not None:
       self.current_message.addToolRequestMessage(enc, message)
     
-  def addToolResponseMessage(self, enc, message):
+  def addToolResponseMessage(self, enc, message, text=None):
     if self.current_message is not None:
-      self.current_message.addToolResponseMessage(enc, message)
+      self.current_message.addToolResponseMessage(enc, message, text)
 
   def addResponseMessage(self, enc, message):
     if self.current_message is not None:
@@ -200,6 +221,9 @@ class MessageRecords:
 
   def message_sets(self):
     return self.message_history
+
+  def current_message_set(self):
+    return self.current_message
 
   def jsonString(self):
     messages = []

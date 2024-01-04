@@ -155,9 +155,13 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     """
     # TODO: this is where we need lock for updating
     wstate = world_state.loadWorldState(db, self.wstate_id)
+    character = elements.loadCharacter(db, self.character_id)    
     wstate.markCharacterSupport(self.character_id)
     world_state.saveWorldState(db, wstate)
-    return self.funcStatus("OK")
+
+    result = { "response": self.funcStatus("OK"),
+               "text": character.getName() + " gave support" }
+    return result
 
   def FuncGiveItem(self, db, args):
     """
@@ -171,9 +175,12 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       return self.funcError("You do not have this item")
     
     wstate.addItem(item_id)
-    
-    world_state.saveWorldState(db, wstate)
-    return self.funcStatus("OK")
+    world_state.saveWorldState(db, wstate)    
+    character = elements.loadCharacter(db, self.character_id)
+    result = { "response": self.funcStatus("OK"),
+               "text": character.getName() + " gave an item" }
+
+    return result
 
   def FuncTakeItem(self, db, args):
     """
@@ -188,7 +195,12 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
     wstate.addCharacterItem(self.character_id, item_id)
     world_state.saveWorldState(db, wstate)
-    return self.funcStatus("OK")
+
+    character = elements.loadCharacter(db, self.character_id)
+    result = { "response": self.funcStatus("OK"),
+               "text": character.getName() + " took an item" }
+    
+    return result
 
 
 all_functions = [

@@ -46,9 +46,12 @@ def chat_loop():
     if len(user) == 0:
       continue
 
-    assistant_message = chat_session.chat_message(db, user)
-      
-    chat.pretty_print_message(assistant_message)               
+    message = chat_session.chat_message(db, user)
+    assistant_message = message["assistant"]
+    text = message.get("updates")
+    print(assistant_message)
+    if len(text) > 0:
+      print(text)
 
   #pretty_print_conversation(BuildMessages(message_history))
   print("Tokens")
