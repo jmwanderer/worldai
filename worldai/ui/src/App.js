@@ -38,11 +38,11 @@ function extract_prefix(url) {
   return url.substr(0, end);
 }
 
-/*global url_pre, auth_key*/
+// global URL, auth_key
 let URL= extract_prefix(document.location.href);
 console.log("URL Prefix: " + URL);
 
-/* get from global variable set in index.html */
+// get from global variable set in index.html
 let AUTH_KEY="auth"
 if (auth_key.substring(0,2) !== "{{") {
     AUTH_KEY=auth_key

@@ -718,18 +718,7 @@ def worlds_list():
   for (entry) in worlds:
     wid = entry.getID()
     world = elements.loadWorld(get_db(), wid)
-
-    # May be None
-    image_id = world.getImageByIndex(0)
-    if image_id is None:
-      url = flask.url_for('static',
-                          filename="question-square-fill.svg",
-                          _external=True)
-      image_prop = { "id": "0", "url": url }     
-    else:
-      image_prop = { "id": image_id,
-                     "url": flask.url_for('worldai.get_image_thumb',
-                                          id=image_id, _external=True) }
+    image_prop = getElementThumbProperty(world)
     world_list.append({"id": wid,
                        "name": world.getName(),
                        "description": world.getDescription(),
@@ -750,17 +739,7 @@ def worlds(wid):
 
   # Save last opened in session
   session['world_id'] = wid
-  images = []
-  for image in world.getImages():
-    url = flask.url_for('worldai.get_image', id=image, _external=True)
-    images.append({ "id": image, "url": url})
-
-  if len(images) == 0:
-    url = flask.url_for('static',
-                        filename="question-square-fill.svg",
-                        _external=True)    
-    images.append({ "id": "0", "url": url})    
-
+  images = getElementImageProps(world)
   result = world.getJSONRep()
   result["images"] = images
   
@@ -774,14 +753,27 @@ def getElementThumbProperty(element):
   image_id = element.getImageByIndex(0)
   if image_id is None:
     url = flask.url_for('static',
-                        filename="question-square-fill.svg",
-                        _external=True)
+                        filename="question-square-fill.svg")
     image_prop = { "id": "0", "url": url }
   else:
     image_prop = { "id": image_id,
                    "url": flask.url_for('worldai.get_image_thumb',
                                         id=image_id) }
   return image_prop
+
+def getElementImageProps(element):
+  images = []
+  for image in element.getImages():
+    url = flask.url_for('worldai.get_image', id=image)
+    images.append({ "id": image, "url": url})
+
+  if len(images) == 0:
+    url = flask.url_for('static',
+                        filename="question-square-fill.svg")
+    images.append({ "id": "0", "url": url})
+  return images
+
+
 
 
 @bp.route('/worlds/<wid>/characters', methods=["GET"])
@@ -815,19 +807,6 @@ def characters_list(wid):
        "image": image_prop })
 
   return flask.jsonify(character_list)
-
-def getElementImageProps(element):
-  images = []
-  for image in element.getImages():
-    url = flask.url_for('worldai.get_image', id=image, _external=True)
-    images.append({ "id": image, "url": url})
-
-  if len(images) == 0:
-    url = flask.url_for('static',
-                        filename="question-square-fill.svg",
-                        _external=True)    
-    images.append({ "id": "0", "url": url})
-  return images
 
 
 @bp.route('/worlds/<wid>/characters/<id>', methods=["GET"])
