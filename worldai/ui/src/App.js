@@ -43,6 +43,8 @@ let URL= extract_prefix(document.location.href);
 console.log("URL Prefix: " + URL);
 
 // get from global variable set in index.html
+// Following comment is required for compile.
+/* global auth_key */
 let AUTH_KEY="auth"
 if (auth_key.substring(0,2) !== "{{") {
     AUTH_KEY=auth_key
