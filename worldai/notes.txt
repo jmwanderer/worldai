@@ -1,12 +1,14 @@
 Plans
 -----
 
-- Persist player location
-- consider items at sites, not with a character?
+- Persist player location - done
+- consider items at sites, not with a character? - done
 - consider allowing characters to
   - change location
   - teach skills
   - give / take coin
+
+- React client does not yet support markdown
 
 - a task generator
   - number of characters, items, sites

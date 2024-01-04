@@ -30,8 +30,8 @@ The user has the following items:
 Your world is described as follows:
 {world_description}
 
-When taking an item from the user, call TakeItem
-When giving an item to the user, call GiveItem
+To accept or take an item from the user, call TakeItem
+To give the item to the user, call GiveItem
 To offer your support to the user, call GiveSupport
 
 """
