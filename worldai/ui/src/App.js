@@ -105,7 +105,9 @@ function MessageScreen({chatHistory, currentMessage, chatState, name}) {
     );
 
     return (
-        <Stack className="border m-2" style={{ textAlign: "left" }}>
+        <Stack className="border m-2" style={{ textAlign: "left",
+                                               overflow: "auto"}}>
+            
             { entries }
             <CurrentMessage content={currentMessage}
                             chatState={chatState}/>
@@ -211,7 +213,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
 
     let disabled = (chatState !== "ready");
     return (
-        <Stack style={{ height: "100%" }}>
+        <Stack style={{ height: "100%", maxHeight: "90vh" }}>
             <MessageScreen chatHistory={chatHistory}
                            currentMessage={currentMessage}
                            chatState={chatState}
