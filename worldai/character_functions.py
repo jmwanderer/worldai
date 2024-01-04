@@ -30,15 +30,16 @@ The user has the following items:
 Your world is described as follows:
 {world_description}
 
-To accept or take an item from the user, call TakeItem
+To accept or take an item from the user, call AcceptItem
 To give the item to the user, call GiveItem
 To offer your support to the user, call GiveSupport
 
+If you support the user, you are inclined to loan items to the user
 """
 
 SUPPORT="""
 The user may want your support. First ensure the user explains why
-they deserve your support, and give spport only if you agree.
+they deserve your support, and give support only if you agree.
 """
 
 CHARACTER_DETAILS="""
@@ -144,8 +145,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncGiveSupport(db)
     elif function_name == "GiveItem":
       result = self.FuncGiveItem(db, arguments)
-    if function_name == "TakeItem":
-      result = self.FuncTakeItem(db, arguments)
+    if function_name == "AcceptItem":
+      result = self.FuncAcceptItem(db, arguments)
 
     return result
 
@@ -177,12 +178,14 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     wstate.addItem(item_id)
     world_state.saveWorldState(db, wstate)    
     character = elements.loadCharacter(db, self.character_id)
+    item = elements.loadItem(db, item_id)        
     result = { "response": self.funcStatus("OK"),
-               "text": character.getName() + " gave an item" }
+               "text": character.getName() + " gave the " +
+               item.getName() }
 
     return result
 
-  def FuncTakeItem(self, db, args):
+  def FuncAcceptItem(self, db, args):
     """
     Record that the player completed the challenge for the current character.
     """
@@ -197,8 +200,10 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     world_state.saveWorldState(db, wstate)
 
     character = elements.loadCharacter(db, self.character_id)
+    item = elements.loadItem(db, item_id)    
     result = { "response": self.funcStatus("OK"),
-               "text": character.getName() + " took an item" }
+               "text": character.getName() + " took the " +
+               item.getName() }
     
     return result
 
@@ -228,8 +233,8 @@ all_functions = [
     },
   },
   {
-    "name": "TakeItem",
-    "description": "Take an item from the user.",
+    "name": "AcceptItem",
+    "description": "Accept an item from the user.",
     "parameters": {
       "type": "object",
       "properties": {
