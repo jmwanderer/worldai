@@ -33,6 +33,9 @@ Your world is described as follows:
 To accept or take an item from the user, call AcceptItem
 To give the item to the user, call GiveItem
 To offer your support to the user, call GiveSupport
+Call ListSites to get the locations or sites and ids
+Call ListCharacters to get the characters and ids
+Call ListItems to get the artifacts or items and ids
 
 If you support the user, you are inclined to loan items to the user
 """
@@ -147,7 +150,23 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncGiveItem(db, arguments)
     if function_name == "AcceptItem":
       result = self.FuncAcceptItem(db, arguments)
+    if function_name == "ChangeLocation":
+      result = self.FuncChangeLocation(db, arguments)
+    elif function_name == "ListCharacters":
+      result = [{ "id": entry.getID(), "name": entry.getName() }            
+                for entry in elements.listCharacters(db, self.world_id) ]
+    elif function_name == "ListSites":
+      result = []
+      for entry in elements.listSites(db, self.world_id):   
+        site = elements.loadSite(db, entry.getID())
+        result.append({"id": entry.getID(),
+                       "name": site.getName(),
+                       "description": site.getDescription() })
 
+    elif function_name == "ListItems":
+      result = [ { "id": entry.getID(), "name": entry.getName() } 
+             for entry in elements.listItems(db, self.world_id) ]
+      
     return result
 
   def FuncGiveSupport(self, db):
@@ -207,6 +226,28 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     
     return result
 
+  def FuncChangeLocation(self, db, args):
+    """
+    Record that the player completed the challenge for the current character.
+    """
+    # TODO: this is where we need lock for updating
+    site_id = args["site_id"]
+    print(f"move to {site_id}")    
+    wstate = world_state.loadWorldState(db, self.wstate_id)
+    site = elements.loadSite(db, site_id)
+    if site is None:
+      return self.funcError("Site does not exist")
+    old_site_id = wstate.getCharacterLocation(self.character_id)
+    site = elements.loadSite(db, old_site_id)
+    wstate.setCharacterLocation(self.character_id, site_id)
+    world_state.saveWorldState(db, wstate)
+    character = elements.loadCharacter(db, self.character_id)
+
+    result = { "response": self.funcStatus("OK"),
+               "text": character.getName() + " left " + site.getName() }
+    
+    return result
+
 
 all_functions = [
   {
@@ -246,5 +287,49 @@ all_functions = [
       "required": [ "item_id" ],
     },
   },
+  {
+    "name": "ChangeLocation",
+    "description": "Move to a different site",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "site_id": {
+          "type": "string",
+          "description": "Unique identifier for the destination site.",
+        },
+      },
+      "required": [ "site_id" ],
+    },
+  },
+
+  {
+    "name": "ListSites",
+    "description": "Get the list of existing sites and IDs",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+  {
+    "name": "ListItems",
+    "description": "Get the list of existing items and IDs",    
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+  {
+    "name": "ListCharacters",
+    "description": "Get the list of existing characters and IDs",        
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+
+  
 ]
   

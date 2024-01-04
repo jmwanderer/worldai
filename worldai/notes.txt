@@ -1,10 +1,14 @@
 Plans
 -----
 
+- fix refresh and chat enable on character move
+- list of characters at the same location
+- 
+
 - Persist player location - done
 - consider items at sites, not with a character? - done
 - consider allowing characters to
-  - change location
+  - change location - done
   - teach skills
   - give / take coin
 
