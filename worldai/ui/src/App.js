@@ -17,26 +17,37 @@ import Carousel from 'react-bootstrap/Carousel';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 
-/*
- * TODO:
- * - get auth token
- * - get a url prefix for fetch
- * - support multiple images
- */
+
+function extract_prefix(url) {
+  // https://localhost:3000/  --> https://localhost:3000
+  // https://localhost:3000/ui/play --> https://localhost:3000
+  // https://localhost:3000/worldai/ui/play --> https://localhost:3000/worldai
+
+  // Find 3rd / character
+  let i = url.indexOf('/')
+  i = url.indexOf('/', i + 1)
+  i = url.indexOf('/', i + 1)
+
+  // Find 2nd to last / character
+  let end = url.lastIndexOf('/')
+  end = url.lastIndexOf('/', end - 1)
+
+  if (end < i) {
+    end = url.length - 1;
+  } 
+  return url.substr(0, end);
+}
 
 /*global url_pre, auth_key*/
-let URL="/"
-if (url_pre.substring(0,2) !== "{{") {
-    URL=url_pre;
-}
+let URL= extract_prefix(document.location.href);
 console.log("URL Prefix: " + URL);
 
+/* get from global variable set in index.html */
 let AUTH_KEY="auth"
 if (auth_key.substring(0,2) !== "{{") {
     AUTH_KEY=auth_key
 }
-console.log("AUTH Key: " + AUTH_KEY);    
-
+console.log("AUTH Key: " + AUTH_KEY);
 
 
 // Shows a single message exchange.
@@ -137,7 +148,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
         const signal = controller.signal;
         async function getData() {
             // Get the chat history.
-            const url = URL + "threads/worlds/" + worldId +
+            const url = URL + "/threads/worlds/" + worldId +
                   "/characters/" + characterId;
             try {
                 const response =
@@ -148,7 +159,6 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
                                    }
                                   });
                 const values = await response.json();
-                console.log(values["messages"]);
                 setChatHistory(values["messages"]);
                 if (values["messages"].length === 0) {
                     setUserInput("hello");
@@ -172,7 +182,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
 
         async function getData() {
             const data = { "user": user_msg }
-            const url = URL + "threads/worlds/" + worldId +
+            const url = URL + "/threads/worlds/" + worldId +
                   "/characters/" + characterId;
             // Post the user request
             try {            
@@ -185,7 +195,6 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
                     }
                 });
                 const values = await response.json();
-                console.log(values);
                 setChatHistory([...chatHistory, values])
                 setCurrentMessage({user: "", error: "" });
             } catch (e) {
@@ -271,7 +280,7 @@ function ChatCharacter({ worldId, characterId, onClose}) {
 
         async function getData() {
             // Load the character
-            const url = URL + "worlds/" + worldId +
+            const url = URL + "/worlds/" + worldId +
                   "/characters/" + characterId;
             try {
                 const response =
@@ -424,7 +433,7 @@ function Site({ world, siteId, onClose }) {
 
         async function getData() {
             // Load the site
-            const url = URL + "worlds/" + world.id +
+            const url = URL + "/worlds/" + world.id +
                   "/sites/" + siteId;
             try {
                 const response =
@@ -448,7 +457,7 @@ function Site({ world, siteId, onClose }) {
 
     async function takeItem(item_id) {
         // Set player location
-        const url = URL + "worlds/" + world.id + "/command";
+        const url = URL + "/worlds/" + world.id + "/command";
         const data = { "name": "take",
                        "item": item_id }
         try {
@@ -604,7 +613,7 @@ function CharacterList({ worldId }) {
 
         async function getCharacterData() {
             // Get the status of progress in the world
-            const url = URL + "worlds/" + worldId + "/characters";
+            const url = URL + "/worlds/" + worldId + "/characters";
             try {
                 const response =
                       await fetch(url, {
@@ -680,7 +689,7 @@ function ItemList({ worldId }) {
 
         async function getItemData() {
             // Get the status of progress in the world
-            const url = URL + "worlds/" + worldId + "/items";
+            const url = URL + "/worlds/" + worldId + "/items";
             try {
                 const response =
                       await fetch(url, {
@@ -808,7 +817,7 @@ function World({ worldId, setWorldId }) {
 
         async function getSiteData() {
             // Get the status of progress in the world
-            const url = URL + "worlds/" + worldId + "/sites";
+            const url = URL + "/worlds/" + worldId + "/sites";
             try {
                 const response =
                       await fetch(url, {
@@ -830,7 +839,7 @@ function World({ worldId, setWorldId }) {
 
         async function getWorldData() {
             // Get the details of the world
-            const url = URL + "worlds/" + worldId;
+            const url = URL + "/worlds/" + worldId;
             try {
                 const response =
                       await fetch(url, {
@@ -873,7 +882,7 @@ function World({ worldId, setWorldId }) {
 
     async function goToSite(site_id) {
         // Set player location
-        const url = URL + "worlds/" + worldId + "/command";
+        const url = URL + "/worlds/" + worldId + "/command";
         const data = { "name": "go",
                        "to": site_id }
         try {
@@ -965,7 +974,7 @@ function SelectWorld({setWorldId}) {
 
         async function getData() {
             // Get the list of worlds
-            const url = URL + "worlds";
+            const url = URL + "/worlds";
             try {
                 const response =
                       await fetch(url, {
@@ -1009,7 +1018,7 @@ function App() {
 
         async function getData() {
             // Get initial load data
-            const url = URL + "initdata";
+            const url = URL + "/initdata";
             try {
                 const response =
                       await fetch(url, {

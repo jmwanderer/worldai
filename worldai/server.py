@@ -253,20 +253,26 @@ def top_view():
   """
   return flask.render_template("top.html")
 
+@bp.route('/ui/play', methods=["GET"])
+def react_base():
+  """
+  Serve the index.html file for the root of the UI
+  """
+  html_file = os.path.join(current_app.root_path,
+                           'static/ui/index.html')
+  with open(html_file) as f:
+    html = f.read()
+  
+  return flask.render_template_string(
+    html,
+    auth_key=current_app.config['AUTH_KEY'])
+
 @bp.route('/ui/<path:path>', methods=["GET"])
 def react_ui(path):
   """
   Serve react based files for the UI.
   """
   return flask.send_from_directory("static/ui", path)
-
-@bp.route('/ui/', methods=["GET"])
-def react_base():
-  """
-  Serve the index.html file for the root of the UI
-  """
-  return flask.render_template("index.html",
-                               auth_key=current_app.config['AUTH_KEY'])
 
 
 @bp.route('/view/worlds', methods=["GET"])
