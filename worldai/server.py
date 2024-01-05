@@ -681,7 +681,6 @@ def threads_api(wid, id):
                                                               wstate_id,
                                                               wid,
                                                               id)
-  
   if request.method == "GET":
     history = chat_session.chat_history()    
     content = { "messages": history }
@@ -698,6 +697,11 @@ def threads_api(wid, id):
       }
   else:
     content = { "error": "malformed input" }
+
+  # Player and character must be in same location to chat.
+  wstate = world_state.loadWorldState(get_db(), wstate_id)  
+  enabled = (wstate.getCharacterLocation(id) == wstate.getLocation())
+  content["enabled"] = enabled           
 
   chat_session.saveChatSession(get_db())
   return content

@@ -99,13 +99,13 @@ function MessageExchange({ name, message }) {
   );
 }
 
-const CurrentMessage = forwardRef(({ content, chatState}, msgRef) => {
+const CurrentMessage = forwardRef(({ content, chatState }, msgRef) => {
   let user = "";
   if (content.user.length > 0) {
     user = <div> User: {content.user} </div>;
   }
   let running = "";
-  if (chatState !== "ready") {
+  if (chatState === "waiting") {
     running = <div className="App-running"><i> Running... </i></div>
   }
   let error = "";
@@ -203,12 +203,17 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
                                                  "");
             setChatHistory(c => [...c, values])
           }
+          if (values["enabled"]) {
+            setChatState("ready");
+          } else {
+            setChatState("disabled");
+          }
         }
       } catch {
         setCurrentMessage({user: "",
                            error: "Something went wrong."});
+        setChatState("ready")        
       }
-      setChatState("ready")          
     }
     
     getData();
@@ -231,11 +236,16 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
                                              user_msg);
         setChatHistory([...chatHistory, values])
         setCurrentMessage({user: "", error: "" });
+        if (values["enabled"]) {
+          setChatState("ready");
+        } else {
+          setChatState("disabled");            
+        }
       } catch (e) {
         setCurrentMessage({user: user_msg,
                            error: "Something went wrong."});
+        setChatState("ready")
       }
-      setChatState("ready")
       onChange()
     }
     getData();
@@ -255,6 +265,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
   }
 
   let disabled = (chatState !== "ready");
+  let text_disabled = (chatState === "disabled");
   return (
     <Stack style={{ height: "100%", maxHeight: "90vh" }}>
       <MessageScreen chatHistory={chatHistory}
@@ -263,7 +274,8 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
                      name={name}/>
       <UserInput value={userInput}
                  onChange={handleInputChange}
-                 onKeyDown={handleKeyDown}/>
+                 onKeyDown={handleKeyDown}
+                 disabled={text_disabled}/>
       <div>
         <Button disabled={disabled}
                 onClick={submitClick}

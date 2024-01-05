@@ -13,13 +13,9 @@ Your name is {name}.
 You reside in the world {world_name}.
 You are described as follows:
 {description}
-
 When you first meet the user, offer a nuetral greeting, not assistance.
-You do not yet know if this user is a friend or an enemy.
-
 {support}
-
-You are currently located in {location}
+Your current location is "{location}"
 
 You have the following items:
 {char_items}
@@ -41,9 +37,11 @@ If you support the user, you are inclined to loan items to the user
 """
 
 SUPPORT="""
+You do not yet know if this user is a friend or an enemy.
 The user may want your support. First ensure the user explains why
 they deserve your support, and give support only if you agree.
 """
+
 
 CHARACTER_DETAILS="""
 Additional details about you:
@@ -228,11 +226,10 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
   def FuncChangeLocation(self, db, args):
     """
-    Record that the player completed the challenge for the current character.
+    Change the location of the character
     """
     # TODO: this is where we need lock for updating
     site_id = args["site_id"]
-    print(f"move to {site_id}")    
     wstate = world_state.loadWorldState(db, self.wstate_id)
     site = elements.loadSite(db, site_id)
     if site is None:
@@ -243,7 +240,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     world_state.saveWorldState(db, wstate)
     character = elements.loadCharacter(db, self.character_id)
 
-    result = { "response": self.funcStatus("OK"),
+    result = { "response": self.funcStatus("You are enroute to " +
+                                           site.getName()),
                "text": character.getName() + " left " + site.getName() }
     
     return result

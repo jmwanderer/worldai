@@ -1,6 +1,9 @@
 Plans
 -----
 
+- handle DB errors
+- protect APIs against bad id args
+
 - fix refresh and chat enable on character move
 - list of characters at the same location
 - 
