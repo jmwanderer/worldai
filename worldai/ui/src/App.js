@@ -325,7 +325,7 @@ async function getCharacter(worldId, characterId) {
   return value
 }
 
-function ChatCharacter({ worldId, characterId, onClose}) {
+function ChatCharacter({ worldId, characterId, onClose, onChange}) {
   const [character, setCharacter] = useState(null);
   const [refresh, setRefresh] = useState(null);    
   useEffect(() => {
@@ -349,6 +349,7 @@ function ChatCharacter({ worldId, characterId, onClose}) {
 
   function handleUpdate() {
     setRefresh(refresh + 1);
+    onChange()
   }
 
   if (!character) {
@@ -490,7 +491,7 @@ function Site({ world, siteId, onClose }) {
   const [site, setSite] = useState(null);
   const [view, setView] = useState(null);
   const [characterId, setCharacterId] = useState(null);
-  const [itemId, setItemId] = useState(null);    
+  const [refresh, setRefresh] = useState(null);
   
   useEffect(() => {
     let ignore = false;
@@ -509,17 +510,20 @@ function Site({ world, siteId, onClose }) {
     return () => {
       ignore = true;
     }
-  }, [world, siteId, itemId]);
+  }, [world, siteId, refresh]);
 
   async function takeItem(item_id) {
     try {
       await postTakeItem(world.id, item_id);
-      // TODO: proper way to do this? Perhaps reload site.
-      setItemId(item_id);
+      handleUpdate()
     } catch {
       // TODO: fix reporting
       console.log("ERROR");
     }
+  }
+
+  function handleUpdate() {
+    setRefresh(refresh + 1);
   }
   
   function clearView() {
@@ -547,7 +551,8 @@ function Site({ world, siteId, onClose }) {
     return (
       <ChatCharacter worldId={world.id}
                      characterId={characterId}
-                     onClose={clearCharacterId}/>
+                     onClose={clearCharacterId}
+                     onChange={handleUpdate}/>
     );
   }
   

@@ -8,6 +8,7 @@ import time
 import os
 import json
 import random
+import logging
 
 from . import elements
 
@@ -178,7 +179,7 @@ def getWorldStateID(db, session_id, world_id):
     initialize = True
     id = "id%s" % os.urandom(4).hex()
     state = WorldState(id)
-    print(f"world id {world_id}")
+    logging.info(f"world id {world_id}")
     c.execute("INSERT INTO world_state (id, session_id, world_id, created, " +
               "updated, player_state, character_state, item_state) " +
               "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -212,8 +213,9 @@ def checkWorldState(db, wstate):
         site = random.choice(sites)
         wstate.setCharacterLocation(character.getID(), site.getID())
         changed = True
-        print("assign %s to location %s" % (character.getName(),
-                                            site.getName()))
+        logging.info("assign %s to location %s",
+                     character.getName(),
+                     site.getName())
 
     places = []
     places.extend(characters)
@@ -224,7 +226,9 @@ def checkWorldState(db, wstate):
         if wstate.item_state.get(item.getID()) is None:
           place = random.choice(places)
           wstate.setItemLocation(item.getID(), place.getID())
-          print("place item %s: %s" % (item.getName(), place.getName()))
+          logging.info("place item %s: %s",
+                       item.getName(),
+                       place.getName())
         changed = True
         
   return changed

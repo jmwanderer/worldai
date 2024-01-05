@@ -235,14 +235,14 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     if site is None:
       return self.funcError("Site does not exist")
     old_site_id = wstate.getCharacterLocation(self.character_id)
-    site = elements.loadSite(db, old_site_id)
+    old_site = elements.loadSite(db, old_site_id)
     wstate.setCharacterLocation(self.character_id, site_id)
     world_state.saveWorldState(db, wstate)
     character = elements.loadCharacter(db, self.character_id)
 
     result = { "response": self.funcStatus("You are enroute to " +
                                            site.getName()),
-               "text": character.getName() + " left " + site.getName() }
+               "text": character.getName() + " left " + old_site.getName() }
     
     return result
 
