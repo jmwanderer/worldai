@@ -48,7 +48,7 @@ console.log("URL Prefix: " + URL);
 /* global auth_key */
 let AUTH_KEY="auth"
 if (auth_key.substring(0,2) !== "{{") {
-    AUTH_KEY=auth_key
+  AUTH_KEY=auth_key
 }
 console.log("AUTH Key: " + AUTH_KEY);
 
@@ -71,32 +71,32 @@ function headers_post() {
 
 // Shows a single message exchange.
 function MessageExchange({ name, message }) {
-    let user_message = "";
-    let updates_message = "";    
+  let user_message = "";
+  let updates_message = "";    
 
-    if (message.user.length > 0) {
-        user_message = (
-            <div className="App-message">            
-                <b>You:</b> <br/> { message.user }
-            </div>);
-    }
-    if (message.updates && message.updates.length > 0) {
-        updates_message = (
-            <div className="App-message">            
-                <i>{ message.updates }</i>
-            </div>);
-    }
-    return (
-        <div className="p-2">
-            { user_message }
-            <div className="App-message">
-                <b> {name}: </b>
-                <br/>
-                { message.reply}
-            </div>
-            { updates_message }
-        </div>
-    );
+  if (message.user.length > 0) {
+    user_message = (
+      <div className="App-message">            
+        <b>You:</b> <br/> { message.user }
+      </div>);
+  }
+  if (message.updates && message.updates.length > 0) {
+    updates_message = (
+      <div className="App-message">            
+        <i>{ message.updates }</i>
+      </div>);
+  }
+  return (
+    <div className="p-2">
+      { user_message }
+      <div className="App-message">
+        <b> {name}: </b>
+        <br/>
+        { message.reply}
+      </div>
+      { updates_message }
+    </div>
+  );
 }
 
 const CurrentMessage = forwardRef(({ content, chatState}, msgRef) => {
@@ -123,12 +123,12 @@ const CurrentMessage = forwardRef(({ content, chatState}, msgRef) => {
 
 function MessageScreen({chatHistory, currentMessage, chatState, name}) {
   const msgRef = useRef(null);
-    useEffect(() => {
-        const {current} = msgRef;
-        if (current !== null) {
-          current.scrollIntoView({behavior: "smooth"});
-        }
-    }, [chatHistory, currentMessage]);
+  useEffect(() => {
+    const {current} = msgRef;
+    if (current !== null) {
+      current.scrollIntoView({behavior: "smooth"});
+    }
+  }, [chatHistory, currentMessage]);
   
   const entries = chatHistory.map(entry =>
     <MessageExchange key={entry.id} message={entry} name={name}/>
@@ -137,23 +137,23 @@ function MessageScreen({chatHistory, currentMessage, chatState, name}) {
   return (
     <Stack className="border m-2" style={{ textAlign: "left",
                                            overflow: "auto"}}>
-            
+      
       { entries }
       
       <CurrentMessage content={currentMessage}
                       chatState={chatState}
                       ref={msgRef}/>
-      </Stack>
-      );
+    </Stack>
+  );
 }
 
 function UserInput({value, onChange, onKeyDown, disabled}) {
-    return (
-        <textarea className="m-2"
-            value={value} 
-            disabled={disabled}
-            onChange={onChange} onKeyDown={onKeyDown}/>
-    );
+  return (
+    <textarea className="m-2"
+              value={value} 
+              disabled={disabled}
+              onChange={onChange} onKeyDown={onKeyDown}/>
+  );
 }
 
 
@@ -181,129 +181,129 @@ async function postChatMessage(worldId, characterId, user_msg) {
 
 
 function ChatScreen({ name, worldId, characterId, onChange}) {
-    const [chatHistory, setChatHistory] = useState([]);
-    const [currentMessage,
-           setCurrentMessage] = useState({ user: "", error: ""});
-    const [userInput, setUserInput] = useState("")
-    const [chatState, setChatState] = useState("ready")
+  const [chatHistory, setChatHistory] = useState([]);
+  const [currentMessage,
+         setCurrentMessage] = useState({ user: "", error: ""});
+  const [userInput, setUserInput] = useState("")
+  const [chatState, setChatState] = useState("ready")
 
   useEffect(() => {
-        let ignore = false;    
+    let ignore = false;    
 
-        async function getData() {
-          // Get the chat history.
-          try {
-            const values = await getChatHistory(worldId, characterId);
-            if (!ignore) {
-              setChatHistory(values["messages"]);
-              if (values["messages"].length === 0) {
-                setChatState("waiting");                
-                const values = await postChatMessage(worldId,
-                                                     characterId,
-                                                     "");
-                setChatHistory(c => [...c, values])
-              }
-            }
-          } catch {
-            setCurrentMessage({user: "",
-                               error: "Something went wrong."});
-          }
-          setChatState("ready")          
-        }
-    
-        getData();
-        return () => {
-          ignore = true;
-        }
-    }, [worldId, characterId]);
-
-    function submitClick() {
-        let user_msg = userInput
-        setCurrentMessage({user: user_msg, error: ""});
-        setUserInput("");
-        setChatState("waiting");
-
-        async function getData() {
-          // Post the user request
-          try {            
+    async function getData() {
+      // Get the chat history.
+      try {
+        const values = await getChatHistory(worldId, characterId);
+        if (!ignore) {
+          setChatHistory(values["messages"]);
+          if (values["messages"].length === 0) {
+            setChatState("waiting");                
             const values = await postChatMessage(worldId,
                                                  characterId,
-                                                 user_msg);
-            setChatHistory([...chatHistory, values])
-            setCurrentMessage({user: "", error: "" });
-          } catch (e) {
-            setCurrentMessage({user: user_msg,
-                               error: "Something went wrong."});
+                                                 "");
+            setChatHistory(c => [...c, values])
           }
-          setChatState("ready")
-          onChange()
         }
-      getData();
+      } catch {
+        setCurrentMessage({user: "",
+                           error: "Something went wrong."});
+      }
+      setChatState("ready")          
     }
-
-    function handleInputChange(e) {
-        setUserInput(e.target.value);
+    
+    getData();
+    return () => {
+      ignore = true;
     }
+  }, [worldId, characterId]);
 
-    function handleKeyDown(e) {
-        if (chatState === "ready") {
-            if (e.keyCode === 13) {
-                submitClick();
-                e.preventDefault();            
-            }
-        }
+  function submitClick() {
+    let user_msg = userInput
+    setCurrentMessage({user: user_msg, error: ""});
+    setUserInput("");
+    setChatState("waiting");
+
+    async function getData() {
+      // Post the user request
+      try {            
+        const values = await postChatMessage(worldId,
+                                             characterId,
+                                             user_msg);
+        setChatHistory([...chatHistory, values])
+        setCurrentMessage({user: "", error: "" });
+      } catch (e) {
+        setCurrentMessage({user: user_msg,
+                           error: "Something went wrong."});
+      }
+      setChatState("ready")
+      onChange()
     }
+    getData();
+  }
 
-    let disabled = (chatState !== "ready");
-    return (
-        <Stack style={{ height: "100%", maxHeight: "90vh" }}>
-            <MessageScreen chatHistory={chatHistory}
-                           currentMessage={currentMessage}
-                           chatState={chatState}
-                           name={name}/>
-            <UserInput value={userInput}
-                       onChange={handleInputChange}
-                       onKeyDown={handleKeyDown}/>
-            <div>
-                <Button disabled={disabled}
-                        onClick={submitClick}
-                        text="Submit">
-                    Submit
-                </Button>
-            </div>
-        </Stack>
-    );
+  function handleInputChange(e) {
+    setUserInput(e.target.value);
+  }
+
+  function handleKeyDown(e) {
+    if (chatState === "ready") {
+      if (e.keyCode === 13) {
+        submitClick();
+        e.preventDefault();            
+      }
+    }
+  }
+
+  let disabled = (chatState !== "ready");
+  return (
+    <Stack style={{ height: "100%", maxHeight: "90vh" }}>
+      <MessageScreen chatHistory={chatHistory}
+                     currentMessage={currentMessage}
+                     chatState={chatState}
+                     name={name}/>
+      <UserInput value={userInput}
+                 onChange={handleInputChange}
+                 onKeyDown={handleKeyDown}/>
+      <div>
+        <Button disabled={disabled}
+                onClick={submitClick}
+                text="Submit">
+          Submit
+        </Button>
+      </div>
+    </Stack>
+  );
 }
 
 
 function CharacterImages({character}) {
-    const items = character.images.map(entry =>
-        <Carousel.Item key={entry.url}>
-            <Image src={entry.url}
-                   style={{ maxWidth: "50vmin", maxHeight: "50vmin",
-                            minHeight: "30vmin"}}/>                            
-        </Carousel.Item>);
-            
-    return (
-        <Carousel interval={null} style={{ textAlign: "center" }}>
-            { items }
-        </Carousel>            
-    );
+  const items = character.images.map(entry =>
+    <Carousel.Item key={entry.url}>
+      <Image src={entry.url}
+             style={{ maxWidth: "50vmin", maxHeight: "50vmin",
+                      minHeight: "30vmin"}}/>                            
+    </Carousel.Item>);
+  
+  return (
+    <Carousel interval={null} style={{ textAlign: "center" }}>
+      { items }
+    </Carousel>            
+  );
 }
 
 
 function CharacterScreen({ character }) {
-    return (
-        <Stack style={{ textAlign: "left" }}>
-            <h3>{character.name}</h3>
-            <CharacterImages character={character}/>
-            <h4>Notes:</h4>
-            <h5>{character.description}</h5>
-            <p>
-                Have support: { character.givenSupport ? "Yes" : "No" }
-            </p>
-        </Stack>
-    );
+  return (
+    <Stack style={{ textAlign: "left" }}>
+      <h3>{character.name}</h3>
+      <CharacterImages character={character}/>
+      <h4>Notes:</h4>
+      <h5>{character.description}</h5>
+      <p>
+        Have support: { character.givenSupport ? "Yes" : "No" }
+      </p>
+    </Stack>
+  );
 }
 
 async function getCharacter(worldId, characterId) {
@@ -314,143 +314,143 @@ async function getCharacter(worldId, characterId) {
 }
 
 function ChatCharacter({ worldId, characterId, onClose}) {
-    const [character, setCharacter] = useState(null);
-    const [refresh, setRefresh] = useState(null);    
-    useEffect(() => {
-      let ignore = false;
-      async function getData() {
-        // Load the character
-        try {
-          const value = await getCharacter(worldId, characterId);
-          if (!ignore) {
-            setCharacter(value);
-          }
-        } catch {
+  const [character, setCharacter] = useState(null);
+  const [refresh, setRefresh] = useState(null);    
+  useEffect(() => {
+    let ignore = false;
+    async function getData() {
+      // Load the character
+      try {
+        const value = await getCharacter(worldId, characterId);
+        if (!ignore) {
+          setCharacter(value);
         }
+      } catch {
       }
-      getData();
-      return () => {
-        ignore = true;
-      }
-    }, [worldId, characterId, refresh]);
-
-
-    function handleUpdate() {
-        setRefresh(refresh + 1);
     }
-
-    if (!character) {
-        return <div/>
+    getData();
+    return () => {
+      ignore = true;
     }
+  }, [worldId, characterId, refresh]);
 
-    return (
-        <Container>
-            <Row>
-                <Col>
-                    <CloseBar onClose={onClose}/>
-                </Col>
-            </Row>
-            <Row>
-                <Col xs={6}>
-                    <CharacterScreen character={character}/>
-                </Col>
-                <Col xs={6}>
-                    <ChatScreen name={character.name}
-                                worldId={worldId}
-                                characterId={characterId}
-                                onChange={handleUpdate}/>
-                </Col>
-            </Row>
-        </Container>
-        );
+
+  function handleUpdate() {
+    setRefresh(refresh + 1);
+  }
+
+  if (!character) {
+    return <div/>
+  }
+
+  return (
+    <Container>
+      <Row>
+        <Col>
+          <CloseBar onClose={onClose}/>
+        </Col>
+      </Row>
+      <Row>
+        <Col xs={6}>
+          <CharacterScreen character={character}/>
+        </Col>
+        <Col xs={6}>
+          <ChatScreen name={character.name}
+                      worldId={worldId}
+                      characterId={characterId}
+                      onChange={handleUpdate}/>
+        </Col>
+      </Row>
+    </Container>
+  );
 }
 
 
 
 function CharacterItem({ character, onClick }) {
-    function handleClick() {
-        onClick(character.id);
-    }
-    return (
-        <div onClick={handleClick} className="mt-2" style={{ height: "100%"}}>
-            <Card style={{ height: "100%"}}>
-                <Card.Img src={character.image.url}/>
-                  
-                <Card.Title>
-                    {character.name }
-                </Card.Title>
-            </Card>
-        </div>);
+  function handleClick() {
+    onClick(character.id);
+  }
+  return (
+    <div onClick={handleClick} className="mt-2" style={{ height: "100%"}}>
+      <Card style={{ height: "100%"}}>
+        <Card.Img src={character.image.url}/>
+        
+        <Card.Title>
+          {character.name }
+        </Card.Title>
+      </Card>
+    </div>);
 }
 
 function SitePeople({ site, setCharacterId}) {
 
-    const people = site.characters.map(entry =>
-        <Col key={entry.id} md={2}>
-            <CharacterItem key={entry.id}
-                           character={entry}
-                           onClick={setCharacterId}/>
-        </Col>
-    );
-    
-    return ( <Container className="mt-2">
-                 <Row>                 
-                     { people }
-                 </Row>
-             </Container>
-           );
+  const people = site.characters.map(entry =>
+    <Col key={entry.id} md={2}>
+      <CharacterItem key={entry.id}
+                     character={entry}
+                     onClick={setCharacterId}/>
+    </Col>
+  );
+  
+  return ( <Container className="mt-2">
+             <Row>                 
+               { people }
+             </Row>
+           </Container>
+         );
 }
 
 function ItemCard({ item, onClick }) {
-    function handleClick() {
-        if (onClick) {
-            onClick(item.id);
-        }
+  function handleClick() {
+    if (onClick) {
+      onClick(item.id);
     }
-    return (
-        <div onClick={handleClick} className="mt-2" style={{ height: "100%"}}>
-            <Card style={{ height: "100%"}}>
-                <Card.Img src={item.image.url}/>
-                  
-                <Card.Title>
-                    {item.name }
-                </Card.Title>
-            </Card>
-        </div>);
+  }
+  return (
+    <div onClick={handleClick} className="mt-2" style={{ height: "100%"}}>
+      <Card style={{ height: "100%"}}>
+        <Card.Img src={item.image.url}/>
+        
+        <Card.Title>
+          {item.name }
+        </Card.Title>
+      </Card>
+    </div>);
 }
 
 
 function SiteItems({ site, setItemId}) {
-    const items = site.items.map(entry =>
-        <Col key={entry.id} md={2}>
-            <ItemCard key={entry.id}
-                      item={entry}
-                      onClick={setItemId}/>
-        </Col>
-    );
-    
-    return ( <Container className="mt-2">
-                 <Row>       
-                     { items }
-                 </Row>
-             </Container>
-           );
+  const items = site.items.map(entry =>
+    <Col key={entry.id} md={2}>
+      <ItemCard key={entry.id}
+                item={entry}
+                onClick={setItemId}/>
+    </Col>
+  );
+  
+  return ( <Container className="mt-2">
+             <Row>       
+               { items }
+             </Row>
+           </Container>
+         );
 }
 
 
 function SiteImages({ site }) {
-    const items = site.images.map(entry =>
-        <Carousel.Item key={entry.url}>
-            <Image src={entry.url}
-                   style={{ maxWidth: "50vmin", maxHeight: "50vmin",
-                            minHeight: "30vmin"}}/>
-        </Carousel.Item>);
+  const items = site.images.map(entry =>
+    <Carousel.Item key={entry.url}>
+      <Image src={entry.url}
+             style={{ maxWidth: "50vmin", maxHeight: "50vmin",
+                      minHeight: "30vmin"}}/>
+    </Carousel.Item>);
 
-    return (
-        <Carousel interval={null}>
-            { items }
-        </Carousel>            
-    );
+  return (
+    <Carousel interval={null}>
+      { items }
+    </Carousel>            
+  );
 }
 
 async function getSite(worldId, siteId) {
@@ -475,166 +475,166 @@ async function postTakeItem(worldId, itemId) {
 }
 
 function Site({ world, siteId, onClose }) {
-    const [site, setSite] = useState(null);
-    const [view, setView] = useState(null);
-    const [characterId, setCharacterId] = useState(null);
-    const [itemId, setItemId] = useState(null);    
-    
-    useEffect(() => {
-        let ignore = false;
+  const [site, setSite] = useState(null);
+  const [view, setView] = useState(null);
+  const [characterId, setCharacterId] = useState(null);
+  const [itemId, setItemId] = useState(null);    
+  
+  useEffect(() => {
+    let ignore = false;
 
-        async function getData() {
-            // Load the site
-            try {
-              const value = await getSite(world.id, siteId)
-                if (!ignore) {
-                    setSite(value);
-                }
-            } catch {
-            }
+    async function getData() {
+      // Load the site
+      try {
+        const value = await getSite(world.id, siteId)
+        if (!ignore) {
+          setSite(value);
         }
-        getData();
-        return () => {
-            ignore = true;
-        }
-    }, [world, siteId, itemId]);
+      } catch {
+      }
+    }
+    getData();
+    return () => {
+      ignore = true;
+    }
+  }, [world, siteId, itemId]);
 
-    async function takeItem(item_id) {
-        try {
-          await postTakeItem(world.id, item_id);
-          // TODO: proper way to do this? Perhaps reload site.
-          setItemId(item_id);
-        } catch {
-          // TODO: fix reporting
-          console.log("ERROR");
-        }
+  async function takeItem(item_id) {
+    try {
+      await postTakeItem(world.id, item_id);
+      // TODO: proper way to do this? Perhaps reload site.
+      setItemId(item_id);
+    } catch {
+      // TODO: fix reporting
+      console.log("ERROR");
     }
-    
-    function clearView() {
-        setView(null)
-    }
+  }
+  
+  function clearView() {
+    setView(null)
+  }
 
-    function clearCharacterId() {
-        setCharacterId(null)
-    }
+  function clearCharacterId() {
+    setCharacterId(null)
+  }
 
-    function clickClose() {
-        onClose()
-    }
+  function clickClose() {
+    onClose()
+  }
 
-    if (!site) {
-        return <div/>        
-    }
+  if (!site) {
+    return <div/>        
+  }
 
-    if (view) {
-        return (<DetailsView view={view} world={ world }
-                             onClose={clearView}/>);
-    }
+  if (view) {
+    return (<DetailsView view={view} world={ world }
+                         onClose={clearView}/>);
+  }
 
-    if (characterId) {
-        return (
-            <ChatCharacter worldId={world.id}
-                           characterId={characterId}
-                           onClose={clearCharacterId}/>
-        );
-    }
-    
+  if (characterId) {
     return (
-        <Container>
-            <Row>
-                <Navigation onClose={clickClose} setView={ setView }/>
-            </Row>
-            <Row>
-                <Col xs={6}>
-                    <Stack>
-                        <SiteImages site={site}/>
-                    </Stack>
-                </Col>
-                <Col xs={6} style={{ textAlign: "left" }}>
-                    <h2>{site.name}</h2>
-                    <h5>{site.description}</h5>
-                </Col>                        
-            </Row>
-            <Row className="mb-2">
-                <SitePeople site={site}
-                            setCharacterId={setCharacterId}/>
-            </Row>
-            <Row>
-                <SiteItems site={site}
-                           setItemId={takeItem}/>
-            </Row>
-        </Container>            
+      <ChatCharacter worldId={world.id}
+                     characterId={characterId}
+                     onClose={clearCharacterId}/>
     );
+  }
+  
+  return (
+    <Container>
+      <Row>
+        <Navigation onClose={clickClose} setView={ setView }/>
+      </Row>
+      <Row>
+        <Col xs={6}>
+          <Stack>
+            <SiteImages site={site}/>
+          </Stack>
+        </Col>
+        <Col xs={6} style={{ textAlign: "left" }}>
+          <h2>{site.name}</h2>
+          <h5>{site.description}</h5>
+        </Col>                        
+      </Row>
+      <Row className="mb-2">
+        <SitePeople site={site}
+                    setCharacterId={setCharacterId}/>
+      </Row>
+      <Row>
+        <SiteItems site={site}
+                   setItemId={takeItem}/>
+      </Row>
+    </Container>            
+  );
 }
-    
+
 
 function CloseBar({ onClose }) {
-    return (
-        <Navbar expand="lg" className="bg-body-tertiary">
-            <Container>
-                <CloseButton onClick={onClose}/>
-            </Container>
-        </Navbar>);
+  return (
+    <Navbar expand="lg" className="bg-body-tertiary">
+      <Container>
+        <CloseButton onClick={onClose}/>
+      </Container>
+    </Navbar>);
 }
 
 function Navigation({ onClose, setView}) {
 
-    function setCharactersView() {
-        setView("characters");        
-    }
-    
-    function setItemsView() {
-        setView("items");        
-    }
+  function setCharactersView() {
+    setView("characters");        
+  }
+  
+  function setItemsView() {
+    setView("items");        
+  }
 
-    
-    return (
-        <Navbar expand="lg" className="bg-body-tertiary">
-            <Container>
-                <CloseButton onClick={onClose}/>
-                <Nav>
-                    <Nav.Link onClick={setCharactersView}>
-                        Characters
-                    </Nav.Link>
-                    <Nav.Link onClick={setItemsView}>
-                        Items
-                    </Nav.Link>                        
-                </Nav>
-            </Container>
-        </Navbar>);
+  
+  return (
+    <Navbar expand="lg" className="bg-body-tertiary">
+      <Container>
+        <CloseButton onClick={onClose}/>
+        <Nav>
+          <Nav.Link onClick={setCharactersView}>
+            Characters
+          </Nav.Link>
+          <Nav.Link onClick={setItemsView}>
+            Items
+          </Nav.Link>                        
+        </Nav>
+      </Container>
+    </Navbar>);
 }
 
 
 function CharacterListEntry({ character }) {
 
-    let has_support = "";
-    if (character.givenSupport) {
-        has_support = <i className="bi-heart" style={{ fontSize: "4rem"}}/>
-    }
+  let has_support = "";
+  if (character.givenSupport) {
+    has_support = <i className="bi-heart" style={{ fontSize: "4rem"}}/>
+  }
 
-    return (
-        <div className="card mb-3 container">
-            <div className="row">
-                <div className="col-2">
-                    <img src={character.image.url} className="card-img"
-                         alt="character"/>
-                </div>
-                <div className="col-8">
-                    <div className="card-body">
-                        <h5 className="card-title">
-                            { character.name }
-                        </h5>
-                        <p className="card-text" style={{ textAlign: "left" }}>
-                            { character.description }
-                        </p>
-                    </div>
-                </div>
-                <div className="col-2">
-                    { has_support }
-                </div>
-            </div>
+  return (
+    <div className="card mb-3 container">
+      <div className="row">
+        <div className="col-2">
+          <img src={character.image.url} className="card-img"
+               alt="character"/>
         </div>
-    );
+        <div className="col-8">
+          <div className="card-body">
+            <h5 className="card-title">
+              { character.name }
+            </h5>
+            <p className="card-text" style={{ textAlign: "left" }}>
+              { character.description }
+            </p>
+          </div>
+        </div>
+        <div className="col-2">
+          { has_support }
+        </div>
+      </div>
+    </div>
+  );
 }
 
 async function getCharacterList(worldId) {
@@ -647,69 +647,69 @@ async function getCharacterList(worldId) {
 
 function CharacterList({ worldId }) {
 
-    const [characterList, setCharacterList] = useState([]);
+  const [characterList, setCharacterList] = useState([]);
 
-    useEffect(() => {
-        let ignore = false;
+  useEffect(() => {
+    let ignore = false;
 
-        async function getCharacterData() {
-            try {
-              const values = await getCharacterList(worldId);
-              if (!ignore) {
-                setCharacterList(values);
-              }
-            } catch {
-            }
+    async function getCharacterData() {
+      try {
+        const values = await getCharacterList(worldId);
+        if (!ignore) {
+          setCharacterList(values);
         }
-        
-        getCharacterData();
-        return () => {
-            ignore = true;
-        }
-    }, [worldId]);
+      } catch {
+      }
+    }
     
-    const entries = characterList.map(entry =>
-        <CharacterListEntry key={entry.id}
-                            character={entry}/>
-    );
+    getCharacterData();
+    return () => {
+      ignore = true;
+    }
+  }, [worldId]);
+  
+  const entries = characterList.map(entry =>
+    <CharacterListEntry key={entry.id}
+                        character={entry}/>
+  );
 
-    return (
-        <Stack className="mt-3">
-            { entries }
-        </Stack>
-    );
+  return (
+    <Stack className="mt-3">
+      { entries }
+    </Stack>
+  );
 }
 
 function ItemListEntry({ item }) {
 
-    let in_inventory = "";
-    if (item.have_item) {
-        in_inventory = <i className="bi-check" style={{ fontSize: "4rem"}}/>
-    }
-    
-    return (
-        <div className="card mb-3 container">            
-            <div className="row">
-                <div className="col-2">
-                    <img src={item.image.url} className="card-img"
-                         alt="item"/>
-                </div>
-                <div className="col-8">
-                    <div className="card-body">
-                        <h5 className="card-title">
-                            { item.name }
-                        </h5>
-                        <p className="card-text" style={{ textAlign: "left" }}>
-                            { item.description }
-                        </p>
-                    </div>
-                </div>
-                <div className="col-2">
-                    { in_inventory }
-                </div>
-            </div>
+  let in_inventory = "";
+  if (item.have_item) {
+    in_inventory = <i className="bi-check" style={{ fontSize: "4rem"}}/>
+  }
+  
+  return (
+    <div className="card mb-3 container">            
+      <div className="row">
+        <div className="col-2">
+          <img src={item.image.url} className="card-img"
+               alt="item"/>
         </div>
-    );
+        <div className="col-8">
+          <div className="card-body">
+            <h5 className="card-title">
+              { item.name }
+            </h5>
+            <p className="card-text" style={{ textAlign: "left" }}>
+              { item.description }
+            </p>
+          </div>
+        </div>
+        <div className="col-2">
+          { in_inventory }
+        </div>
+      </div>
+    </div>
+  );
 }
 
 async function getItemList(worldId) {
@@ -722,115 +722,115 @@ async function getItemList(worldId) {
 
 function ItemList({ worldId }) {
 
-    const [itemList, setItemList] = useState([]);
+  const [itemList, setItemList] = useState([]);
 
-    useEffect(() => {
-        let ignore = false;
+  useEffect(() => {
+    let ignore = false;
 
-        async function getItemData() {
-            try {
-              const values = await getItemList(worldId);
-              if (!ignore) {
-                setItemList(values);
-              }
-            } catch {
-            }
+    async function getItemData() {
+      try {
+        const values = await getItemList(worldId);
+        if (!ignore) {
+          setItemList(values);
         }
-      
-      getItemData();
-      return () => {
-        ignore = true;
+      } catch {
       }
-    }, [worldId]);
+    }
+    
+    getItemData();
+    return () => {
+      ignore = true;
+    }
+  }, [worldId]);
 
-    const entries = itemList.map(entry =>
-        <ItemListEntry key={entry.id}
-                       item={entry}/>
-    );
+  const entries = itemList.map(entry =>
+    <ItemListEntry key={entry.id}
+                   item={entry}/>
+  );
 
-    return (
-        <Stack className="mt-3">
-            { entries }
-        </Stack>
-    );
+  return (
+    <Stack className="mt-3">
+      { entries }
+    </Stack>
+  );
 }
 
 function DetailsView({view, world, onClose}) {
 
-    if (view === "characters") {
-        return (
-            <div>
-                <h2>
-                    {world.name} Characters
-                </h2>
-                <CloseBar onClose={onClose}/>
-                <CharacterList worldId={world.id}/>
-            </div>
-        );        
-    } else {
-        return (
-            <div>
-                <h2>
-                    {world.name} Items
-                </h2>
-                <CloseBar onClose={onClose}/>
-                <ItemList worldId={world.id}/>                
-            </div>
-        );        
-    }
+  if (view === "characters") {
+    return (
+      <div>
+        <h2>
+          {world.name} Characters
+        </h2>
+        <CloseBar onClose={onClose}/>
+        <CharacterList worldId={world.id}/>
+      </div>
+    );        
+  } else {
+    return (
+      <div>
+        <h2>
+          {world.name} Items
+        </h2>
+        <CloseBar onClose={onClose}/>
+        <ItemList worldId={world.id}/>                
+      </div>
+    );        
+  }
 }
 
 
 
 
 function SiteItem({ site, onClick }) {
-    function handleClick() {
-        onClick(site.id);
-    }
-    return (
-        <div onClick={handleClick}  className="mt-2" style={{ height: "100%"}}>
-            <Card style={{ height: "100%"}}>
-                <Card.Img src={site.image.url}/>
-                <Card.Title>
-                    { site.name }
-                </Card.Title>
-            </Card>
-        </div>);
+  function handleClick() {
+    onClick(site.id);
+  }
+  return (
+    <div onClick={handleClick}  className="mt-2" style={{ height: "100%"}}>
+      <Card style={{ height: "100%"}}>
+        <Card.Img src={site.image.url}/>
+        <Card.Title>
+          { site.name }
+        </Card.Title>
+      </Card>
+    </div>);
 }
 
 
 
 function WorldSites({ siteList, onClick }) {
 
-    const sites = siteList.map(entry =>
-        <Col key={entry.id} md={2}>
-            <SiteItem key={entry.id}
-                           site={entry}
-                           onClick={onClick}/>
-        </Col>
-    );
-    
-    return ( <Container className="mt-2">
-                 <Row>                 
-                     { sites }
-                 </Row>
-             </Container>
-           );
+  const sites = siteList.map(entry =>
+    <Col key={entry.id} md={2}>
+      <SiteItem key={entry.id}
+                site={entry}
+                onClick={onClick}/>
+    </Col>
+  );
+  
+  return ( <Container className="mt-2">
+             <Row>                 
+               { sites }
+             </Row>
+           </Container>
+         );
 }
 
 function WorldImages({world}) {
-    const items = world.images.map(entry =>
-        <Carousel.Item key={entry.url}>
-            <Image src={entry.url}
-                   style={{ maxWidth: "50vmin", maxHeight: "50vmin",
-                            minHeight: "30vmin"}}/>
-        </Carousel.Item>);
-            
-    return (
-        <Carousel interval={null}>
-            { items }
-        </Carousel>            
-    );
+  const items = world.images.map(entry =>
+    <Carousel.Item key={entry.url}>
+      <Image src={entry.url}
+             style={{ maxWidth: "50vmin", maxHeight: "50vmin",
+                      minHeight: "30vmin"}}/>
+    </Carousel.Item>);
+  
+  return (
+    <Carousel interval={null}>
+      { items }
+    </Carousel>            
+  );
 }
 
 
@@ -865,62 +865,62 @@ async function postGoTo(worldId, siteId) {
 }
 
 function World({ worldId, setWorldId }) {
-    const [world, setWorld] = useState(null);            
-    const [siteList, setSiteList] = useState([]);
-    const [siteId, setSiteId] = useState(null);
-    const [view, setView] = useState(null);
+  const [world, setWorld] = useState(null);            
+  const [siteList, setSiteList] = useState([]);
+  const [siteId, setSiteId] = useState(null);
+  const [view, setView] = useState(null);
 
-    
-    useEffect(() => {
-        let ignore = false;
+  
+  useEffect(() => {
+    let ignore = false;
 
-      async function getData() {
-        try {
-          // Get the details of the world  and a list of sites.
+    async function getData() {
+      try {
+        // Get the details of the world  and a list of sites.
 
-          let calls = Promise.all([ getSiteList(worldId),
-                                    getWorld(worldId) ]);
-          let [sites, world] = await calls;
+        let calls = Promise.all([ getSiteList(worldId),
+                                  getWorld(worldId) ]);
+        let [sites, world] = await calls;
 
-          if (!ignore) {
-            setWorld(world);
-            setSiteList(sites);
-            // Set the site id if we are present at a site
-            for (let i = 0; i < sites.length; i++) {
-              if (sites[i].present) {
-                setSiteId(sites[i].id);
-                break;
-              }
+        if (!ignore) {
+          setWorld(world);
+          setSiteList(sites);
+          // Set the site id if we are present at a site
+          for (let i = 0; i < sites.length; i++) {
+            if (sites[i].present) {
+              setSiteId(sites[i].id);
+              break;
             }
           }
-        } 
-        catch {
         }
+      } 
+      catch {
       }
-
-      getData();
-      return () => {
-        ignore = true;
-      }
-    }, [worldId]);
-
-    function clickClose() {
-        setWorldId("");
     }
 
-    function clearView() {
-        setView("");
+    getData();
+    return () => {
+      ignore = true;
     }
+  }, [worldId]);
 
-    function clearSite() {
-        goToSite(""); 
-        setSiteId(null);
-    }
+  function clickClose() {
+    setWorldId("");
+  }
 
-    function selectSite(site_id) {
-        goToSite(site_id);
-        setSiteId(site_id);
-    }
+  function clearView() {
+    setView("");
+  }
+
+  function clearSite() {
+    goToSite(""); 
+    setSiteId(null);
+  }
+
+  function selectSite(site_id) {
+    goToSite(site_id);
+    setSiteId(site_id);
+  }
 
   async function goToSite(site_id) {
     try {    
@@ -930,71 +930,71 @@ function World({ worldId, setWorldId }) {
     }
   }
 
-    // Wait until data loads
-    if (world === null || siteList === null) {
-        return (<div></div>);
-    }
+  // Wait until data loads
+  if (world === null || siteList === null) {
+    return (<div></div>);
+  }
 
-    if (view) {
-        return (<DetailsView view={view} world={ world } onClose={clearView}/>);
-    }
+  if (view) {
+    return (<DetailsView view={view} world={ world } onClose={clearView}/>);
+  }
 
-    // Show a specific site
-    if (siteId) {
-        return (<Site world={world}
-                      siteId={siteId}
-                      onClose={clearSite}/>);
-    }
+  // Show a specific site
+  if (siteId) {
+    return (<Site world={world}
+                  siteId={siteId}
+                  onClose={clearSite}/>);
+  }
 
-    // Show world view
-    // Show sites
-    return (
-        <Container>
-            <Row>
-                <Navigation onClose={clickClose} setView={ setView }/>
-            </Row>
-            <Row >
-                <Col xs={6}>
-                    <WorldImages world={world}/>
-                </Col>
-                <Col xs={6} style={{ textAlign: "left" }}>
-                    <h2>{world.name}</h2>
-                    <h5>{world.description}</h5>
-                </Col>                        
-            </Row>
-            <Row>
-                <WorldSites siteList={siteList} onClick={selectSite}/>
-            </Row>
-        </Container>            
-    );
+  // Show world view
+  // Show sites
+  return (
+    <Container>
+      <Row>
+        <Navigation onClose={clickClose} setView={ setView }/>
+      </Row>
+      <Row >
+        <Col xs={6}>
+          <WorldImages world={world}/>
+        </Col>
+        <Col xs={6} style={{ textAlign: "left" }}>
+          <h2>{world.name}</h2>
+          <h5>{world.description}</h5>
+        </Col>                        
+      </Row>
+      <Row>
+        <WorldSites siteList={siteList} onClick={selectSite}/>
+      </Row>
+    </Container>            
+  );
 }
 
 
 function WorldItem({ world, onClick }) {
 
-    function handleClick() {
-        onClick(world.id);
-    }
-    
-    return (
-        <div className="card mb-3 container" onClick={handleClick} >
-            <div className="row">
-                <div className="col-2">
-                    <img src={world.image.url} className="card-img" alt="world"/>
-                </div>
-                <div className="col-8">
-                    <div className="card-body">
-                        <h5 className="card-title">
-                            { world.name }
-                        </h5>
-                        <p className="card-text" style={{ textAlign: "left" }}>
-                            { world.description }
-                        </p>
-                    </div>
-                </div>
-            </div>
+  function handleClick() {
+    onClick(world.id);
+  }
+  
+  return (
+    <div className="card mb-3 container" onClick={handleClick} >
+      <div className="row">
+        <div className="col-2">
+          <img src={world.image.url} className="card-img" alt="world"/>
         </div>
-    );
+        <div className="col-8">
+          <div className="card-body">
+            <h5 className="card-title">
+              { world.name }
+            </h5>
+            <p className="card-text" style={{ textAlign: "left" }}>
+              { world.description }
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 async function getWorldList() {
@@ -1007,39 +1007,39 @@ async function getWorldList() {
 }
 
 function SelectWorld({setWorldId}) {
-    const [worldList, setWorldList] = useState([]);
-    useEffect(() => {
-        let ignore = false;
+  const [worldList, setWorldList] = useState([]);
+  useEffect(() => {
+    let ignore = false;
 
-        async function getData() {
-            // Get the list of worlds
-            try {
-              const values = await getWorldList();
-              if (!ignore) {
-                setWorldList(values);
-              }
-            } catch {
-            }
+    async function getData() {
+      // Get the list of worlds
+      try {
+        const values = await getWorldList();
+        if (!ignore) {
+          setWorldList(values);
         }
-        getData();
-        return () => {
-            ignore = true;
-        }
-    }, []);
-
-    function selectWorld(world_id) {
-        setWorldId(world_id);
+      } catch {
+      }
     }
-    
-    const entries = worldList.map(entry =>
-        <WorldItem key={entry.id} world={entry} onClick={selectWorld}/>
-    );
+    getData();
+    return () => {
+      ignore = true;
+    }
+  }, []);
 
-    return (
-        <Stack className="mt-3">
-            { entries }
-        </Stack>
-    );
+  function selectWorld(world_id) {
+    setWorldId(world_id);
+  }
+  
+  const entries = worldList.map(entry =>
+    <WorldItem key={entry.id} world={entry} onClick={selectWorld}/>
+  );
+
+  return (
+    <Stack className="mt-3">
+      { entries }
+    </Stack>
+  );
 }
 
 async function getInitData() {
@@ -1049,46 +1049,46 @@ async function getInitData() {
   const values = await response.json();
   return values; 
 }
-    
+
 function App() {
-    const [worldId, setWorldId] = useState(null);
-    useEffect(() => {
-        let ignore = false;
+  const [worldId, setWorldId] = useState(null);
+  useEffect(() => {
+    let ignore = false;
 
-        async function getData() {
-            // Get initial load data
-            try {
-              const values = await getInitData();
-              if (!ignore) {
-                setWorldId(values['world_id']);
-              }
-            } catch {
-            }
+    async function getData() {
+      // Get initial load data
+      try {
+        const values = await getInitData();
+        if (!ignore) {
+          setWorldId(values['world_id']);
         }
-        
-        getData();
-        return () => {
-            ignore = true;
-        }
-    }, []);
-    console.log("App: " + worldId)
+      } catch {
+      }
+    }
+    
+    getData();
+    return () => {
+      ignore = true;
+    }
+  }, []);
+  console.log("App: " + worldId)
 
-    let screen = ""
-    if (worldId === null) {
-        screen = <p>Loading...</p>
-    } else if (worldId === "") {
-        screen = <SelectWorld setWorldId={setWorldId}/>
-    } else {
-        screen = <World worldId={worldId}
-                        setWorldId={setWorldId}/>
-    }        
-    return (
-        <div className="App">
-            <header className="App-header">
-                { screen }
-            </header>
-        </div>
-    );
+  let screen = ""
+  if (worldId === null) {
+    screen = <p>Loading...</p>
+  } else if (worldId === "") {
+    screen = <SelectWorld setWorldId={setWorldId}/>
+  } else {
+    screen = <World worldId={worldId}
+                    setWorldId={setWorldId}/>
+  }        
+  return (
+    <div className="App">
+      <header className="App-header">
+        { screen }
+      </header>
+    </div>
+  );
 }
 
 export default App;
