@@ -2,6 +2,7 @@ import React from 'react';
 import { useState } from 'react';
 import { useRef } from 'react';
 import { useEffect } from 'react';
+import { forwardRef } from 'react';
 import './App.css';
 
 import Button from 'react-bootstrap/Button';
@@ -52,6 +53,22 @@ if (auth_key.substring(0,2) !== "{{") {
 console.log("AUTH Key: " + AUTH_KEY);
 
 
+function get_url(suffix) {
+  return URL + suffix;
+}
+
+function headers_get() {
+  return {  "Authorization": "Bearer " + AUTH_KEY };
+}
+
+function headers_post() {
+  return {
+    'Content-Type': 'application/json',    
+    "Authorization": "Bearer " + AUTH_KEY
+  };
+}
+
+
 // Shows a single message exchange.
 function MessageExchange({ name, message }) {
     let user_message = "";
@@ -82,50 +99,52 @@ function MessageExchange({ name, message }) {
     );
 }
 
-function CurrentMessage({ content, chatState}) {
-    const divRef = useRef();
-    useEffect(() => {
-        const {current} = divRef;
-        if (current !== null) {
-            current.scrollIntoView({behavior: "smooth"});
-        }
-    }, [content]);
-              
-    let user = "";
-    if (content.user.length > 0) {
-         user = <div> User: {content.user} </div>;
-    }
-    let running = "";
-    if (chatState !== "ready") {
-        running = <div className="App-running"><i> Running... </i></div>
-    }
-    let error = "";
-    if (content.error.length > 0) {
-        error = <div> Error: { content.error } </div>;
-    }
-    return (
-        <div className="p-2" ref={divRef}>
-            { user }
-            { running}
-            { error }
-        </div>
-    );
-}
+const CurrentMessage = forwardRef(({ content, chatState}, msgRef) => {
+  let user = "";
+  if (content.user.length > 0) {
+    user = <div> User: {content.user} </div>;
+  }
+  let running = "";
+  if (chatState !== "ready") {
+    running = <div className="App-running"><i> Running... </i></div>
+  }
+  let error = "";
+  if (content.error.length > 0) {
+    error = <div> Error: { content.error } </div>;
+  }
+  return (
+    <div className="p-2" ref={msgRef}>
+      { user }
+      { running}
+      { error }
+    </div>
+  );
+});
 
 function MessageScreen({chatHistory, currentMessage, chatState, name}) {
-    const entries = chatHistory.map(entry =>
-        <MessageExchange key={entry.id} message={entry} name={name}/>
-    );
+  const msgRef = useRef(null);
+    useEffect(() => {
+        const {current} = msgRef;
+        if (current !== null) {
+          current.scrollIntoView({behavior: "smooth"});
+        }
+    }, [chatHistory, currentMessage]);
+  
+  const entries = chatHistory.map(entry =>
+    <MessageExchange key={entry.id} message={entry} name={name}/>
+  );
 
-    return (
-        <Stack className="border m-2" style={{ textAlign: "left",
-                                               overflow: "auto"}}>
+  return (
+    <Stack className="border m-2" style={{ textAlign: "left",
+                                           overflow: "auto"}}>
             
-            { entries }
-            <CurrentMessage content={currentMessage}
-                            chatState={chatState}/>
-        </Stack>
-    );
+      { entries }
+      
+      <CurrentMessage content={currentMessage}
+                      chatState={chatState}
+                      ref={msgRef}/>
+      </Stack>
+      );
 }
 
 function UserInput({value, onChange, onKeyDown, disabled}) {
@@ -138,6 +157,29 @@ function UserInput({value, onChange, onKeyDown, disabled}) {
 }
 
 
+async function getChatHistory(worldId, characterId) {
+  const url = `/threads/worlds/${worldId}/characters/${characterId}`;
+  const response =
+        await fetch(get_url(url),
+                    { headers: headers_get() });
+  const values = await response.json();
+  return values;
+}
+
+async function postChatMessage(worldId, characterId, user_msg) {
+  const data = { "user": user_msg }
+  const url = `/threads/worlds/${worldId}/characters/${characterId}`;
+  // Post the user request
+  const response = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()
+  });
+  const values = await response.json();
+  return values;
+}
+
+
 function ChatScreen({ name, worldId, characterId, onChange}) {
     const [chatHistory, setChatHistory] = useState([]);
     const [currentMessage,
@@ -145,34 +187,33 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
     const [userInput, setUserInput] = useState("")
     const [chatState, setChatState] = useState("ready")
 
-    useEffect(() => {
-        const controller = new AbortController();
-        const signal = controller.signal;
+  useEffect(() => {
+        let ignore = false;    
+
         async function getData() {
-            // Get the chat history.
-            const url = URL + "/threads/worlds/" + worldId +
-                  "/characters/" + characterId;
-            try {
-                const response =
-                      await fetch(url,
-                                  {signal: signal,
-                                   headers: {
-                                       "Authorization": "Bearer " + AUTH_KEY
-                                   }
-                                  });
-                const values = await response.json();
-                setChatHistory(values["messages"]);
-                if (values["messages"].length === 0) {
-                    setUserInput("hello");
-                    // TODO: figure out the right way to do this
-                    submitClick();
-                }
-            } catch {
+          // Get the chat history.
+          try {
+            const values = await getChatHistory(worldId, characterId);
+            if (!ignore) {
+              setChatHistory(values["messages"]);
+              if (values["messages"].length === 0) {
+                setChatState("waiting");                
+                const values = await postChatMessage(worldId,
+                                                     characterId,
+                                                     "");
+                setChatHistory(c => [...c, values])
+              }
             }
+          } catch {
+            setCurrentMessage({user: "",
+                               error: "Something went wrong."});
+          }
+          setChatState("ready")          
         }
+    
         getData();
         return () => {
-            controller.abort();
+          ignore = true;
         }
     }, [worldId, characterId]);
 
@@ -183,30 +224,21 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
         setChatState("waiting");
 
         async function getData() {
-            const data = { "user": user_msg }
-            const url = URL + "/threads/worlds/" + worldId +
-                  "/characters/" + characterId;
-            // Post the user request
-            try {            
-                const response = await fetch(url, {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        "Authorization": "Bearer " + AUTH_KEY
-                    }
-                });
-                const values = await response.json();
-                setChatHistory([...chatHistory, values])
-                setCurrentMessage({user: "", error: "" });
-            } catch (e) {
-                setCurrentMessage({user: user_msg,
-                                   error: "Something went wrong."});
-            }
-            setChatState("ready")
-            onChange()
+          // Post the user request
+          try {            
+            const values = await postChatMessage(worldId,
+                                                 characterId,
+                                                 user_msg);
+            setChatHistory([...chatHistory, values])
+            setCurrentMessage({user: "", error: "" });
+          } catch (e) {
+            setCurrentMessage({user: user_msg,
+                               error: "Something went wrong."});
+          }
+          setChatState("ready")
+          onChange()
         }
-        getData();
+      getData();
     }
 
     function handleInputChange(e) {
@@ -274,34 +306,32 @@ function CharacterScreen({ character }) {
     );
 }
 
+async function getCharacter(worldId, characterId) {
+  const url = `/worlds/${worldId}/characters/${characterId}`;
+  const response = await fetch(get_url(url),
+                               { headers: headers_get() });                       const value = await response.json();
+  return value
+}
+
 function ChatCharacter({ worldId, characterId, onClose}) {
     const [character, setCharacter] = useState(null);
     const [refresh, setRefresh] = useState(null);    
     useEffect(() => {
-        let ignore = false;
-
-        async function getData() {
-            // Load the character
-            const url = URL + "/worlds/" + worldId +
-                  "/characters/" + characterId;
-            try {
-                const response =
-                      await fetch(url, {
-                          headers: {
-                              "Authorization": "Bearer " + AUTH_KEY
-                          }
-                      });
-                const value = await response.json();
-                if (!ignore) {
-                    setCharacter(value);
-                }
-            } catch {
-            }
+      let ignore = false;
+      async function getData() {
+        // Load the character
+        try {
+          const value = await getCharacter(worldId, characterId);
+          if (!ignore) {
+            setCharacter(value);
+          }
+        } catch {
         }
-        getData();
-        return () => {
-            ignore = true;
-        }
+      }
+      getData();
+      return () => {
+        ignore = true;
+      }
     }, [worldId, characterId, refresh]);
 
 
@@ -423,6 +453,26 @@ function SiteImages({ site }) {
     );
 }
 
+async function getSite(worldId, siteId) {
+  const url = `/worlds/${worldId}/sites/${siteId}`;
+  const response =
+        await fetch(get_url(url),
+                    { headers: headers_get() });
+  const value = await response.json();
+  return value;
+}
+
+async function postTakeItem(worldId, itemId) {
+  const url = `/worlds/${worldId}/command`;
+  const data = { "name": "take",
+                 "item": itemId }
+  const response = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()    
+  });
+  return response.json();
+}
 
 function Site({ world, siteId, onClose }) {
     const [site, setSite] = useState(null);
@@ -435,16 +485,8 @@ function Site({ world, siteId, onClose }) {
 
         async function getData() {
             // Load the site
-            const url = URL + "/worlds/" + world.id +
-                  "/sites/" + siteId;
             try {
-                const response =
-                      await fetch(url, {
-                          headers: {
-                              "Authorization": "Bearer " + AUTH_KEY
-                          }
-                      });
-                const value = await response.json();
+              const value = await getSite(world.id, siteId)
                 if (!ignore) {
                     setSite(value);
                 }
@@ -458,27 +500,16 @@ function Site({ world, siteId, onClose }) {
     }, [world, siteId, itemId]);
 
     async function takeItem(item_id) {
-        // Set player location
-        const url = URL + "/worlds/" + world.id + "/command";
-        const data = { "name": "take",
-                       "item": item_id }
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: {
-                    'Content-Type': 'application/json',
-                    "Authorization": "Bearer " + AUTH_KEY
-                }
-            });
-            await response.json();
-            setItemId(item_id);
+          await postTakeItem(world.id, item_id);
+          // TODO: proper way to do this? Perhaps reload site.
+          setItemId(item_id);
         } catch {
-            console.log("ERROR");
+          // TODO: fix reporting
+          console.log("ERROR");
         }
     }
     
-
     function clearView() {
         setView(null)
     }
@@ -606,6 +637,14 @@ function CharacterListEntry({ character }) {
     );
 }
 
+async function getCharacterList(worldId) {
+  const url = `/worlds/${worldId}/characters`;
+  const response = await fetch(get_url(url),
+                               { headers: headers_get() });                     
+  const values = await response.json();
+  return values;
+}
+
 function CharacterList({ worldId }) {
 
     const [characterList, setCharacterList] = useState([]);
@@ -614,19 +653,11 @@ function CharacterList({ worldId }) {
         let ignore = false;
 
         async function getCharacterData() {
-            // Get the status of progress in the world
-            const url = URL + "/worlds/" + worldId + "/characters";
             try {
-                const response =
-                      await fetch(url, {
-                          headers: {
-                              "Authorization": "Bearer " + AUTH_KEY
-                          }
-                      });
-                const values = await response.json();
-                if (!ignore) {
-                    setCharacterList(values);
-                }
+              const values = await getCharacterList(worldId);
+              if (!ignore) {
+                setCharacterList(values);
+              }
             } catch {
             }
         }
@@ -636,7 +667,6 @@ function CharacterList({ worldId }) {
             ignore = true;
         }
     }, [worldId]);
-
     
     const entries = characterList.map(entry =>
         <CharacterListEntry key={entry.id}
@@ -682,6 +712,14 @@ function ItemListEntry({ item }) {
     );
 }
 
+async function getItemList(worldId) {
+  const url = `/worlds/${worldId}/items`;
+  const response = await fetch(get_url(url),
+                               { headers: headers_get() });                     
+  const values = await response.json();
+  return values;
+}
+
 function ItemList({ worldId }) {
 
     const [itemList, setItemList] = useState([]);
@@ -690,30 +728,21 @@ function ItemList({ worldId }) {
         let ignore = false;
 
         async function getItemData() {
-            // Get the status of progress in the world
-            const url = URL + "/worlds/" + worldId + "/items";
             try {
-                const response =
-                      await fetch(url, {
-                          headers: {
-                              "Authorization": "Bearer " + AUTH_KEY
-                          }
-                      });
-                const values = await response.json();
-                if (!ignore) {
-                    setItemList(values);
-                }
+              const values = await getItemList(worldId);
+              if (!ignore) {
+                setItemList(values);
+              }
             } catch {
             }
         }
-        
-        getItemData();
-        return () => {
-            ignore = true;
-        }
+      
+      getItemData();
+      return () => {
+        ignore = true;
+      }
     }, [worldId]);
 
-    
     const entries = itemList.map(entry =>
         <ItemListEntry key={entry.id}
                        item={entry}/>
@@ -805,7 +834,35 @@ function WorldImages({world}) {
 }
 
 
+async function getSiteList(worldId) {
+  const url = `/worlds/${worldId}/sites`;
+  const response = await fetch(get_url(url),
+                               { headers: headers_get() });
+  const values = await response.json();
+  return values;
+}
 
+async function getWorld(worldId) {
+  const url = `/worlds/${worldId}`;
+  const response =
+        await fetch(get_url(url),
+                    { headers: headers_get() });
+  const values = await response.json();
+  return values;
+}
+
+
+async function postGoTo(worldId, siteId) {
+  const url = `/worlds/${worldId}/command`;
+  const data = { "name": "go",
+                 "to": siteId }
+  let result = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()        
+  });
+  return result;
+}
 
 function World({ worldId, setWorldId }) {
     const [world, setWorld] = useState(null);            
@@ -817,51 +874,34 @@ function World({ worldId, setWorldId }) {
     useEffect(() => {
         let ignore = false;
 
-        async function getSiteData() {
-            // Get the status of progress in the world
-            const url = URL + "/worlds/" + worldId + "/sites";
-            try {
-                const response =
-                      await fetch(url, {
-                          headers: {
-                              "Authorization": "Bearer " + AUTH_KEY
-                          }
-                      });
-                const values = await response.json();
-                if (!ignore) {
-                    setSiteList(values);
-                    values.forEach(item => {
-                        if (item.present) {
-                            setSiteId(item.id);
-                        }});
-                }
-            } catch {
-            }
-        }
+      async function getData() {
+        try {
+          // Get the details of the world  and a list of sites.
 
-        async function getWorldData() {
-            // Get the details of the world
-            const url = URL + "/worlds/" + worldId;
-            try {
-                const response =
-                      await fetch(url, {
-                          headers: {
-                              "Authorization": "Bearer " + AUTH_KEY
-                          }
-                      });
-                const values = await response.json();
-                if (!ignore) {
-                    setWorld(values);
-                }
-            } catch {
+          let calls = Promise.all([ getSiteList(worldId),
+                                    getWorld(worldId) ]);
+          let [sites, world] = await calls;
+
+          if (!ignore) {
+            setWorld(world);
+            setSiteList(sites);
+            // Set the site id if we are present at a site
+            for (let i = 0; i < sites.length; i++) {
+              if (sites[i].present) {
+                setSiteId(sites[i].id);
+                break;
+              }
             }
+          }
+        } 
+        catch {
         }
-        
-        getSiteData();
-        getWorldData();        
-        return () => {
-            ignore = true;
-        }
+      }
+
+      getData();
+      return () => {
+        ignore = true;
+      }
     }, [worldId]);
 
     function clickClose() {
@@ -882,25 +922,13 @@ function World({ worldId, setWorldId }) {
         setSiteId(site_id);
     }
 
-    async function goToSite(site_id) {
-        // Set player location
-        const url = URL + "/worlds/" + worldId + "/command";
-        const data = { "name": "go",
-                       "to": site_id }
-        try {
-            await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: {
-                    'Content-Type': 'application/json',
-                    "Authorization": "Bearer " + AUTH_KEY
-                }
-            });
-        } catch {
-            console.log("ERROR");
-        }
+  async function goToSite(site_id) {
+    try {    
+      await postGoTo(world.id, site_id);      
+    } catch {
+      console.log("ERROR");
     }
-
+  }
 
     // Wait until data loads
     if (world === null || siteList === null) {
@@ -969,6 +997,15 @@ function WorldItem({ world, onClick }) {
     );
 }
 
+async function getWorldList() {
+  // Get the list of worlds
+  const response =
+        await fetch(get_url("/worlds"),
+                    { headers: headers_get() });
+  const values = await response.json();
+  return values;
+}
+
 function SelectWorld({setWorldId}) {
     const [worldList, setWorldList] = useState([]);
     useEffect(() => {
@@ -976,18 +1013,11 @@ function SelectWorld({setWorldId}) {
 
         async function getData() {
             // Get the list of worlds
-            const url = URL + "/worlds";
             try {
-                const response =
-                      await fetch(url, {
-                          headers: {
-                              "Authorization": "Bearer " + AUTH_KEY
-                          }
-                      });
-                const values = await response.json();
-                if (!ignore) {
-                    setWorldList(values);
-                }
+              const values = await getWorldList();
+              if (!ignore) {
+                setWorldList(values);
+              }
             } catch {
             }
         }
@@ -1011,7 +1041,14 @@ function SelectWorld({setWorldId}) {
         </Stack>
     );
 }
-    
+
+async function getInitData() {
+  const response =
+        await fetch(get_url("/initdata"),
+                    { headers: headers_get() });
+  const values = await response.json();
+  return values; 
+}
     
 function App() {
     const [worldId, setWorldId] = useState(null);
@@ -1020,18 +1057,11 @@ function App() {
 
         async function getData() {
             // Get initial load data
-            const url = URL + "/initdata";
             try {
-                const response =
-                      await fetch(url, {
-                          headers: {
-                              "Authorization": "Bearer " + AUTH_KEY
-                          }
-                      });
-                const values = await response.json();
-                if (!ignore) {
-                    setWorldId(values['world_id']);
-                }
+              const values = await getInitData();
+              if (!ignore) {
+                setWorldId(values['world_id']);
+              }
             } catch {
             }
         }

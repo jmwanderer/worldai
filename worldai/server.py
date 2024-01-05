@@ -675,7 +675,6 @@ def threads_api(wid, id):
   Character chat interface
   """
   session_id = get_session_id()
-
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
   # TODO: this is where we need lock for updating  
   chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
