@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useRef } from 'react';
 import { useEffect } from 'react';
 import { forwardRef } from 'react';
+import Markdown from 'react-markdown';
+
 import './App.css';
 
 import Button from 'react-bootstrap/Button';
@@ -91,8 +93,9 @@ function MessageExchange({ name, message }) {
       { user_message }
       <div className="App-message">
         <b> {name}: </b>
-        <br/>
-        { message.reply}
+          <Markdown>
+              { message.reply}
+          </Markdown>
       </div>
       { updates_message }
     </div>
