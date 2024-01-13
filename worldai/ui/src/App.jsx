@@ -35,7 +35,7 @@ function extract_prefix(url) {
   end = url.lastIndexOf('/', end - 1)
 
   if (end < i) {
-    end = url.length - 1;
+    end = i;
   } 
   return url.substr(0, end);
 }
@@ -1070,7 +1070,7 @@ async function getInitData() {
   return values; 
 }
 
-function App() {
+function PlayClient() {
   const [worldId, setWorldId] = useState(null);
   useEffect(() => {
     let ignore = false;
@@ -1111,6 +1111,17 @@ function App() {
   );
 }
 
+function DesignClient() {
+  return (
+    <div className="App">
+      <header className="App-header">
+        <h1>Design</h1>
+      </header>
+    </div>
+  );
+}
 
-export default App
+
+export { PlayClient, DesignClient };
+export default PlayClient;
 
