@@ -449,7 +449,7 @@ def view_client():
                                auth_key=current_app.config['AUTH_KEY'])
 
 
-@bp.route('/chat/<session_id>', methods=["GET","POST"])
+@bp.route('/api/chat/<session_id>', methods=["GET","POST"])
 @auth_required
 def chat_api(session_id):
   """
@@ -493,7 +493,7 @@ def chat_api(session_id):
   return flask.jsonify(content)
 
 
-@bp.route('/view_props', methods=["POST"])
+@bp.route('/api/view_props', methods=["POST"])
 @auth_required
 def view_props():
   """
@@ -654,7 +654,7 @@ def get_random_message():
 
 
 
-@bp.route('/initdata', methods=["GET"])
+@bp.route('/api/initdata', methods=["GET"])
 @auth_required
 def get_init_data():
   """
@@ -668,7 +668,7 @@ def get_init_data():
            "world_id": world_id }
 
 
-@bp.route('/threads/worlds/<wid>/characters/<id>', methods=["GET","POST"])
+@bp.route('/api/threads/worlds/<wid>/characters/<id>', methods=["GET","POST"])
 @auth_required
 def threads_api(wid, id):
   """
@@ -707,7 +707,7 @@ def threads_api(wid, id):
   return content
 
 
-@bp.route('/worlds', methods=["GET"])
+@bp.route('/api/worlds', methods=["GET"])
 @auth_required
 def worlds_list():
   """
@@ -730,7 +730,7 @@ def worlds_list():
   return flask.jsonify(world_list)
 
 
-@bp.route('/worlds/<wid>', methods=["GET"])
+@bp.route('/api/worlds/<wid>', methods=["GET"])
 @auth_required
 def worlds(wid):
   """
@@ -779,7 +779,7 @@ def getElementImageProps(element):
 
 
 
-@bp.route('/worlds/<wid>/characters', methods=["GET"])
+@bp.route('/api/worlds/<wid>/characters', methods=["GET"])
 @auth_required
 def characters_list(wid):
   """
@@ -812,7 +812,7 @@ def characters_list(wid):
   return flask.jsonify(character_list)
 
 
-@bp.route('/worlds/<wid>/characters/<id>', methods=["GET"])
+@bp.route('/api/worlds/<wid>/characters/<id>', methods=["GET"])
 @auth_required
 def characters(wid, id):
   """
@@ -832,7 +832,7 @@ def characters(wid, id):
 
   return result
 
-@bp.route('/worlds/<wid>/sites', methods=["GET"])
+@bp.route('/api/worlds/<wid>/sites', methods=["GET"])
 @auth_required
 def site_list(wid):
   """
@@ -863,7 +863,7 @@ def site_list(wid):
        "image": image_prop })
   return site_list
 
-@bp.route('/worlds/<wid>/sites/<sid>', methods=["GET"])
+@bp.route('/api/worlds/<wid>/sites/<sid>', methods=["GET"])
 @auth_required
 def site(wid, sid):
   """
@@ -912,7 +912,7 @@ def site(wid, sid):
 
   return result
 
-@bp.route('/worlds/<wid>/items', methods=["GET"])
+@bp.route('/api/worlds/<wid>/items', methods=["GET"])
 @auth_required
 def items_list(wid):
   """
@@ -945,7 +945,7 @@ def items_list(wid):
   return item_list
 
 
-@bp.route('/worlds/<wid>/command', methods=["POST"])
+@bp.route('/api/worlds/<wid>/command', methods=["POST"])
 @auth_required
 def command(wid):
   """

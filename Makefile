@@ -10,7 +10,7 @@ build: build_ui
 build_ui:
 	cd worldai/ui && npm run build
 	mkdir -p worldai/static/ui
-	cp -r worldai/ui/build/* worldai/static/ui
+	cp -r worldai/ui/dist/* worldai/static/ui
 
 
 .PHONY: coverage
