@@ -94,6 +94,6 @@ class DesignChatSession:
           self.chat.chat_exchange(db, message)
       self.chatFunctions.next_view = elements.ElemTag()
 
-    return self.chat.chat_exchange(db, user)
+    return self.chat.chat_exchange(db, user, to_html=False)
 
     

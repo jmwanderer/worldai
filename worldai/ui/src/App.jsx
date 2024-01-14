@@ -1,8 +1,8 @@
+import { get_url, headers_get, headers_post } from './common.js';
+import ChatScreen from './ChatScreen.jsx';
+
 import { useState } from 'react'
-import { useRef } from 'react';
 import { useEffect } from 'react';
-import { forwardRef } from 'react';
-import Markdown from 'react-markdown';
 
 import './App.css'
 
@@ -18,314 +18,6 @@ import Carousel from 'react-bootstrap/Carousel';
 
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-
-
-function extract_prefix(url) {
-  // https://localhost:3000/  --> https://localhost:3000
-  // https://localhost:3000/ui/play --> https://localhost:3000
-  // https://localhost:3000/worldai/ui/play --> https://localhost:3000/worldai
-
-  // Find 3rd / character
-  let i = url.indexOf('/')
-  i = url.indexOf('/', i + 1)
-  i = url.indexOf('/', i + 1)
-
-  // Find 2nd to last / character
-  let end = url.lastIndexOf('/')
-  end = url.lastIndexOf('/', end - 1)
-
-  if (end < i) {
-    end = i;
-  } 
-  return url.substr(0, end);
-}
-
-// global URL, auth_key
-let URL= extract_prefix(document.location.href);
-console.log("URL Prefix: " + URL);
-
-// get from global variable set in index.html
-// Following comment is required for compile.
-/* global auth_key */
-let AUTH_KEY="auth"
-if (typeof auth_key !== 'undefined' && auth_key.substring(0,2) !== "{{") {
-  AUTH_KEY=auth_key
-}
-console.log("AUTH Key: " + AUTH_KEY);
-
-
-function get_url(suffix) {
-  return URL + '/api'+ suffix;
-}
-
-function headers_get() {
-  return {  "Authorization": "Bearer " + AUTH_KEY };
-}
-
-function headers_post() {
-  return {
-    'Content-Type': 'application/json',    
-    "Authorization": "Bearer " + AUTH_KEY
-  };
-}
-
-
-// Shows a single message exchange.
-function MessageExchange({ name, message }) {
-  let user_message = "";
-  let updates_message = "";    
-
-  if (message.user.length > 0) {
-    user_message = (
-      <div className="App-message">            
-        <b>You:</b> <br/> { message.user }
-      </div>);
-  }
-  if (message.updates && message.updates.length > 0) {
-    updates_message = (
-      <div className="App-message">            
-        <i>{ message.updates }</i>
-      </div>);
-  }
-  return (
-    <div className="p-2">
-      { user_message }
-      <div className="App-message">
-        <b> {name}: </b>
-          <Markdown>
-              { message.reply}
-          </Markdown>
-      </div>
-      { updates_message }
-    </div>
-  );
-}
-
-const CurrentMessage = forwardRef(({ content, chatState }, msgRef) => {
-  // Use a forwardRef to expose a component div to parents in order to
-  // scoll into view.
-  
-  let user = "";
-  if (content.user.length > 0) {
-    user = <div> User: {content.user} </div>;
-  }
-  let running = "";
-  if (chatState === "waiting") {
-    running = <div className="App-running"><i> Running... </i></div>
-  }
-  let error = "";
-  if (content.error.length > 0) {
-    error = <div> Error: { content.error } </div>;
-  }
-  return (
-    <div className="p-2" ref={msgRef}>
-      { user }
-      { running}
-      { error }
-    </div>
-  );
-});
-
-function MessageScreen({chatHistory, currentMessage, chatState, name}) {
-  const msgRef = useRef(null);
-  useEffect(() => {
-    const {current} = msgRef;
-    if (current !== null) {
-      current.scrollIntoView({behavior: "smooth"});
-    }
-  }, [chatHistory, currentMessage]);
-  
-  const entries = chatHistory.map(entry =>
-    <MessageExchange key={entry.id} message={entry} name={name}/>
-  );
-
-  return (
-    <Stack className="border m-2" style={{ textAlign: "left",
-                                           overflow: "auto"}}>
-      
-      { entries }
-      
-      <CurrentMessage content={currentMessage}
-                      chatState={chatState}
-                      ref={msgRef}/>
-    </Stack>
-  );
-}
-
-function UserInput({value, onChange, onKeyDown, disabled}) {
-  return (
-    <textarea className="m-2"
-              value={value} 
-              disabled={disabled}
-              onChange={onChange} onKeyDown={onKeyDown}/>
-  );
-}
-
-
-
-async function getCharacterChats(context) {
-  const worldId = context.worldId
-  const characterId = context.characterId  
-  const url = `/threads/worlds/${worldId}/characters/${characterId}`;
-  const response =
-        await fetch(get_url(url),
-                    { headers: headers_get() });
-  const values = await response.json();
-  return values;
-}
-
-async function postCharacterChat(context, user_msg) {
-  const worldId = context.worldId
-  const characterId = context.characterId  
-  const data = { "user": user_msg }
-  const url = `/threads/worlds/${worldId}/characters/${characterId}`;
-  // Post the user request
-  const response = await fetch(get_url(url), {
-    method: 'POST',
-    body: JSON.stringify(data),
-    headers: headers_post()
-  });
-  const values = await response.json();
-  return values;
-}
-
-
-function ChatScreen({ name, context, getChats, postChat, clearChat, onChange}) {
-  const [chatHistory, setChatHistory] = useState([]);
-  const [currentMessage,
-         setCurrentMessage] = useState({ user: "", error: ""});
-  const [userInput, setUserInput] = useState("")
-  const [chatState, setChatState] = useState("ready")
-
-  useEffect(() => {
-    let ignore = false;    
-
-    async function getData() {
-      // Get the chat history.
-      try {
-        const values = await getChats(context);
-        if (!ignore) {
-          setChatHistory(values["messages"]);
-          if (values["messages"].length === 0) {
-            setChatState("waiting");                
-            const values = await postChat(context, "");
-            setChatHistory(c => [...c, values])
-          }
-          if (values["enabled"]) {
-            setChatState("ready");
-          } else {
-            setChatState("disabled");
-          }
-        }
-      } catch (e) {
-        console.log(e);
-        setCurrentMessage({user: "",
-                           error: "Something went wrong."});
-        setChatState("ready")        
-      }
-    }
-    
-    getData();
-    return () => {
-      ignore = true;
-    }
-  }, [ context ]);
-
-  function submitClick() {
-    let user_msg = userInput
-    setCurrentMessage({user: user_msg, error: ""});
-    setUserInput("");
-    setChatState("waiting");
-
-    async function getData() {
-      // Post the user request
-      try {            
-        const values = await postChat(context, user_msg);
-        setChatHistory([...chatHistory, values])
-        setCurrentMessage({user: "", error: "" });
-        if (values["enabled"]) {
-          setChatState("ready");
-        } else {
-          setChatState("disabled");            
-        }
-      } catch (e) {
-        console.log(e);
-        setCurrentMessage({user: user_msg,
-                           error: "Something went wrong."});
-        setChatState("ready")
-      }
-      onChange()
-    }
-    getData();
-  }
-
-  function submitClear() {
-    try {
-      setChatState("disabled");      
-      clearChat(context);
-      setChatHistory([]);
-      setChatState("ready")      
-    } catch (e) {
-      console.log(e);
-    }
-  }
-  
-
-  function handleInputChange(e) {
-    setUserInput(e.target.value);
-  }
-
-  function handleKeyDown(e) {
-    if (chatState === "ready") {
-      if (e.keyCode === 13) {
-        submitClick();
-        e.preventDefault();            
-      }
-    }
-  }
-
-
-  let disabled = (chatState !== "ready");
-  let text_disabled = (chatState === "disabled");
-  
-  let clearButton = ""
-  if (typeof clearChat !== 'undefined') {
-    clearButton = (
-      <Col>
-        <Button disabled={disabled}
-                onClick={submitClear}
-                text="Clear Thread">
-          ClearThread
-        </Button>
-      </Col>
-    );
-  }
-
-  return (
-    <Stack style={{ height: "100%", maxHeight: "90vh" }}>
-      <MessageScreen chatHistory={chatHistory}
-                     currentMessage={currentMessage}
-                     chatState={chatState}
-                     name={name}/>
-      <UserInput value={userInput}
-                 onChange={handleInputChange}
-                 onKeyDown={handleKeyDown}
-                 disabled={text_disabled}/>
-      <Container>
-        <Row>
-          { clearButton }
-          <Col>
-            <Button disabled={disabled}
-                    onClick={submitClick}
-                    text="Submit">
-              Submit
-            </Button>
-          </Col>
-        </Row>
-      </Container>
-    </Stack>
-  );
-}
 
 
 function CharacterImages({character}) {
@@ -364,6 +56,34 @@ async function getCharacter(worldId, characterId) {
                                { headers: headers_get() });                       const value = await response.json();
   return value
 }
+
+async function getCharacterChats(context) {
+  const worldId = context.worldId
+  const characterId = context.characterId  
+  const url = `/threads/worlds/${worldId}/characters/${characterId}`;
+  const response =
+        await fetch(get_url(url),
+                    { headers: headers_get() });
+  const values = await response.json();
+  return values;
+}
+
+async function postCharacterChat(context, user_msg) {
+  const worldId = context.worldId
+  const characterId = context.characterId  
+  const data = { "user": user_msg }
+  const url = `/threads/worlds/${worldId}/characters/${characterId}`;
+  // Post the user request
+  const response = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()
+  });
+  const values = await response.json();
+  return values;
+}
+
+
 
 function ChatCharacter({ worldId, characterId, onClose, onChange}) {
   const [character, setCharacter] = useState(null);
@@ -1162,115 +882,7 @@ function PlayClient() {
   );
 }
 
-function DesignChat({name, setChatView}) {
 
-  async function getDesignChats(context) {
-    const url = '/design_chat'  
-    const response =
-          await fetch(get_url(url),
-                      { headers: headers_get() });
-    const values = await response.json();
-    setChatView(values.view);
-    return values;
-  }
-
-  async function postDesignChat(context, user_msg) {
-    const data = { "user": user_msg }
-    const url = '/design_chat'    
-    // Post the user request
-    const response = await fetch(get_url(url), {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: headers_post()
-    });
-    const values = await response.json();
-    setChatView(values.view);    
-    return values;
-  }
-
-  async function clearDesignChat(context) {
-    const url = '/design_chat'    
-    const response = await fetch(get_url(url), {
-      method: 'POST',
-      body: '{ "command": "clear_thread" }',       
-      headers: headers_post()
-    });
-  }
-
-
-  function handleUpdate() {
-  }
-
-  return ( <div style={{ height: "100%", maxHeight: "90vh" }}>
-             <ChatScreen name={name}
-                         context={"dummy"}
-                         getChats={getDesignChats}
-                         postChat={postDesignChat}
-                         clearChat={clearDesignChat}
-                         onChange={handleUpdate}/>
-           </div> );
-}
-
-async function getChatViewContent(view) {
-  const response =
-        await fetch(get_url("/view_props"), {
-          method: 'POST',
-          body: JSON.stringify(view),
-          headers: headers_post()
-        });
-  const value = await response.json();
-  return value; 
-}
-
-function DesignView({chatView}) {
-  const [viewContent, setViewContent] = useState(null);  
-  useEffect(() => {
-    let ignore = false;
-    async function getData() {
-      // TODO: replace this scheme.
-      try {
-        if (chatView !== null) {
-          const value = await getChatViewContent(chatView);
-          if (!ignore) {
-            setViewContent(value)
-          }
-        }
-      } catch (e) {
-        console.log(e);
-      }
-    }
-
-    getData();
-    return () => {
-      ignore = true;
-    }
-  }, [chatView]);
-  
-  return ( <div>
-             { (viewContent === null) ? "" : viewContent.html }
-           </div> );
-}
-
-function DesignClient() {
-  const [chatView, setChatView] = useState(null);
-  
-  return (
-    <Container>
-      <Row>
-        <Col xs={6}>
-          <DesignChat name={"Assistant"}
-                      setChatView={setChatView}/>
-        </Col>
-        <Col xs={6}>
-          <DesignView chatView={chatView}/>          
-        </Col>
-      </Row>
-    </Container>
-  );
-}
-    
-
-
-export { PlayClient, DesignClient };
+export { PlayClient };
 export default PlayClient;
 
