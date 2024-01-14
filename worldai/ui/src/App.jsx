@@ -190,7 +190,7 @@ async function postCharacterChat(context, user_msg) {
 }
 
 
-function ChatScreen({ name, context, getChats, postChat, onChange}) {
+function ChatScreen({ name, context, getChats, postChat, clearChat, onChange}) {
   const [chatHistory, setChatHistory] = useState([]);
   const [currentMessage,
          setCurrentMessage] = useState({ user: "", error: ""});
@@ -259,6 +259,18 @@ function ChatScreen({ name, context, getChats, postChat, onChange}) {
     getData();
   }
 
+  function submitClear() {
+    try {
+      setChatState("disabled");      
+      clearChat(context);
+      setChatHistory([]);
+      setChatState("ready")      
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  
+
   function handleInputChange(e) {
     setUserInput(e.target.value);
   }
@@ -272,8 +284,23 @@ function ChatScreen({ name, context, getChats, postChat, onChange}) {
     }
   }
 
+
   let disabled = (chatState !== "ready");
   let text_disabled = (chatState === "disabled");
+  
+  let clearButton = ""
+  if (typeof clearChat !== 'undefined') {
+    clearButton = (
+      <Col>
+        <Button disabled={disabled}
+                onClick={submitClear}
+                text="Clear Thread">
+          ClearThread
+        </Button>
+      </Col>
+    );
+  }
+
   return (
     <Stack style={{ height: "100%", maxHeight: "90vh" }}>
       <MessageScreen chatHistory={chatHistory}
@@ -284,13 +311,18 @@ function ChatScreen({ name, context, getChats, postChat, onChange}) {
                  onChange={handleInputChange}
                  onKeyDown={handleKeyDown}
                  disabled={text_disabled}/>
-      <div>
-        <Button disabled={disabled}
-                onClick={submitClick}
-                text="Submit">
-          Submit
-        </Button>
-      </div>
+      <Container>
+        <Row>
+          { clearButton }
+          <Col>
+            <Button disabled={disabled}
+                    onClick={submitClick}
+                    text="Submit">
+              Submit
+            </Button>
+          </Col>
+        </Row>
+      </Container>
     </Stack>
   );
 }
@@ -1133,19 +1165,16 @@ function PlayClient() {
 function DesignChat({name, setChatView}) {
 
   async function getDesignChats(context) {
-    const worldId = context.worldId
-    const characterId = context.characterId  
     const url = '/design_chat'  
     const response =
           await fetch(get_url(url),
                       { headers: headers_get() });
     const values = await response.json();
+    setChatView(values.view);
     return values;
   }
 
   async function postDesignChat(context, user_msg) {
-    const worldId = context.worldId
-    const characterId = context.characterId  
     const data = { "user": user_msg }
     const url = '/design_chat'    
     // Post the user request
@@ -1155,24 +1184,71 @@ function DesignChat({name, setChatView}) {
       headers: headers_post()
     });
     const values = await response.json();
+    setChatView(values.view);    
     return values;
+  }
+
+  async function clearDesignChat(context) {
+    const url = '/design_chat'    
+    const response = await fetch(get_url(url), {
+      method: 'POST',
+      body: '{ "command": "clear_thread" }',       
+      headers: headers_post()
+    });
   }
 
 
   function handleUpdate() {
   }
 
-  return ( <div>
+  return ( <div style={{ height: "100%", maxHeight: "90vh" }}>
              <ChatScreen name={name}
                          context={"dummy"}
                          getChats={getDesignChats}
                          postChat={postDesignChat}
+                         clearChat={clearDesignChat}
                          onChange={handleUpdate}/>
            </div> );
 }
 
-function DesignView() {
-  return ( <div></div> );
+async function getChatViewContent(view) {
+  const response =
+        await fetch(get_url("/view_props"), {
+          method: 'POST',
+          body: JSON.stringify(view),
+          headers: headers_post()
+        });
+  const value = await response.json();
+  return value; 
+}
+
+function DesignView({chatView}) {
+  const [viewContent, setViewContent] = useState(null);  
+  useEffect(() => {
+    let ignore = false;
+    async function getData() {
+      // TODO: replace this scheme.
+      try {
+        if (chatView !== null) {
+          const value = await getChatViewContent(chatView);
+          if (!ignore) {
+            setViewContent(value)
+          }
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    getData();
+    return () => {
+      ignore = true;
+    }
+  }, [chatView]);
+  
+  return ( <div>
+             { (viewContent === null) ? "" : viewContent.html }
+           </div> );
 }
 
 function DesignClient() {
@@ -1186,7 +1262,7 @@ function DesignClient() {
                       setChatView={setChatView}/>
         </Col>
         <Col xs={6}>
-          <DesignView/>          
+          <DesignView chatView={chatView}/>          
         </Col>
       </Row>
     </Container>

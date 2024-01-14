@@ -476,7 +476,7 @@ def design_chat_api():
       content = {
         "id": os.urandom(4).hex(),
         "user": user_msg,        
-        "reply": chat.parseResponseText(assistant_message),
+        "reply": assistant_message,
         "changes": chat_session.madeChanges(),
         "enabled": True,
       }
