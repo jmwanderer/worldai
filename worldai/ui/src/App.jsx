@@ -1,4 +1,6 @@
 import { get_url, headers_get, headers_post } from './common.js';
+import { WorldImages } from './common.jsx';
+import { getWorldList, getWorld } from './api.js';
 import ChatScreen from './ChatScreen.jsx';
 
 import { useState } from 'react'
@@ -606,35 +608,11 @@ function WorldSites({ siteList, onClick }) {
          );
 }
 
-function WorldImages({world}) {
-  const items = world.images.map(entry =>
-    <Carousel.Item key={entry.url}>
-      <Image src={entry.url}
-             style={{ maxWidth: "50vmin", maxHeight: "50vmin",
-                      minHeight: "30vmin"}}/>
-    </Carousel.Item>);
-  
-  return (
-    <Carousel interval={null}>
-      { items }
-    </Carousel>            
-  );
-}
-
 
 async function getSiteList(worldId) {
   const url = `/worlds/${worldId}/sites`;
   const response = await fetch(get_url(url),
                                { headers: headers_get() });
-  const values = await response.json();
-  return values;
-}
-
-async function getWorld(worldId) {
-  const url = `/worlds/${worldId}`;
-  const response =
-        await fetch(get_url(url),
-                    { headers: headers_get() });
   const values = await response.json();
   return values;
 }
@@ -784,15 +762,6 @@ function WorldItem({ world, onClick }) {
       </div>
     </div>
   );
-}
-
-async function getWorldList() {
-  // Get the list of worlds
-  const response =
-        await fetch(get_url("/worlds"),
-                    { headers: headers_get() });
-  const values = await response.json();
-  return values;
 }
 
 function SelectWorld({setWorldId}) {
