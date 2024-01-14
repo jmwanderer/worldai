@@ -445,23 +445,25 @@ def view_client():
   """
   session_id = get_session_id()
   return flask.render_template("client.html",
-                               session_id=session_id,
                                auth_key=current_app.config['AUTH_KEY'])
 
 
-@bp.route('/api/chat/<session_id>', methods=["GET","POST"])
+@bp.route('/api/design_chat', methods=["GET","POST"])
 @auth_required
-def chat_api(session_id):
+def design_chat_api():
   """
   Chat interface
   """
+  session_id = get_session_id()  
   chat_session = design_chat.DesignChatSession.loadChatSession(get_db(),
                                                                session_id)
   deleteSession = False
   
   if request.method == "GET":
-      content = chat_session.chat_history()
+      history = chat_session.chat_history()
+      content = { "messages": history }      
       content['view'] = chat_session.get_view()
+      content['enabled'] =  True
   else:
     if request.json.get("user") is not None:
       user_msg = request.json.get("user")
@@ -472,8 +474,11 @@ def chat_api(session_id):
       text = message.get("updates")
 
       content = {
-        "assistant": chat.parseResponseText(assistant_message),
-        "changes": chat_session.madeChanges()
+        "id": os.urandom(4).hex(),
+        "user": user_msg,        
+        "reply": chat.parseResponseText(assistant_message),
+        "changes": chat_session.madeChanges(),
+        "enabled": True,
       }
 
       if text is not None:

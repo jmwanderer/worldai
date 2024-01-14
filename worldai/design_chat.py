@@ -1,4 +1,5 @@
 import io
+import os
 
 from . import chat
 from . import elements
@@ -41,7 +42,14 @@ class DesignChatSession:
     threads.delete_thread(db, self.chat.id)    
 
   def chat_history(self):
-    return self.chat.chat_history()
+    history = []
+    for message in self.chat.chat_history(to_html=False)["messages"]:
+      history.append({ "id": os.urandom(4).hex(),
+                       "user": message["user"],
+                       "reply": message["assistant"],
+                       "updates": message.get("updates", "")
+                      })
+    return history
 
   def get_view(self):
     return self.chatFunctions.get_view()

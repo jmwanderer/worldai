@@ -102,6 +102,9 @@ function MessageExchange({ name, message }) {
 }
 
 const CurrentMessage = forwardRef(({ content, chatState }, msgRef) => {
+  // Use a forwardRef to expose a component div to parents in order to
+  // scoll into view.
+  
   let user = "";
   if (content.user.length > 0) {
     user = <div> User: {content.user} </div>;
@@ -159,7 +162,10 @@ function UserInput({value, onChange, onKeyDown, disabled}) {
 }
 
 
-async function getChatHistory(worldId, characterId) {
+
+async function getCharacterChats(context) {
+  const worldId = context.worldId
+  const characterId = context.characterId  
   const url = `/threads/worlds/${worldId}/characters/${characterId}`;
   const response =
         await fetch(get_url(url),
@@ -168,7 +174,9 @@ async function getChatHistory(worldId, characterId) {
   return values;
 }
 
-async function postChatMessage(worldId, characterId, user_msg) {
+async function postCharacterChat(context, user_msg) {
+  const worldId = context.worldId
+  const characterId = context.characterId  
   const data = { "user": user_msg }
   const url = `/threads/worlds/${worldId}/characters/${characterId}`;
   // Post the user request
@@ -182,7 +190,7 @@ async function postChatMessage(worldId, characterId, user_msg) {
 }
 
 
-function ChatScreen({ name, worldId, characterId, onChange}) {
+function ChatScreen({ name, context, getChats, postChat, onChange}) {
   const [chatHistory, setChatHistory] = useState([]);
   const [currentMessage,
          setCurrentMessage] = useState({ user: "", error: ""});
@@ -195,14 +203,12 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
     async function getData() {
       // Get the chat history.
       try {
-        const values = await getChatHistory(worldId, characterId);
+        const values = await getChats(context);
         if (!ignore) {
           setChatHistory(values["messages"]);
           if (values["messages"].length === 0) {
             setChatState("waiting");                
-            const values = await postChatMessage(worldId,
-                                                 characterId,
-                                                 "");
+            const values = await postChat(context, "");
             setChatHistory(c => [...c, values])
           }
           if (values["enabled"]) {
@@ -211,7 +217,8 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
             setChatState("disabled");
           }
         }
-      } catch {
+      } catch (e) {
+        console.log(e);
         setCurrentMessage({user: "",
                            error: "Something went wrong."});
         setChatState("ready")        
@@ -222,7 +229,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
     return () => {
       ignore = true;
     }
-  }, [worldId, characterId]);
+  }, [ context ]);
 
   function submitClick() {
     let user_msg = userInput
@@ -233,9 +240,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
     async function getData() {
       // Post the user request
       try {            
-        const values = await postChatMessage(worldId,
-                                             characterId,
-                                             user_msg);
+        const values = await postChat(context, user_msg);
         setChatHistory([...chatHistory, values])
         setCurrentMessage({user: "", error: "" });
         if (values["enabled"]) {
@@ -244,6 +249,7 @@ function ChatScreen({ name, worldId, characterId, onChange}) {
           setChatState("disabled");            
         }
       } catch (e) {
+        console.log(e);
         setCurrentMessage({user: user_msg,
                            error: "Something went wrong."});
         setChatState("ready")
@@ -329,6 +335,11 @@ async function getCharacter(worldId, characterId) {
 
 function ChatCharacter({ worldId, characterId, onClose, onChange}) {
   const [character, setCharacter] = useState(null);
+  const [context, setContext ] = useState(
+    {
+      "worldId": worldId,
+      "characterId": characterId
+    });  
   const [refresh, setRefresh] = useState(null);    
   useEffect(() => {
     let ignore = false;
@@ -339,7 +350,8 @@ function ChatCharacter({ worldId, characterId, onClose, onChange}) {
         if (!ignore) {
           setCharacter(value);
         }
-      } catch {
+      } catch (e) {
+        console.log(e);        
       }
     }
     getData();
@@ -371,8 +383,9 @@ function ChatCharacter({ worldId, characterId, onClose, onChange}) {
         </Col>
         <Col xs={6}>
           <ChatScreen name={character.name}
-                      worldId={worldId}
-                      characterId={characterId}
+                      context={context}
+                      getChats={getCharacterChats}
+                      postChat={postCharacterChat}
                       onChange={handleUpdate}/>
         </Col>
       </Row>
@@ -505,7 +518,8 @@ function Site({ world, siteId, onClose }) {
         if (!ignore) {
           setSite(value);
         }
-      } catch {
+      } catch (e) {
+        console.log(e);        
       }
     }
     getData();
@@ -518,9 +532,9 @@ function Site({ world, siteId, onClose }) {
     try {
       await postTakeItem(world.id, item_id);
       handleUpdate()
-    } catch {
+    } catch (e) {
       // TODO: fix reporting
-      console.log("ERROR");
+      console.log(e);      
     }
   }
 
@@ -677,7 +691,8 @@ function CharacterList({ worldId }) {
         if (!ignore) {
           setCharacterList(values);
         }
-      } catch {
+      } catch (e) {
+        console.log(e);      
       }
     }
     
@@ -752,7 +767,8 @@ function ItemList({ worldId }) {
         if (!ignore) {
           setItemList(values);
         }
-      } catch {
+      } catch (e) {
+        console.log(e);
       }
     }
     
@@ -914,7 +930,8 @@ function World({ worldId, setWorldId }) {
           }
         }
       } 
-      catch {
+      catch (e) {
+        console.log(e);
       }
     }
 
@@ -945,8 +962,8 @@ function World({ worldId, setWorldId }) {
   async function goToSite(site_id) {
     try {    
       await postGoTo(world.id, site_id);      
-    } catch {
-      console.log("ERROR");
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -1038,7 +1055,8 @@ function SelectWorld({setWorldId}) {
         if (!ignore) {
           setWorldList(values);
         }
-      } catch {
+      } catch (e) {
+        console.log(e);
       }
     }
     getData();
@@ -1082,7 +1100,8 @@ function PlayClient() {
           if (!ignore) {
             setWorldId(values['world_id']);
           }
-      } catch {
+      } catch (e) {
+        console.log(e);
       }
     }
     
@@ -1111,15 +1130,69 @@ function PlayClient() {
   );
 }
 
+function DesignChat({name, setChatView}) {
+
+  async function getDesignChats(context) {
+    const worldId = context.worldId
+    const characterId = context.characterId  
+    const url = '/design_chat'  
+    const response =
+          await fetch(get_url(url),
+                      { headers: headers_get() });
+    const values = await response.json();
+    return values;
+  }
+
+  async function postDesignChat(context, user_msg) {
+    const worldId = context.worldId
+    const characterId = context.characterId  
+    const data = { "user": user_msg }
+    const url = '/design_chat'    
+    // Post the user request
+    const response = await fetch(get_url(url), {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: headers_post()
+    });
+    const values = await response.json();
+    return values;
+  }
+
+
+  function handleUpdate() {
+  }
+
+  return ( <div>
+             <ChatScreen name={name}
+                         context={"dummy"}
+                         getChats={getDesignChats}
+                         postChat={postDesignChat}
+                         onChange={handleUpdate}/>
+           </div> );
+}
+
+function DesignView() {
+  return ( <div></div> );
+}
+
 function DesignClient() {
+  const [chatView, setChatView] = useState(null);
+  
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Design</h1>
-      </header>
-    </div>
+    <Container>
+      <Row>
+        <Col xs={6}>
+          <DesignChat name={"Assistant"}
+                      setChatView={setChatView}/>
+        </Col>
+        <Col xs={6}>
+          <DesignView/>          
+        </Col>
+      </Row>
+    </Container>
   );
 }
+    
 
 
 export { PlayClient, DesignClient };

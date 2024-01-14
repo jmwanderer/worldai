@@ -53,7 +53,7 @@ const loadAction = async() => {
     // Display chat history
     for (i in msg_list) {
         addUserMessage(msg_list[i]["user"]);
-        addAssistantMessage(msg_list[i]["assistant"]);
+        addAssistantMessage(msg_list[i]["reply"]);
     }
     // Scroll to bottom of chat history
     messages.scrollTop = messages.scrollHeight;
@@ -95,7 +95,7 @@ const postAction = async() => {
     user_input.disabled = false;
     user_input.focus();
     send_button.disbled = false;
-    addAssistantMessage(values["assistant"]);
+    addAssistantMessage(values["reply"]);
     in_progress = false;
     messages.scrollTop = messages.scrollHeight;
 
