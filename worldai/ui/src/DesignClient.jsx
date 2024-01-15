@@ -1,6 +1,7 @@
-import { get_url, headers_get, headers_post } from './common.js';
+import { get_url, headers_get, headers_post } from './util.js';
 import { getWorldList, getWorld } from './api.js';
-import { WorldImages } from './common.jsx';
+import {  getSiteList, getItemList, getCharacterList } from './api.js';
+import { WorldImages, WorldItem } from './common.jsx';
 
 import ChatScreen from './ChatScreen.jsx';
 import './App.css'
@@ -32,7 +33,10 @@ function Character({ tag }) {
 
 
 function World({ tag }) {
-  const [world, setWorld] = useState(null);            
+  const [world, setWorld] = useState(null);
+  const [characters, setCharacters] = useState(null);
+  const [items, setItems] = useState(null);
+  const [sites, setSites] = useState(null);    
   
   useEffect(() => {
     let ignore = false;
@@ -41,10 +45,17 @@ function World({ tag }) {
       try {
         // Get the details of the world  and a list of sites.
 
-        let value = await getWorld(tag.wid);
-
+        let calls = Promise.all([ getWorld(tag.wid),
+                                  getSiteList(tag.wid),
+                                  getItemList(tag.wid),
+                                  getCharacterList(tag.wid) ]);
+        let [world, sites, items, characters ] = await calls;
+        
         if (!ignore) {
-          setWorld(value);
+          setWorld(world);
+          setSites(sites);
+          setItems(items);          
+          setCharacters(characters);
         }
       } 
       catch (e) {
@@ -59,46 +70,49 @@ function World({ tag }) {
   }, [tag]);
 
   if (world !== null) {
+    const character_list = characters.map(entry =>
+      <li key={entry.id}> <b>{entry.name}</b> - {entry.description} </li>
+    );
+    const item_list = items.map(entry =>
+      <li key={entry.id}> <b>{entry.name}</b> - {entry.description} </li>
+    );
+    const site_list = sites.map(entry =>
+      <li key={entry.id}> <b>{entry.name}</b> - {entry.description} </li>
+    );
+
+    
     return (
-      <Container>
-        <Row >
-          <Col xs={6}>
-            <WorldImages world={world}/>
-          </Col>
-          
-          <Col xs={6} style={{ textAlign: "left" }}>
+      <Stack>
+        <Stack direction="horizontal" gap={3} className="align-items-start m-3">
+          <WorldImages world={world}/>
+          <Container >
             <h2>{world.name}</h2>
             <h5>{world.description}</h5>
-          </Col>                        
-        </Row>
-      </Container>            
+          </Container>
+        </Stack>
+        <h2>Details:</h2>
+        { world.details }
+
+        <h2>Main Characters:</h2>
+        <ul>
+          { character_list }
+        </ul>
+
+        <h2>Key Sites:</h2>
+        <ul>
+          { site_list }
+        </ul>
+        
+        <h2>Significant Items:</h2>
+        <ul>
+          { item_list }
+        </ul>
+
+      </Stack>
     );
   } else {
     return (<></>);
   }
-}
-
-function WorldItem({ world }) {
-
-  return (
-    <div className="card mb-3 container">
-      <div className="row">
-        <div className="col-2">
-          <img src={world.image.url} className="card-img" alt="world"/>
-        </div>
-        <div className="col-8">
-          <div className="card-body">
-            <h5 className="card-title">
-              { world.name }
-            </h5>
-            <p className="card-text" style={{ textAlign: "left" }}>
-              { world.description }
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function WorldList() {
@@ -218,13 +232,13 @@ function DesignClient() {
   const [chatView, setChatView] = useState(null);
   
   return (
-    <Container>
+    <Container fluid>
       <Row>
-        <Col xs={6}>
+        <Col xs={4}>
           <DesignChat name={"Assistant"}
                       setChatView={setChatView}/>
         </Col>
-        <Col xs={6}>
+        <Col xs={8}>
           <DesignView chatView={chatView}/>          
         </Col>
       </Row>

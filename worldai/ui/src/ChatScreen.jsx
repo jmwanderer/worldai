@@ -1,4 +1,4 @@
-import { get_url, headers_get, headers_post } from './common.js';
+import { get_url, headers_get, headers_post } from './util.js';
 
 import { useState } from 'react'
 import { useRef } from 'react';
@@ -227,7 +227,7 @@ function ChatScreen({ name, context, getChats, postChat, clearChat, onChange}) {
                  onChange={handleInputChange}
                  onKeyDown={handleKeyDown}
                  disabled={text_disabled}/>
-      <Container>
+      <Container style={{ textAlign: "center" }}>
         <Row>
           { clearButton }
           <Col>

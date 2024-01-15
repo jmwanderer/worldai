@@ -1,6 +1,8 @@
-import { get_url, headers_get, headers_post } from './common.js';
-import { WorldImages } from './common.jsx';
+import { get_url, headers_get, headers_post } from './util.js';
+import { WorldImages, WorldItem } from './common.jsx';
 import { getWorldList, getWorld } from './api.js';
+import {  getSiteList, getItemList, getCharacterList } from './api.js';
+
 import ChatScreen from './ChatScreen.jsx';
 
 import { useState } from 'react'
@@ -424,13 +426,6 @@ function CharacterListEntry({ character }) {
   );
 }
 
-async function getCharacterList(worldId) {
-  const url = `/worlds/${worldId}/characters`;
-  const response = await fetch(get_url(url),
-                               { headers: headers_get() });                     
-  const values = await response.json();
-  return values;
-}
 
 function CharacterList({ worldId }) {
 
@@ -500,13 +495,6 @@ function ItemListEntry({ item }) {
   );
 }
 
-async function getItemList(worldId) {
-  const url = `/worlds/${worldId}/items`;
-  const response = await fetch(get_url(url),
-                               { headers: headers_get() });                     
-  const values = await response.json();
-  return values;
-}
 
 function ItemList({ worldId }) {
 
@@ -608,14 +596,6 @@ function WorldSites({ siteList, onClick }) {
          );
 }
 
-
-async function getSiteList(worldId) {
-  const url = `/worlds/${worldId}/sites`;
-  const response = await fetch(get_url(url),
-                               { headers: headers_get() });
-  const values = await response.json();
-  return values;
-}
 
 
 async function postGoTo(worldId, siteId) {
@@ -736,33 +716,6 @@ function World({ worldId, setWorldId }) {
   );
 }
 
-
-function WorldItem({ world, onClick }) {
-
-  function handleClick() {
-    onClick(world.id);
-  }
-  
-  return (
-    <div className="card mb-3 container" onClick={handleClick} >
-      <div className="row">
-        <div className="col-2">
-          <img src={world.image.url} className="card-img" alt="world"/>
-        </div>
-        <div className="col-8">
-          <div className="card-body">
-            <h5 className="card-title">
-              { world.name }
-            </h5>
-            <p className="card-text" style={{ textAlign: "left" }}>
-              { world.description }
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function SelectWorld({setWorldId}) {
   const [worldList, setWorldList] = useState([]);
