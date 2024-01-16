@@ -31,8 +31,10 @@ function WorldItem({ world, onClick }) {
   );
 }
 
-function WorldImages({world}) {
-  const items = world.images.map(entry =>
+
+
+function ElementImages({element}) {
+  const items = element.images.map(entry =>
     <Carousel.Item key={entry.url}>
       <Image src={entry.url}
              style={{ maxWidth: "50vmin", maxHeight: "50vmin",
@@ -48,4 +50,4 @@ function WorldImages({world}) {
 
 
 
-export { WorldImages, WorldItem };
+export { ElementImages, WorldItem };

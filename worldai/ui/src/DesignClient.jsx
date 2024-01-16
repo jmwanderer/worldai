@@ -1,7 +1,8 @@
 import { get_url, headers_get, headers_post } from './util.js';
 import { getWorldList, getWorld } from './api.js';
 import {  getSiteList, getItemList, getCharacterList } from './api.js';
-import { WorldImages, WorldItem } from './common.jsx';
+import {  getCharacter, getSite, getItem } from './api.js';
+import { ElementImages, WorldItem } from './common.jsx';
 
 import ChatScreen from './ChatScreen.jsx';
 import './App.css'
@@ -20,15 +21,133 @@ import Stack from 'react-bootstrap/Stack';
 import Carousel from 'react-bootstrap/Carousel';
 
 function Site({ tag }) {
-  return (<></>);
+  const [site, setSite] = useState(null);
+  useEffect(() => {
+    let ignore = false;
+
+    async function getData() {
+      try {
+        const site = await getSite(tag.wid, tag.id);
+        
+        if (!ignore) {
+          setSite(site);
+        }
+      } 
+      catch (e) {
+        console.log(e);
+      }
+    }
+
+    getData();
+    return () => {
+      ignore = true;
+    }
+  }, [tag]);
+
+  if (site === null) {
+    return (<></>);
+  }
+
+  return (<Stack>
+            <Stack direction="horizontal" gap={3}
+                   className="align-items-start m-3">
+              <ElementImages element={site}/>
+              <Container >
+                <h2>{site.name}</h2>
+                <h5>{site.description}</h5>
+              </Container>
+            </Stack>
+            <h2>Details:</h2>
+            { site.details }
+          </Stack>);
 }
 
+
 function Item({ tag }) {
-  return (<></>);
+  const [item, setItem] = useState(null);
+  useEffect(() => {
+    let ignore = false;
+
+    async function getData() {
+      try {
+        const item = await getItem(tag.wid, tag.id);
+        
+        if (!ignore) {
+          setItem(item)
+        }
+      } 
+      catch (e) {
+        console.log(e);
+      }
+    }
+
+    getData();
+    return () => {
+      ignore = true;
+    }
+  }, [tag]);
+
+  if (item === null) {
+    return (<></>);
+  }
+
+  return (<Stack>
+            <Stack direction="horizontal" gap={3}
+                   className="align-items-start m-3">
+              <ElementImages item={item}/>
+              <Container >
+                <h2>{item.name}</h2>
+                <h5>{item.description}</h5>
+              </Container>
+            </Stack>
+            <h2>Details:</h2>
+            { item.details }
+          </Stack>);
 }
 
 function Character({ tag }) {
-  return (<></>);
+  const [character, setCharacter] = useState(null);
+  useEffect(() => {
+    let ignore = false;
+
+    async function getData() {
+      try {
+        const character = await getCharacter(tag.wid, tag.id);
+        
+        if (!ignore) {
+          setCharacter(character);
+        }
+      } 
+      catch (e) {
+        console.log(e);
+      }
+    }
+
+    getData();
+    return () => {
+      ignore = true;
+    }
+  }, [tag]);
+
+  if (character === null) {
+    return (<></>);
+  }
+
+  return (<Stack>
+            <Stack direction="horizontal" gap={3}
+                   className="align-items-start m-3">
+              <ElementImages element={character}/>
+              <Container >
+                <h2>{character.name}</h2>
+                <h5>{character.description}</h5>
+              </Container>
+            </Stack>
+            <h2>Details:</h2>
+            { character.details }
+
+            <h2>Personality:</h2>
+            { character.personality }
+          </Stack>);
 }
 
 
@@ -84,7 +203,7 @@ function World({ tag }) {
     return (
       <Stack>
         <Stack direction="horizontal" gap={3} className="align-items-start m-3">
-          <WorldImages world={world}/>
+          <ElementImages element={world}/>
           <Container >
             <h2>{world.name}</h2>
             <h5>{world.description}</h5>

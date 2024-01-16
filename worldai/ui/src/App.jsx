@@ -1,7 +1,8 @@
 import { get_url, headers_get, headers_post } from './util.js';
-import { WorldImages, WorldItem } from './common.jsx';
+import { ElementImages, WorldItem } from './common.jsx';
 import { getWorldList, getWorld } from './api.js';
-import {  getSiteList, getItemList, getCharacterList } from './api.js';
+import { getSiteList, getItemList, getCharacterList } from './api.js';
+import { getSite, getCharacter } from './api.js';
 
 import ChatScreen from './ChatScreen.jsx';
 
@@ -24,27 +25,12 @@ import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 
 
-function CharacterImages({character}) {
-  const items = character.images.map(entry =>
-    <Carousel.Item key={entry.url}>
-      <Image src={entry.url}
-             style={{ maxWidth: "50vmin", maxHeight: "50vmin",
-                      minHeight: "30vmin"}}/>                            
-    </Carousel.Item>);
-  
-  return (
-    <Carousel interval={null} style={{ textAlign: "center" }}>
-      { items }
-    </Carousel>            
-  );
-}
-
 
 function CharacterScreen({ character }) {
   return (
     <Stack style={{ textAlign: "left" }}>
       <h3>{character.name}</h3>
-      <CharacterImages character={character}/>
+      <ElementImages element={character}/>
       <h4>Notes:</h4>
       <h5>{character.description}</h5>
       <p>
@@ -52,13 +38,6 @@ function CharacterScreen({ character }) {
       </p>
     </Stack>
   );
-}
-
-async function getCharacter(worldId, characterId) {
-  const url = `/worlds/${worldId}/characters/${characterId}`;
-  const response = await fetch(get_url(url),
-                               { headers: headers_get() });                       const value = await response.json();
-  return value
 }
 
 async function getCharacterChats(context) {
@@ -222,29 +201,6 @@ function SiteItems({ site, setItemId}) {
 }
 
 
-function SiteImages({ site }) {
-  const items = site.images.map(entry =>
-    <Carousel.Item key={entry.url}>
-      <Image src={entry.url}
-             style={{ maxWidth: "50vmin", maxHeight: "50vmin",
-                      minHeight: "30vmin"}}/>
-    </Carousel.Item>);
-
-  return (
-    <Carousel interval={null}>
-      { items }
-    </Carousel>            
-  );
-}
-
-async function getSite(worldId, siteId) {
-  const url = `/worlds/${worldId}/sites/${siteId}`;
-  const response =
-        await fetch(get_url(url),
-                    { headers: headers_get() });
-  const value = await response.json();
-  return value;
-}
 
 async function postTakeItem(worldId, itemId) {
   const url = `/worlds/${worldId}/command`;
@@ -336,7 +292,7 @@ function Site({ world, siteId, onClose }) {
       <Row>
         <Col xs={6}>
           <Stack>
-            <SiteImages site={site}/>
+            <ElementImages element={site}/>
           </Stack>
         </Col>
         <Col xs={6} style={{ textAlign: "left" }}>
@@ -702,7 +658,7 @@ function World({ worldId, setWorldId }) {
       </Row>
       <Row >
         <Col xs={6}>
-          <WorldImages world={world}/>
+          <ElementImages element={world}/>
         </Col>
         <Col xs={6} style={{ textAlign: "left" }}>
           <h2>{world.name}</h2>

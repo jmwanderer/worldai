@@ -950,6 +950,25 @@ def items_list(wid):
   return item_list
 
 
+@bp.route('/api/worlds/<wid>/items/<id>', methods=["GET"])
+@auth_required
+def items(wid, id):
+  """
+  API to access an item
+  """
+  session_id = get_session_id()
+  item = elements.loadItem(get_db(), id)
+  if item == None or item.parent_id != wid:
+    return { "error", "Item not found"}, 400
+
+  images = getElementImageProps(item)
+  result = item.getJSONRep()
+  result["images"] = images
+
+  return result
+
+
+
 @bp.route('/api/worlds/<wid>/command', methods=["POST"])
 @auth_required
 def command(wid):
