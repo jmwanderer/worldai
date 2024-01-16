@@ -20,7 +20,7 @@ import Image from 'react-bootstrap/Image';
 import Stack from 'react-bootstrap/Stack';
 import Carousel from 'react-bootstrap/Carousel';
 
-function Site({ tag }) {
+function Site({ tag, setChatView }) {
   const [site, setSite] = useState(null);
   useEffect(() => {
     let ignore = false;
@@ -44,11 +44,18 @@ function Site({ tag }) {
     }
   }, [tag]);
 
+  function changeWorld() {
+    setChatView({ "wid": tag.wid,
+                  "element_type": "World",
+                  "id": tag.wid });
+  }
+
   if (site === null) {
     return (<></>);
   }
 
   return (<Stack>
+            <a onClick={changeWorld}>World</a>
             <Stack direction="horizontal" gap={3}
                    className="align-items-start m-3">
               <ElementImages element={site}/>
@@ -63,7 +70,7 @@ function Site({ tag }) {
 }
 
 
-function Item({ tag }) {
+function Item({ tag, setChatView }) {
   const [item, setItem] = useState(null);
   useEffect(() => {
     let ignore = false;
@@ -87,14 +94,21 @@ function Item({ tag }) {
     }
   }, [tag]);
 
+  function changeWorld() {
+    setChatView({ "wid": tag.wid,
+                  "element_type": "World",
+                  "id": tag.wid });
+  }
+
   if (item === null) {
     return (<></>);
   }
 
   return (<Stack>
+            <a onClick={changeWorld}>World</a>            
             <Stack direction="horizontal" gap={3}
                    className="align-items-start m-3">
-              <ElementImages item={item}/>
+              <ElementImages element={item}/>
               <Container >
                 <h2>{item.name}</h2>
                 <h5>{item.description}</h5>
@@ -105,7 +119,7 @@ function Item({ tag }) {
           </Stack>);
 }
 
-function Character({ tag }) {
+function Character({ tag, setChatView }) {
   const [character, setCharacter] = useState(null);
   useEffect(() => {
     let ignore = false;
@@ -133,7 +147,14 @@ function Character({ tag }) {
     return (<></>);
   }
 
+  function changeWorld() {
+    setChatView({ "wid": tag.wid,
+                  "element_type": "World",
+                  "id": tag.wid });
+  }
+
   return (<Stack>
+            <a onClick={changeWorld}>World</a>            
             <Stack direction="horizontal" gap={3}
                    className="align-items-start m-3">
               <ElementImages element={character}/>
@@ -151,7 +172,7 @@ function Character({ tag }) {
 }
 
 
-function World({ tag }) {
+function World({ tag, setChatView }) {
   const [world, setWorld] = useState(null);
   const [characters, setCharacters] = useState(null);
   const [items, setItems] = useState(null);
@@ -188,6 +209,12 @@ function World({ tag }) {
     }
   }, [tag]);
 
+  function changeWorldList() {
+    setChatView({ "wid": null,
+                  "element_type": "None",
+                  "id": null });
+  }
+
   if (world !== null) {
     const character_list = characters.map(entry =>
       <li key={entry.id}> <b>{entry.name}</b> - {entry.description} </li>
@@ -202,6 +229,7 @@ function World({ tag }) {
     
     return (
       <Stack>
+        <a onClick={changeWorldList}>All Worlds</a>
         <Stack direction="horizontal" gap={3} className="align-items-start m-3">
           <ElementImages element={world}/>
           <Container >
@@ -234,7 +262,7 @@ function World({ tag }) {
   }
 }
 
-function WorldList() {
+function WorldList({ setChatView }) {
   const [worldList, setWorldList] = useState([]);
   useEffect(() => {
     let ignore = false;
@@ -256,8 +284,14 @@ function WorldList() {
     }
   }, []);
 
+  function selectWorld(id) {
+    setChatView({ "wid": id,
+                  "element_type": "World",
+                  "id": id });
+  }
+
   const entries = worldList.map(entry =>
-    <WorldItem key={entry.id} world={entry}/>
+    <WorldItem key={entry.id} world={entry} onClick={selectWorld}/>
   );
 
   return (
@@ -268,7 +302,7 @@ function WorldList() {
 }
   
 
-function DesignView({chatView}) {
+function DesignView({chatView, setChatView}) {
 
   let type = 'None';
   if (chatView !== null &&
@@ -277,15 +311,16 @@ function DesignView({chatView}) {
   }
   let content = "";
   if (type === 'None') {
-    content = ( <WorldList/> );
+    content = (<WorldList setChatView={setChatView}/>);
   } else if (type === 'World') {
-    content = ( <World tag={chatView}/> );    
+    content = (<World tag={chatView}
+                       setChatView={setChatView}/>);    
   } else if (type === 'Character') {
-    content = ( <Character tag={chatView}/> );        
+    content = (<Character tag={chatView} setChatView={setChatView}/>);
   } else if (type === 'Site') {
-    content = ( <Site tag={chatView}/> );            
+    content = (<Site tag={chatView} setChatView={setChatView}/>);
   } else if (type === 'Item') {
-    content = ( <Item tag={chatView}/> );     
+    content = (<Item tag={chatView} setChatView={setChatView}/>);
   }
   
   return ( <div style={{ overflow: "auto",
@@ -357,7 +392,7 @@ function DesignClient() {
                       setChatView={setChatView}/>
         </Col>
         <Col xs={8}>
-          <DesignView chatView={chatView}/>          
+          <DesignView chatView={chatView} setChatView={setChatView}/>          
         </Col>
       </Row>
     </Container>

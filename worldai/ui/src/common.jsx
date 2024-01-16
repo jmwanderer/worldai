@@ -5,7 +5,8 @@ import Carousel from 'react-bootstrap/Carousel';
 function WorldItem({ world, onClick }) {
 
   function handleClick() {
-    if (onClick !== null) {
+    if (onClick !== undefined && onClick !== null) {
+      console.log(onClick);
       onClick(world.id);
     }
   }
