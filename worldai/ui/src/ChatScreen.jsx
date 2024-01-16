@@ -98,7 +98,7 @@ function MessageScreen({chatHistory, currentMessage, chatState, name}) {
 
 function UserInput({value, onChange, onKeyDown, disabled}) {
   return (
-    <textarea className="m-2"
+    <textarea className="m-2" style={{ minHeight: "2em" }}
               value={value} 
               disabled={disabled}
               onChange={onChange} onKeyDown={onKeyDown}/>
