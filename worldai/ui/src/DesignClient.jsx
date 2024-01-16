@@ -269,7 +269,6 @@ function WorldList() {
   
 
 function DesignView({chatView}) {
-  const [viewContent, setViewContent] = useState(null);  
 
   let type = 'None';
   if (chatView !== null &&
