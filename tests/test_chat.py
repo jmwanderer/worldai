@@ -156,57 +156,58 @@ def getCompletionResponse(msg):
       }
   return completion_response
 
-def test_basic_chat(app):    
-  # Stub out the user input, completion request, and exec fuc routines
-  self.request_count = 0
-  os.environ['OPENAI_API_KEY'] = "dummy key"    
 
-  def chat_completion_request(messages, tools=None, tool_choice=None):
-    # Return:
-    # 1: assistant response
-    # 2: tool request
-    # 3: assistant response
-    self.request_count += 1
-    print("get completion request")
-    if self.request_count == 1:
-      return getCompletionResponse(getAssistantMessage())
-    if self.request_count == 2:
-      return getCompletionResponse(getToolRequestMessage())
-    return getCompletionResponse(getAssistantMessage())      
-
-  def get_user_input():
-    # Return:
-    # 1: "hello"
-    # 2: EOF exception
-    print("get user input")
-    if self.request_count == 0:
-      return "Hello"
-    raise EOFError()
-
-  def get_function_result(dummy_self, db, name, args):
-    # Note: dummy_self is the ChatSession instance      
-    return getToolResponseMessage()
-
-  def track_tokens(dummy_self, db, prompt, complete, total):
-    # Note: dummy_self is the ChatSession instance      
-    pass
-    
-  chat.chat_completion_request = chat_completion_request
-  chat_cli.get_user_input = get_user_input
-  chat.ChatSession.execute_function_call = get_function_result
-  chat.ChatSession.track_tokens = track_tokens
-  chat_cli.chat_loop()
-
-@unittest.skip
-class ExtendedChatTestCase(unittest.TestCase):
+class BasicChatHelper:
 
   def setUp(self):
-    dir_name = os.path.dirname(__file__)    
-    path = os.path.join(dir_name, "../worldai/schema.sql")
-    self.db = sqlite3.connect("file::memory:")
-    with open(path) as f:
-      self.db.executescript(f.read())
+    self.request_count = 0
     
+    def chat_completion_request(messages, tools=None, tool_choice=None):
+      # Return:
+      # 1: assistant response
+      # 2: tool request
+      # 3: assistant response
+      self.request_count += 1
+      print("get completion request")
+      if self.request_count == 1:
+        return getCompletionResponse(getAssistantMessage())
+      if self.request_count == 2:
+        return getCompletionResponse(getToolRequestMessage())
+      return getCompletionResponse(getAssistantMessage())      
+
+    def get_user_input():
+      # Return:
+      # 1: "hello"
+      # 2: EOF exception
+      print("get user input")
+      if self.request_count == 0:
+        return "Hello"
+      raise EOFError()
+
+    def get_function_result(dummy_self, db, name, args):
+      # Note: dummy_self is the ChatSession instance      
+      return getToolResponseMessage()
+
+    def track_tokens(dummy_self, db, prompt, complete, total):
+      # Note: dummy_self is the ChatSession instance      
+      pass
+    
+    chat.chat_completion_request = chat_completion_request
+    chat_cli.get_user_input = get_user_input
+    chat.ChatSession.execute_function_call = get_function_result
+    chat.ChatSession.track_tokens = track_tokens
+    
+  
+def test_basic_chat(app):    
+  # Stub out the user input, completion request, and exec fuc routines
+  os.environ['OPENAI_API_KEY'] = "dummy key"    
+  helper = BasicChatHelper()
+  helper.setUp()
+  chat_cli.chat_loop()
+
+class ExtendedChatHelper:
+
+  def setUp(self):
     # Stub out the user input, completion request, and exec fuc routines
     self.msg_index = 0
     self.max_token_count = 0
@@ -218,7 +219,7 @@ class ExtendedChatTestCase(unittest.TestCase):
         raise EOFError()      
       msg = msg_thread[self.msg_index]
       self.msg_index += 1
-      self.assertEqual(msg.get("role"), "user")
+      assert msg.get("role") == "user"
       return msg.get("content")
 
     def chat_completion_request(messages, tools=None, tool_choice=None):
@@ -227,14 +228,14 @@ class ExtendedChatTestCase(unittest.TestCase):
       print(f"********** token count: {tokenCount}, max: {self.max_token_count}")
       msg_response = msg_thread[self.msg_index]
       self.msg_index += 1
-      self.assertEqual(msg_response.get("role"), "assistant")
+      assert msg_response.get("role") == "assistant"
       return getCompletionResponse(msg_response)
 
     def get_function_result(dummy_self, db, name, args):
       # Note: dummy_self is the ChatSession instance      
       msg_result = msg_thread[self.msg_index]
       self.msg_index += 1
-      self.assertEqual(msg_result.get("role"), "tool")
+      assert msg_result.get("role") == "tool"
       return msg_result
 
     def track_tokens(dummy_self, db, prompt, complete, total):
@@ -246,8 +247,6 @@ class ExtendedChatTestCase(unittest.TestCase):
     chat.ChatSession.execute_function_call = get_function_result
     chat.ChatSession.track_tokens = track_tokens
 
-  def tearDown(self):
-    self.db.close()    
     
   def calcTokens(self, messages):
     total = 0
@@ -255,17 +254,19 @@ class ExtendedChatTestCase(unittest.TestCase):
       total += len(self.encoder.encode(json.dumps(message)))
       return total
 
-  def testSimpleChatLoop(self):
-    # No buffer management needed
-    chat.MESSAGE_THRESHOLD=6_000
-    chat_cli.chat_loop()
-    self.assertLess(self.max_token_count, chat.MESSAGE_THRESHOLD)
+def testSimpleChatLoop(app):
+  helper = ExtendedChatHelper()
+  helper.setUp()
+  chat.MESSAGE_THRESHOLD=6_000
+  chat_cli.chat_loop()
+  assert helper.max_token_count < chat.MESSAGE_THRESHOLD
     
 
-  def testComplexChatLoop(self):
-    # No buffer management needed
-    chat_cli.chat_loop()
-    self.assertLess(self.max_token_count, chat.MESSAGE_THRESHOLD)    
+def testComplexChatLoop(app):
+  helper = ExtendedChatHelper()
+  helper.setUp()
+  chat_cli.chat_loop()
+  assert helper.max_token_count < chat.MESSAGE_THRESHOLD
     
 
 msg_thread = [
