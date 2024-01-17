@@ -67,22 +67,22 @@ class DesignChatSession:
       # TODO: handle failure
       next_view = self.chatFunctions.next_view
       current_view = self.chatFunctions.current_view
-      new_state = design_functions.elemTypeToState(next_view.getType())
-      
+            
       # Handle when next view is world list.
       if next_view.getType() == elements.ElementType.NoneType():
-        self.chatFunctions.current_state = new_state
+        self.chatFunctions.current_state = design_functions.STATE_WORLDS
         self.chatFunctions.clearCurrentView()
 
       # Handle a change in the current world.
       if next_view.getWorldID() != current_view.getWorldID():
-        self.chatFunctions.current_state = new_state        
         world = elements.loadWorld(db, next_view.getWorldID())
         message = "Read world '%s'" % world.getName()
+        self.chatFunctions.current_state = design_functions.STATE_WORLDS        
         self.chat.chat_exchange(db, message)
 
       # Handle when next view is world.
       if next_view.getType() == elements.ElementType.WorldType():
+        new_state = design_functions.elemTypeToState(next_view.getType())
         self.chatFunctions.current_state = new_state        
         self.chatFunctions.current_view = next_view
 
