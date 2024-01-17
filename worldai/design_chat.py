@@ -76,7 +76,7 @@ class DesignChatSession:
       # Handle a change in the current world.
       if next_view.getWorldID() != current_view.getWorldID():
         world = elements.loadWorld(db, next_view.getWorldID())
-        message = "Read world '%s'" % world.getName()
+        message = "Show world '%s'" % world.getName()
         self.chatFunctions.current_state = design_functions.STATE_WORLDS        
         self.chat.chat_exchange(db, message)
 

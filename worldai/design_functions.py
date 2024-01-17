@@ -33,22 +33,22 @@ def elemTypeToState(element_type):
 
 
 states = {
-  STATE_WORLDS: [ "ListWorlds", "ReadWorld", "CreateWorld" ],
+  STATE_WORLDS: [ "ListWorlds", "ShowWorld", "CreateWorld" ],
   STATE_WORLD: [ "ReadPlanningNotes", 
-                 "ReadCharacter", "ReadItem", "ReadSite",
+                 "ShowCharacter", "ShowItem", "ShowSite",
                  "ChangeState", "EditWorld" ],
-  STATE_WORLD_EDIT: [ "UpdateWorld", "ReadWorld",
+  STATE_WORLD_EDIT: [ "UpdateWorld", "ShowWorld",
                       "ReadPlanningNotes", "UpdatePlanningNotes",
                       "CreateWorldImage", "ChangeState" ],
-  STATE_CHARACTERS: [ "ListCharacters", "ReadCharacter",
+  STATE_CHARACTERS: [ "ListCharacters", "ShowCharacter",
                       "CreateCharacter", "UpdateCharacter",
                       "ReadPlanningNotes", 
                       "CreateCharacterImage", "ChangeState" ],
-  STATE_ITEMS: [ "ListItems", "ReadItem",
+  STATE_ITEMS: [ "ListItems", "ShowItem",
                  "CreateItem", "UpdateItem",
                  "ReadPlanningNotes",                  
                  "CreateItemImage", "ChangeState" ],
-  STATE_SITES: [ "ListSites", "ReadSite",
+  STATE_SITES: [ "ListSites",  "ShowSite",
                  "CreateSite", "UpdateSite",
                  "ReadPlanningNotes",                  
                  "CreateSiteImage", "ChangeState" ],
@@ -67,7 +67,7 @@ We design the world with a name and a high level description and create backgrou
 We use Planning Notes for plans on characters, items, and sites.
 
 We can be in one of the following states:
-- State_Worlds: We can list and read existing worlds and create new worlds
+- State_Worlds: We can list and show existing worlds and create new worlds
 - State_World: We view a world description, details, and PlanningNotes.
 - State_World_Edit: We change a world description, details, and PlanningNotes.
 - State_Characters: We can view characters and create new characters and change the description and details of a character.
@@ -85,11 +85,10 @@ Suggest next steps to the user in designing a complete world.
 instructions = {
   STATE_WORLDS:
 """
-You can create a new world or resume work on an existing one by reading it.
+You can create a new world or resume work on an existing one by showing it.
 To modify an existing world, ChangeState to State_World.
 To get a list of worlds, call ListWorlds
-Get a list of worlds before reading a world or creating a new one
-Before creating a new world, check if it already exists by using ListWorlds
+Get a list of worlds before showing a world or creating a new one
 """,
 
   STATE_WORLD:
@@ -134,8 +133,6 @@ You save changes to a character by calling UpdateCharacter.
 
 Use information in the world details to guide character creation and design.
 
-Before creating a new character, check if it already exists by calling the ListCharacters function.
-
 When creating images for the character using CreateCharacterImage, make a long prompt using the character description and details.
 
 Save detailed information about the character in character details.
@@ -154,8 +151,6 @@ You can update the name, description, and details of an item.
 You save changes to an item by calling UpdateItem.  
 
 Use information in the world details to guide item creation and design.
-
-Before creating a new item, check if it already exists by calling the ListItems function.
 
 When creating images for the item with CreateItemImage, make a long prompt using the item description and details.
 
@@ -176,10 +171,7 @@ You save changes to a site by calling UpdateSite.
 
 Use information in the world details to guide site creation and design.
 
-Before creating a new site, check if it already exists by calling the ListSites function.
-
 When creating images for the site with CreateSiteImage, make a long prompt using the site description and details.
-
 
 Save detailed information about the site in site details.
 
@@ -357,7 +349,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     elif function_name == "UpdateWorld":
       result = self.FuncUpdateWorld(db, arguments)
 
-    elif function_name == "ReadWorld":
+    elif function_name == "ShowWorld":
       result = self.FuncReadWorld(db, arguments)
 
     elif function_name == "ReadPlanningNotes":
@@ -370,7 +362,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       result = [{ "id": entry.getID(), "name": entry.getName() }            
            for entry in elements.listCharacters(db, self.getCurrentWorldID())]
 
-    elif function_name == "ReadCharacter":
+    elif function_name == "ShowCharacter":
       result = self.FuncReadCharacter(db, arguments)
   
     elif function_name == "CreateCharacter":
@@ -383,7 +375,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       result = [ { "id": entry.getID(), "name": entry.getName() } 
              for entry in elements.listItems(db, self.getCurrentWorldID()) ]
 
-    elif function_name == "ReadItem":
+    elif function_name == "ShowItem":
       result = self.FuncReadItem(db, arguments)
   
     elif function_name == "CreateItem":
@@ -396,7 +388,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       result = [ { "id": entry.getID(), "name": entry.getName() } 
               for entry in elements.listSites(db, self.getCurrentWorldID()) ]
 
-    elif function_name == "ReadSite":
+    elif function_name == "ShowSite":
       result = self.FuncReadSite(db, arguments)
   
     elif function_name == "CreateSite":
@@ -852,8 +844,8 @@ all_functions = [
 
 
   {
-    "name": "ReadWorld",
-    "description": "Read in a specific virtual world.",
+    "name": "ShowWorld",
+    "description": "Open and show a specific virtual world.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -962,8 +954,8 @@ all_functions = [
   },
 
   {
-    "name": "ReadCharacter",
-    "description": "Read in a specific character.",
+    "name": "ShowCharacter",
+    "description": "Open and show a specific character.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -1056,8 +1048,8 @@ all_functions = [
   },
 
   {
-    "name": "ReadItem",
-    "description": "Read in a specific item.",
+    "name": "ShowItem",
+    "description": "Open and show a specific item.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -1147,8 +1139,8 @@ all_functions = [
   },
 
   {
-    "name": "ReadSite",
-    "description": "Read in a specific site.",
+    "name": "ShowSite",
+    "description": "Open and show a specific site.",
     "parameters": {
       "type": "object",
       "properties": {
