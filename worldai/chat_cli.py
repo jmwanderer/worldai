@@ -11,24 +11,7 @@ from . import db_access
 def get_user_input():
   return input("> ").strip()
 
-def initializeApp():
-  openai.api_key = os.environ['OPENAI_API_KEY']  
-  BASE_DIR = os.getcwd()
-  log_file_name = os.path.join(BASE_DIR, 'log-chat.log')
-  FORMAT = '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
-  logging.basicConfig(filename=log_file_name,
-                      level=logging.INFO,
-                      format=FORMAT,)
-
-  dir = os.path.split(os.path.split(__file__)[0])[0]
-  dir = os.path.join(dir, 'instance')
-  design_functions.IMAGE_DIRECTORY = dir
-  print(f"dir: {dir}")
-  DATABASE=os.path.join(dir, 'worldai.sqlite')
-  db_access.init_config(DATABASE)
-  
 def chat_loop():
-  initializeApp()
   db = db_access.open_db()
   chat_session = design_chat.DesignChatSession()
   logging.info("\nstartup*****************");
@@ -59,8 +42,4 @@ def chat_loop():
   print("\nRunning total")
   chat_functions.dump_token_usage(db)
   db.close()
-
-if __name__ ==  '__main__':
-  chat_loop()
-
 

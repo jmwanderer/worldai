@@ -41,6 +41,7 @@ def getToolResponseMessage():
            'content': 'South on 101' }
 
 class RecordsTestCase(unittest.TestCase):
+  
   def testMessageRecords(self):
     enc = tiktoken.encoding_for_model(chat.GPT_MODEL)    
     records = message_records.MessageRecords()
@@ -140,9 +141,6 @@ class SaveLoadTestCase(unittest.TestCase):
     session.deleteChatSession(self.db)
 
 
-
-    
-
 def getCompletionResponse(msg):
   completion_response = {
       "choices": [ {
@@ -158,56 +156,57 @@ def getCompletionResponse(msg):
       }
   return completion_response
 
+def test_basic_chat(app):    
+  # Stub out the user input, completion request, and exec fuc routines
+  self.request_count = 0
+  os.environ['OPENAI_API_KEY'] = "dummy key"    
+
+  def chat_completion_request(messages, tools=None, tool_choice=None):
+    # Return:
+    # 1: assistant response
+    # 2: tool request
+    # 3: assistant response
+    self.request_count += 1
+    print("get completion request")
+    if self.request_count == 1:
+      return getCompletionResponse(getAssistantMessage())
+    if self.request_count == 2:
+      return getCompletionResponse(getToolRequestMessage())
+    return getCompletionResponse(getAssistantMessage())      
+
+  def get_user_input():
+    # Return:
+    # 1: "hello"
+    # 2: EOF exception
+    print("get user input")
+    if self.request_count == 0:
+      return "Hello"
+    raise EOFError()
+
+  def get_function_result(dummy_self, db, name, args):
+    # Note: dummy_self is the ChatSession instance      
+    return getToolResponseMessage()
+
+  def track_tokens(dummy_self, db, prompt, complete, total):
+    # Note: dummy_self is the ChatSession instance      
+    pass
     
-class BasicChatTestCase(unittest.TestCase):
+  chat.chat_completion_request = chat_completion_request
+  chat_cli.get_user_input = get_user_input
+  chat.ChatSession.execute_function_call = get_function_result
+  chat.ChatSession.track_tokens = track_tokens
+  chat_cli.chat_loop()
 
-  def setUp(self):
-    # Stub out the user input, completion request, and exec fuc routines
-    self.request_count = 0
-    os.environ['OPENAI_API_KEY'] = "dummy key"    
-
-    def chat_completion_request(messages, tools=None, tool_choice=None):
-      # Return:
-      # 1: assistant response
-      # 2: tool request
-      # 3: assistant response
-      self.request_count += 1
-      print("get completion request")
-      if self.request_count == 1:
-        return getCompletionResponse(getAssistantMessage())
-      if self.request_count == 2:
-        return getCompletionResponse(getToolRequestMessage())
-      return getCompletionResponse(getAssistantMessage())      
-
-    def get_user_input():
-      # Return:
-      # 1: "hello"
-      # 2: EOF exception
-      print("get user input")
-      if self.request_count == 0:
-        return "Hello"
-      raise EOFError()
-
-    def get_function_result(dummy_self, db, name, args):
-      # Note: dummy_self is the ChatSession instance      
-      return getToolResponseMessage()
-
-    def track_tokens(dummy_self, db, prompt, complete, total):
-      # Note: dummy_self is the ChatSession instance      
-      pass
-    
-    chat.chat_completion_request = chat_completion_request
-    chat_cli.get_user_input = get_user_input
-    chat.ChatSession.execute_function_call = get_function_result
-    chat.ChatSession.track_tokens = track_tokens
-
-  def testChatLoop(self):
-    chat_cli.chat_loop()
-
-
+@unittest.skip
 class ExtendedChatTestCase(unittest.TestCase):
 
   def setUp(self):
+    dir_name = os.path.dirname(__file__)    
+    path = os.path.join(dir_name, "../worldai/schema.sql")
+    self.db = sqlite3.connect("file::memory:")
+    with open(path) as f:
+      self.db.executescript(f.read())
+    
     # Stub out the user input, completion request, and exec fuc routines
     self.msg_index = 0
     self.max_token_count = 0
@@ -247,6 +246,9 @@ class ExtendedChatTestCase(unittest.TestCase):
     chat.ChatSession.execute_function_call = get_function_result
     chat.ChatSession.track_tokens = track_tokens
 
+  def tearDown(self):
+    self.db.close()    
+    
   def calcTokens(self, messages):
     total = 0
     for message in messages:

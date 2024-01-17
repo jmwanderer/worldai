@@ -24,6 +24,7 @@ from . import design_chat
 from . import character_chat
 from . import threads
 from . import world_state
+from . import chat_cli
 
 
 def create_app(instance_path=None, test_config=None):
@@ -98,6 +99,11 @@ def close_db(e=None):
 
 
 bp = Blueprint('worldai', __name__, cli_group=None)
+
+@bp.cli.command('chat')
+def run_chat_loop():
+  """Text version of chat."""
+  chat_cli.chat_loop()
 
 @bp.cli.command('create-image-thumb')
 @click.argument('id')
