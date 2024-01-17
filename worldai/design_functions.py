@@ -502,12 +502,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       return self.funcError(f"World not found {self.getCurrentWorldID()}")
     content = { "id": world.id,
                elements.PROP_PLANS: world.getPlans() }
-
-    # Side affect, change state
-    # TODO: this will not change here - remove it
-    self.current_state = STATE_WORLD
-    self.current_view = world.getElemTag()
-    self.current_world_name = world.getName()
     return content
 
   def FuncUpdatePlanningNotes(self, db, arguments):
