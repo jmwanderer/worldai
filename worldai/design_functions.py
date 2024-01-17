@@ -34,7 +34,7 @@ def elemTypeToState(element_type):
 
 states = {
   STATE_WORLDS: [ "ListWorlds", "ReadWorld", "CreateWorld" ],
-  STATE_WORLD: [ "ReadWorld", "ReadPlanningNotes", 
+  STATE_WORLD: [ "ReadPlanningNotes", 
                  "ReadCharacter", "ReadItem", "ReadSite",
                  "ChangeState", "EditWorld" ],
   STATE_WORLD_EDIT: [ "UpdateWorld", "ReadWorld",
@@ -67,7 +67,7 @@ We design the world with a name and a high level description and create backgrou
 We use Planning Notes for plans on characters, items, and sites.
 
 We can be in one of the following states:
-- State_Worlds: We can open existing worlds and create new worlds
+- State_Worlds: We can list and read existing worlds and create new worlds
 - State_World: We view a world description, details, and PlanningNotes.
 - State_World_Edit: We change a world description, details, and PlanningNotes.
 - State_Characters: We can view characters and create new characters and change the description and details of a character.
@@ -232,7 +232,10 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
   def getCurrentWorldID(self):
     # May return None
     return self.current_view.getWorldID()
-  
+
+  def clearCurrentView(self):
+    self.current_view = elements.ElemTag()
+    
   def get_instructions(self, db):
     global_instructions = GLOBAL_INSTRUCTIONS.format(
       current_state=self.current_state)
@@ -273,12 +276,17 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     If same as current, this is a NO-OP
     """
     next_view = elements.ElemTag.JsonTag(next_view)
+    logging.info("next view -- %s", next_view.jsonStr())
+    logging.info("current view -- %s", self.current_view.jsonStr())    
     if next_view == self.current_view:
       # View already matches - reset
+      logging.info("Equal!")
       self.next_view = elements.ElemTag()
       return
-    
+
+    logging.info("set next view")
     self.next_view = next_view
+    logging.info(self.next_view.jsonStr())
 
 
   def checkToolChoice(self, history):
@@ -460,7 +468,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     id = arguments["id"]
     world = elements.loadWorld(db, id)
     if world is None:
-      return self.funcError(f"no world '{id}'")      
+      return self.funcError(f"no world '{id}', perahps call ListWorlds")      
     content = { "id": world.id,
                 **world.getProperties(),
                 "has_image": world.hasImage(), 

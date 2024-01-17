@@ -484,6 +484,7 @@ def design_chat_api():
     if request.json.get("user") is not None:
       user_msg = request.json.get("user")
       view = request.json.get("view")
+      logging.info(f"view: {view}")
       chat_session.set_view(view)
       message = chat_session.chat_message(get_db(), user_msg)
       assistant_message = message["assistant"]
@@ -497,10 +498,14 @@ def design_chat_api():
         "enabled": True,
       }
 
+      view = chat_session.get_view()        
+      logging.info(f"view2: {view}")
+      content['view'] = view
+
       if text is not None:
         content['updates'] = text
-        
-      content['view'] = chat_session.get_view()
+        print(f"updates: {text}")
+
     elif request.json.get("command") is not None:
       content= { "status": "ok" }
       deleteSession = True

@@ -1,5 +1,6 @@
 import io
 import os
+import logging
 
 from . import chat
 from . import elements
@@ -55,6 +56,7 @@ class DesignChatSession:
     return self.chatFunctions.get_view()
 
   def set_view(self, view):
+    logging.info("design chat set view")
     self.chatFunctions.set_view(view)
 
   def madeChanges(self):
@@ -65,16 +67,30 @@ class DesignChatSession:
       # TODO: handle failure
       next_view = self.chatFunctions.next_view
       current_view = self.chatFunctions.current_view
+      new_state = design_functions.elemTypeToState(next_view.getType())
       
+      # Handle when next view is world list.
+      if next_view.getType() == elements.ElementType.NoneType():
+        self.chatFunctions.current_state = new_state
+        self.chatFunctions.clearCurrentView()
+
+      # Handle a change in the current world.
       if next_view.getWorldID() != current_view.getWorldID():
+        self.chatFunctions.current_state = new_state        
         world = elements.loadWorld(db, next_view.getWorldID())
         message = "Read world '%s'" % world.getName()
         self.chat.chat_exchange(db, message)
 
+      # Handle when next view is world.
+      if next_view.getType() == elements.ElementType.WorldType():
+        self.chatFunctions.current_state = new_state        
+        self.chatFunctions.current_view = next_view
+
       # Refresh current_view, may have changed
       current_view = self.chatFunctions.current_view
       new_state = design_functions.elemTypeToState(next_view.getType())
-        
+
+      # Handle if the next view is a new item, character, or site
       if next_view.getID() != current_view.getID():
         message = None
         if next_view.getType() == elements.ElementType.CharacterType():
@@ -92,6 +108,7 @@ class DesignChatSession:
         self.chatFunctions.current_state = new_state
         if message is not None:
           self.chat.chat_exchange(db, message)
+      logging.info("done with processing next view, set to empty")
       self.chatFunctions.next_view = elements.ElemTag()
 
     return self.chat.chat_exchange(db, user, to_html=False)

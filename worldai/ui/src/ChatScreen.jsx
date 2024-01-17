@@ -145,7 +145,7 @@ function ChatScreen({ name, context, getChats, postChat, clearChat, onChange}) {
     return () => {
       ignore = true;
     }
-  }, [ context ]);
+  }, []);
 
   function submitClick() {
     let user_msg = userInput

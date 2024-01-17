@@ -1,5 +1,5 @@
 import { get_url, headers_get, headers_post } from './util.js';
-import { ElementImages, WorldItem } from './common.jsx';
+import { ElementImages, WorldItem, CloseBar } from './common.jsx';
 import { getWorldList, getWorld } from './api.js';
 import { getSiteList, getItemList, getCharacterList } from './api.js';
 import { getSite, getCharacter } from './api.js';
@@ -313,14 +313,6 @@ function Site({ world, siteId, onClose }) {
 }
 
 
-function CloseBar({ onClose }) {
-  return (
-    <Navbar expand="lg" className="bg-body-tertiary">
-      <Container>
-        <CloseButton onClick={onClose}/>
-      </Container>
-    </Navbar>);
-}
 
 function Navigation({ onClose, setView}) {
 

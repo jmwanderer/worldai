@@ -2,7 +2,7 @@ import { get_url, headers_get, headers_post } from './util.js';
 import { getWorldList, getWorld } from './api.js';
 import {  getSiteList, getItemList, getCharacterList } from './api.js';
 import {  getCharacter, getSite, getItem } from './api.js';
-import { ElementImages, WorldItem } from './common.jsx';
+import { ElementImages, WorldItem, CloseBar } from './common.jsx';
 
 import ChatScreen from './ChatScreen.jsx';
 import './App.css'
@@ -55,7 +55,7 @@ function Site({ tag, setChatView }) {
   }
 
   return (<Stack>
-            <a onClick={changeWorld}>World</a>
+            <CloseBar onClose={changeWorld}/>
             <Stack direction="horizontal" gap={3}
                    className="align-items-start m-3">
               <ElementImages element={site}/>
@@ -105,7 +105,7 @@ function Item({ tag, setChatView }) {
   }
 
   return (<Stack>
-            <a onClick={changeWorld}>World</a>            
+            <CloseBar onClose={changeWorld}/>
             <Stack direction="horizontal" gap={3}
                    className="align-items-start m-3">
               <ElementImages element={item}/>
@@ -154,7 +154,7 @@ function Character({ tag, setChatView }) {
   }
 
   return (<Stack>
-            <a onClick={changeWorld}>World</a>            
+            <CloseBar onClose={changeWorld}/>
             <Stack direction="horizontal" gap={3}
                    className="align-items-start m-3">
               <ElementImages element={character}/>
@@ -209,27 +209,72 @@ function World({ tag, setChatView }) {
     }
   }, [tag]);
 
-  function changeWorldList() {
+  function changeToWorldList() {
     setChatView({ "wid": null,
                   "element_type": "None",
                   "id": null });
   }
 
+  function changeToCharacter(id) {
+    console.log("change to char - wid: " + tag.wid + ", id: " + id);
+    setChatView({ "wid": tag.wid,
+                  "element_type": "Character",
+                  "id": id });
+  }
+
+  function changeToSite(id) {
+    setChatView({ "wid": tag.wid,
+                  "element_type": "Site",
+                  "id": id });
+  }
+
+  function changeToItem(id) {
+    setChatView({ "wid": tag.wid,
+                  "element_type": "Item",
+                  "id": id });
+  }
+
   if (world !== null) {
     const character_list = characters.map(entry =>
-      <li key={entry.id}> <b>{entry.name}</b> - {entry.description} </li>
+      <li key={entry.id}>
+        <b>
+          <a onClick={() => changeToCharacter(entry.id)}>
+            {entry.name}
+          </a>
+        </b>
+        - {entry.description}
+      </li>
     );
+
     const item_list = items.map(entry =>
-      <li key={entry.id}> <b>{entry.name}</b> - {entry.description} </li>
+      <li key={entry.id}>
+        <b>
+          <a onClick={() => changeToItem(entry.id)}>
+            {entry.name}
+          </a>
+
+        </b>
+        - {entry.description}
+      </li>
+
     );
+
     const site_list = sites.map(entry =>
-      <li key={entry.id}> <b>{entry.name}</b> - {entry.description} </li>
+      <li key={entry.id}>
+        <b>
+          <a onClick={() => changeToSite(entry.id)}>
+            {entry.name}
+          </a>
+        </b>
+        - {entry.description}
+      </li>
+
     );
 
     
     return (
       <Stack>
-        <a onClick={changeWorldList}>All Worlds</a>
+        <CloseBar onClose={changeToWorldList}/>        
         <Stack direction="horizontal" gap={3} className="align-items-start m-3">
           <ElementImages element={world}/>
           <Container >
@@ -331,20 +376,24 @@ function DesignView({chatView, setChatView}) {
 
 
 
-function DesignChat({name, setChatView}) {
+function DesignChat({name, chatView, setChatView}) {
 
   async function getDesignChats(context) {
+    console.log("get design chats");
     const url = '/design_chat'  
     const response =
           await fetch(get_url(url),
                       { headers: headers_get() });
     const values = await response.json();
+    console.log("get view: " + values.view);    
     setChatView(values.view);
     return values;
   }
 
   async function postDesignChat(context, user_msg) {
-    const data = { "user": user_msg }
+    const data = { "user": user_msg,
+                   "view": context }
+    console.log("post view: " + JSON.stringify(context))
     const url = '/design_chat'    
     // Post the user request
     const response = await fetch(get_url(url), {
@@ -353,6 +402,7 @@ function DesignChat({name, setChatView}) {
       headers: headers_post()
     });
     const values = await response.json();
+    console.log("get view: " + JSON.stringify(values.view));   
     setChatView(values.view);    
     return values;
   }
@@ -372,7 +422,7 @@ function DesignChat({name, setChatView}) {
 
   return ( <div style={{ height: "100%", maxHeight: "90vh" }}>
              <ChatScreen name={name}
-                         context={"dummy"}
+                         context={ chatView }
                          getChats={getDesignChats}
                          postChat={postDesignChat}
                          clearChat={clearDesignChat}
@@ -389,6 +439,7 @@ function DesignClient() {
       <Row>
         <Col xs={4}>
           <DesignChat name={"Assistant"}
+                      chatView={chatView}
                       setChatView={setChatView}/>
         </Col>
         <Col xs={8}>

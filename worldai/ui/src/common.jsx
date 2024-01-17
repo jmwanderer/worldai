@@ -1,12 +1,23 @@
 import Image from 'react-bootstrap/Image';
 import Carousel from 'react-bootstrap/Carousel';
+import Navbar from 'react-bootstrap/Navbar';
+import Container from 'react-bootstrap/Container';
+import CloseButton from 'react-bootstrap/CloseButton';
+
+function CloseBar({ onClose }) {
+  return (
+    <Navbar expand="lg" className="bg-body-tertiary">
+      <Container>
+        <CloseButton onClick={onClose}/>
+      </Container>
+    </Navbar>);
+}
 
 
 function WorldItem({ world, onClick }) {
 
   function handleClick() {
     if (onClick !== undefined && onClick !== null) {
-      console.log(onClick);
       onClick(world.id);
     }
   }
@@ -51,4 +62,4 @@ function ElementImages({element}) {
 
 
 
-export { ElementImages, WorldItem };
+export { ElementImages, WorldItem, CloseBar };

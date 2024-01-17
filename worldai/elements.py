@@ -27,6 +27,9 @@ class ElementType:
   def typeToName(element_type):
     return ElementType.typeNames[element_type]
 
+  def NoneType():
+    return ElementType.typeToName(ElementType.NONE)
+
   def WorldType():
     return ElementType.typeToName(ElementType.WORLD)
 
