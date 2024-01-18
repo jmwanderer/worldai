@@ -82,11 +82,11 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(values[1]["id"], id1)
 
     # Read not existent world
-    values = self.callFunction('ReadWorld', '{ "id": "not_exist" }')
+    values = self.callFunction('ShowWorld', '{ "id": "not_exist" }')
     self.assertIsNotNone(values.get("error"))
                   
-    self.assertCallAvailable('ReadWorld')
-    values = self.callFunction('ReadWorld', '{ "id": "%s" }' % id1)
+    self.assertCallAvailable('ShowWorld')
+    values = self.callFunction('ShowWorld', '{ "id": "%s" }' % id1)
     self.assertIsNone(values.get("details"))
 
     self.callFunction('ChangeState', '{ "state": "State_World" }')    
@@ -100,8 +100,8 @@ class BasicTestCase(unittest.TestCase):
                       ' "description": "a description", ' +
                       ' "details": "details" }')
     
-    self.assertCallAvailable('ReadWorld')
-    values = self.callFunction('ReadWorld', '{ "id": "%s" }' % id1)
+    self.assertCallAvailable('ShowWorld')
+    values = self.callFunction('ShowWorld', '{ "id": "%s" }' % id1)
     self.assertEqual(values["details"], "details")
 
     # Test setting and getting plans
@@ -121,7 +121,7 @@ class BasicTestCase(unittest.TestCase):
     self.callFunction('ChangeState', '{ "state": "State_Characters" }')    
 
     # Read not existent character
-    values = self.callFunction('ReadCharacter', '{ "id": "not_exist" }')
+    values = self.callFunction('ShowCharacter', '{ "id": "not_exist" }')
     self.assertIsNotNone(values.get("error"))
     
     # Create a character
@@ -134,7 +134,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertIsNotNone(result.get("error"))
 
     # Read not existent character again
-    values = self.callFunction('ReadCharacter', '{ "id": "not_exist" }')
+    values = self.callFunction('ShowCharacter', '{ "id": "not_exist" }')
     self.assertIsNotNone(values.get("error"))
 
     # Update a character
@@ -174,7 +174,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertCallNotAvailable('UpdateWorld')
     self.assertCallAvailable('ListCharacters')
     self.assertCallAvailable('CreateCharacter')
-    self.assertCallAvailable('ReadCharacter')
+    self.assertCallAvailable('ShowCharacter')
 
     result = self.callFunction('CreateCharacter','{ "name": "char 1" }')
     id = result["id"]
@@ -189,7 +189,7 @@ class BasicTestCase(unittest.TestCase):
                       ' "description": "a description", ' +
                       ' "details": "my details" }')
 
-    values = self.callFunction('ReadCharacter',
+    values = self.callFunction('ShowCharacter',
                                 '{ "id": "' + id + '" }')
     print(str(values))
     self.assertEqual(values["details"], "my details")

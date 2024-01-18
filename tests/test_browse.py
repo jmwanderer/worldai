@@ -29,13 +29,18 @@ def test_login(client, app):
   assert response.status_code == 200
   assert b"<h2>" in response.data
 
-def test_client_no_login(client, app):
-  response = client.get("/client")
+def test_play_no_login(client, app):
+  response = client.get("/ui/play")
   assert response.status_code == 302
 
-def test_client_login(client, app):
+def test_design_login(client, app):
   do_login(client, app)  
-  response = client.get("/client")
+  response = client.get("/ui/design")
+  assert response.status_code == 200
+
+def test_play_login(client, app):
+  do_login(client, app)  
+  response = client.get("/ui/play")
   assert response.status_code == 200
 
 def test_view_worlds(client, app):

@@ -6,8 +6,6 @@ import json
 def test_no_access(client):
   response = client.get("/api/design_chat")
   assert response.status_code == 401
-  response = client.post("/api/view_props")
-  assert response.status_code == 401
 
 def bearer_token(app):
   return "Bearer " + app.config['AUTH_KEY']
@@ -168,79 +166,4 @@ def test_chat_cmd_clear(client, app):
   assert len(response.json['messages']) == 0
 
   
-  
-def test_view_props(client, app):
-  # List of workds
-  response = client.post("/api/view_props",
-                         headers={
-                           'Content-Type': 'application/json',    
-                           "Authorization": bearer_token(app),
-                         },
-                         json = {
-                         })
-  assert response.status_code == 200
-  assert response.json["html"] is not None
-  assert response.json["images"] is not None
-  assert len(response.json["images"]) == 0
-
-  # World
-  response = client.post("/api/view_props",
-                         headers={
-                           'Content-Type': 'application/json',    
-                           "Authorization": bearer_token(app),
-                         },
-                         json = {
-                           "wid": "ida1ad7f2c",
-                           "element_type": "World",
-                           "id": "ida1ad7f2c",
-                         })
-  assert response.status_code == 200
-  assert response.json["html"] is not None
-  assert response.json["images"] is not None
-
-  # Character
-  response = client.post("/api/view_props",
-                         headers={
-                           'Content-Type': 'application/json',    
-                           "Authorization": bearer_token(app),
-                         },
-                         json = {
-                           "wid": "ida1ad7f2c",
-                           "element_type": "Character",
-                           "id": "id7b89a481",
-                         })
-  assert response.status_code == 200
-  assert response.json["html"] is not None
-  assert response.json["images"] is not None
-  
-
-  # Item
-  response = client.post("/api/view_props",
-                         headers={
-                           'Content-Type': 'application/json',    
-                           "Authorization": bearer_token(app),
-                         },
-                         json = {
-                           "wid": "ida1ad7f2c",
-                           "element_type": "Item",
-                           "id": "id5936b090",
-                         })
-  assert response.status_code == 200
-  assert response.json["html"] is not None
-  assert response.json["images"] is not None
-
-  # Site
-  response = client.post("/api/view_props",
-                         headers={
-                           'Content-Type': 'application/json',    
-                           "Authorization": bearer_token(app),
-                         },
-                         json = {
-                           "wid": "ida1ad7f2c",
-                           "element_type": "World",
-                           "id": "id6c7f129d",
-                         })
-  assert response.status_code == 200
-  assert response.json["html"] is not None
-  assert response.json["images"] is not None
   

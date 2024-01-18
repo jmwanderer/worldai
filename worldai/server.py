@@ -260,6 +260,7 @@ def top_view():
   return flask.render_template("top.html")
 
 @bp.route('/ui/play', methods=["GET"])
+@login_required
 def play_page():
   """
   Serve the play.html file for the root of the UI
@@ -275,6 +276,7 @@ def play_page():
 
 
 @bp.route('/ui/design', methods=["GET"])
+@login_required
 def design_page():
   """
   Serve the design.html file for the root of the UI
@@ -459,17 +461,6 @@ def get_session_id():
   return session_id
 
 
-@bp.route('/client', methods=["GET"])
-@login_required
-def view_client():
-  """
-  Client view
-  """
-  session_id = get_session_id()
-  return flask.render_template("client.html",
-                               auth_key=current_app.config['AUTH_KEY'])
-
-
 @bp.route('/api/design_chat', methods=["GET","POST"])
 @auth_required
 def design_chat_api():
@@ -523,167 +514,6 @@ def design_chat_api():
   else:
     chat_session.deleteChatSession(get_db())    
   return flask.jsonify(content)
-
-
-@bp.route('/api/view_props', methods=["POST"])
-@auth_required
-def view_props():
-  """
-  Return view properties for an element.
-  - HTML to display
-  - List of image urls
-  """
-  wid = request.json.get("wid")
-  element_type = request.json.get("element_type")
-  id = request.json.get("id")
-  
-  images = []
-
-  if wid is None:
-    # List of worlds view
-    world_list = []
-    worlds = elements.listWorlds(get_db())
-    for (entry) in worlds:
-      id = entry.getID()
-      world = elements.loadWorld(get_db(), id)
-      world_list.append((world.getElemTag(),
-                         world.getName(),
-                         world.getDescription()))
-    html = flask.render_template("view.html", obj="worlds",
-                                 world_list=world_list)
-
-  elif element_type == elements.ElementType.CharacterType():
-    # Character view
-    world = elements.loadWorld(get_db(), wid)
-    if world == None:
-      return "World not found", 400
-    character = elements.loadCharacter(get_db(), id)
-    if character == None:
-      return "Character not found", 400
-
-    # Setup next / prev
-    characters = elements.listCharacters(get_db(), world.id)
-    (pc, nc) = elements.getAdjacentElements(character.getIdName(),
-                                            characters)
-    # Change to elemTag
-    pc = elements.idNameToElemTag(get_db(), pc)
-    nc = elements.idNameToElemTag(get_db(), nc)    
-
-    for image in character.getImages():
-      url = flask.url_for('worldai.get_image', id=image)
-      images.append(url)
-
-    html = flask.render_template("view.html", obj="character",
-                                 world=world,
-                                 next=nc, prev=pc,
-                                 character=character)
-
-  elif element_type == elements.ElementType.ItemType():
-    # Item view
-    world = elements.loadWorld(get_db(), wid)
-    if world == None:
-      return "World not found", 400
-    item = elements.loadItem(get_db(), id)
-    if item == None:
-      return "Item not found", 400
-
-    # Setup next / prev
-    items = elements.listItems(get_db(), world.id)
-    (pi, ni) = elements.getAdjacentElements(item.getIdName(),
-                                            items)
-    # Change to elemTag
-    pi = elements.idNameToElemTag(get_db(), pi)
-    ni = elements.idNameToElemTag(get_db(), ni)    
-    
-    for image in item.getImages():
-      url = flask.url_for('worldai.get_image', id=image)
-      images.append(url)
-
-    html = flask.render_template("view.html", obj="item",
-                                 world=world,
-                                 next=ni, prev=pi,
-                                 item=item)
-
-  elif element_type == elements.ElementType.SiteType():
-    # Site view
-    world = elements.loadWorld(get_db(), wid)
-    if world == None:
-      return "World not found", 400
-    site = elements.loadSite(get_db(), id)
-    if site == None:
-      return "Site not found", 400
-
-    # Setup next / prev
-    sites = elements.listSites(get_db(), world.id)
-    (ps, ns) = elements.getAdjacentElements(site.getIdName(),
-                                            sites)
-    # Change to elemTag
-    ps = elements.idNameToElemTag(get_db(), ps)
-    ns = elements.idNameToElemTag(get_db(), ns)    
-    
-    for image in site.getImages():
-      url = flask.url_for('worldai.get_image', id=image)
-      images.append(url)
-   
-    html = flask.render_template("view.html", obj="site", world=world,
-                                 next=ns, prev=ps,
-                                 site=site)
-
-  elif element_type == elements.ElementType.WorldType():
-    # World view
-    world = elements.loadWorld(get_db(), wid)
-    if world == None:
-      return "World not found", 400
-
-    characters = elements.listCharacters(get_db(), world.id)
-    char_list = []
-    for entry in characters:
-      char_id = entry.getID()
-      char_name = entry.getName()
-      character = elements.loadCharacter(get_db(), char_id)    
-      char_list.append((character.getElemTag(), char_name,
-                        character.getDescription()))
-
-    items = elements.listItems(get_db(), world.id)
-    item_list = []
-    for entry in items:
-      item_id = entry.getID()
-      item_name = entry.getName()
-      item = elements.loadItem(get_db(), item_id)    
-      item_list.append((item.getElemTag(), item_name, item.getDescription()))
-
-    sites = elements.listSites(get_db(), world.id)
-    site_list = []
-    for entry in sites:
-      site_id = entry.getID()
-      site_name = entry.getName()
-      site = elements.loadSite(get_db(), site_id)    
-      site_list.append((site.getElemTag(), site_name, site.getDescription()))
-      
-    for image in world.getImages():
-      url = flask.url_for('worldai.get_image', id=image)
-      images.append(url)
-    
-    html = flask.render_template("view.html", obj='world', world=world,
-                                 character_list=char_list,
-                                 item_list=item_list,
-                                 site_list=site_list)
-  else:
-    return { "error": "malformed input" }        
-
-  return flask.jsonify({ "html": html, "images": images })
-  
-
-def get_random_message():
-  messages = [
-    "Hey, how is it going?",
-    "I don't know, what do you think?",
-    "Isn't Jim a pretty great guy?",
-    "Well, I guess I agree.",
-    "I am not sure about that.",
-    "I wonder what is on TV right now?" ]
-  return random.choice(messages)
-
 
 
 @bp.route('/api/initdata', methods=["GET"])
