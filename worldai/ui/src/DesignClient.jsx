@@ -238,7 +238,9 @@ function World({ tag, setChatView }) {
     const character_list = characters.map(entry =>
       <li key={entry.id}>
         <b>
-          <a onClick={() => changeToCharacter(entry.id)}>
+          <a className="link-primary link-underline-opacity-100"
+             href="#"
+             onClick={() => changeToCharacter(entry.id)}>
             {entry.name}
           </a>
         </b>
@@ -249,7 +251,9 @@ function World({ tag, setChatView }) {
     const item_list = items.map(entry =>
       <li key={entry.id}>
         <b>
-          <a onClick={() => changeToItem(entry.id)}>
+          <a className="link-underline-primary"
+             href="#"             
+             onClick={() => changeToItem(entry.id)}>
             {entry.name}
           </a>
 
@@ -262,7 +266,9 @@ function World({ tag, setChatView }) {
     const site_list = sites.map(entry =>
       <li key={entry.id}>
         <b>
-          <a onClick={() => changeToSite(entry.id)}>
+          <a className="link-underline-primary"
+             href="#"             
+             onClick={() => changeToSite(entry.id)}>
             {entry.name}
           </a>
         </b>
