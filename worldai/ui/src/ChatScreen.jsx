@@ -22,7 +22,7 @@ function MessageExchange({ name, message }) {
   if (message.user.length > 0) {
     user_message = (
       <div className="App-message">            
-        <b>You:</b> <br/> { message.user }
+        <b>You:</b> <br/> { message.user } <br/>
       </div>);
   }
   if (message.updates && message.updates.length > 0) {
@@ -32,7 +32,7 @@ function MessageExchange({ name, message }) {
       </div>);
   }
   return (
-    <div className="p-2">
+    <div>
       { user_message }
       <div className="App-message">
         <b> {name}: </b>

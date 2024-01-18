@@ -2,6 +2,10 @@
     width: 100%;
 }
 
+.App-message {
+    margin: 1em; 
+}
+
 .card {
   padding: 2em;
 }
