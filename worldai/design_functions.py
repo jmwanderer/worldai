@@ -210,7 +210,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
   def __init__(self):
     chat_functions.BaseChatFunctions.__init__(self)
     self.current_state = STATE_WORLDS
-    self.current_world_name = None
 
     # Tracks current world, current element
     self.current_view = elements.ElemTag()
@@ -225,17 +224,26 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     # May return None
     return self.current_view.getWorldID()
 
+  def getCurrentWorldName(self, db):
+    # May return None
+    if self.current_view.getWorldID() is None:
+      return None
+    world = elements.loadWorld(db, self.getCurrentWorldID())
+    if world is not None:
+      return world.getName()
+    return None
+
   def clearCurrentView(self):
     self.current_view = elements.ElemTag()
     
   def get_instructions(self, db):
     global_instructions = GLOBAL_INSTRUCTIONS.format(
       current_state=self.current_state)
-    return global_instructions + "\n" + self.get_state_instructions()
+    return global_instructions + "\n" + self.get_state_instructions(db)
   
-  def get_state_instructions(self):
+  def get_state_instructions(self, db):
     value = instructions[self.current_state].format(
-      current_world_name = self.current_world_name)
+      current_world_name = self.getCurrentWorldName(db))
     return value
 
   def get_available_tools(self):
@@ -405,7 +413,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
     if self.current_state == STATE_WORLDS:
       self.current_view = elements.ElemTag()
-      self.current_world_name = None
     elif self.current_state == STATE_WORLD:
       self.current_view = elements.ElemTag.WorldTag(self.getCurrentWorldID())
     return result
@@ -438,7 +445,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     world = elements.createWorld(db, world)
     self.current_state = STATE_WORLD
     self.current_view = world.getElemTag()
-    self.current_world_name = world.getName()
     self.modified = True      
     status = self.funcStatus("created world")
     status["id"] = world.id
@@ -492,8 +498,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     # Side affect, change state
     self.current_state = STATE_WORLD
     self.current_view = world.getElemTag()
-    self.current_world_name = world.getName()
-      
     return content
 
   def FuncReadPlanningNotes(self, db, arguments):
