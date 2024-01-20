@@ -12,7 +12,7 @@ import logging
 
 from . import elements
 
-PROP_CHAR_SUPPORT = "CharacterSupport"
+PROP_CHAR_FRIENDSHIP = "CharacterFriendship"
 PROP_LOCATION = "Location"
 PROP_CHAT_WHO = "CharacterChat"
 PROP_ITEMS = "ItemList"
@@ -27,7 +27,7 @@ class WorldState:
     self.session_id = None
     self.world_id = None
 
-    self.player_state = { PROP_CHAR_SUPPORT: [],
+    self.player_state = { PROP_CHAR_FRIENDSHIP: {},
                           PROP_LOCATION: "",
                           PROP_CHAT_WHO: "",
                          }
@@ -127,14 +127,18 @@ class WorldState:
         result.append(item_id)
     return result
 
-  def markCharacterSupport(self, char_id):
-    if not char_id in self.player_state[PROP_CHAR_SUPPORT]:
-      self.player_state[PROP_CHAR_SUPPORT].append(char_id)
+  def increaseFriendship(self, char_id, amount=5):
+    level = self.getFriendship(char_id) + amount
+    self.player_state[PROP_CHAR_FRIENDSHIP][char_id] = level
 
-  def hasCharacterSupport(self, char_id):
-    if char_id in self.player_state[PROP_CHAR_SUPPORT]:
-      return True
-    return False
+  def decreaseFriendship(self, char_id, amount=5):
+    level = self.getFriendship(char_id) - amount    
+    self.player_state[PROP_CHAR_FRIENDSHIP][char_id] = level
+
+  def getFriendship(self, char_id):
+    if self.player_state[PROP_CHAR_FRIENDSHIP].get(char_id) is None:
+      return 0
+    return self.player_state[PROP_CHAR_FRIENDSHIP][char_id]
 
 
   def setChatCharacter(self, char_id=None):

@@ -668,7 +668,7 @@ def characters_list(wid):
       {"id": id,
        "name": character.getName(),
        "description": character.getDescription(),
-       "givenSupport": wstate.hasCharacterSupport(id),
+       "givenSupport": wstate.getFriendship(id) > 0,
        "image": image_prop })
 
   return flask.jsonify(character_list)
@@ -690,7 +690,7 @@ def characters(wid, id):
   images = getElementImageProps(character)
   result = character.getJSONRep()
   result["images"] = images
-  result["givenSupport"] = wstate.hasCharacterSupport(id)
+  result["givenSupport"] = wstate.getFriendship(id) > 0
 
   return result
 
@@ -755,7 +755,7 @@ def site(wid, sid):
       {"id": cid,
        "name": character.getName(),
        "description": character.getDescription(),
-       "givenSupport": wstate.hasCharacterSupport(id),
+       "givenSupport": wstate.getFriendship(cid) > 0,
        "image": image_prop })
   result["characters"] = characters
   

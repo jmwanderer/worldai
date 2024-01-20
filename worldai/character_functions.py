@@ -13,8 +13,9 @@ Your name is {name}.
 You reside in the world {world_name}.
 You are described as follows:
 {description}
-When you first meet the user, offer a nuetral greeting, not assistance.
-{support}
+
+{friendship}
+
 Your current location is "{location}"
 
 You have the following items:
@@ -36,10 +37,22 @@ Call ListItems to get the artifacts or items and ids
 If you support the user, you are inclined to loan items to the user
 """
 
-SUPPORT="""
+FRIENDSHIP_NEUTRAL="""
 You do not yet know if this user is a friend or an enemy.
-The user may want your support. First ensure the user explains why
-they deserve your support, and give support only if you agree.
+When you first meet the user, offer a greeting but not assistance.
+The user may want your friendship and support. But you must
+ensure the user deserves your support.
+"""
+
+FRIEND="""
+You are on friendly terms with the user. You are more likely to help the user.
+Your level of friendship is {level} of 10.
+"""
+
+ENEMY="""
+You are not friendly with the user. You probably need to work against them.
+You do not trust them.
+Your level of enimity is {level} of 10.
 """
 
 
@@ -75,10 +88,14 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     wstate = world_state.loadWorldState(db, self.wstate_id)
 
     # Build message about supporting the user
-    support = SUPPORT
-    if wstate.hasCharacterSupport(self.character_id):
-      support = "You have given the user your support."
-
+    friend_level = wstate.getFriendship(self.character_id)
+    if friend_level == 0:
+      friendship = FRIENDSHIP_NEUTRAL
+    elif friend_level > 0:
+      friendship = FRIEND.format(level=friend_level)
+    else:
+      friendship = ENEMY.format(level=-friend_level)      
+    
     location = "unknown"
     site_id = wstate.getCharacterLocation(self.character_id)
     if len(site_id) > 0:
@@ -100,7 +117,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       name=character.getName(),
       world_name=world.getName(),
       description=character.getDescription(),
-      support=support,
+      friendship=friendship,
       location=location,
       char_items=character_items,
       user_items=user_items,
@@ -142,8 +159,10 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     # Default response value
     result = '{ "error": "' + f"no such function: {function_name}" + '" }'
 
-    if function_name == "GiveSupport":
-      result = self.FuncGiveSupport(db)
+    if function_name == "IncreaseFriendship":
+      result = self.FuncIncreaseFriendship(db)
+    if function_name == "DecreaseFriendship":
+      result = self.FuncDecreaseFriendship(db)
     elif function_name == "GiveItem":
       result = self.FuncGiveItem(db, arguments)
     if function_name == "AcceptItem":
@@ -167,18 +186,34 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       
     return result
 
-  def FuncGiveSupport(self, db):
+  def FuncIncreaseFriendship(self, db):
     """
     Record that the player completed the challenge for the current character.
     """
+    print("Increase friendship")
     # TODO: this is where we need lock for updating
     wstate = world_state.loadWorldState(db, self.wstate_id)
     character = elements.loadCharacter(db, self.character_id)    
-    wstate.markCharacterSupport(self.character_id)
+    wstate.increaseFriendship(self.character_id)
     world_state.saveWorldState(db, wstate)
 
     result = { "response": self.funcStatus("OK"),
-               "text": character.getName() + " gave support" }
+               "text": character.getName() + " increases friendship" }
+    return result
+
+  def FuncDecreaseFriendship(self, db):
+    """
+    Record that the player completed the challenge for the current character.
+    """
+    print("Decrease friendship")    
+    # TODO: this is where we need lock for updating
+    wstate = world_state.loadWorldState(db, self.wstate_id)
+    character = elements.loadCharacter(db, self.character_id)    
+    wstate.decreaseFriendship(self.character_id)
+    world_state.saveWorldState(db, wstate)
+
+    result = { "response": self.funcStatus("OK"),
+               "text": character.getName() + " increases enimity" }
     return result
 
   def FuncGiveItem(self, db, args):
@@ -249,8 +284,17 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
 all_functions = [
   {
-    "name": "GiveSupport",
-    "description": "Give the user your support in their efforts.",
+    "name": "IncreaseFriendship",
+    "description": "Note developing a friendship.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+  {
+    "name": "DecreaseFriendship",
+    "description": "Note user does not appear to be a friend.",
     "parameters": {
       "type": "object",
       "properties": {
