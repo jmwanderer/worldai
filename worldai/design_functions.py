@@ -215,6 +215,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.current_view = elements.ElemTag()
     
     # An ElemTag that describes a view we need to change into.
+    # The none elem tag means that there is no change for the view.
     # This happens when the user changes the view in the UI.
     # We need to sync the GPT to the new view
     self.next_view = elements.ElemTag()
@@ -278,15 +279,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     next_view = elements.ElemTag.JsonTag(next_view)
     logging.info("next view -- %s", next_view.jsonStr())
     logging.info("current view -- %s", self.current_view.jsonStr())    
-    if next_view == self.current_view:
-      # View already matches - reset
-      logging.info("Equal!")
-      self.next_view = elements.ElemTag()
-      return
-
-    logging.info("set next view")
     self.next_view = next_view
-    logging.info(self.next_view.jsonStr())
 
 
   def checkToolChoice(self, history):

@@ -87,6 +87,13 @@ class ElemTag:
     self.id = id;
     self.element_type = element_type
 
+  def __eq__(self, other):
+    if not isinstance(other, ElemTag):
+      return False
+    return (self.world_id == other.world_id and
+            self.id == other.id and
+            self.element_type == other.element_type)
+
   def getID(self):
     return self.id
 

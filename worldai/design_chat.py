@@ -63,7 +63,9 @@ class DesignChatSession:
     return self.chatFunctions.madeChanges()
 
   def chat_message(self, db, user):
-    if not self.chatFunctions.next_view.noElement():
+    # Handle changing the view
+    if self.chatFunctions.next_view != self.chatFunctions.current_view:
+      logging.info("*** Change view")
       # TODO: handle failure
       next_view = self.chatFunctions.next_view
       current_view = self.chatFunctions.current_view
@@ -77,7 +79,7 @@ class DesignChatSession:
       if next_view.getWorldID() != current_view.getWorldID():
         world = elements.loadWorld(db, next_view.getWorldID())
         message = "Show world '%s'" % world.getName()
-        self.chatFunctions.current_state = design_functions.STATE_WORLDS        
+        self.chatFunctions.current_state = design_functions.STATE_WORLDS
         self.chat.chat_exchange(db, message)
 
       # Handle when next view is world.
@@ -95,21 +97,20 @@ class DesignChatSession:
         message = None
         if next_view.getType() == elements.ElementType.CharacterType():
           character = elements.loadCharacter(db, next_view.getID())
-          message = "Read character '%s'" % character.getName()          
+          message = "Show character '%s'" % character.getName()          
 
         elif next_view.getType() == elements.ElementType.ItemType():
           item = elements.loadItem(db, next_view.getID())
-          message = "Read item '%s'" % item.getName()
+          message = "Show item '%s'" % item.getName()
 
         elif next_view.getType() == elements.ElementType.SiteType():
           site = elements.loadSite(db, next_view.getID())
-          message = "Read site '%s'" % site.getName()
+          message = "Show site '%s'" % site.getName()
 
         self.chatFunctions.current_state = new_state
         if message is not None:
           self.chat.chat_exchange(db, message)
-      logging.info("done with processing next view, set to empty")
-      self.chatFunctions.next_view = elements.ElemTag()
+
 
     return self.chat.chat_exchange(db, user, to_html=False)
 
