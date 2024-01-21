@@ -846,7 +846,7 @@ def command(wid):
 
   changed = False
   command = request.json
-  client_actions = client_commands.ClientActions(world, wstate)
+  client_actions = client_commands.ClientActions(get_db(), world, wstate)
   result, changed = client_actions.ExecCommand(command)
 
   if changed:

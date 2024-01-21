@@ -2,9 +2,11 @@
 Implements the game play commands.
 """
 import logging
+from . import elements
 
 class ClientActions:
-  def __init__(self, world, wstate):
+  def __init__(self, db, world, wstate):
+    self.db = db
     self.world = world
     self.wstate = wstate
 
@@ -21,7 +23,7 @@ class ClientActions:
     if (command.get("name") == "go"):
       site_id = command.get("to")
       # Verify location
-      site = elements.loadSite(get_db(), site_id)
+      site = elements.loadSite(self.db, site_id)
       if site is not None:
         self.wstate.setLocation(site_id)
       else:
@@ -32,7 +34,7 @@ class ClientActions:
     elif (command.get("name") == "take"):
       item_id = command.get("item")
       # Verify 
-      if self.wstate.getItemLocation(item_id) == wstate.getLocation():
+      if self.wstate.getItemLocation(item_id) == self.wstate.getLocation():
         self.wstate.addItem(item_id)
         changed = True
         result = ok
