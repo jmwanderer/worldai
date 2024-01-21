@@ -137,7 +137,8 @@ class WorldState:
   def getCharactersAtLocation(self, site_id):
     result = []
     for char_id in self.character_state.keys():
-      if self.getCharacterLocation(char_id) == site_id:
+      if (char_id != PLAYER_ID and
+          self.getCharacterLocation(char_id) == site_id):
         result.append(char_id)
     return result
  
