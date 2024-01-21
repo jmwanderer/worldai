@@ -71,11 +71,12 @@ class BasicTestCase(unittest.TestCase):
     state = world_state.loadWorldState(self.db, wstate_id)
     self.assertIsNotNone(state)
 
-    self.assertEqual(len(state.player_state[world_state.PROP_CHAR_SUPPORT]), 0)
-    self.assertFalse(state.hasCharacterSupport(char_id))
+    self.assertEqual(len(state.player_state[world_state.PROP_CHAR_FRIENDSHIP]),
+                     0)
+    self.assertEqual(state.getFriendship(char_id), 0 )
 
-    state.markCharacterSupport(char_id)
-    self.assertTrue(state.hasCharacterSupport(char_id))
+    state.increaseFriendship(char_id)
+    self.assertTrue(state.getFriendship(char_id) > 0)
 
     self.assertEqual(len(state.getChatCharacter()), 0)
     state.setChatCharacter(char_id)
@@ -103,7 +104,7 @@ class BasicTestCase(unittest.TestCase):
     world_state.saveWorldState(self.db, state)
 
     state = world_state.loadWorldState(self.db, wstate_id)
-    self.assertTrue(state.hasCharacterSupport(char_id))
+    self.assertTrue(state.getFriendship(char_id) > 0)
     self.assertEqual(len(state.getItems()), 1)
     self.assertNotEqual(len(state.getLocation()), 0)
     self.assertNotEqual(len(state.getChatCharacter()), 0) 

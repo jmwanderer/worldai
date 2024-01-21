@@ -1,36 +1,48 @@
 Plans
 -----
+- Basic world design - DONE
+- Basic character interaction - DONE
+- Basic action exchange w/ characters: offer / accept
+- Time keeping
 
+TODO
+----
+- support chat in response to actions
+- tool choice in character chat
+- complete API test coverage
+  - check if mock test env is reusable for all
+- client command test coverage
+- character history with user
+- standard character / player data store
+
+
+
+Details
+-------
+- a task / TODO generator
+  - number of characters, items, sites
+  - complete characters, items, sites
+- Revamp ChatExchange API messages
+- trim contents of message history in chat_session
 - handle DB errors
 - protect APIs against bad id args
+- consider changing state to mode
+- set budget for tokens and images (images done)
+- update status of calls in client
 
-- fix refresh and chat enable on character move
-- list of characters at the same location
-- 
 
+Completed
+---------
+- fix refresh and chat enable on character move - done
+- list of characters at the same location - done?
 - Persist player location - done
 - consider items at sites, not with a character? - done
 - consider allowing characters to
   - change location - done
   - teach skills
   - give / take coin
-
-- React client does not yet support markdown
-
-- a task generator
-  - number of characters, items, sites
-  - complete characters, items, sites
-
-- Revamp ChatExchange API messages
-- trim contents of message history in chat_session
-- consider changing state to mode
-- set budget for tokens and images (images done)
-- update status of calls in client
-
-Potential
----------
-
-- task driven module
+- React client does not yet support markdown - done
+- React design client - done
 
 
 Working notes

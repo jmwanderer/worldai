@@ -149,8 +149,9 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(len(functions), 3)
     self.assertCallAvailable('ListWorlds')
     self.assertCallNotAvailable('UpdateWorld')    
-    self.assertIsNotNone(self.chatFunctions.get_state_instructions())
-    self.assertIn("new world", self.chatFunctions.get_state_instructions())
+    self.assertIsNotNone(self.chatFunctions.get_state_instructions(self.db))
+    self.assertIn("new world",
+                  self.chatFunctions.get_state_instructions(self.db))
                        
     self.callFunction('CreateWorld', '{ "name": "world 1" }')
 
@@ -159,8 +160,8 @@ class BasicTestCase(unittest.TestCase):
                      design_functions.STATE_WORLD)
     self.assertCallNotAvailable('UpdateWorld')    
     self.assertCallNotAvailable('ListWorlds')
-    self.assertIsNotNone(self.chatFunctions.get_state_instructions())
-    self.assertIn("world", self.chatFunctions.get_state_instructions())
+    self.assertIsNotNone(self.chatFunctions.get_state_instructions(self.db))
+    self.assertIn("world", self.chatFunctions.get_state_instructions(self.db))
     self.callFunction('ChangeState', '{ "state": "State_World" }')
 
     # STATE WORLD

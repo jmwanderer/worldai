@@ -167,3 +167,11 @@ def test_chat_cmd_clear(client, app):
 
   
   
+# ADD
+# /api/world/<wid>/command
+#  - go, take, engage, disengage
+#
+# /api/world/<wid>/items
+# /api/world/<wid>/items/<id>
+#
+# /api/world/<wid>/characters/<id>
