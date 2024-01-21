@@ -48,13 +48,16 @@ function WorldItem({ world, onClick }) {
 function ElementImages({element}) {
   const items = element.images.map(entry =>
     <Carousel.Item key={entry.url}>
-      <Image src={entry.url}
-             style={{ maxWidth: "50vmin", maxHeight: "50vmin",
-                      minHeight: "30vmin"}}/>
+      <div class="d-flex justify-content-center">
+        <Image src={entry.url}
+               style={{ maxWidth: "50vmin", maxHeight: "50vmin",
+                        minHeight: "30vmin"}}/>
+      </div>
     </Carousel.Item>);
+  const show = element.images.length > 1;
   
   return (
-    <Carousel interval={null}>
+    <Carousel interval={null} controls={show} indicators={show}>
       { items }
     </Carousel>            
   );

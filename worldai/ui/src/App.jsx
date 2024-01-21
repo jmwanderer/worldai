@@ -19,7 +19,6 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Image from 'react-bootstrap/Image';
 import Stack from 'react-bootstrap/Stack';
-import Carousel from 'react-bootstrap/Carousel';
 
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
@@ -135,13 +134,13 @@ function CharacterItem({ character, onClick }) {
     onClick(character.id);
   }
   return (
-    <div onClick={handleClick} className="mt-2" style={{ height: "100%"}}>
-      <Card style={{ height: "100%"}}>
+    <div className="mt-2" style={{ height: "100%"}}>
+      <Card style={{ height: "100%", padding: "1em" }}>
         <Card.Img src={character.image.url}/>
-        
         <Card.Title>
           {character.name }
         </Card.Title>
+        <Button onClick={handleClick} className="mt-auto">Chat</Button>
       </Card>
     </div>);
 }
@@ -171,13 +170,14 @@ function ItemCard({ item, onClick }) {
     }
   }
   return (
-    <div onClick={handleClick} className="mt-2" style={{ height: "100%"}}>
-      <Card style={{ height: "100%"}}>
+    <div className="mt-2" style={{ height: "100%"}}>
+      <Card style={{ height: "100%", padding: "1em" }}>
         <Card.Img src={item.image.url}/>
         
         <Card.Title>
           {item.name }
         </Card.Title>
+        <Button onClick={handleClick} className="mt-auto">Take</Button>        
       </Card>
     </div>);
 }
@@ -501,20 +501,20 @@ function DetailsView({view, world, onClose}) {
   if (view === "characters") {
     return (
       <div>
+        <CloseBar onClose={onClose}/>
         <h2>
           {world.name} Characters
         </h2>
-        <CloseBar onClose={onClose}/>
         <CharacterList worldId={world.id}/>
       </div>
     );        
   } else {
     return (
       <div>
+        <CloseBar onClose={onClose}/>
         <h2>
           {world.name} Items
         </h2>
-        <CloseBar onClose={onClose}/>
         <ItemList worldId={world.id}/>                
       </div>
     );        
@@ -530,12 +530,13 @@ function SiteItem({ site, onClick }) {
   }
 
   return (
-    <div onClick={handleClick}  className="mt-2" style={{ height: "100%"}}>
-      <Card style={{ height: "100%"}}>
+    <div className="mt-2" style={{ height: "100%"}}>
+      <Card style={{ height: "100%", padding: "1em" }}>
         <Card.Img src={site.image.url}/>
         <Card.Title>
           { site.name }
         </Card.Title>
+        <Button onClick={handleClick} className="mt-auto">Go</Button>        
       </Card>
     </div>);
 }
