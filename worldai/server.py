@@ -170,6 +170,17 @@ def list_images(parent_id):
           (entry["id"], entry["filename"], entry["prompt"]))
     
 
+@bp.cli.command('clear-state')
+def clear_state():
+  """Clear the game state due to a new format"""
+  print("clearing state...")
+  db = get_db()
+  db.execute("DELETE FROM character_threads")  
+  db.execute("DELETE FROM threads")
+  db.execute("DELETE FROM world_state")
+  db.commit()
+
+  
 @bp.cli.command('dump-worlds')
 def dump_worlds():
   """Dump the contents of the world DB."""

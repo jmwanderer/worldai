@@ -13,11 +13,63 @@ import logging
 from . import elements
 
 PROP_CHAR_FRIENDSHIP = "CharacterFriendship"
-PROP_LOCATION = "Location"
 PROP_CHAT_WHO = "CharacterChat"
 PROP_ITEMS = "ItemList"
 PLAYER_ID = "id0"
 
+PROP_LOCATION = "Location"
+PROP_CREDITS = "Credits"
+PROP_HEALTH = "Health"
+PROP_STRENGTH = "Strength"
+
+
+
+class CharState:
+  """
+  Represents state for a instance of a character
+  Either a player or an NPC
+  """
+  def __init__(self):
+    # Items are recorded under item state
+    self.state = { PROP_LOCATION: "",
+                   PROP_CREDITS: 100,
+                   PROP_HEALTH: 10,
+                   PROP_STRENGTH: 8 }
+
+  def getLocation(self):
+    return self.state[PROP_LOCATION]
+
+  def setLocation(self, site_id):
+    if site_id is None:
+      site_id = ""
+    self.state[PROP_LOCATION] = site_id
+
+  def getHealth(self):
+    return self.state[PROP_HEALTH]
+
+  def setHealth(self, value):
+    self.state[PROP_HEALTH] = value
+
+  def getStrength(self):
+    return self.state[PROP_STRENGTH]
+
+  def setStrength(self, value):
+    self.state[PROP_STRENGTH] = value
+
+  def getCredits(self):
+    return self.state[PROP_CREDITS]
+
+  def setCredits(self, value):
+    self.state[PROP_CREDITS] = value
+
+  def getStateValue(self):
+    return self.state
+
+  def setStateValue(self, value):
+    self.state = value
+      
+
+    
 class WorldState:
   """
   Represents an instantation of a world
@@ -28,15 +80,15 @@ class WorldState:
     self.world_id = None
 
     self.player_state = { PROP_CHAR_FRIENDSHIP: {},
-                          PROP_LOCATION: "",
                           PROP_CHAT_WHO: "",
                          }
+
+    # char_id: CharState   
+    self.character_state = {}
 
     # site_id: { PROP_LOCATION: "" }
     self.item_state = { }
 
-    # char_id: { PROP_LOCATION: "" }
-    self.character_state = { }
     
   def get_player_state_str(self):
     return json.dumps(self.player_state)
@@ -45,11 +97,20 @@ class WorldState:
     self.player_state = json.loads(str)
 
   def get_character_state_str(self):
-    return json.dumps(self.character_state)
+    # Build a json structure and return a string
+    state = {}
+    for cid in self.character_state.keys():
+      state[cid] = self.character_state[cid].getStateValue()
+    return json.dumps(state)
 
   def set_character_state_str(self, str):
-    self.character_state = json.loads(str)
-
+    self.character_state = {}    
+    state = json.loads(str)
+    for cid in state.keys():
+      char_state = CharState()
+      char_state.setStateValue(state[cid])
+      self.character_state[cid] = char_state
+      
   def get_item_state_str(self):
     return json.dumps(self.item_state)
 
@@ -58,8 +119,7 @@ class WorldState:
 
   def get_char(self, char_id):
     if not char_id in self.character_state:
-      self.character_state[char_id] = {
-        PROP_LOCATION: "" }
+      self.character_state[char_id] = CharState()
     return self.character_state[char_id]
 
   def get_item(self, item_id):
@@ -69,10 +129,10 @@ class WorldState:
     return self.item_state[item_id]
 
   def getCharacterLocation(self, char_id):
-    return self.get_char(char_id)[PROP_LOCATION]
+    return self.get_char(char_id).getLocation()
 
   def setCharacterLocation(self, char_id, site_id):
-    self.get_char(char_id)[PROP_LOCATION] = site_id
+    self.get_char(char_id).setLocation(site_id)
 
   def getCharactersAtLocation(self, site_id):
     result = []
@@ -80,7 +140,50 @@ class WorldState:
       if self.getCharacterLocation(char_id) == site_id:
         result.append(char_id)
     return result
+ 
+  def setLocation(self, site_id=None):
+    self.setCharacterLocation(PLAYER_ID, site_id)
 
+  def getLocation(self):
+    return self.getCharacterLocation(PLAYER_ID)
+
+  def getCharacterStrength(self, char_id):
+    return self.get_char(char_id).getStrength()
+
+  def setCharacterStrength(self, char_id, value):
+    self.get_char(char_id).setStrength(value)
+
+  def getCharacterHealth(self, char_id):
+    return self.get_char(char_id).getHealth()
+
+  def setCharacterHealth(self, char_id, value):
+    self.get_char(char_id).setHealth(value)
+
+  def getCharacterCredits(self, char_id):
+    return self.get_char(char_id).getCredits()
+
+  def setCharacterCredits(self, char_id, value):
+    self.get_char(char_id).setCredits(value)
+
+  def getPlayerStrength(self):
+    return self.getCharacterStrength(PLAYER_ID)
+
+  def setPlayerStrength(self, value):
+    self.setCharacterStrength(PLAYER_ID, value)
+
+  def getPlayerHealth(self):
+    return self.getCharacterHealth(PLAYER_ID)
+
+  def setPlayerHealth(self, value):
+    self.setCharacterHealth(PLAYER_ID, value)
+
+  def getPlayerCredits(self):
+    return self.getCharacterCredits(PLAYER_ID)
+
+  def setPlayerCredits(self, value):
+    self.setCharacterCredits(PLAYER_ID, value)
+    
+    
   def getCharacterItems(self, char_id):
     result = []
     for item_id in self.item_state.keys():
@@ -151,18 +254,6 @@ class WorldState:
     """
     return self.player_state[PROP_CHAT_WHO]
 
-  def setLocation(self, site_id=None):
-    if site_id is None:
-      site_id = ""
-    self.player_state[PROP_LOCATION] = site_id
-
-  def getLocation(self):
-    return self.player_state[PROP_LOCATION]
-
-  def updateGoalState(self, db):
-    # pass TODO
-    pass
-
 
 def getWorldStateID(db, session_id, world_id):
   """
@@ -224,7 +315,7 @@ def checkWorldState(db, wstate):
     places.extend(characters)
     places.extend(sites)
     if len(places) > 0:
-      # Set item location - character or location
+      # Set item location - character or site
       for item in items:
         if wstate.item_state.get(item.getID()) is None:
           place = random.choice(places)

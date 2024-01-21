@@ -1,0 +1,16 @@
+Test Coverage
+-------------
+
+1. Add test to world state - move out of test_db_functions
+2. Add tests for client_commands
+3. Extend API test coverage
+
+
+Notes
+-----
+
+Two types of test cases:
+
+1. Unit test - there is no flask app
+2. System test - using a flask app - with conftest.py
+

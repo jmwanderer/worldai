@@ -17,7 +17,7 @@ def open_db():
 
 def check_init_db():
   data_dir = os.path.dirname(DATABASE)
-  if not os.path.exists(data_dir):
+  if len(data_dir) > 0 and not os.path.exists(data_dir):
     os.makedirs(data_dir)
 
   if not os.path.exists(DATABASE):
