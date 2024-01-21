@@ -124,8 +124,8 @@ function ChatScreen({ name, context, getChats, postChat, clearChat, onChange}) {
           setChatHistory(values["messages"]);
           if (values["messages"].length === 0) {
             setChatState("waiting");                
-            const values = await postChat(context, "");
-            setChatHistory(c => [...c, values])
+            const response = await postChat(context, "");
+            setChatHistory(c => [...c, response])
           }
           if (values["enabled"]) {
             setChatState("ready");

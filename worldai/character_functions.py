@@ -8,38 +8,48 @@ from . import chat_functions
 from . import world_state
 
 INSTRUCTIONS="""
-You have the persona of a fictional character.
-Your name is {name}.
+You are '{name}', a fictional character.
+You are described as '{character_notes}'
+{character_details}
+{personality}
+
 You reside in the world {world_name}.
-You are described as follows:
-{description}
-
-{friendship}
-
-Your current location is "{location}"
-
-You have the following items:
-{char_items}
-
-The user has the following items:
-{user_items}
-
 Your world is described as follows:
 {world_description}
+Your current location is "{location}"
 
-To accept or take an item from the user, call AcceptItem
-To give the item to the user, call GiveItem
-To offer your support to the user, call GiveSupport
-Call ListSites to get the locations or sites and ids
-Call ListCharacters to get the characters and ids
-Call ListItems to get the artifacts or items and ids
+You are talking to the user, who you know by the name 'Traveler'
+Traveler is a visitor to this world. 
+{friendship}
+
+{name} has the following items:
+'{char_items}'
+
+Travler has the following items:
+'{user_items}'
 
 If you support the user, you are inclined to loan items to the user
 """
 
+CHARACTER_DETAILS="""
+Additional details about you:
+'{details}'
+
+"""
+PERSONALITY="""
+{personality}
+"""
+
+WORLD_DETAILS="""
+Additional details about your world {world_name}:
+{world_details}
+
+"""
+
 FRIENDSHIP_NEUTRAL="""
-You do not yet know if this user is a friend or an enemy.
-When you first meet the user, offer a greeting but not assistance.
+You do not yet know if Traveler is a friend or an enemy.
+On meeting, no assistance should be offered, we do not know the
+motivations or values of Traveler.
 The user may want your friendship and support. But you must
 ensure the user deserves your support.
 """
@@ -56,23 +66,6 @@ Your level of enimity is {level} of 10.
 """
 
 
-CHARACTER_DETAILS="""
-Additional details about you:
-{details}
-
-"""
-
-WORLD_DETAILS="""
-Additional details about your world {world_name}:
-{world_details}
-
-"""
-
-
-PERSONALITY="""
-Your presonality can be described as:
-{personality}
-"""
 
 class CharacterFunctions(chat_functions.BaseChatFunctions):
 
@@ -105,38 +98,44 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     character_items = []
     for item_id in wstate.getCharacterItems(self.character_id):
       item = elements.loadItem(db, item_id)
-      character_items.append(item.getIdName().getJSON())
+      character_items.append(item.getName())
 
     user_items = []
     for item_id in wstate.getItems():
       item = elements.loadItem(db, item_id)
-      user_items.append(item.getIdName().getJSON())
+      user_items.append(item.getName())
 
-    instructions = []
-    instructions.append(INSTRUCTIONS.format(
+    character_details = ""
+    if len(character.getDetails()) > 0:
+      character_details = CHARACTER_DETAILS.format(
+        details=character.getDetails())
+      
+    personality = ""
+    if len(character.getPersonality()) > 0:
+      personality = PERSONALITY.format(
+        personality=character.getPersonality())
+
+    world_details = ""
+    if len(world.getDetails()) > 0:
+      world_details = WORLD_DETAILS.format(
+        world_name=world.getName(),        
+        world_details=world.getDetails())
+
+    instructions = INSTRUCTIONS.format(
       name=character.getName(),
+      character_notes=character.getDescription(),      
+      character_details=character_details,
+      personality=personality,
       world_name=world.getName(),
+      world_details=world_details,
       description=character.getDescription(),
       friendship=friendship,
       location=location,
-      char_items=character_items,
-      user_items=user_items,
-      world_description=world.getDescription()))
+      char_items=",".join(character_items),
+      user_items=",".join(user_items),
+      world_description=world.getDescription())
 
-    if len(character.getDetails()) > 0:
-      instructions.append(CHARACTER_DETAILS.format(
-        details=character.getDetails()))
-
-    if len(world.getDetails()) > 0:
-      instructions.append(WORLD_DETAILS.format(
-        world_name=world.getName(),        
-        world_details=world.getDetails()))
-
-    if len(character.getPersonality()) > 0:
-      instructions.append(PERSONALITY.format(
-        personality=character.getPersonality()))
-
-    return "\n".join(instructions)
+    return instructions
 
   def get_available_tools(self):
     result = []
@@ -181,8 +180,13 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                        "description": site.getDescription() })
 
     elif function_name == "ListItems":
-      result = [ { "id": entry.getID(), "name": entry.getName() } 
-             for entry in elements.listItems(db, self.world_id) ]
+      result = []
+      for entry in elements.listItems(db, self.world_id):
+        item = elements.loadItem(db, entry.getID())
+        result.append({ "id": entry.getID(),
+                        "name": item.getName(),
+                        "description": item.getDescription() })
+                 
       
     return result
 

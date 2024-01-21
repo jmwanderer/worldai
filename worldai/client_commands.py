@@ -26,8 +26,10 @@ class ClientActions:
       site = elements.loadSite(self.db, site_id)
       if site is not None:
         self.wstate.setLocation(site_id)
+        print(f"set location {site_id}")
       else:
-        self.wstate.setLocation(None)      
+        self.wstate.setLocation(None)
+        print("clear location")        
       changed = True
       result = ok
 

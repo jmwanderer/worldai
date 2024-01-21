@@ -574,7 +574,11 @@ def threads_api(wid, id):
   # Player and character must be in same location to chat.
   wstate = world_state.loadWorldState(get_db(), wstate_id)  
   enabled = (wstate.getCharacterLocation(id) == wstate.getLocation())
+  print(f"location: {wstate.getLocation()}")
+  print(f"char location: {wstate.getCharacterLocation(id)}")  
   engaged = (wstate.getChatCharacter() == id)
+  print(f"enabled: {enabled}")
+  print(f"engaged: {engaged}")  
   content["enabled"] = enabled and engaged
 
   chat_session.saveChatSession(get_db())
