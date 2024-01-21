@@ -140,7 +140,6 @@ class WorldState:
       return 0
     return self.player_state[PROP_CHAR_FRIENDSHIP][char_id]
 
-
   def setChatCharacter(self, char_id=None):
     if char_id is None:
       char_id = ""

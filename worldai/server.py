@@ -22,9 +22,9 @@ from . import chat
 from . import design_functions
 from . import design_chat
 from . import character_chat
-from . import threads
 from . import world_state
 from . import chat_cli
+from . import client_commands
 
 
 def create_app(instance_path=None, test_config=None):
@@ -563,7 +563,8 @@ def threads_api(wid, id):
   # Player and character must be in same location to chat.
   wstate = world_state.loadWorldState(get_db(), wstate_id)  
   enabled = (wstate.getCharacterLocation(id) == wstate.getLocation())
-  content["enabled"] = enabled           
+  engaged = (wstate.getChatCharacter() == id)
+  content["enabled"] = enabled and engaged
 
   chat_session.saveChatSession(get_db())
   return content
@@ -741,6 +742,7 @@ def site(wid, sid):
   if site == None:
     return { "error", "Site not found"}, 400
 
+  chat_char_id = wstate.getChatCharacter()
   images = getElementImageProps(site)
   result = site.getJSONRep()
   result["images"] = images
@@ -751,14 +753,17 @@ def site(wid, sid):
     character = elements.loadCharacter(get_db(), cid)
     # TODO: make more DRY
     image_prop = getElementThumbProperty(character)
-    characters.append(
-      {"id": cid,
-       "name": character.getName(),
-       "description": character.getDescription(),
-       "givenSupport": wstate.getFriendship(cid) > 0,
-       "image": image_prop })
-  result["characters"] = characters
-  
+    record = {"id": cid,
+              "name": character.getName(),
+              "description": character.getDescription(),
+              "givenSupport": wstate.getFriendship(cid) > 0,
+              "image": image_prop }
+    characters.append(record)
+
+  result["characters"] = characters    
+  if chat_char_id in cid_list:
+    result["chatting"] = chat_char_id
+      
   items = []
   iid_list = wstate.getItemsAtLocation(sid)
   for iid in iid_list:
@@ -839,28 +844,10 @@ def command(wid):
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
   wstate = world_state.loadWorldState(get_db(), wstate_id)
 
-  result = { "status": "error" }  
   changed = False
   command = request.json
-
-  if (command.get("name") == "go"):
-    site_id = command.get("to")
-    # Verify location
-    site = elements.loadSite(get_db(), site_id)
-    if site is not None:
-      wstate.setLocation(site_id)
-    else:
-      wstate.setLocation(None)      
-    changed = True
-    result = { "status": "ok" }
-
-  elif (command.get("name") == "take"):
-    item_id = command.get("item")
-    # Verify 
-    if wstate.getItemLocation(item_id) == wstate.getLocation():
-      wstate.addItem(item_id)
-      changed = True
-      result = { "status": "ok" }
+  client_actions = client_commands.ClientActions(world, wstate)
+  result, changed = client_actions.ExecCommand(command)
 
   if changed:
     world_state.saveWorldState(get_db(), wstate)

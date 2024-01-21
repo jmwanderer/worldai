@@ -229,6 +229,7 @@ function Site({ world, siteId, onClose }) {
         const value = await getSite(world.id, siteId)
         if (!ignore) {
           setSite(value);
+          setCharacterId(value.chatting);
         }
       } catch (e) {
         console.log(e);        
@@ -258,10 +259,6 @@ function Site({ world, siteId, onClose }) {
     setView(null)
   }
 
-  function clearCharacterId() {
-    setCharacterId(null)
-  }
-
   function clickClose() {
     onClose()
   }
@@ -269,6 +266,25 @@ function Site({ world, siteId, onClose }) {
   if (!site) {
     return <div/>        
   }
+
+  async function engageCharacter(char_id) {
+    try {    
+      await postEngage(world.id, char_id)
+      setCharacterId(char_id)
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async function disengageCharacter() {
+    try {    
+      await postEngage(world.id, null)
+      setCharacterId(null)      
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  
 
   if (view) {
     return (<DetailsView view={view} world={ world }
@@ -279,7 +295,7 @@ function Site({ world, siteId, onClose }) {
     return (
       <ChatCharacter worldId={world.id}
                      characterId={characterId}
-                     onClose={clearCharacterId}
+                     onClose={disengageCharacter}
                      onChange={handleUpdate}/>
     );
   }
@@ -302,7 +318,7 @@ function Site({ world, siteId, onClose }) {
       </Row>
       <Row className="mb-2">
         <SitePeople site={site}
-                    setCharacterId={setCharacterId}/>
+                    setCharacterId={engageCharacter}/>
       </Row>
       <Row>
         <SiteItems site={site}
@@ -550,6 +566,24 @@ async function postGoTo(worldId, siteId) {
   const url = `/worlds/${worldId}/command`;
   const data = { "name": "go",
                  "to": siteId }
+  let result = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()        
+  });
+  return result;
+}
+
+async function postEngage(worldId, charId) {
+  const url = `/worlds/${worldId}/command`;
+  let data = null
+  if (charId !== null) {
+    data =  { "name": "engage",
+              "character": charId }
+  } else {
+    data =  { "name": "disengage" }
+  }
+  
   let result = await fetch(get_url(url), {
     method: 'POST',
     body: JSON.stringify(data),
