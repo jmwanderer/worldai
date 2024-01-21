@@ -776,8 +776,7 @@ def site(wid, sid):
     characters.append(record)
 
   result["characters"] = characters    
-  if chat_char_id in cid_list:
-    result["chatting"] = chat_char_id
+  result["chatting"] = chat_char_id
       
   items = []
   iid_list = wstate.getItemsAtLocation(sid)
