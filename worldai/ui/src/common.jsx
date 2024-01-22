@@ -48,7 +48,7 @@ function WorldItem({ world, onClick }) {
 function ElementImages({element}) {
   const items = element.images.map(entry =>
     <Carousel.Item key={entry.url}>
-      <div class="d-flex justify-content-center">
+      <div className="d-flex justify-content-center">
         <Image src={entry.url}
                style={{ maxWidth: "50vmin", maxHeight: "50vmin",
                         minHeight: "30vmin"}}/>

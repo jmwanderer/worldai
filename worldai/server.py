@@ -572,6 +572,7 @@ def threads_api(wid, id):
     content = { "error": "malformed input" }
 
   # Player and character must be in same location to chat.
+  print("load world state")
   wstate = world_state.loadWorldState(get_db(), wstate_id)  
   enabled = (wstate.getCharacterLocation(id) == wstate.getLocation())
   print(f"location: {wstate.getLocation()}")
@@ -864,6 +865,7 @@ def command(wid):
   result, changed = client_actions.ExecCommand(command)
 
   if changed:
+    print("save world state")
     world_state.saveWorldState(get_db(), wstate)
     
   return result

@@ -67,11 +67,12 @@ async function postCharacterChat(context, user_msg) {
 
 
 
-function ChatCharacter({ worldId, characterId, onClose, onChange}) {
+function ChatCharacter({ world, characterId, onClose, onChange}) {
+  const [view, setView] = useState(null);  
   const [character, setCharacter] = useState(null);
   const [context, setContext ] = useState(
     {
-      "worldId": worldId,
+      "worldId": world.id,
       "characterId": characterId
     });  
   const [refresh, setRefresh] = useState(null);    
@@ -80,7 +81,7 @@ function ChatCharacter({ worldId, characterId, onClose, onChange}) {
     async function getData() {
       // Load the character
       try {
-        const value = await getCharacter(worldId, characterId);
+        const value = await getCharacter(world.id, characterId);
         if (!ignore) {
           setCharacter(value);
         }
@@ -92,7 +93,7 @@ function ChatCharacter({ worldId, characterId, onClose, onChange}) {
     return () => {
       ignore = true;
     }
-  }, [worldId, characterId, refresh]);
+  }, [world, characterId, refresh]);
 
 
   function handleUpdate() {
@@ -100,16 +101,24 @@ function ChatCharacter({ worldId, characterId, onClose, onChange}) {
     onChange()
   }
 
+  function clearView() {
+    setView(null)
+  }
+  
+
   if (!character) {
     return <div/>
+  }
+
+  if (view) {
+    return (<DetailsView view={view} world={ world }
+                         onClose={clearView}/>);
   }
 
   return (
     <Container>
       <Row>
-        <Col>
-          <CloseBar onClose={onClose}/>
-        </Col>
+        <Navigation onClose={onClose} setView={ setView }/>
       </Row>
       <Row>
         <Col xs={6}>
@@ -293,7 +302,7 @@ function Site({ world, siteId, onClose }) {
 
   if (characterId) {
     return (
-      <ChatCharacter worldId={world.id}
+      <ChatCharacter world={world}
                      characterId={characterId}
                      onClose={disengageCharacter}
                      onChange={handleUpdate}/>
@@ -350,7 +359,7 @@ function Navigation({ onClose, setView}) {
             Characters
           </Nav.Link>
           <Nav.Link onClick={setItemsView}>
-            Items
+            Inventory
           </Nav.Link>                        
         </Nav>
       </Container>
@@ -460,7 +469,7 @@ function ItemListEntry({ item }) {
 }
 
 
-function ItemList({ worldId }) {
+function Inventory({ worldId }) {
 
   const [itemList, setItemList] = useState([]);
 
@@ -484,11 +493,11 @@ function ItemList({ worldId }) {
     }
   }, [worldId]);
 
-  const entries = itemList.map(entry =>
-    <ItemListEntry key={entry.id}
-                   item={entry}/>
-  );
-
+  const entries = itemList.filter(
+    entry => entry.have_item).map(
+      entry => <ItemListEntry key={entry.id}
+                              item={entry}/>);
+  
   return (
     <Stack className="mt-3">
       { entries }
@@ -502,9 +511,9 @@ function DetailsView({view, world, onClose}) {
     return (
       <div>
         <CloseBar onClose={onClose}/>
-        <h2>
+        <h5>
           {world.name} Characters
-        </h2>
+        </h5>
         <CharacterList worldId={world.id}/>
       </div>
     );        
@@ -512,10 +521,10 @@ function DetailsView({view, world, onClose}) {
     return (
       <div>
         <CloseBar onClose={onClose}/>
-        <h2>
-          {world.name} Items
-        </h2>
-        <ItemList worldId={world.id}/>                
+        <h5>
+          Inventory
+        </h5>
+        <Inventory worldId={world.id}/>                
       </div>
     );        
   }
