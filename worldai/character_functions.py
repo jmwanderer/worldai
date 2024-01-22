@@ -22,11 +22,9 @@ You are talking to the user, who you know by the name 'Traveler'
 Traveler is a visitor to this world. 
 {friendship}
 
-{name} has the following items:
-'{char_items}'
+{char_items}
 
-Travler has the following items:
-'{user_items}'
+{user_items}
 
 If you support the user, you are inclined to loan items to the user
 """
@@ -44,6 +42,24 @@ WORLD_DETAILS="""
 Additional details about your world {world_name}:
 {world_details}
 
+"""
+
+CHAR_ITEMS="""
+{name} possesses the following items:
+'{char_items}'
+"""
+
+NO_CHAR_ITEMS="""
+{name} does not currently possess any items.
+"""
+
+USER_ITEMS="""
+Travler possesses the following items:
+'{user_items}'
+"""
+
+NO_USER_ITEMS="""
+Travler does not currently possess any items.
 """
 
 FRIENDSHIP_NEUTRAL="""
@@ -95,15 +111,29 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       site = elements.loadSite(db, site_id)
       location = site.getName()
     
-    character_items = []
+    character_items_list = []
     for item_id in wstate.getCharacterItems(self.character_id):
       item = elements.loadItem(db, item_id)
-      character_items.append(item.getName())
+      character_items_list.append(item.getName())
 
-    user_items = []
+    if len(character_items_list) > 0:
+      character_items=CHAR_ITEMS.format(
+        name=character.getName(),
+        char_items=",".join(character_items_list))
+    else:
+      character_items=NO_CHAR_ITEMS.format(
+                name=character.getName())
+
+    user_items_list = []
     for item_id in wstate.getItems():
       item = elements.loadItem(db, item_id)
-      user_items.append(item.getName())
+      user_items_list.append(item.getName())
+
+    if len(user_items_list) > 0:
+      user_items = USER_ITEMS.format(
+        user_items=",".join(user_items_list))
+    else:
+      user_items = NO_USER_ITEMS
 
     character_details = ""
     if len(character.getDetails()) > 0:
@@ -131,8 +161,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       description=character.getDescription(),
       friendship=friendship,
       location=location,
-      char_items=",".join(character_items),
-      user_items=",".join(user_items),
+      char_items=character_items,
+      user_items=user_items,
       world_description=world.getDescription())
 
     return instructions
@@ -168,10 +198,10 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncAcceptItem(db, arguments)
     if function_name == "ChangeLocation":
       result = self.FuncChangeLocation(db, arguments)
-    elif function_name == "ListCharacters":
+    elif function_name == "ListAllCharacters":
       result = [{ "id": entry.getID(), "name": entry.getName() }            
                 for entry in elements.listCharacters(db, self.world_id) ]
-    elif function_name == "ListSites":
+    elif function_name == "ListAllSites":
       result = []
       for entry in elements.listSites(db, self.world_id):   
         site = elements.loadSite(db, entry.getID())
@@ -179,14 +209,23 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                        "name": site.getName(),
                        "description": site.getDescription() })
 
-    elif function_name == "ListItems":
+    elif function_name == "ListAllItems":
       result = []
       for entry in elements.listItems(db, self.world_id):
         item = elements.loadItem(db, entry.getID())
         result.append({ "id": entry.getID(),
                         "name": item.getName(),
                         "description": item.getDescription() })
-                 
+    elif function_name == "ListMyItems":
+      wstate = world_state.loadWorldState(db, self.wstate_id)      
+      result = []
+      char_items = wstate.getCharacterItems(self.character_id)
+      for entry in elements.listItems(db, self.world_id):
+        if entry.getID() in char_items:
+          item = elements.loadItem(db, entry.getID())
+          result.append({ "id": entry.getID(),
+                          "name": item.getName(),
+                          "description": item.getDescription() })
       
     return result
 
@@ -354,7 +393,7 @@ all_functions = [
   },
 
   {
-    "name": "ListSites",
+    "name": "ListAllSites",
     "description": "Get the list of existing sites and IDs",
     "parameters": {
       "type": "object",
@@ -363,8 +402,8 @@ all_functions = [
     },
   },
   {
-    "name": "ListItems",
-    "description": "Get the list of existing items and IDs",    
+    "name": "ListAllItems",
+    "description": "Get the list of all existing items and IDs",    
     "parameters": {
       "type": "object",
       "properties": {
@@ -372,8 +411,17 @@ all_functions = [
     },
   },
   {
-    "name": "ListCharacters",
-    "description": "Get the list of existing characters and IDs",        
+    "name": "ListMyItems",
+    "description": "Get the list of items I possess",    
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+  {
+    "name": "ListAllCharacters",
+    "description": "Get the list of all existing characters and IDs",        
     "parameters": {
       "type": "object",
       "properties": {
