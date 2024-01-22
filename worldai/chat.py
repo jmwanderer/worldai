@@ -33,6 +33,7 @@ from . import chat_functions
 #
 
 GPT_MODEL = "gpt-3.5-turbo-1106"
+#GPT_MODEL = "gpt-4-1106-preview"
 # Can be higher, but save $$$ with some potential loss in perf
 MESSAGE_THRESHOLD=3_000
 
