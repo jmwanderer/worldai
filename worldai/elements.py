@@ -52,6 +52,28 @@ PROP_DESCRIPTION = "description"
 PROP_DETAILS = "details"
 PROP_PLANS = "plans"
 PROP_PERSONALITY = "personality"
+
+# Item property
+PROP_MOBILE = "is_mobile"
+PROP_ABILITY = "ability"
+
+class CharState:
+  # Possible states for characters.
+  STATE_SLEEP = "sleeping"
+  STATE_PARALIZED = "paralized"
+  STATE_POISONED = "poisoned"
+  STATE_BRAINWASHED = "brainwashed"
+  STATE_CAPTURED = "captured"
+  STATE_INVISIBLE = "invisible"
+  STATE_KILLED = "killed"
+
+class ItemAction:
+  # Item Actions
+  # Items can apply, clear, and toggle states on characters
+  ITEM_APPLY = "apply"
+  ITEM_CLEAR = "clear"
+  ITEM_TOGGLE = "toogle"
+
   
 class IdName:
   """
@@ -71,8 +93,6 @@ class IdName:
   def getJSON(self):
     return { "id": self.id,
              "name": self.name }
-  
-
 
 class ElemTag:
   """
@@ -131,6 +151,7 @@ class ElemTag:
       return ElemTag()
     return ElemTag(tag["wid"], tag["id"], tag["element_type"])
     
+
   
 class Element:
   """
@@ -304,12 +325,48 @@ class Site(Element):
   def __init__(self, parent_id=''):
     super().__init__(ElementType.SITE, parent_id)
 
+
+class ItemAbility:
+  def __init__(self):
+    self.action = ""
+    self.tag = ""
+
+  def getValue(self):
+    return { "action": self.action,
+            "tag": self.tag }
+
+  def setValue(self, value):
+    self.action = value["action"]
+    self.tag = value["tag"]
+
+  def getAction():
+    return self.action
+
+  def getTag():
+    return self.tag
+  
+
 class Item(Element):
   """
   Represents an instance of an Item
   """
   def __init__(self, parent_id=''):
     super().__init__(ElementType.ITEM, parent_id)
+    self.setIsMobile(True)
+    
+  def getIsMobile(self):
+    return self.getProperty(PROP_MOBILE)
+
+  def setIsMobile(self, value):
+    return self.setProperty(PROP_MOBILE, value)
+
+  def getAbility(self):
+    ability = ItemAbility()
+    ability.setValue(self.getProperty(PROP_ABILITY))
+    return ability
+
+  def setAbility(self, ability):
+    self.setProperty(PROP_ABILITY, ability.getValue())
 
                        
 class ElementStore:

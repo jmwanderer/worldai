@@ -44,7 +44,7 @@ class DesignChatSession:
 
   def chat_history(self):
     history = []
-    for message in self.chat.chat_history(to_html=False)["messages"]:
+    for message in self.chat.chat_history()["messages"]:
       history.append({ "id": os.urandom(4).hex(),
                        "user": message["user"],
                        "reply": message["assistant"],
@@ -113,6 +113,6 @@ class DesignChatSession:
           self.chat.chat_exchange(db, message)
 
 
-    return self.chat.chat_exchange(db, user, to_html=False)
+    return self.chat.chat_exchange(db, user)
 
     

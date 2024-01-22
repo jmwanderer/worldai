@@ -131,34 +131,6 @@ def log_chat_message(messages, assistant_message):
     f.close()
 
 
-def parseResponseText(text):
-  md = markdown.Markdown()
-  # Catch case of unordered list starting without a preceeding blank line
-  prev_line_list = False
-  lines = []
-
-  line_list = False
-  # Fix up non-standard markdown lists.
-  for line in text.splitlines():
-    if line.startswith("  ") and len(line) > 2:
-      # Need 4 spaces indent, not 2.
-      if line[2] == '-' or line[2].isdigit():
-        line = "  " + line
-    elif line.startswith("   ") and len(line) > 3:
-      # Need 4 spaces indent, not 3.
-      if line[3] == '-' or line[3].isdigit():
-        line = " " + line
-    line_list = len(line) > 0 and line[0].isdigit()
-    line_list = line_list or line.startswith("-")
-    if line_list and not prev_line_list:
-      lines.append("")
-    lines.append(line)
-    prev_line_list = line_list
-  text = "\n".join(lines)
-  result = md.convert(text)
-  return result
-  
-  
 class ChatSession:
   def __init__(self, id=None, chatFunctions=None):
     # TODO: remove id
@@ -229,21 +201,18 @@ class ChatSession:
     return messages
 
 
-  def getMessageContent(self, message_set, to_html=True):
+  def getMessageContent(self, message_set):
     content = message_set.getMessageContent()
-    if to_html:
-      content["user"] = elements.textToHTML(content["user"])
-      content["assistant"] = parseResponseText(content["assistant"])
     return content
   
-  def chat_history(self, to_html=True):
+  def chat_history(self):
     messages = []
     for message_set in self.history.message_sets():
-      messages.append(self.getMessageContent(message_set, to_html))
+      messages.append(self.getMessageContent(message_set))
     return { "messages": messages }
   
   
-  def chat_exchange(self, db, user, to_html=True):
+  def chat_exchange(self, db, user):
     function_call = False
     assistant_message = None
     messages = []
@@ -341,8 +310,7 @@ class ChatSession:
         
     # Return result
     
-    result = self.getMessageContent(self.history.current_message_set(),
-                                    to_html)
+    result = self.getMessageContent(self.history.current_message_set())
     return result
 
 
