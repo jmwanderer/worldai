@@ -329,7 +329,8 @@ class ElementStore:
     element.name = r[1]      
     element.setPropertiesJSON(r[2])
 
-    c = db.execute("SELECT id FROM images WHERE parent_id = ?", (id,))
+    c = db.execute("SELECT id FROM images WHERE parent_id = ? " +
+                   "AND is_hidden = FALSE", (id,))
     for entry in c.fetchall():
       element.images.append(entry[0])
     return element
@@ -412,6 +413,15 @@ def createImage(db, image):
   db.commit()
   return image
 
+def getImageFromIndex(db, parent_id, index):
+  # Convert index ordinal (0, 1, 2, ...) to an image id
+  # TODO: Note this is probably broken and we need an ordering.
+  images = listImages(db, parent_id)
+  if len(images) > index:
+    return images[index]["id"]
+  return None
+  
+  
 def hideImage(db, id):
   db.execute("UPDATE images SET is_hidden = TRUE WHERE id = ?", (id,))
   db.commit()
@@ -443,10 +453,15 @@ def getImage(db, id):
     return image
   return None
 
-def listImages(db, parent_id):
+def listImages(db, parent_id, include_hidden=False):
   result = []
-  q = db.execute("SELECT id, prompt, filename FROM images WHERE " +
-                 "parent_id = ? AND is_hidden = FALSE", (parent_id,))
+  if include_hidden:
+    q = db.execute("SELECT id, prompt, filename FROM images WHERE " +
+                   "parent_id = ?", (parent_id,))
+  else:
+    q = db.execute("SELECT id, prompt, filename FROM images WHERE " +
+                   "parent_id = ? AND is_hidden = FALSE", (parent_id,))
+    
   for (id, prompt, filename) in q.fetchall():
     result.append({ "id": id,
                     "prompt": prompt,
@@ -616,7 +631,7 @@ def deleteCharacter(db, data_dir, id):
   logging.info("delete character: [%s] %s",
                character.id,
                character.getName())
-  images = listImages(db, id)
+  images = listImages(db, id, include_hidden=True)
 
   for image in images:
     deleteImage(db, data_dir, image["id"])
@@ -634,7 +649,7 @@ def deleteWorld(db, data_dir, world_id):
   for entry in characters:
     deleteCharacter(db, data_dir, entry.getID())
 
-  images = listImages(db, world.id)    
+  images = listImages(db, world.id, include_hidden=True)    
   for image in images:
     deleteImage(db, data_dir, image["id"])
     

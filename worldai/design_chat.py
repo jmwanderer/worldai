@@ -85,6 +85,7 @@ class DesignChatSession:
       # Handle when next view is world.
       if next_view.getType() == elements.ElementType.WorldType():
         new_state = design_functions.elemTypeToState(next_view.getType())
+        logging.info("world view, change state to: %s", new_state)
         self.chatFunctions.current_state = new_state        
         self.chatFunctions.current_view = next_view
 

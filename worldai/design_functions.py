@@ -37,21 +37,26 @@ states = {
   STATE_WORLD: [ "ReadPlanningNotes", 
                  "ShowCharacter", "ShowItem", "ShowSite",
                  "ChangeState", "EditWorld" ],
+
   STATE_WORLD_EDIT: [ "UpdateWorld", "ShowWorld",
                       "ReadPlanningNotes", "UpdatePlanningNotes",
-                      "CreateWorldImage", "ChangeState" ],
+                      "CreateWorldImage", "ChangeState",
+                      "RemoveWorldImage", "RecoverWorldImages" ],                      
   STATE_CHARACTERS: [ "ListCharacters", "ShowCharacter",
                       "CreateCharacter", "UpdateCharacter",
                       "ReadPlanningNotes", 
-                      "CreateCharacterImage", "ChangeState" ],
+                      "CreateCharacterImage", "ChangeState",
+                      "RemoveImage", "RecoverImages" ],
   STATE_ITEMS: [ "ListItems", "ShowItem",
                  "CreateItem", "UpdateItem",
                  "ReadPlanningNotes",                  
-                 "CreateItemImage", "ChangeState" ],
+                 "CreateItemImage", "ChangeState",
+                 "RemoveImage", "RecoverImages" ],
   STATE_SITES: [ "ListSites",  "ShowSite",
                  "CreateSite", "UpdateSite",
                  "ReadPlanningNotes",                  
-                 "CreateSiteImage", "ChangeState" ],
+                 "CreateSiteImage", "ChangeState",
+                 "RemoveImage", "RecoverImages" ],  
 }
 
 
@@ -404,6 +409,14 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
           function_name == "CreateSiteImage"):          
       result = self.FuncCreateImage(db, arguments)
 
+    elif (function_name == "RemoveImage" or
+          function_name == "RemoveWorldImage"):
+      result = self.FuncRemoveImage(db, arguments)    
+
+    elif (function_name == "RecoverImages" or
+          function_name == "RecoverWorldImages"):
+      result = self.FuncRecoverImages(db, arguments)    
+
     if self.current_state == STATE_WORLDS:
       self.current_view = elements.ElemTag()
     elif self.current_state == STATE_WORLD:
@@ -714,6 +727,36 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       status["id"] = image.id
       return status
     return self.funcError("problem generating image")
+
+  def FuncRemoveImage(self, db, arguments):
+    index = arguments["index"]
+
+    if self.current_state == STATE_WORLD_EDIT:
+      element_id = self.getCurrentWorldID()
+    else:
+      element_id = arguments["id"]
+      
+    logging.info(f"remove image element_id {element_id}")
+    logging.info(f"remove image index {index}")
+    
+    id = elements.getImageFromIndex(db, element_id, int(index))
+    logging.info(f"remove image id {id}")    
+    
+    if id is None:
+      return self.funcError(f"unknown image index: {index}")
+    elements.hideImage(db, id)
+    print(f"hid image id {id}")        
+    return self.funcStatus("image removed")    
+
+  def FuncRecoverImages(self, db, arguments):
+    if self.current_state == STATE_WORLD_EDIT:
+      element_id = self.getCurrentWorldID()
+    else:
+      element_id = arguments["id"]
+
+    elements.recoverImages(db, element_id)
+    return self.funcStatus("images recovered")    
+
   
 def create_image_thumbnail(image_element):
   """
@@ -1189,6 +1232,65 @@ all_functions = [
       "required": [ "id", "prompt" ],
     },
   },
-    
+
+  {
+    "name": "RemoveImage",
+    "description": "Remove an image from a character, site, or item",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for them character, site, item.",
+        },
+        "index": {
+          "type": "integer",
+          "description": "Zero based index of image to remove",
+        },
+      },
+      "required": [ "id", "index" ],
+    },
+  },
+
+  {
+    "name": "RecoverImages",
+    "description": "Restore images for a character, site, or item",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for them character, site, item.",
+        },
+      },
+      "required": [ "id" ],
+    },
+  },
+
+  {
+    "name": "RemoveWorldImage",
+    "description": "Remove an image from the world",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "index": {
+          "type": "integer",
+          "description": "Zero based index of image to remove",
+        },
+      },
+      "required": [ "index" ],
+    },
+  },
+  {
+    "name": "RecoverWorldImages",
+    "description": "Restore images for the wrold",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+
+  
 ]
 
