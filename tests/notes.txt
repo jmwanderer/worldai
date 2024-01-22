@@ -1,0 +1,13 @@
+Update Test Data
+----------------
+
+run sqlite3 on database
+.output tmp
+.dump
+.exit
+
+edit tmp to remove table create, world state, threads, character threads
+
+cp tmp data/test_data.sql
+
+

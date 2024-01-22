@@ -346,7 +346,8 @@ class ElementStore:
     Return an element insance
     """
     element.id = "id%s" % os.urandom(4).hex()
-    q = db.execute("INSERT INTO elements VALUES (?, ?, ?, ?, ?)",
+    q = db.execute("INSERT INTO elements (id, type, parent_id, name, " +
+                   " properties) VALUES (?, ?, ?, ?, ?)",
                    (element.id, element.type, element.parent_id,
                     element.name, element.getPropertiesJSON()))
     db.commit()
@@ -358,11 +359,24 @@ class ElementStore:
     """
     result = []
     q = db.execute("SELECT id, name FROM elements WHERE " +
-                   "type = ? AND parent_id = ?", (element_type, parent_id))
+                   "type = ? AND parent_id = ? AND is_hidden = FALSE",
+                   (element_type, parent_id))
     for (id, name) in q.fetchall():
       result.append(IdName(id, name))
 
     return result
+
+  def hideElement(db, element_type, id):
+    db.execute("UPDATE elements SET is_hidden = TRUE WHERE id = ? AND " +
+               "type = ?", (id, element_type))
+    db.commit()
+
+  def recoverElements(db, element_type, parent_id):
+    db.execute("UPDATE elements SET is_hidden = FALSE WHERE " +
+               "parent_id = ? AND type = ?",
+               (parent_id, element_type))  
+    db.commit()
+  
 
 class Image:
   """
@@ -392,10 +406,21 @@ class Image:
   
 def createImage(db, image):
   image.id = "id%s" % os.urandom(4).hex()
-  db.execute("INSERT INTO images VALUES (?, ?, ?, ?)",
+  db.execute("INSERT INTO images (id, parent_id, prompt, filename) " +
+             "VALUES (?, ?, ?, ?)",
              (image.id, image.parent_id, image.prompt, image.filename))
   db.commit()
   return image
+
+def hideImage(db, id):
+  db.execute("UPDATE images SET is_hidden = TRUE WHERE id = ?", (id,))
+  db.commit()
+
+def recoverImages(db, parent_id):
+  db.execute("UPDATE images SET is_hidden = FALSE WHERE parent_id = ?",
+             (parent_id,))  
+  db.commit()
+  
 
 def getImageFile(db, data_dir, id):
   q = db.execute("SELECT filename FROM images WHERE id = ?", (id,))
@@ -420,7 +445,8 @@ def getImage(db, id):
 
 def listImages(db, parent_id):
   result = []
-  q = db.execute("SELECT id, prompt, filename FROM images WHERE parent_id = ?", (parent_id,))
+  q = db.execute("SELECT id, prompt, filename FROM images WHERE " +
+                 "parent_id = ? AND is_hidden = FALSE", (parent_id,))
   for (id, prompt, filename) in q.fetchall():
     result.append({ "id": id,
                     "prompt": prompt,
@@ -436,7 +462,7 @@ def getImages(db, parent_id=None):
   result = []
   if parent_id is not None:
     q = db.execute("SELECT id, parent_id, prompt, filename FROM images " +
-                   "WHERE parent_id = ?", (parent_id,))
+                   "WHERE parent_id = ? AND is_hidden = FALSE", (parent_id,))
   else:
     q = db.execute("SELECT id, parent_id, prompt, filename FROM images")
     
@@ -513,6 +539,12 @@ def createCharacter(db, character):
 def updateCharacter(db, character):
   ElementStore.updateElement(db, character)
 
+def hideCharacter(db, id):
+  ElementStore.hideElement(db, ElementType.CHARACTER, id)
+
+def recoverCharacters(db, world_id):
+  ElementStore.recoverElements(db, ElementType.CHARACTER, world_id)
+
 def listSites(db, world_id):
   """
   Return a list of sites.
@@ -533,6 +565,13 @@ def createSite(db, site):
 
 def updateSite(db, site):
   ElementStore.updateElement(db, site)
+
+def hideSite(db, id):
+  ElementStore.hideElement(db, ElementType.SITE, id)
+
+def recoverSites(db, world_id):
+  ElementStore.recoverElements(db, ElementType.SITE, world_id)
+  
     
 def listItems(db, world_id):
   """
@@ -554,6 +593,13 @@ def createItem(db, item):
   
 def updateItem(db, item):
   ElementStore.updateElement(db, item)
+
+def hideItem(db, id):
+  ElementStore.hideElement(db, ElementType.ITEM, id)
+
+def recoverItems(db, world_id):
+  ElementStore.recoverElements(db, ElementType.ITEM, world_id)
+  
     
 def deleteImage(db, data_dir, image_id):
   image = getImage(db, image_id)

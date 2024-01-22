@@ -10,14 +10,16 @@ CREATE TABLE elements (
   type INTEGER,    
   parent_id TEXT,
   name TEXT NOT NULL,
-  properties TEXT NOT NULL
+  properties TEXT NOT NULL,
+  is_hidden BOOLEAN DEFAULT FALSE
 );      
 
 CREATE TABLE images (
   id TEXT PRIMARY KEY,
   parent_id TEXT NOT NULL,
   prompt TEXT NOT NULL,
-  filename TEXT NOT NULL
+  filename TEXT NOT NULL,
+  is_hidden BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE token_usage (

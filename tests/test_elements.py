@@ -29,19 +29,37 @@ class BasicTestCase(unittest.TestCase):
     f_out.close()
     
   def testImages(self):
+    parent_id = "my_parent"
 
+    images = elements.getImages(self.db, parent_id)
+    self.assertEqual(len(images), 0)
+    
     image = elements.Image()
     image.setPrompt("a prompt")
-    image.setParentId("dummy_id")
+    image.setParentId(parent_id)
     self.createImageFile(image.getFilename())
     image = elements.createImage(self.db, image)
     self.assertIsNotNone(image)
+
+    images = elements.getImages(self.db, parent_id)
+    self.assertEqual(len(images), 1)
+    
 
     f = elements.getImageFile(self.db, self.user_dir.name, image.id)
     data = f.read()
     f.close()
     self.assertEqual(len(data), 2366609)
+
+    elements.hideImage(self.db, image.id)
+    images = elements.getImages(self.db, parent_id)
+    self.assertEqual(len(images), 0)
+
+    elements.recoverImages(self.db, parent_id)    
+    images = elements.getImages(self.db, parent_id)
+    self.assertEqual(len(images), 1)
+
     elements.deleteImage(self.db, self.user_dir.name, image.id)
+    
 
   def testBasic(self):
     self.assertEqual(elements.ElementType.WorldType(), "World")
@@ -77,6 +95,9 @@ class BasicTestCase(unittest.TestCase):
     self.assertIsNotNone(world)
     self.assertIsNotNone(world2.getPlans())
 
+    characters = elements.listCharacters(self.db, world1.id)
+    self.assertEqual(len(characters), 0)
+    
     # Create character
     character = elements.Character(world1.id)
     character.setProperties({ elements.PROP_NAME: "char1",
@@ -86,6 +107,17 @@ class BasicTestCase(unittest.TestCase):
     character.updateProperties({ elements.PROP_DETAILS: "my details"})
     character = elements.createCharacter(self.db, character)
     self.assertIsNotNone(character)
+
+    characters = elements.listCharacters(self.db, world1.id)
+    self.assertEqual(len(characters), 1)
+    
+    elements.hideCharacter(self.db, character.id)
+    characters = elements.listCharacters(self.db, world1.id)
+    self.assertEqual(len(characters), 0)
+    
+    elements.recoverCharacters(self.db, world1.id)
+    characters = elements.listCharacters(self.db, world1.id)
+    self.assertEqual(len(characters), 1)
 
     tag = elements.getElemTag(self.db, character.id)
     self.assertEqual(tag.getID(), character.id)
@@ -116,6 +148,9 @@ class BasicTestCase(unittest.TestCase):
     character = elements.createCharacter(self.db, character)
     self.assertIsNotNone(character)
 
+    sites = elements.listSites(self.db, world1.id)
+    self.assertEqual(len(sites), 0)
+
     # Create site    
     site = elements.Site(world1.id)
     site.setName("site 1")
@@ -128,6 +163,18 @@ class BasicTestCase(unittest.TestCase):
     site = elements.createSite(self.db, site)
     self.assertIsNotNone(site)
 
+    sites = elements.listSites(self.db, world1.id)
+    self.assertEqual(len(sites), 2)
+
+    elements.hideSite(self.db, site.id)
+    sites = elements.listSites(self.db, world1.id)
+    self.assertEqual(len(sites), 1)
+
+    elements.recoverSites(self.db, world1.id)
+    sites = elements.listSites(self.db, world1.id)
+    self.assertEqual(len(sites), 2)
+    
+
     # Create item
     item = elements.Item(world1.id)
     item.setName("item 1")
@@ -139,6 +186,18 @@ class BasicTestCase(unittest.TestCase):
     item.setName("item 2")    
     item = elements.createItem(self.db, item)
     self.assertIsNotNone(item)
+
+    items = elements.listItems(self.db, world1.id)
+    self.assertEqual(len(items), 2)
+
+    elements.hideItem(self.db, item.id)
+    items = elements.listItems(self.db, world1.id)
+    self.assertEqual(len(items), 1)
+
+    elements.recoverItems(self.db, world1.id)  
+    items = elements.listItems(self.db, world1.id)
+    self.assertEqual(len(items), 2)
+    
 
     # List worlds
     worlds = elements.listWorlds(self.db)
