@@ -2,12 +2,14 @@ Plans
 -----
 - Basic world design - DONE
 - Basic character interaction - DONE
-- Basic action exchange w/ characters: offer / accept
+- Add user approval to some tool functions
+- Add item properties and use item
+- Add character tags
+- Add topology
 - Time keeping
 
 TODO
 ----
-- fix personality description string - goofing up system message
 - support chat in response to actions
 - tool choice in character chat
 - complete API test coverage
@@ -16,6 +18,13 @@ TODO
 - character history with user
 - standard character / player data store
 - serialize threads in JSON, not pickle
+
+Bugs
+----
+
+- removing and restoring elements only works if the mode is correct
+- removing an element may not refresh the list of elements in the
+  message thread
 
 
 Details
@@ -34,6 +43,7 @@ Details
 
 Completed
 ---------
+- added ability to remove (hide) images, items, characters, and sites
 - fix refresh and chat enable on character move - done
 - list of characters at the same location - done?
 - Persist player location - done
@@ -44,7 +54,7 @@ Completed
   - give / take coin
 - React client does not yet support markdown - done
 - React design client - done
-
+- fix personality description string - goofing up system message - done
 
 Working notes
 ---------

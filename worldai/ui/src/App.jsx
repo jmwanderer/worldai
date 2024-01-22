@@ -67,8 +67,7 @@ async function postCharacterChat(context, user_msg) {
 
 
 
-function ChatCharacter({ world, characterId, onClose, onChange}) {
-  const [view, setView] = useState(null);  
+function ChatCharacter({ world, characterId, setView, onClose, onChange}) {
   const [character, setCharacter] = useState(null);
   const [context, setContext ] = useState(
     {
@@ -95,7 +94,6 @@ function ChatCharacter({ world, characterId, onClose, onChange}) {
     }
   }, [world, characterId, refresh]);
 
-
   function handleUpdate() {
     setRefresh(refresh + 1);
     onChange()
@@ -104,15 +102,9 @@ function ChatCharacter({ world, characterId, onClose, onChange}) {
   function clearView() {
     setView(null)
   }
-  
 
   if (!character) {
     return <div/>
-  }
-
-  if (view) {
-    return (<DetailsView view={view} world={ world }
-                         onClose={clearView}/>);
   }
 
   return (
@@ -304,6 +296,7 @@ function Site({ world, siteId, onClose }) {
     return (
       <ChatCharacter world={world}
                      characterId={characterId}
+                     setView={setView}
                      onClose={disengageCharacter}
                      onChange={handleUpdate}/>
     );
