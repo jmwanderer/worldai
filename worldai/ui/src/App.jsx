@@ -47,6 +47,12 @@ async function getCharacterChats(context) {
         await fetch(get_url(url),
                     { headers: headers_get() });
   const values = await response.json();
+
+  if (values["messages"].length === 0) {
+    const response = await postCharacterChat(context, "");
+    values["messages"] = [response]
+  }
+  
   return values;
 }
 

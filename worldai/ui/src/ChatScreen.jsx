@@ -51,7 +51,9 @@ const CurrentMessage = forwardRef(({ content, chatState }, msgRef) => {
   
   let user = "";
   if (content.user.length > 0) {
-    user = <div> User: {content.user} </div>;
+    user = <div className="App-message">
+             <b>You:</b> <br/> { content.user } <br/>             
+           </div>;
   }
   let running = "";
   if (chatState === "waiting") {
@@ -118,15 +120,11 @@ function ChatScreen({ name, context, getChats, postChat, clearChat, onChange}) {
 
     async function getData() {
       // Get the chat history.
-      try {
+      try { 
+        setChatState("waiting");                
         const values = await getChats(context);
         if (!ignore) {
           setChatHistory(values["messages"]);
-          if (values["messages"].length === 0) {
-            setChatState("waiting");                
-            const response = await postChat(context, "");
-            setChatHistory(c => [...c, response])
-          }
           if (values["enabled"]) {
             setChatState("ready");
           } else {
