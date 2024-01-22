@@ -54,7 +54,8 @@ class BasicTestCase(unittest.TestCase):
     images = elements.getImages(self.db, parent_id)
     self.assertEqual(len(images), 0)
 
-    elements.recoverImages(self.db, parent_id)    
+    count = elements.recoverImages(self.db, parent_id)
+    self.assertEqual(count, 1)
     images = elements.getImages(self.db, parent_id)
     self.assertEqual(len(images), 1)
 
@@ -115,7 +116,8 @@ class BasicTestCase(unittest.TestCase):
     characters = elements.listCharacters(self.db, world1.id)
     self.assertEqual(len(characters), 0)
     
-    elements.recoverCharacters(self.db, world1.id)
+    count = elements.recoverCharacters(self.db, world1.id)
+    self.assertEqual(count, 1)    
     characters = elements.listCharacters(self.db, world1.id)
     self.assertEqual(len(characters), 1)
 
@@ -170,7 +172,8 @@ class BasicTestCase(unittest.TestCase):
     sites = elements.listSites(self.db, world1.id)
     self.assertEqual(len(sites), 1)
 
-    elements.recoverSites(self.db, world1.id)
+    count = elements.recoverSites(self.db, world1.id)
+    self.assertEqual(count, 1)
     sites = elements.listSites(self.db, world1.id)
     self.assertEqual(len(sites), 2)
     
@@ -194,7 +197,8 @@ class BasicTestCase(unittest.TestCase):
     items = elements.listItems(self.db, world1.id)
     self.assertEqual(len(items), 1)
 
-    elements.recoverItems(self.db, world1.id)  
+    count = elements.recoverItems(self.db, world1.id)
+    self.assertEqual(count, 1)
     items = elements.listItems(self.db, world1.id)
     self.assertEqual(len(items), 2)
     

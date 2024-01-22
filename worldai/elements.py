@@ -373,10 +373,12 @@ class ElementStore:
     db.commit()
 
   def recoverElements(db, element_type, parent_id):
-    db.execute("UPDATE elements SET is_hidden = FALSE WHERE " +
-               "parent_id = ? AND type = ?",
+    c = db.cursor()      
+    c.execute("UPDATE elements SET is_hidden = FALSE WHERE " +
+               "parent_id = ? AND type = ? and is_hidden = TRUE",
                (parent_id, element_type))  
     db.commit()
+    return c.rowcount
   
 
 class Image:
@@ -427,10 +429,11 @@ def hideImage(db, id):
   db.commit()
 
 def recoverImages(db, parent_id):
-  db.execute("UPDATE images SET is_hidden = FALSE WHERE parent_id = ?",
-             (parent_id,))  
+  c = db.cursor()  
+  c.execute("UPDATE images SET is_hidden = FALSE WHERE parent_id = ? " +
+            "AND is_hidden = TRUE", (parent_id,))  
   db.commit()
-  
+  return c.rowcount
 
 def getImageFile(db, data_dir, id):
   q = db.execute("SELECT filename FROM images WHERE id = ?", (id,))
@@ -558,7 +561,7 @@ def hideCharacter(db, id):
   ElementStore.hideElement(db, ElementType.CHARACTER, id)
 
 def recoverCharacters(db, world_id):
-  ElementStore.recoverElements(db, ElementType.CHARACTER, world_id)
+  return ElementStore.recoverElements(db, ElementType.CHARACTER, world_id)
 
 def listSites(db, world_id):
   """
@@ -585,8 +588,7 @@ def hideSite(db, id):
   ElementStore.hideElement(db, ElementType.SITE, id)
 
 def recoverSites(db, world_id):
-  ElementStore.recoverElements(db, ElementType.SITE, world_id)
-  
+  return ElementStore.recoverElements(db, ElementType.SITE, world_id)
     
 def listItems(db, world_id):
   """
@@ -613,8 +615,7 @@ def hideItem(db, id):
   ElementStore.hideElement(db, ElementType.ITEM, id)
 
 def recoverItems(db, world_id):
-  ElementStore.recoverElements(db, ElementType.ITEM, world_id)
-  
+  return ElementStore.recoverElements(db, ElementType.ITEM, world_id)
     
 def deleteImage(db, data_dir, image_id):
   image = getImage(db, image_id)

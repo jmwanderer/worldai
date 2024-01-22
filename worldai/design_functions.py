@@ -46,16 +46,19 @@ states = {
                       "CreateCharacter", "UpdateCharacter",
                       "ReadPlanningNotes", 
                       "CreateCharacterImage", "ChangeState",
+                      "RemoveCharacter", "RecoverCharacters",
                       "RemoveImage", "RecoverImages" ],
   STATE_ITEMS: [ "ListItems", "ShowItem",
                  "CreateItem", "UpdateItem",
                  "ReadPlanningNotes",                  
                  "CreateItemImage", "ChangeState",
+                 "RemoveItem", "RecoverItems",
                  "RemoveImage", "RecoverImages" ],
   STATE_SITES: [ "ListSites",  "ShowSite",
                  "CreateSite", "UpdateSite",
                  "ReadPlanningNotes",                  
                  "CreateSiteImage", "ChangeState",
+                 "RemoveSite", "RecoverSites",
                  "RemoveImage", "RecoverImages" ],  
 }
 
@@ -232,12 +235,16 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
   def getCurrentWorldName(self, db):
     # May return None
-    if self.current_view.getWorldID() is None:
-      return None
-    world = elements.loadWorld(db, self.getCurrentWorldID())
+    world = self.getCurrentWorld(db)
     if world is not None:
       return world.getName()
     return None
+
+  def getCurrentWorld(self, db):
+    # May return None
+    if self.current_view.getWorldID() is None:
+      return None
+    return elements.loadWorld(db, self.getCurrentWorldID())
 
   def clearCurrentView(self):
     self.current_view = elements.ElemTag()
@@ -415,8 +422,18 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
     elif (function_name == "RecoverImages" or
           function_name == "RecoverWorldImages"):
-      result = self.FuncRecoverImages(db, arguments)    
+      result = self.FuncRecoverImages(db, arguments)
 
+    elif (function_name == "RemoveSite" or
+          function_name == "RemoveCharacter" or
+          function_name == "RemoveItem"):
+      result = self.FuncRemoveElement(db, arguments)
+      
+    elif (function_name == "RecoverSites" or
+          function_name == "RecoverItems" or
+          function_name == "RecoverCharacters"):
+      result = self.FuncRecoverElements(db, arguments)    
+      
     if self.current_state == STATE_WORLDS:
       self.current_view = elements.ElemTag()
     elif self.current_state == STATE_WORLD:
@@ -728,6 +745,37 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       return status
     return self.funcError("problem generating image")
 
+  def FuncRemoveElement(self, db, arguments):
+    id = arguments["id"]
+    logging.info("Remove element: %s", id)
+    # Change view
+    self.current_view  = self.getCurrentWorld(db).getElemTag()    
+    if self.current_state == STATE_CHARACTERS:
+      elements.hideCharacter(db, id)
+      return self.funcStatus("removed character")      
+    elif self.current_state == STATE_ITEMS:
+      elements.hideItem(db, id)
+      return self.funcStatus("removed item")      
+    elif self.current_state == STATE_SITES:
+      elements.hideSite(db, id)
+      return self.funcStatus("removed site")      
+    return self.funcError("internal error")
+
+  def FuncRecoverElements(self, db, arguments):
+    world_id = self.getCurrentWorldID()    
+    logging.info("Recover elements for: %s", world_id)
+    
+    if self.current_state == STATE_CHARACTERS:
+      count = elements.recoverCharacters(db, world_id)
+      return self.funcStatus("Recovered %d characters" % count)
+    elif self.current_state == STATE_ITEMS:
+      count = elements.recoverItems(db, world_id)
+      return self.funcStatus("Recovered %d items" % count)
+    elif self.current_state == STATE_SITES:
+      count = elements.recoverSites(db, world_id)
+      return self.funcStatus("Recovered %d sites" % count)
+    return self.funcError("internal error")
+    
   def FuncRemoveImage(self, db, arguments):
     index = arguments["index"]
 
@@ -754,8 +802,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     else:
       element_id = arguments["id"]
 
-    elements.recoverImages(db, element_id)
-    return self.funcStatus("images recovered")    
+    count = elements.recoverImages(db, element_id)
+    return self.funcStatus("Recovered %d images" % count)    
 
   
 def create_image_thumbnail(image_element):
@@ -1187,6 +1235,81 @@ all_functions = [
     },
   },
 
+  {
+    "name": "RemoveSite",
+    "description": "Remove a specific site.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the site.",
+        },
+      },
+      "required": [ "id"]
+    },
+  },
+
+  {
+    "name": "RecoverSites",
+    "description": "Restore the sites for this world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+
+  {
+    "name": "RemoveItem",
+    "description": "Remove a specific item.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the item.",
+        },
+      },
+      "required": [ "id"]
+    },
+  },
+
+  {
+    "name": "RecoverItems",
+    "description": "Restore the items for this world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+
+  {
+    "name": "RemoveCharacter",
+    "description": "Remove a specific characvter.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the character.",
+        },
+      },
+      "required": [ "id"]
+    },
+  },
+
+  {
+    "name": "RecoverCharacters",
+    "description": "Restore the characters for this world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+  
   {
     "name": "UpdateSite",
     "description": "Update the values of the site.",
