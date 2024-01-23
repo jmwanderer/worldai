@@ -58,21 +58,22 @@ PROP_MOBILE = "is_mobile"
 PROP_ABILITY = "ability"
 
 class CharState:
-  # Possible states for characters.
-  STATE_SLEEP = "sleeping"
-  STATE_PARALIZED = "paralized"
-  STATE_POISONED = "poisoned"
-  STATE_BRAINWASHED = "brainwashed"
-  STATE_CAPTURED = "captured"
-  STATE_INVISIBLE = "invisible"
-  STATE_KILLED = "killed"
+  # Possible states for characters affected by items
+  # These are saved in the dynamic world staate
+  SLEEP = "sleeping"
+  PARALIZED = "paralized"
+  POISONED = "poisoned"
+  BRAINWASHED = "brainwashed"
+  CAPTURED = "captured"
+  INVISIBLE = "invisible"
+  KILLED = "killed"
 
 class ItemAction:
   # Item Actions
   # Items can apply, clear, and toggle states on characters
-  ITEM_APPLY = "apply"
-  ITEM_CLEAR = "clear"
-  ITEM_TOGGLE = "toogle"
+  APPLY = "apply"
+  CLEAR = "clear"
+  TOGGLE = "toogle"
 
   
 class IdName:
@@ -220,10 +221,10 @@ class Element:
              "name": self.getName(),
              **self.properties }
 
-  def getProperty(self, name):
+  def getProperty(self, name, default=""):
     if name == PROP_NAME:
       return self.name
-    return self.properties.get(name, "")
+    return self.properties.get(name, default)
   
   def setProperty(self, name, value):
     if name == PROP_NAME:
@@ -327,23 +328,25 @@ class Site(Element):
 
 
 class ItemAbility:
-  def __init__(self):
-    self.action = ""
-    self.tag = ""
+  def __init__(self, action="", char_state=""):
+    # ItemAction.XXX
+    self.action = action
+    # CharState.XXX
+    self.char_state = char_state
 
   def getValue(self):
     return { "action": self.action,
-            "tag": self.tag }
+             "char_state": self.char_state }
 
   def setValue(self, value):
-    self.action = value["action"]
-    self.tag = value["tag"]
+    self.action = value.get("action", "")
+    self.char_state = value.get("char_state", "")
 
-  def getAction():
+  def getAction(self):
     return self.action
 
-  def getTag():
-    return self.tag
+  def getState(self):
+    return self.char_state
   
 
 class Item(Element):
@@ -353,6 +356,10 @@ class Item(Element):
   def __init__(self, parent_id=''):
     super().__init__(ElementType.ITEM, parent_id)
     self.setIsMobile(True)
+  
+  def myProps(self):
+    return [ PROP_NAME, PROP_DESCRIPTION, PROP_DETAILS,
+             PROP_MOBILE, PROP_ABILITY ]
     
   def getIsMobile(self):
     return self.getProperty(PROP_MOBILE)
@@ -362,7 +369,7 @@ class Item(Element):
 
   def getAbility(self):
     ability = ItemAbility()
-    ability.setValue(self.getProperty(PROP_ABILITY))
+    ability.setValue(self.getProperty(PROP_ABILITY, {}))
     return ability
 
   def setAbility(self, ability):
