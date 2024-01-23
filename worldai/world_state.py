@@ -4,6 +4,14 @@ Represets the state of an instance of a world.
 A player interacting with a specific world
 """
 
+# Notes:
+# Access to the state strings done through the get_[item|char|site] calls.
+# This ensures entries are populated
+#
+#
+# Consider adding an instance ID to the element id
+#
+
 import time
 import os
 import json
@@ -128,16 +136,23 @@ class WorldState:
     self.site_state = json.loads(str)
 
   def get_char(self, char_id):
-    if not char_id in self.character_state:
+    if not char_id in self.character_state.keys():
       self.character_state[char_id] = CharState()
     return self.character_state[char_id]
 
   def get_item(self, item_id):
-    # TODO: is this a bug? Need keys here? Add a test
-    if not item_id in self.item_state:
+    if not item_id in self.item_state.keys():
+      # Populate defaults      
       self.item_state[item_id] = {
         PROP_LOCATION: "" }
     return self.item_state[item_id]
+
+  def get_site(self, site_id):
+    if not site_id in self.site_state.keys():
+      # Populate defaults
+      self.site_state[site_id] = {
+        PROP_LOCKED: "" }
+    return self.site_state[site_id]
 
   def getCharacterLocation(self, char_id):
     return self.get_char(char_id).getLocation()
@@ -270,17 +285,13 @@ class WorldState:
     """
     Returns True if the site is locked.
     """
-    if self.site_state.get(site_id) is None:
-      return False
-    return self.site_state.get(site_id)["PROP_LOCKED"]
+    return self.get_site(site_id)[PROP_LOCKED]
 
   def setSiteLocked(self, site_id, value):
     """
     Record if site is locked
     """
-    if self.site_state.get(site_id) is None:
-      self.site_state[site_id] = {}
-    self.site_state[site_id]["PROP_LOCKED"] = value
+    self.get_site(site_id)[PROP_LOCKED] = value
       
 
 
