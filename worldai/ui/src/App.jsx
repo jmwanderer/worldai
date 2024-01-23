@@ -182,9 +182,11 @@ function ItemCard({ item, onClick }) {
         <Card.Img src={item.image.url}/>
         
         <Card.Title>
-          {item.name }
+          { item.name }
         </Card.Title>
-        <Button onClick={handleClick} className="mt-auto">Take</Button>        
+        <Button onClick={handleClick} className="mt-auto">
+          { item.mobile ? "Take" : "Use" }
+        </Button>        
       </Card>
     </div>);
 }

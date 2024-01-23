@@ -98,13 +98,15 @@ class BasicTestCase(unittest.TestCase):
     state.setItemLocation(item_id, site_id)
     self.assertEqual(1, len(state.getItemsAtLocation(site_id)))    
 
-    state.addItem(item_id)    
+    state.addItem(item_id)
+    state.setSiteLocked(site_id, True)
     world_state.saveWorldState(self.db, state)
 
     state = world_state.loadWorldState(self.db, wstate_id)
     self.assertTrue(state.getFriendship(char_id) > 0)
     self.assertEqual(len(state.getItems()), 1)
     self.assertNotEqual(len(state.getLocation()), 0)
-    self.assertNotEqual(len(state.getChatCharacter()), 0) 
+    self.assertNotEqual(len(state.getChatCharacter()), 0)
+    self.assertTrue(state.getSiteLocked(site_id))
 
     self.assertEqual(site_id, state.getCharacterLocation(char_id))

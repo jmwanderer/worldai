@@ -76,6 +76,12 @@ class BasicTestCase(unittest.TestCase):
     self.wstate.addCharacterItem(cid, iid)
     self.assertTrue(self.wstate.hasCharacterItem(cid, iid))
 
+  def testSiteFunctions(self):
+    site_id = self.site_ids[0]
+    self.assertFalse(self.wstate.getSiteLocked(site_id))
+    self.wstate.setSiteLocked(site_id, True)
+    self.assertTrue(self.wstate.getSiteLocked(site_id))
+
     
   def testPlayerFunctions(self):
     cid = self.char_ids[0]

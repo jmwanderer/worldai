@@ -57,6 +57,9 @@ PROP_PERSONALITY = "personality"
 PROP_MOBILE = "mobile"
 PROP_ABILITY = "ability"
 
+# Site Property
+PROP_DEFAULT_LOCKED = "def_locked"
+
 class CharState:
   # Possible states for characters affected by items
   # These are saved in the dynamic world staate
@@ -165,6 +168,9 @@ class Element:
     self.name = None
     self.properties = {}
     self.images = []  # List of image ids
+
+  def getID(self):
+    return self.id
 
   def myProps(self):
     """
@@ -351,6 +357,18 @@ class Site(Element):
   def __init__(self, parent_id=''):
     super().__init__(ElementType.SITE, parent_id)
 
+  def myProps(self):
+    return { PROP_NAME: "",
+             PROP_DESCRIPTION: "",
+             PROP_DETAILS: None,
+             PROP_DEFAULT_LOCKED: False }
+
+  def getDefaultLocked(self):
+    return self.getProperty(PROP_DEFAULT_LOCKED)
+
+  def setDefaultLocked(self, value):
+    self.setProperty(PROP_DEFAULT_LOCKED, value)
+    
 
 class ItemAbility:
   def __init__(self, action="", state=""):

@@ -37,8 +37,10 @@ class ClientActions:
       item_id = command.get("item")
       # Verify 
       if self.wstate.getItemLocation(item_id) == self.wstate.getLocation():
-        self.wstate.addItem(item_id)
-        changed = True
+        item = elements.loadItem(self.db, item_id)
+        if item.getIsMobile():
+          self.wstate.addItem(item_id)
+          changed = True
         result = ok
 
     elif (command.get("name") == "engage"):

@@ -22,6 +22,7 @@ PROP_CREDITS = "Credits"
 PROP_HEALTH = "Health"
 PROP_STRENGTH = "Strength"
 
+PROP_LOCKED = "Locked"
 
 
 class CharState:
@@ -86,9 +87,12 @@ class WorldState:
     # char_id: CharState   
     self.character_state = {}
 
-    # site_id: { PROP_LOCATION: "" }
+    # item_id: { PROP_LOCATION: "" }
     self.item_state = { }
 
+    # site_id: { PROP_LOCKED: "" }
+    self.site_state = { }
+    
     
   def get_player_state_str(self):
     return json.dumps(self.player_state)
@@ -117,12 +121,19 @@ class WorldState:
   def set_item_state_str(self, str):
     self.item_state = json.loads(str)
 
+  def get_site_state_str(self):
+    return json.dumps(self.site_state)
+
+  def set_site_state_str(self, str):
+    self.site_state = json.loads(str)
+
   def get_char(self, char_id):
     if not char_id in self.character_state:
       self.character_state[char_id] = CharState()
     return self.character_state[char_id]
 
   def get_item(self, item_id):
+    # TODO: is this a bug? Need keys here? Add a test
     if not item_id in self.item_state:
       self.item_state[item_id] = {
         PROP_LOCATION: "" }
@@ -255,6 +266,23 @@ class WorldState:
     """
     return self.player_state[PROP_CHAT_WHO]
 
+  def getSiteLocked(self, site_id):
+    """
+    Returns True if the site is locked.
+    """
+    if self.site_state.get(site_id) is None:
+      return False
+    return self.site_state.get(site_id)["PROP_LOCKED"]
+
+  def setSiteLocked(self, site_id, value):
+    """
+    Record if site is locked
+    """
+    if self.site_state.get(site_id) is None:
+      self.site_state[site_id] = {}
+    self.site_state[site_id]["PROP_LOCKED"] = value
+      
+
 
 def getWorldStateID(db, session_id, world_id):
   """
@@ -276,13 +304,14 @@ def getWorldStateID(db, session_id, world_id):
     state = WorldState(id)
     logging.info(f"world id {world_id}")
     c.execute("INSERT INTO world_state (id, session_id, world_id, created, " +
-              "updated, player_state, character_state, item_state) " +
-              "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+              "updated, player_state, character_state, item_state, site_state) " +
+              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
               (id, session_id, world_id,
                now, now,
                state.get_player_state_str(),
                state.get_character_state_str(),
-               state.get_item_state_str()))
+               state.get_item_state_str(),
+               state.get_site_state_str()))
   else:
     id = r[0]
   db.commit()
@@ -315,11 +344,16 @@ def checkWorldState(db, wstate):
     places = []
     places.extend(characters)
     places.extend(sites)
-    if len(places) > 0:
+    if len(characters) > 0 and len(sites) > 0:
       # Set item location - character or site
-      for item in items:
-        if wstate.item_state.get(item.getID()) is None:
-          place = random.choice(places)
+      for item_entry in items:
+        if wstate.item_state.get(item_entry.getID()) is None:
+          item = elements.loadItem(db, item_entry.getID())
+          # Place non-mobile items at sites
+          if item.getIsMobile():
+            place = random.choice(places)
+          else:
+            place = random.choice(sites)
           wstate.setItemLocation(item.getID(), place.getID())
           logging.info("place item %s: %s",
                        item.getName(),
@@ -337,7 +371,7 @@ def loadWorldState(db, wstate_id):
   wstate = None
   c = db.cursor()  
   c.execute("SELECT session_id, world_id, player_state, character_state, " +
-            "item_state FROM world_state WHERE id = ?",
+            "item_state, site_state FROM world_state WHERE id = ?",
             (wstate_id,))
 
   r = c.fetchone()
@@ -347,7 +381,8 @@ def loadWorldState(db, wstate_id):
     wstate.world_id = r[1]
     wstate.set_player_state_str(r[2])
     wstate.set_character_state_str(r[3])
-    wstate.set_item_state_str(r[4])    
+    wstate.set_item_state_str(r[4])
+    wstate.set_site_state_str(r[5])    
 
     if checkWorldState(db, wstate):
       saveWorldState(db, wstate)
@@ -365,12 +400,13 @@ def saveWorldState(db, state):
   # Support changing the session_id (Still figuring that out)
   c.execute("UPDATE world_state SET session_id = ?, " +
             "updated = ?, player_state = ?, character_state = ?, " +
-            "item_state = ? WHERE id = ?",
+            "item_state = ?, site_state = ? WHERE id = ?",
             (state.session_id,
              now,
              state.get_player_state_str(),
              state.get_character_state_str(),
              state.get_item_state_str(),
+             state.get_site_state_str(),             
              state.id))
   db.commit()
     
