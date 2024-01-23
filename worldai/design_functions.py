@@ -601,6 +601,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
                   **item.getProperties(),
                   "has_image": item.hasImage(),                  
                  }
+      print("item: " +json.dumps(content))
       self.current_state = STATE_ITEMS
       self.current_view = item.getElemTag()
     else:
@@ -1080,6 +1081,31 @@ all_functions = [
       "required": [ "id"]      
     }
   },
+
+  {
+    "name": "RemoveCharacter",
+    "description": "Remove a specific characvter.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the character.",
+        },
+      },
+      "required": [ "id"]
+    },
+  },
+
+  {
+    "name": "RecoverCharacters",
+    "description": "Restore the characters for this world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
   
   {
     "name": "CreateCharacterImage",
@@ -1166,9 +1192,53 @@ all_functions = [
           "type": "string",
           "description": "Detailed information about the item.",
         },
+        "mobile": {
+          "type": "boolean",
+          "description": "True if item can be carried.",
+        },
+        "ability": {
+          "type": "object",
+          "description": "Abilities that the object enables.",          
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [ "apply", "clear", "toggle" ],
+              },
+            "state": {
+              "type": "string",
+              "enum": [ "sleeping", "paralized", "poisoned",
+                        "brainwashed", "captured", "invisible", "killed" ],
+            },
+          }
+        }
       },
       "required": [ "id"]      
     }
+  },
+
+  {
+    "name": "RemoveItem",
+    "description": "Remove a specific item.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the item.",
+        },
+      },
+      "required": [ "id"]
+    },
+  },
+
+  {
+    "name": "RecoverItems",
+    "description": "Restore the items for this world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
   },
   
   {
@@ -1260,56 +1330,6 @@ all_functions = [
     },
   },
 
-  {
-    "name": "RemoveItem",
-    "description": "Remove a specific item.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the item.",
-        },
-      },
-      "required": [ "id"]
-    },
-  },
-
-  {
-    "name": "RecoverItems",
-    "description": "Restore the items for this world.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-      },
-    },
-  },
-
-  {
-    "name": "RemoveCharacter",
-    "description": "Remove a specific characvter.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the character.",
-        },
-      },
-      "required": [ "id"]
-    },
-  },
-
-  {
-    "name": "RecoverCharacters",
-    "description": "Restore the characters for this world.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-      },
-    },
-  },
-  
   {
     "name": "UpdateSite",
     "description": "Update the values of the site.",

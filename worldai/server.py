@@ -207,7 +207,29 @@ def dump_worlds():
       character = elements.loadCharacter(get_db(), id)
       print(character.getPropertiesJSON())
       list_images(character.id)
-    
+
+    print("Loading sites...")
+    sites = elements.listSites(get_db(), world.id)
+    for (site_entry) in sites:
+      id = site_entry.getID()
+      name = site_entry.getName()
+      print(f"Site({id}): {name}")
+
+      site = elements.loadSite(get_db(), id)
+      print(site.getPropertiesJSON())
+      list_images(site.id)
+
+    print("Loading items...")
+    items = elements.listItems(get_db(), world.id)
+    for (item_entry) in items:
+      id = item_entry.getID()
+      name = item_entry.getName()
+      print(f"Item({id}): {name}")
+
+      item = elements.loadItem(get_db(), id)
+      print(item.getPropertiesJSON())
+      list_images(item.id)
+      
   print("\n\n")
 
 def extract_auth_key(headers):

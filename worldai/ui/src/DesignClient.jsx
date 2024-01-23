@@ -112,6 +112,10 @@ function Item({ tag, setChatView }) {
               <Container >
                 <h2>{item.name}</h2>
                 <h5>{item.description}</h5>
+                <br></br>
+                Mobile: {item.mobile ? "Yes" : "No" }
+                <br></br>
+                Ability: {item.ability.action} {item.ability.state}
               </Container>
             </Stack>
             <h2>Details:</h2>

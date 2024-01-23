@@ -54,7 +54,7 @@ PROP_PLANS = "plans"
 PROP_PERSONALITY = "personality"
 
 # Item property
-PROP_MOBILE = "is_mobile"
+PROP_MOBILE = "mobile"
 PROP_ABILITY = "ability"
 
 class CharState:
@@ -73,7 +73,7 @@ class ItemAction:
   # Items can apply, clear, and toggle states on characters
   APPLY = "apply"
   CLEAR = "clear"
-  TOGGLE = "toogle"
+  TOGGLE = "toggle"
 
   
 class IdName:
@@ -167,7 +167,12 @@ class Element:
     self.images = []  # List of image ids
 
   def myProps(self):
-    return [ PROP_NAME, PROP_DESCRIPTION, PROP_DETAILS ]
+    """
+    Possible properties and default values.
+    """
+    return { PROP_NAME: "",
+             PROP_DESCRIPTION: "",
+             PROP_DETAILS: None }
 
   def hasImage(self):
     return len(self.images) > 0
@@ -189,14 +194,26 @@ class Element:
 
   def updateProperties(self, properties):
     for prop_name in properties.keys():
-      if prop_name in self.myProps():
+      if prop_name in self.myProps().keys():
         self.setProperty(prop_name, properties[prop_name])
     
   def getProperties(self):
     """
     Return dictonary of malable properties
     """
-    return { PROP_NAME: self.name, **self.properties }
+    properties = { PROP_NAME: self.name,
+                   **self.getPropertyMap() }
+    return properties
+
+  def getPropertyMap(self):
+    """
+    Return a structure with all possible properties populated.
+    """
+    properties = {}
+    # Include all possible properties in the set.
+    for prop_name in self.myProps().keys():
+      properties[prop_name] = self.getProperty(prop_name)
+    return properties
 
   def setPropertiesJSON(self, properties):
     """
@@ -210,7 +227,7 @@ class Element:
     Return an encoded json string of property values.
     Will not include id, parent_id, type, or name
     """
-    return json.dumps(self.properties)
+    return json.dumps(self.getPropertyMap())
 
   def getJSONRep(self):
     """
@@ -218,13 +235,15 @@ class Element:
     excluse internals of type and parent id.
     """
     return { "id": self.id,
-             "name": self.getName(),
-             **self.properties }
+             **self.getProperties() }
 
-  def getProperty(self, name, default=""):
+  def getProperty(self, name):
     if name == PROP_NAME:
       return self.name
-    return self.properties.get(name, default)
+    if name in self.myProps().keys():
+      default = self.myProps()[name]
+      return self.properties.get(name, default)
+    return None
   
   def setProperty(self, name, value):
     if name == PROP_NAME:
@@ -287,8 +306,11 @@ class World(Element):
     super().__init__(ElementType.WORLD, '')
 
   def myProps(self):
-    return [ PROP_NAME, PROP_DESCRIPTION, PROP_DETAILS, PROP_PLANS ]
-  
+    return { PROP_NAME: "",
+             PROP_DESCRIPTION: "",
+             PROP_DETAILS: None,
+             PROP_PLANS: "" }
+
   def getPlans(self):
     return self.getProperty(PROP_PLANS)
 
@@ -307,7 +329,10 @@ class Character(Element):
     super().__init__(ElementType.CHARACTER, parent_id)
 
   def myProps(self):
-    return [ PROP_NAME, PROP_DESCRIPTION, PROP_DETAILS, PROP_PERSONALITY ]
+    return { PROP_NAME: "",
+             PROP_DESCRIPTION: "",
+             PROP_DETAILS: None,
+             PROP_PERSONALITY: "" }
 
   def getPersonality(self):
     return self.getProperty(PROP_PERSONALITY)
@@ -328,25 +353,25 @@ class Site(Element):
 
 
 class ItemAbility:
-  def __init__(self, action="", char_state=""):
+  def __init__(self, action="", state=""):
     # ItemAction.XXX
     self.action = action
     # CharState.XXX
-    self.char_state = char_state
+    self.state = state
 
   def getValue(self):
     return { "action": self.action,
-             "char_state": self.char_state }
+             "state": self.state }
 
   def setValue(self, value):
     self.action = value.get("action", "")
-    self.char_state = value.get("char_state", "")
+    self.state = value.get("state", "")
 
   def getAction(self):
     return self.action
 
   def getState(self):
-    return self.char_state
+    return self.state
   
 
 class Item(Element):
@@ -355,11 +380,14 @@ class Item(Element):
   """
   def __init__(self, parent_id=''):
     super().__init__(ElementType.ITEM, parent_id)
-    self.setIsMobile(True)
   
   def myProps(self):
-    return [ PROP_NAME, PROP_DESCRIPTION, PROP_DETAILS,
-             PROP_MOBILE, PROP_ABILITY ]
+    ability = ItemAbility()
+    return { PROP_NAME: "",
+             PROP_DESCRIPTION: "",
+             PROP_DETAILS: None,
+             PROP_MOBILE: True,
+             PROP_ABILITY: ability.getValue() }
     
   def getIsMobile(self):
     return self.getProperty(PROP_MOBILE)
@@ -369,7 +397,7 @@ class Item(Element):
 
   def getAbility(self):
     ability = ItemAbility()
-    ability.setValue(self.getProperty(PROP_ABILITY, {}))
+    ability.setValue(self.getProperty(PROP_ABILITY))
     return ability
 
   def setAbility(self, ability):
