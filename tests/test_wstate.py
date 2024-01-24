@@ -24,14 +24,17 @@ class BasicTestCase(unittest.TestCase):
     places.extend(self.site_ids)
 
     for iid in self.item_ids:
-      if self.wstate.item_state.get(iid) is None:
+      if self.wstate.model.item_state.get(iid) is None:
         pid = random.choice(places)
         self.wstate.setItemLocation(iid, pid)
     
-  def testStateStrings(self):
-    self.assertIsNotNone(self.wstate.get_player_state_str())
-    self.assertIsNotNone(self.wstate.get_character_state_str())
-    self.assertIsNotNone(self.wstate.get_item_state_str())
+  def testStateString(self):
+    self.assertIsNotNone(self.wstate.get_model_str())
+    wstate = world_state.WorldState("id0001")
+    wstate.set_model_str(self.wstate.get_model_str())
+    for cid in self.char_ids:
+      self.assertTrue(wstate.getCharacterLocation(cid) in self.site_ids)
+    
 
   def testCharFunctions(self):
     # Functions for character state

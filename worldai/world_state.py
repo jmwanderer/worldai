@@ -17,180 +17,108 @@ import os
 import json
 import random
 import logging
+import pydantic
+import typing
 
 from . import elements
 
-PROP_CHAR_FRIENDSHIP = "CharacterFriendship"
-PROP_CHAT_WHO = "CharacterChat"
-PROP_ITEMS = "ItemList"
 PLAYER_ID = "id0"
 
-PROP_LOCATION = "Location"
-PROP_CREDITS = "Credits"
-PROP_HEALTH = "Health"
-PROP_STRENGTH = "Strength"
 
-PROP_LOCKED = "Locked"
-
-
-class CharState:
+class CharState(pydantic.BaseModel):
   """
   Represents state for a instance of a character
   Either a player or an NPC
   """
-  def __init__(self):
-    # Items are recorded under item state
-    self.state = { PROP_LOCATION: "",
-                   PROP_CREDITS: 100,
-                   PROP_HEALTH: 10,
-                   PROP_STRENGTH: 8 }
+  location: str = ""
+  credits: int = 100
+  health: int = 10
+  strength: int = 8
 
-  def getLocation(self):
-    return self.state[PROP_LOCATION]
+class PlayerState(pydantic.BaseModel):
+  friendship: typing.Dict[ str, int] = {}
+  chat_who: str = ""
 
-  def setLocation(self, site_id):
-    if site_id is None:
-      site_id = ""
-    self.state[PROP_LOCATION] = site_id
+class ItemState(pydantic.BaseModel):
+  location: str = ""
 
-  def getHealth(self):
-    return self.state[PROP_HEALTH]
-
-  def setHealth(self, value):
-    self.state[PROP_HEALTH] = value
-
-  def getStrength(self):
-    return self.state[PROP_STRENGTH]
-
-  def setStrength(self, value):
-    self.state[PROP_STRENGTH] = value
-
-  def getCredits(self):
-    return self.state[PROP_CREDITS]
-
-  def setCredits(self, value):
-    self.state[PROP_CREDITS] = value
-
-  def getStateValue(self):
-    return self.state
-
-  def setStateValue(self, value):
-    self.state = value
-      
-
+class SiteState(pydantic.BaseModel):
+  locked: bool = False
     
-class WorldState:
+class WorldStateModel(pydantic.BaseModel):
   """
   Represents an instantation of a world
   """
+  character_state: typing.Dict[str, CharState] = {}
+  player_state: PlayerState = PlayerState()
+  item_state: typing.Dict[str, ItemState] = {}
+  site_state: typing.Dict[str, SiteState] = {}
+
+class WorldState:
   def __init__(self, wstate_id):
     self.id = wstate_id
     self.session_id = None
     self.world_id = None
+    self.model = WorldStateModel()
 
-    self.player_state = { PROP_CHAR_FRIENDSHIP: {},
-                          PROP_CHAT_WHO: "",
-                         }
+  def set_model_str(self, str):
+    self.model = WorldStateModel(**json.loads(str))
 
-    # char_id: CharState   
-    self.character_state = {}
-
-    # item_id: { PROP_LOCATION: "" }
-    self.item_state = { }
-
-    # site_id: { PROP_LOCKED: "" }
-    self.site_state = { }
+  def get_model_str(self):
+    return self.model.model_dump_json()
     
-    
-  def get_player_state_str(self):
-    return json.dumps(self.player_state)
-
-  def set_player_state_str(self, str):
-    self.player_state = json.loads(str)
-
-  def get_character_state_str(self):
-    # Build a json structure and return a string
-    state = {}
-    for cid in self.character_state.keys():
-      state[cid] = self.character_state[cid].getStateValue()
-    return json.dumps(state)
-
-  def set_character_state_str(self, str):
-    self.character_state = {}    
-    state = json.loads(str)
-    for cid in state.keys():
-      char_state = CharState()
-      char_state.setStateValue(state[cid])
-      self.character_state[cid] = char_state
-      
-  def get_item_state_str(self):
-    return json.dumps(self.item_state)
-
-  def set_item_state_str(self, str):
-    self.item_state = json.loads(str)
-
-  def get_site_state_str(self):
-    return json.dumps(self.site_state)
-
-  def set_site_state_str(self, str):
-    self.site_state = json.loads(str)
-
   def get_char(self, char_id):
-    if not char_id in self.character_state.keys():
-      self.character_state[char_id] = CharState()
-    return self.character_state[char_id]
+    if not char_id in self.model.character_state.keys():
+      self.model.character_state[char_id] = CharState()
+    return self.model.character_state[char_id]
 
   def get_item(self, item_id):
-    if not item_id in self.item_state.keys():
-      # Populate defaults      
-      self.item_state[item_id] = {
-        PROP_LOCATION: "" }
-    return self.item_state[item_id]
+    if not item_id in self.model.item_state.keys():
+      self.model.item_state[item_id] = ItemState()
+    return self.model.item_state[item_id]
 
   def get_site(self, site_id):
-    if not site_id in self.site_state.keys():
-      # Populate defaults
-      self.site_state[site_id] = {
-        PROP_LOCKED: "" }
-    return self.site_state[site_id]
+    if not site_id in self.model.site_state.keys():
+      self.model.site_state[site_id] = SiteState()
+    return self.model.site_state[site_id]
 
   def getCharacterLocation(self, char_id):
-    return self.get_char(char_id).getLocation()
+    return self.get_char(char_id).location
 
   def setCharacterLocation(self, char_id, site_id):
-    self.get_char(char_id).setLocation(site_id)
+    self.get_char(char_id).location = site_id
 
   def getCharactersAtLocation(self, site_id):
     result = []
-    for char_id in self.character_state.keys():
+    for char_id in self.model.character_state.keys():
       if (char_id != PLAYER_ID and
           self.getCharacterLocation(char_id) == site_id):
         result.append(char_id)
     return result
  
-  def setLocation(self, site_id=None):
+  def setLocation(self, site_id=""):
     self.setCharacterLocation(PLAYER_ID, site_id)
 
   def getLocation(self):
     return self.getCharacterLocation(PLAYER_ID)
 
   def getCharacterStrength(self, char_id):
-    return self.get_char(char_id).getStrength()
+    return self.get_char(char_id).strength
 
   def setCharacterStrength(self, char_id, value):
-    self.get_char(char_id).setStrength(value)
+    self.get_char(char_id).strength = value
 
   def getCharacterHealth(self, char_id):
-    return self.get_char(char_id).getHealth()
+    return self.get_char(char_id).health
 
   def setCharacterHealth(self, char_id, value):
-    self.get_char(char_id).setHealth(value)
+    self.get_char(char_id).health = value
 
   def getCharacterCredits(self, char_id):
-    return self.get_char(char_id).getCredits()
+    return self.get_char(char_id).credits
 
   def setCharacterCredits(self, char_id, value):
-    self.get_char(char_id).setCredits(value)
+    self.get_char(char_id).credits = value
 
   def getPlayerStrength(self):
     return self.getCharacterStrength(PLAYER_ID)
@@ -213,87 +141,86 @@ class WorldState:
     
   def getCharacterItems(self, char_id):
     result = []
-    for item_id in self.item_state.keys():
-      if self.item_state[item_id][PROP_LOCATION] == char_id:
+    for item_id in self.model.item_state.keys():
+      if self.model.item_state[item_id].location == char_id:
         result.append(item_id)
     return result
 
   def addCharacterItem(self, char_id, item_id):
-    self.get_item(item_id)[PROP_LOCATION] = char_id
+    self.get_item(item_id).location = char_id
 
   def hasCharacterItem(self, char_id, item_id):
     # True if a character has an item
-    return self.get_item(item_id)[PROP_LOCATION] == char_id
+    return self.get_item(item_id).location == char_id
 
   def addItem(self, item_id):
     # Give an item to the player
-    self.get_item(item_id)[PROP_LOCATION] = PLAYER_ID
+    self.get_item(item_id).location = PLAYER_ID
 
   def hasItem(self, item_id):
     # True if player has this item
-    return self.get_item(item_id)[PROP_LOCATION] == PLAYER_ID
+    return self.get_item(item_id).location == PLAYER_ID
 
   def getItems(self):
     # Return a list of item ids possesed by the player
     result = []
-    for item_id in self.item_state.keys():
-      if self.item_state[item_id][PROP_LOCATION] == PLAYER_ID:
+    for item_id in self.model.item_state.keys():
+      if self.model.item_state[item_id].location == PLAYER_ID:
         result.append(item_id)
     return result
 
   def setItemLocation(self, item_id, site_id):
     # Set the location of an item
-    self.get_item(item_id)[PROP_LOCATION] = site_id
+    self.get_item(item_id).location = site_id
 
   def getItemLocation(self, item_id):
     # Set the location of an item
-    return self.get_item(item_id)[PROP_LOCATION]
+    return self.get_item(item_id).location
 
   def getItemsAtLocation(self, site_id):
     # Return list of item_ids at a specific site
     result = []
-    for item_id in self.item_state.keys():
-      if self.item_state[item_id][PROP_LOCATION] == site_id:
+    for item_id in self.model.item_state.keys():
+      if self.model.item_state[item_id].location == site_id:
         result.append(item_id)
     return result
 
   def increaseFriendship(self, char_id, amount=5):
     level = self.getFriendship(char_id) + amount
-    self.player_state[PROP_CHAR_FRIENDSHIP][char_id] = level
+    self.model.player_state.friendship[char_id] = level
 
   def decreaseFriendship(self, char_id, amount=5):
     level = self.getFriendship(char_id) - amount    
-    self.player_state[PROP_CHAR_FRIENDSHIP][char_id] = level
+    self.model.player_state.friendship[char_id] = level
 
   def getFriendship(self, char_id):
-    if self.player_state[PROP_CHAR_FRIENDSHIP].get(char_id) is None:
+    if self.model.player_state.friendship.get(char_id) is None:
       return 0
-    return self.player_state[PROP_CHAR_FRIENDSHIP][char_id]
+    return self.model.player_state.friendship[char_id]
 
   def setChatCharacter(self, char_id=None):
     if char_id is None:
       char_id = ""
-    self.player_state[PROP_CHAT_WHO] = char_id
+    self.model.player_state.chat_who = char_id
       
   def getChatCharacter(self):
     """
     Returns character ID or empty string.
     """
-    return self.player_state[PROP_CHAT_WHO]
+    return self.model.player_state.chat_who
 
   def getSiteLocked(self, site_id):
     """
     Returns True if the site is locked.
     """
-    return self.get_site(site_id)[PROP_LOCKED]
+    return self.get_site(site_id).locked
 
   def setSiteLocked(self, site_id, value):
     """
     Record if site is locked
     """
-    self.get_site(site_id)[PROP_LOCKED] = value
+    self.get_site(site_id).locked = value
       
-
 
 def getWorldStateID(db, session_id, world_id):
   """
@@ -315,14 +242,10 @@ def getWorldStateID(db, session_id, world_id):
     state = WorldState(id)
     logging.info(f"world id {world_id}")
     c.execute("INSERT INTO world_state (id, session_id, world_id, created, " +
-              "updated, player_state, character_state, item_state, site_state) " +
-              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              "updated, state) VALUES (?, ?, ?, ?, ?, ?)",
               (id, session_id, world_id,
                now, now,
-               state.get_player_state_str(),
-               state.get_character_state_str(),
-               state.get_item_state_str(),
-               state.get_site_state_str()))
+               state.get_model_str()))
   else:
     id = r[0]
   db.commit()
@@ -358,7 +281,7 @@ def checkWorldState(db, wstate):
     if len(characters) > 0 and len(sites) > 0:
       # Set item location - character or site
       for item_entry in items:
-        if wstate.item_state.get(item_entry.getID()) is None:
+        if wstate.model.item_state.get(item_entry.getID()) is None:
           item = elements.loadItem(db, item_entry.getID())
           # Place non-mobile items at sites
           if item.getIsMobile():
@@ -381,8 +304,7 @@ def loadWorldState(db, wstate_id):
   now = time.time()  
   wstate = None
   c = db.cursor()  
-  c.execute("SELECT session_id, world_id, player_state, character_state, " +
-            "item_state, site_state FROM world_state WHERE id = ?",
+  c.execute("SELECT session_id, world_id, state FROM world_state WHERE id = ?",
             (wstate_id,))
 
   r = c.fetchone()
@@ -390,10 +312,7 @@ def loadWorldState(db, wstate_id):
     wstate = WorldState(wstate_id)
     wstate.session_id = r[0]
     wstate.world_id = r[1]
-    wstate.set_player_state_str(r[2])
-    wstate.set_character_state_str(r[3])
-    wstate.set_item_state_str(r[4])
-    wstate.set_site_state_str(r[5])    
+    wstate.set_model_str(r[2])
 
     if checkWorldState(db, wstate):
       saveWorldState(db, wstate)
@@ -410,14 +329,10 @@ def saveWorldState(db, state):
   c.execute("BEGIN EXCLUSIVE")  
   # Support changing the session_id (Still figuring that out)
   c.execute("UPDATE world_state SET session_id = ?, " +
-            "updated = ?, player_state = ?, character_state = ?, " +
-            "item_state = ?, site_state = ? WHERE id = ?",
+            "updated = ?, state = ? WHERE id = ?",
             (state.session_id,
              now,
-             state.get_player_state_str(),
-             state.get_character_state_str(),
-             state.get_item_state_str(),
-             state.get_site_state_str(),             
+             state.get_model_str(),
              state.id))
   db.commit()
     

@@ -28,7 +28,7 @@ class ClientActions:
         self.wstate.setLocation(site_id)
         print(f"set location {site_id}")
       else:
-        self.wstate.setLocation(None)
+        self.wstate.setLocation("")
         print("clear location")        
       changed = True
       result = ok

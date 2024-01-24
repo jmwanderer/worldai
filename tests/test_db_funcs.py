@@ -69,8 +69,6 @@ class BasicTestCase(unittest.TestCase):
     state = world_state.loadWorldState(self.db, wstate_id)
     self.assertIsNotNone(state)
 
-    self.assertEqual(len(state.player_state[world_state.PROP_CHAR_FRIENDSHIP]),
-                     0)
     self.assertEqual(state.getFriendship(char_id), 0 )
 
     state.increaseFriendship(char_id)
