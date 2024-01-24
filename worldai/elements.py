@@ -85,15 +85,15 @@ class ItemAction(str, enum.Enum):
   TOGGLE = "toggle"
 
 class ItemAbility(pydantic.BaseModel):
-  action: typing.Optional[ItemAction] = None
-  state: typing.Optional[ElemState] = None
-  target_id: typing.Optional[str] = None
+  action: typing.Optional[ItemAction] = ""
+  state: typing.Optional[ElemState] = ""
+  target_id: typing.Optional[str] = ""
   
 class ItemProps(pydantic.BaseModel):
   description: typing.Optional[str] = None  
   details: typing.Optional[str] = None  
   mobile: typing.Optional[bool] = True
-  ability: typing.Optional[ItemAbility] = None
+  ability: typing.Optional[ItemAbility] = ItemAbility()
 
 class SiteProps(pydantic.BaseModel):
   description: typing.Optional[str] = None  
