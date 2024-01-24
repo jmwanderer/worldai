@@ -209,7 +209,7 @@ class BasicTestCase(unittest.TestCase):
 
     self.assertTrue(item.getIsMobile())
     itemAbility = elements.ItemAbility(action=elements.ItemAction.APPLY,
-                                       state=elements.ElemState.captured)
+                                       state=elements.ItemEffect.CAPTURE)
     item.setAbility(itemAbility)
     item.setIsMobile(False)
     elements.updateItem(self.db, item)

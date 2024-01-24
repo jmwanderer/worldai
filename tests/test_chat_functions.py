@@ -87,7 +87,7 @@ class BasicTestCase(unittest.TestCase):
                   
     self.assertCallAvailable('ShowWorld')
     values = self.callFunction('ShowWorld', '{ "id": "%s" }' % id1)
-    self.assertIsNone(values.get("details"))
+    self.assertEqual(len(values.get("details")), 0)
 
     self.callFunction('ChangeState', '{ "state": "State_World" }')    
 

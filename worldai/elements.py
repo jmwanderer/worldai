@@ -65,28 +65,29 @@ class CharacterProps(pydantic.BaseModel):
   details: typing.Optional[str] = ""
   personality: typing.Optional[str] = ""
 
-class ElemState(str, enum.Enum):
-  # Possible states for characters affected by items
-  # These are saved in the dynamic world state
-  sleeping ="sleeping"
-  paralized = "paralized"
-  poisoned = "poisoned"
-  brainwashed = "brainwashed"
-  captured = "captured"
-  invisible = "invisible"
-  killed = "killed"
-  
+class ItemEffect(str, enum.Enum):
+  # Possible effects of the item
+  NONE = ""
+  SLEEP ="sleep"
+  PARALIZE = "paralize"
+  POISON = "poison"
+  BRAINWASH = "brainwash"
+  CAPTURE = "capture"
+  INVISIBLE = "invisible"
+  KILL = "kill"
+  LOCK = "lock"  
 
 class ItemAction(str, enum.Enum):
   # Item Actions
   # Items can apply, clear, and toggle states on characters
+  NONE = ""
   APPLY = "apply"
   CLEAR = "clear"
   TOGGLE = "toggle"
 
 class ItemAbility(pydantic.BaseModel):
   action: typing.Optional[ItemAction] = ""
-  state: typing.Optional[ElemState] = ""
+  effect: typing.Optional[ItemEffect] = ""
   target_id: typing.Optional[str] = ""
   
 class ItemProps(pydantic.BaseModel):

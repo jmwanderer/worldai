@@ -69,6 +69,13 @@ class BasicTestCase(unittest.TestCase):
     state = world_state.loadWorldState(self.db, wstate_id)
     self.assertIsNotNone(state)
 
+
+    sleeping = world_state.CharStatus.SLEEPING
+    poisoned = world_state.CharStatus.POISONED
+    state.addPlayerStatus(sleeping)
+    state.addPlayerStatus(poisoned)
+    state.removePlayerStatus(poisoned)
+
     self.assertEqual(state.getFriendship(char_id), 0 )
 
     state.increaseFriendship(char_id)
@@ -106,5 +113,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertNotEqual(len(state.getLocation()), 0)
     self.assertNotEqual(len(state.getChatCharacter()), 0)
     self.assertTrue(state.getSiteLocked(site_id))
+    self.assertTrue(state.hasPlayerStatus(sleeping))
+    self.assertFalse(state.hasPlayerStatus(poisoned))
 
     self.assertEqual(site_id, state.getCharacterLocation(char_id))

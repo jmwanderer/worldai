@@ -61,7 +61,18 @@ class BasicTestCase(unittest.TestCase):
     self.wstate.setCharacterCredits(cid, 2000)
     self.assertEqual(self.wstate.getCharacterCredits(cid), 2000)
 
-
+    # Status
+    sleeping = world_state.CharStatus.SLEEPING
+    poisoned = world_state.CharStatus.POISONED
+    self.assertFalse(self.wstate.hasPlayerStatus(sleeping))
+    self.wstate.addPlayerStatus(sleeping)
+    self.wstate.addPlayerStatus(poisoned)
+    self.assertTrue(self.wstate.hasPlayerStatus(sleeping))
+    self.assertTrue(self.wstate.hasPlayerStatus(poisoned))    
+    self.wstate.removePlayerStatus(poisoned)
+    self.assertTrue(self.wstate.hasPlayerStatus(sleeping))
+    self.assertFalse(self.wstate.hasPlayerStatus(poisoned))    
+    
   def testItemFunctions(self):
     # character items
     count = 0

@@ -1203,10 +1203,11 @@ all_functions = [
               "type": "string",
               "enum": [ "apply", "clear", "toggle" ],
               },
-            "state": {
+            "effect": {
               "type": "string",
-              "enum": [ "sleeping", "paralized", "poisoned",
-                        "brainwashed", "captured", "invisible", "killed" ],
+              "enum": [ "sleep", "paralize", "poison",
+                        "brainwash", "capture", "invisible", "kill",
+                        "lock" ],
             },
           }
         }

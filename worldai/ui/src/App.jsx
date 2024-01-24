@@ -170,7 +170,7 @@ function SitePeople({ site, setCharacterId}) {
          );
 }
 
-function ItemCard({ item, onClick }) {
+function ItemCard({ item, action, onClick }) {
   function handleClick() {
     if (onClick) {
       onClick(item.id);
@@ -185,19 +185,20 @@ function ItemCard({ item, onClick }) {
           { item.name }
         </Card.Title>
         <Button onClick={handleClick} className="mt-auto">
-          { item.mobile ? "Take" : "Use" }
+          { action }
         </Button>        
       </Card>
     </div>);
 }
 
 
-function SiteItems({ site, setItemId}) {
+function SiteItems({ site, useItemId, takeItemId}) {
   const items = site.items.map(entry =>
     <Col key={entry.id} md={2}>
       <ItemCard key={entry.id}
                 item={entry}
-                onClick={setItemId}/>
+                action={ entry.mobile ? "Take" : "Use" }
+                onClick={ entry.mobile ? takeItemId : useItemId }/>
     </Col>
   );
   
@@ -214,6 +215,18 @@ function SiteItems({ site, setItemId}) {
 async function postTakeItem(worldId, itemId) {
   const url = `/worlds/${worldId}/command`;
   const data = { "name": "take",
+                 "item": itemId }
+  const response = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()    
+  });
+  return response.json();
+}
+
+async function postUseItem(worldId, itemId) {
+  const url = `/worlds/${worldId}/command`;
+  const data = { "name": "use",
                  "item": itemId }
   const response = await fetch(get_url(url), {
     method: 'POST',
@@ -253,6 +266,17 @@ function Site({ world, siteId, onClose }) {
   async function takeItem(item_id) {
     try {
       await postTakeItem(world.id, item_id);
+      handleUpdate()
+    } catch (e) {
+      // TODO: fix reporting
+      console.log(e);      
+    }
+  }
+
+  async function useItem(item_id) {
+    try {
+      // TODO: display some type of result here
+      await postUseItem(world.id, item_id);
       handleUpdate()
     } catch (e) {
       // TODO: fix reporting
@@ -332,7 +356,8 @@ function Site({ world, siteId, onClose }) {
       </Row>
       <Row>
         <SiteItems site={site}
-                   setItemId={takeItem}/>
+                   takeItemId={takeItem}
+                   useItemId={useItem}/>
       </Row>
     </Container>            
   );

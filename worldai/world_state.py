@@ -19,11 +19,20 @@ import random
 import logging
 import pydantic
 import typing
+import enum
 
 from . import elements
 
 PLAYER_ID = "id0"
 
+class CharStatus(str, enum.Enum):
+  # Possible states of characters
+  SLEEPING ="sleeping"
+  PARALIZED = "paralized"
+  POISONED = "poisoned"
+  BRAINWASHED = "brainwashed"
+  CAPTURED = "captured"
+  INVISIBLE = "invisible"
 
 class CharState(pydantic.BaseModel):
   """
@@ -34,6 +43,7 @@ class CharState(pydantic.BaseModel):
   credits: int = 100
   health: int = 10
   strength: int = 8
+  status: typing.List[ CharStatus ] = []
 
 class PlayerState(pydantic.BaseModel):
   friendship: typing.Dict[ str, int] = {}
@@ -119,6 +129,34 @@ class WorldState:
 
   def setCharacterCredits(self, char_id, value):
     self.get_char(char_id).credits = value
+
+  def addCharacterStatus(self, char_id, status):
+    """
+    Add a status to the list of CharStatus
+    state: CharStatus
+    """
+    if not status in self.get_char(char_id).status:
+      self.get_char(char_id).status.append(status)
+
+  def removeCharacterStatus(self, char_id, status):
+    """
+    Remove a status from the list of CharStatus
+    state: CharStatus
+    """
+    if status in self.get_char(char_id).status:
+      self.get_char(char_id).status.remove(status)
+
+  def hasCharacterStatus(self, char_id, status):
+    return status in self.get_char(char_id).status
+
+  def addPlayerStatus(self, status):
+    self.addCharacterStatus(PLAYER_ID, status)
+
+  def removePlayerStatus(self, status):
+    self.removeCharacterStatus(PLAYER_ID, status)
+
+  def hasPlayerStatus(self, status):
+    return self.hasCharacterStatus(PLAYER_ID, status)
 
   def getPlayerStrength(self):
     return self.getCharacterStrength(PLAYER_ID)
