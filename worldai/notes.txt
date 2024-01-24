@@ -10,6 +10,7 @@ Plans
 
 TODO
 ----
+- Make chat interaction use Pydantic
 - support chat in response to actions
 - tool choice in character chat
 - complete API test coverage

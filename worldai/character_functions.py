@@ -351,7 +351,7 @@ all_functions = [
   },
   {
     "name": "GiveItem",
-    "description": "Give the user an item.",
+    "description": "Transfer an item from you to the user.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -365,7 +365,7 @@ all_functions = [
   },
   {
     "name": "AcceptItem",
-    "description": "Accept an item from the user.",
+    "description": "Transfer an item from the user to you.",
     "parameters": {
       "type": "object",
       "properties": {

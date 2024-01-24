@@ -52,18 +52,18 @@ class CoreProps(str, enum.Enum):
   PROP_NAME = "name"
 
 class CommonProps(pydantic.BaseModel):
-  description: typing.Optional[str] = None  
-  details: typing.Optional[str] = None  
+  description: typing.Optional[str] = ""
+  details: typing.Optional[str] = ""
   
 class WorldProps(pydantic.BaseModel):
-  description: typing.Optional[str] = None  
-  details: typing.Optional[str] = None  
-  plans: typing.Optional[str] = None
+  description: typing.Optional[str] = ""
+  details: typing.Optional[str] = ""
+  plans: typing.Optional[str] = ""
 
 class CharacterProps(pydantic.BaseModel):
-  description: typing.Optional[str] = None  
-  details: typing.Optional[str] = None  
-  personality: typing.Optional[str] = None  
+  description: typing.Optional[str] = ""
+  details: typing.Optional[str] = ""
+  personality: typing.Optional[str] = ""
 
 class ElemState(str, enum.Enum):
   # Possible states for characters affected by items
@@ -90,14 +90,14 @@ class ItemAbility(pydantic.BaseModel):
   target_id: typing.Optional[str] = ""
   
 class ItemProps(pydantic.BaseModel):
-  description: typing.Optional[str] = None  
-  details: typing.Optional[str] = None  
+  description: typing.Optional[str] = ""
+  details: typing.Optional[str] = ""
   mobile: typing.Optional[bool] = True
   ability: typing.Optional[ItemAbility] = ItemAbility()
 
 class SiteProps(pydantic.BaseModel):
-  description: typing.Optional[str] = None  
-  details: typing.Optional[str] = None  
+  description: typing.Optional[str] = ""
+  details: typing.Optional[str] = ""
   default_locked: typing.Optional[bool] = False
 
   
