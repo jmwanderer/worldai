@@ -534,7 +534,7 @@ def design_chat_api():
 
       if text is not None:
         content['updates'] = text
-        print(f"updates: {text}")
+        logging.info("design chat pdates: %s",  text)
 
     elif request.json.get("command") is not None:
       content= { "status": "ok" }
@@ -594,14 +594,14 @@ def threads_api(wid, id):
     content = { "error": "malformed input" }
 
   # Player and character must be in same location to chat.
-  print("load world state")
+  logging.info("threads API: load world state")
   wstate = world_state.loadWorldState(get_db(), wstate_id)  
   enabled = (wstate.getCharacterLocation(id) == wstate.getLocation())
-  print(f"location: {wstate.getLocation()}")
-  print(f"char location: {wstate.getCharacterLocation(id)}")  
+  logging.info("location: %s", wstate.getLocation())
+  logging.info("char location: %s", wstate.getCharacterLocation(id)) 
   engaged = (wstate.getChatCharacter() == id)
-  print(f"enabled: {enabled}")
-  print(f"engaged: {engaged}")  
+  logging.info("enabled: %s", enabled)
+  logging.info("engaged: %s", engaged)  
   content["enabled"] = enabled and engaged
 
   chat_session.saveChatSession(get_db())
@@ -882,12 +882,13 @@ def command(wid):
   wstate = world_state.loadWorldState(get_db(), wstate_id)
 
   changed = False
-  command = request.json
+  command = client_commands.Command(**request.json)
+  logging.info("commmand name %s", command.name)
   client_actions = client_commands.ClientActions(get_db(), world, wstate)
   result, changed = client_actions.ExecCommand(command)
 
   if changed:
-    print("save world state")
+    logging.info("COMMAND: save world state")
     world_state.saveWorldState(get_db(), wstate)
     
   return result

@@ -324,6 +324,7 @@ def saveWorldState(db, state):
   """
   Update world state.
   """
+  logging.info("world_state: save world state")
   now = time.time()
   c = db.cursor()
   c.execute("BEGIN EXCLUSIVE")  
