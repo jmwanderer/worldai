@@ -490,13 +490,12 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     world = elements.loadWorld(db, id)
     if world is None:
       return self.funcError(f"no world '{id}', perahps call ListWorlds")      
-    content = { "id": world.id,
-                **world.getProperties(),
+    content = { **world.getAllProperties(),
                 "has_image": world.hasImage(), 
                }
     # Don't include plans in the world description
-    if elements.PROP_PLANS in content.keys():
-      del content[elements.PROP_PLANS]
+    if "plans" in content.keys():
+      del content["plans"]
 
     # Add information on the existing elements of the world.
     content["has_plans"] = len(world.getPlans()) > 0
@@ -528,14 +527,14 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     if world is None:
       return self.funcError(f"World not found {self.getCurrentWorldID()}")
     content = { "id": world.id,
-               elements.PROP_PLANS: world.getPlans() }
+                "plans" : world.getPlans() }
     return content
 
   def FuncUpdatePlanningNotes(self, db, arguments):
     world = elements.loadWorld(db, self.getCurrentWorldID())
     if world is None:
       return self.funcError(f"World not found {self.getCurrentWorldID()}")
-    world.setPlans(arguments[elements.PROP_PLANS])
+    world.setPlans(arguments["plans"])
     elements.updateWorld(db, world)
     self.modified = True
     status = self.funcStatus("updated world plans")    
@@ -550,7 +549,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     character = elements.loadCharacter(db, id)
     if character is not None:
       content = { "id": character.id,
-                  **character.getProperties(),
+                  **character.getAllProperties(),
                   "has_image": character.hasImage(),                   
                  }
       self.current_state = STATE_CHARACTERS
@@ -598,7 +597,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     item = elements.loadItem(db, id)
     if item is not None:
       content = { "id": item.id,
-                  **item.getProperties(),
+                  **item.getAllProperties(),
                   "has_image": item.hasImage(),                  
                  }
       print("item: " +json.dumps(content))
@@ -647,7 +646,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     site = elements.loadSite(db, id)
     if site is not None:
       content = { "id": site.id,
-                  **site.getProperties(),
+                  **site.getAllProperties(),
                   "has_image": site.hasImage(),
                  }
       self.current_state = STATE_SITES

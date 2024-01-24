@@ -7,6 +7,9 @@ import datetime
 import os
 import json
 import logging
+import enum
+import pydantic
+import typing
 
 class ElementType:
   """
@@ -43,40 +46,59 @@ class ElementType:
     return ElementType.typeToName(ElementType.ITEM)
 
 
-# Non-malable properties
-PROP_ID="id"
+class CoreProps(str, enum.Enum):
+  # Element properties not serialized in the DB
+  PROP_ID = "id"  
+  PROP_NAME = "name"
 
-# Malable properties that an element may have
-PROP_NAME = "name"
-PROP_DESCRIPTION = "description"
-PROP_DETAILS = "details"
-PROP_PLANS = "plans"
-PROP_PERSONALITY = "personality"
+class CommonProps(pydantic.BaseModel):
+  description: typing.Optional[str] = None  
+  details: typing.Optional[str] = None  
+  
+class WorldProps(pydantic.BaseModel):
+  description: typing.Optional[str] = None  
+  details: typing.Optional[str] = None  
+  plans: typing.Optional[str] = None
 
-# Item property
-PROP_MOBILE = "mobile"
-PROP_ABILITY = "ability"
+class CharacterProps(pydantic.BaseModel):
+  description: typing.Optional[str] = None  
+  details: typing.Optional[str] = None  
+  personality: typing.Optional[str] = None  
 
-# Site Property
-PROP_DEFAULT_LOCKED = "def_locked"
-
-class CharState:
+class ElemState(str, enum.Enum):
   # Possible states for characters affected by items
-  # These are saved in the dynamic world staate
-  SLEEP = "sleeping"
-  PARALIZED = "paralized"
-  POISONED = "poisoned"
-  BRAINWASHED = "brainwashed"
-  CAPTURED = "captured"
-  INVISIBLE = "invisible"
-  KILLED = "killed"
+  # These are saved in the dynamic world state
+  sleeping ="sleeping"
+  paralized = "paralized"
+  poisoned = "poisoned"
+  brainwashed = "brainwashed"
+  captured = "captured"
+  invisible = "invisible"
+  killed = "killed"
+  
 
-class ItemAction:
+class ItemAction(str, enum.Enum):
   # Item Actions
   # Items can apply, clear, and toggle states on characters
   APPLY = "apply"
   CLEAR = "clear"
   TOGGLE = "toggle"
+
+class ItemAbility(pydantic.BaseModel):
+  action: typing.Optional[ItemAction] = None
+  state: typing.Optional[ElemState] = None
+  target_id: typing.Optional[str] = None
+  
+class ItemProps(pydantic.BaseModel):
+  description: typing.Optional[str] = None  
+  details: typing.Optional[str] = None  
+  mobile: typing.Optional[bool] = True
+  ability: typing.Optional[ItemAbility] = None
+
+class SiteProps(pydantic.BaseModel):
+  description: typing.Optional[str] = None  
+  details: typing.Optional[str] = None  
+  default_locked: typing.Optional[bool] = False
 
   
 class IdName:
@@ -155,7 +177,6 @@ class ElemTag:
       return ElemTag()
     return ElemTag(tag["wid"], tag["id"], tag["element_type"])
     
-
   
 class Element:
   """
@@ -166,19 +187,12 @@ class Element:
     self.type = element_type
     self.parent_id = parent_id
     self.name = None
-    self.properties = {}
+    self.prop_model = None
     self.images = []  # List of image ids
+    self.setProperties({})
 
   def getID(self):
     return self.id
-
-  def myProps(self):
-    """
-    Possible properties and default values.
-    """
-    return { PROP_NAME: "",
-             PROP_DESCRIPTION: "",
-             PROP_DETAILS: None }
 
   def hasImage(self):
     return len(self.images) > 0
@@ -193,69 +207,50 @@ class Element:
   
   def setProperties(self, properties):
     """
-    Set malable properties from a dictionary
+    Set the set of encode properties.
+    Override in derived classes
     """
-    self.properties = {}
-    self.updateProperties(properties)
+    self.prop_model = CommonProps(**properties)
 
   def updateProperties(self, properties):
-    for prop_name in properties.keys():
-      if prop_name in self.myProps().keys():
-        self.setProperty(prop_name, properties[prop_name])
-    
+    """
+    Change properties, including name, that are included.
+    Do not remove properties.
+    """
+    if properties.get(CoreProps.PROP_NAME) is not None:
+      self.name = properties[CoreProps.PROP_NAME]
+      del properties[CoreProps.PROP_NAME]
+    new_props = self.prop_model.model_dump()
+    for key in properties.keys():
+      new_props[key] = properties[key]
+    self.setProperties(new_props)
+
   def getProperties(self):
     """
-    Return dictonary of malable properties
+    Return dictonary of encoded properties
     """
-    properties = { PROP_NAME: self.name,
-                   **self.getPropertyMap() }
-    return properties
+    return self.prop_model.model_dump()
 
-  def getPropertyMap(self):
-    """
-    Return a structure with all possible properties populated.
-    """
-    properties = {}
-    # Include all possible properties in the set.
-    for prop_name in self.myProps().keys():
-      properties[prop_name] = self.getProperty(prop_name)
-    return properties
-
-  def setPropertiesJSON(self, properties):
+  def setPropertiesStr(self, properties):
     """
     Take an encoded json string of property values.
-    Can take name in the string
     """
     self.setProperties(json.loads(properties))
 
-  def getPropertiesJSON(self):
+  def getPropertiesStr(self):
     """
     Return an encoded json string of property values.
-    Will not include id, parent_id, type, or name
     """
-    return json.dumps(self.getPropertyMap())
+    return json.dumps(self.getProperties())
 
-  def getJSONRep(self):
+  def getAllProperties(self):
     """
     Return a map of properties including id and name,
     excluse internals of type and parent id.
     """
-    return { "id": self.id,
+    return { CoreProps.PROP_ID: self.id,
+             CoreProps.PROP_NAME: self.name,
              **self.getProperties() }
-
-  def getProperty(self, name):
-    if name == PROP_NAME:
-      return self.name
-    if name in self.myProps().keys():
-      default = self.myProps()[name]
-      return self.properties.get(name, default)
-    return None
-  
-  def setProperty(self, name, value):
-    if name == PROP_NAME:
-      self.name = value
-    else:
-      self.properties[name] = value
 
   def getName(self):
     return self.name
@@ -264,20 +259,19 @@ class Element:
     self.name = name
 
   def getDescription(self):
-    return self.getProperty(PROP_DESCRIPTION)
-
-  def getDetails(self):
-    return self.getProperty(PROP_DETAILS)
-
-  def getDetailsHTML(self):
-    return textToHTML(self.getProperty(PROP_DETAILS))
-  
+    return self.prop_model.description
 
   def setDescription(self, value):
-    return self.setProperty(PROP_DESCRIPTION, value)
+    self.prop_model.description = value
+                       
+  def getDetails(self):
+    return self.prop_model.details
+
+  def getDetailsHTML(self):
+    return textToHTML(self.getDetails())
 
   def setDetails(self, value):
-    return self.setProperty(PROP_DETAILS, value)
+    self.prop_model.details = value
 
   def getImages(self):
     # Return a list of image ids
@@ -297,7 +291,6 @@ class Element:
             + f"name: {self.name}, description: {self.getDescription()}, "
             + f"details: {self.getDetails()}")
 
-
 def textToHTML(text):
   if text is None:
     return None
@@ -311,20 +304,23 @@ class World(Element):
   def __init__(self):
     super().__init__(ElementType.WORLD, '')
 
-  def myProps(self):
-    return { PROP_NAME: "",
-             PROP_DESCRIPTION: "",
-             PROP_DETAILS: None,
-             PROP_PLANS: "" }
-
+  def setProperties(self, properties):
+    """
+    Set the set of encode properties.
+    Override base class
+    """
+    self.prop_model = WorldProps(**properties)
+                       
   def getPlans(self):
-    return self.getProperty(PROP_PLANS)
+    if self.prop_model.plans is None:
+      return ""
+    return self.prop_model.plans
 
   def getPlansHTML(self):
-    return textToHTML(self.getProperty(PROP_PLANS))
+    return textToHTML(self.getPlans())
   
   def setPlans(self, value):
-    return self.setProperty(PROP_PLANS, value)
+    self.prop_model.plans = value
 
     
 class Character(Element):
@@ -334,20 +330,23 @@ class Character(Element):
   def __init__(self, parent_id=''):
     super().__init__(ElementType.CHARACTER, parent_id)
 
-  def myProps(self):
-    return { PROP_NAME: "",
-             PROP_DESCRIPTION: "",
-             PROP_DETAILS: None,
-             PROP_PERSONALITY: "" }
+  def setProperties(self, properties):
+    """
+    Set the set of encode properties.
+    Override base class
+    """
+    self.prop_model = CharacterProps(**properties)
 
   def getPersonality(self):
-    return self.getProperty(PROP_PERSONALITY)
+    if self.prop_model.personality is None:
+      return ""
+    return self.prop_model.personality
 
   def getPersonalityHTML(self):
-    return textToHTML(self.getProperty(PROP_PERSONALITY))
+    return textToHTML(self.getPersonality())
   
   def setPersonality(self, value):
-    return self.setProperty(PROP_PERSONALITY, value)
+    self.prop_model.personality = value
     
     
 class Site(Element):
@@ -357,41 +356,19 @@ class Site(Element):
   def __init__(self, parent_id=''):
     super().__init__(ElementType.SITE, parent_id)
 
-  def myProps(self):
-    return { PROP_NAME: "",
-             PROP_DESCRIPTION: "",
-             PROP_DETAILS: None,
-             PROP_DEFAULT_LOCKED: False }
+  def setProperties(self, properties):
+    """
+    Set the set of encode properties.
+    Override base class
+    """
+    self.prop_model = SiteProps(**properties)
 
   def getDefaultLocked(self):
-    return self.getProperty(PROP_DEFAULT_LOCKED)
+    return self.prop_model.default_locked
 
   def setDefaultLocked(self, value):
-    self.setProperty(PROP_DEFAULT_LOCKED, value)
+    self.prop_model.default_locked =  value
     
-
-class ItemAbility:
-  def __init__(self, action="", state=""):
-    # ItemAction.XXX
-    self.action = action
-    # CharState.XXX
-    self.state = state
-
-  def getValue(self):
-    return { "action": self.action,
-             "state": self.state }
-
-  def setValue(self, value):
-    self.action = value.get("action", "")
-    self.state = value.get("state", "")
-
-  def getAction(self):
-    return self.action
-
-  def getState(self):
-    return self.state
-  
-
 class Item(Element):
   """
   Represents an instance of an Item
@@ -399,27 +376,24 @@ class Item(Element):
   def __init__(self, parent_id=''):
     super().__init__(ElementType.ITEM, parent_id)
   
-  def myProps(self):
-    ability = ItemAbility()
-    return { PROP_NAME: "",
-             PROP_DESCRIPTION: "",
-             PROP_DETAILS: None,
-             PROP_MOBILE: True,
-             PROP_ABILITY: ability.getValue() }
+  def setProperties(self, properties):
+    """
+    Set the set of encode properties.
+    Override base class
+    """
+    self.prop_model = ItemProps(**properties)
     
   def getIsMobile(self):
-    return self.getProperty(PROP_MOBILE)
+    return self.prop_model.mobile
 
   def setIsMobile(self, value):
-    return self.setProperty(PROP_MOBILE, value)
+    self.prop_model.mobile = value
 
   def getAbility(self):
-    ability = ItemAbility()
-    ability.setValue(self.getProperty(PROP_ABILITY))
-    return ability
+    return self.prop_model.ability
 
   def setAbility(self, ability):
-    self.setProperty(PROP_ABILITY, ability.getValue())
+    self.prop_model.ability = ability
 
                        
 class ElementStore:
@@ -437,7 +411,7 @@ class ElementStore:
     element.id = id
     element.parent_id = r[0]
     element.name = r[1]      
-    element.setPropertiesJSON(r[2])
+    element.setPropertiesStr(r[2])
 
     c = db.execute("SELECT id FROM images WHERE parent_id = ? " +
                    "AND is_hidden = FALSE", (id,))
@@ -448,7 +422,7 @@ class ElementStore:
   def updateElement(db, element):
     q = db.execute("UPDATE elements SET  name = ?, properties = ? " +
                    "WHERE id = ? and type = ?",
-                   (element.name, element.getPropertiesJSON(),
+                   (element.name, element.getPropertiesStr(),
                     element.id, element.type))
     db.commit()    
  
@@ -460,7 +434,7 @@ class ElementStore:
     q = db.execute("INSERT INTO elements (id, type, parent_id, name, " +
                    " properties) VALUES (?, ?, ?, ?, ?)",
                    (element.id, element.type, element.parent_id,
-                    element.name, element.getPropertiesJSON()))
+                    element.name, element.getPropertiesStr()))
     db.commit()
     return element
   
@@ -750,8 +724,6 @@ def deleteCharacter(db, data_dir, id):
   db.execute("DELETE FROM elements WHERE id = ? AND type = ?",
             (id, ElementType.CHARACTER))
   db.commit()
-
-
 
 def deleteWorld(db, data_dir, world_id):
   world = loadWorld(db, world_id)

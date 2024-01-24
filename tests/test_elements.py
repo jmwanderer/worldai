@@ -71,9 +71,8 @@ class BasicTestCase(unittest.TestCase):
   def testCRU(self):
     # Create world
     world = elements.World()
-    world.setPropertiesJSON('{ "' + elements.PROP_NAME + '": "world 1", ' +
-                            '"' + elements.PROP_DESCRIPTION +
-                            '": "description" }')
+    world.updateProperties({ elements.CoreProps.PROP_NAME: "world 1", 
+                             "description": "description" })
     world.setDetails("details")
     world1 = elements.createWorld(self.db, world)
     self.assertIsNotNone(world)
@@ -87,8 +86,8 @@ class BasicTestCase(unittest.TestCase):
     world = elements.World()
     world.setName("w2")
     world2 = elements.createWorld(self.db, world)
-    world2.setProperties({ elements.PROP_NAME: "world 2",
-                           elements.PROP_DESCRIPTION: "description"})
+    world2.updateProperties({ elements.CoreProps.PROP_NAME: "world 2",
+                              "description": "description"})
     world2.setPlans("Characters:\n-Paige\n-Grant\n-Malia\n-Jake")
     elements.updateWorld(self.db, world)
     world2 = elements.loadWorld(self.db, world2.id)
@@ -101,11 +100,11 @@ class BasicTestCase(unittest.TestCase):
     
     # Create character
     character = elements.Character(world1.id)
-    character.setProperties({ elements.PROP_NAME: "char1",
-                              elements.PROP_DESCRIPTION: "description",
-                              elements.PROP_DETAILS: "details"})
+    character.updateProperties({ elements.CoreProps.PROP_NAME: "char1",
+                                 "description": "description",
+                                 "details": "details"})
     
-    character.updateProperties({ elements.PROP_DETAILS: "my details"})
+    character.updateProperties({ "details": "my details"})
     character = elements.createCharacter(self.db, character)
     self.assertIsNotNone(character)
 
@@ -209,13 +208,13 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(len(items), 2)
 
     self.assertTrue(item.getIsMobile())
-    itemAbility = elements.ItemAbility(elements.ItemAction.APPLY,
-                                       elements.CharState.CAPTURED)
+    itemAbility = elements.ItemAbility(action=elements.ItemAction.APPLY,
+                                       state=elements.ElemState.captured)
     item.setAbility(itemAbility)
     item.setIsMobile(False)
     elements.updateItem(self.db, item)
     item = elements.loadItem(self.db, item.id)
-    self.assertEqual(item.getAbility().getAction(),
+    self.assertEqual(item.getAbility().action,
                      elements.ItemAction.APPLY)                     
     self.assertFalse(item.getIsMobile())
 

@@ -106,11 +106,11 @@ class BasicTestCase(unittest.TestCase):
 
     # Test setting and getting plans
     values = self.callFunction('ReadPlanningNotes','{ "id": "%s" }' % id1)
-    self.assertEqual(values[elements.PROP_PLANS], "")
+    self.assertEqual(values["plans"], "")
     self.callFunction('EditWorld', '{}')    
     self.callFunction('UpdatePlanningNotes','{ "plans": "my plans" }')
     values = self.callFunction('ReadPlanningNotes','{ "id": "%s" }' % id1)    
-    self.assertEqual(values[elements.PROP_PLANS], "my plans")
+    self.assertEqual(values["plans"], "my plans")
     
     
   def test_exec_calls_characters(self):

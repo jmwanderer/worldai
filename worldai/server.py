@@ -194,7 +194,7 @@ def dump_worlds():
     print(f"World({id}): {name}")
   
     world = elements.loadWorld(get_db(), id)
-    print(world.getPropertiesJSON())
+    print(world.getAllProperties())
     list_images(world.id)
 
     print("Loading characters...")
@@ -205,7 +205,7 @@ def dump_worlds():
       print(f"Character({id}): {name}")
 
       character = elements.loadCharacter(get_db(), id)
-      print(character.getPropertiesJSON())
+      print(character.getAllProperties())
       list_images(character.id)
 
     print("Loading sites...")
@@ -216,7 +216,7 @@ def dump_worlds():
       print(f"Site({id}): {name}")
 
       site = elements.loadSite(get_db(), id)
-      print(site.getPropertiesJSON())
+      print(site.getAllProperties())
       list_images(site.id)
 
     print("Loading items...")
@@ -227,7 +227,7 @@ def dump_worlds():
       print(f"Item({id}): {name}")
 
       item = elements.loadItem(get_db(), id)
-      print(item.getPropertiesJSON())
+      print(item.getAllProperties())
       list_images(item.id)
       
   print("\n\n")
@@ -644,7 +644,7 @@ def worlds(wid):
   # Save last opened in session
   session['world_id'] = wid
   images = getElementImageProps(world)
-  result = world.getJSONRep()
+  result = world.getAllProperties()
   result["images"] = images
   
   return result
@@ -727,7 +727,7 @@ def characters(wid, id):
     return { "error", "Character not found"}, 400
 
   images = getElementImageProps(character)
-  result = character.getJSONRep()
+  result = character.getAllProperties()
   result["images"] = images
   result["givenSupport"] = wstate.getFriendship(id) > 0
 
@@ -782,7 +782,7 @@ def site(wid, sid):
 
   chat_char_id = wstate.getChatCharacter()
   images = getElementImageProps(site)
-  result = site.getJSONRep()
+  result = site.getAllProperties()
   result["images"] = images
 
   characters = []
@@ -861,7 +861,7 @@ def items(wid, id):
     return { "error", "Item not found"}, 400
 
   images = getElementImageProps(item)
-  result = item.getJSONRep()
+  result = item.getAllProperties()
   result["images"] = images
 
   return result
