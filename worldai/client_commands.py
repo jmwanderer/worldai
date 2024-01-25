@@ -102,7 +102,7 @@ class ClientActions:
     item = elements.loadItem(self.db, item_id)
     if item.getIsMobile():
       # Verify user has the item
-      if not wstate.hasItem(item_id):
+      if not self.wstate.hasItem(item_id):
         return False
     else:
       # Verify same location
@@ -115,65 +115,63 @@ class ClientActions:
     brainwashed = world_state.CharStatus.BRAINWASHED
     captured = world_state.CharStatus.CAPTURED
     invisible = world_state.CharStatus.INVISIBLE
-    
-    # Item my act on player, a character, or something else
-    match item.getAbility().action:
-      case elements.ItemAction.APPLY:
-        logging.info("use item - apply %s", item.getAbility().effect)
-        # Apply an effect
-        match item.getAbility().effect:
-          case elements.ItemEffect.SLEEP:
-            if cid is None:
-              self.wstate.addPlayerStatus(sleeping)
-            else:
-              self.wstate.addCharacterStatus(cid, sleeping)
-              
-          case elements.ItemEffect.PARALIZE:
-            if cid is None:
-              self.wstate.addPlayerStatus(paralized)
-            else:
-              self.wstate.addCharacterStatus(cid, paralized)
-            
-          case elements.ItemEffect.POISON:
-            logging.info("poison")
-            if cid is None:
-              logging.info("poison player")
-              self.wstate.addPlayerStatus(poisoned)
-            else:
-              self.wstate.addCharacterStatus(cid, poisoned)
-            
-          case elements.ItemEffect.BRAINWASH:
-            if cid is None:
-              self.wstate.addPlayerStatus(brainwashed)
-            else:
-              self.wstate.addCharacterStatus(cid, brainwashed)
-            
-          case elements.ItemEffect.CAPTURE:
-            if cid is None:
-              self.wstate.addPlayerStatus(captured)
-            else:
-              self.wstate.addCharacterStatus(cid, captured)
-            
-          case elements.ItemEffect.INVISIBLE:
-            if cid is None:
-              self.wstate.addPlayerStatus(invisible)
-            else:
-              self.wstate.addCharacterStatus(cid, invisible)
-            
-          case elements.ItemEffect.KILL:
-            if cid is None:
-              self.wstate.setPlayerHealth(0)
-            else:
-              self.wstate.setCharacterHealth(cid, 0)
-            
-          case elements.ItemEffect.LOCK:
-            pass
+    logging.info("use item - %s", item.getAbility().effect)    
+
+    # Apply an effect
+    match item.getAbility().effect:
+      case elements.ItemEffect.HEAL:
+        # Self or other
+        if cid is None:
+          self.wstate.healPlayer()
+        else:
+          self.wstate.healCharacter(cid)
         
-      case elements.ItemAction.CLEAR:
-        pass
+      case elements.ItemEffect.HURT:
+        # Only other TODO: extend so characters can use
+        if cid is not None:
+          strength = self.wstate.getCharacterStrength(cid) - 5
+          self.wstate.setCharacterStrenth(strength)
 
-      case elements.ItemAction.TOGGLE:
-        pass
+      case elements.ItemEffect.PARALIZE:
+        # Only other TODO: extend so characters can use
+        if cid is not None:
+          self.wstate.addCharacterStatus(cid, paralized)
+            
+      case elements.ItemEffect.POISON:
+        # Other
+        if cid is not None:
+          self.wstate.addCharacterStatus(cid, poisoned)
 
+      case elements.ItemEffect.SLEEP:
+        # Other character
+        if cid is not None:
+          self.wstate.addCharacterStatus(cid, sleeping)
+              
+      case elements.ItemEffect.BRAINWASH:
+        # Other character
+        if cid is not None:
+          self.wstate.addCharacterStatus(cid, brainwashed)
+            
+      case elements.ItemEffect.CAPTURE:
+        # Other character - toggle
+        if cid is not None:
+          if self.wstate.hasCharacterStatus(cid, captured):
+            self.wstate.removeCharacterStatus(cid, captured)
+          else:
+            self.wstate.addCharacterStatus(cid, captured)            
+            
+      case elements.ItemEffect.INVISIBILITY:
+        # Self only - toggle
+        if self.wstate.hasPlayerStatus(invisible):
+          self.wstate.removePlayerStatus(invisible)
+        else:
+          self.wstate.addPlayerStatus(invisible)
+
+      case elements.ItemEffect.UNLOCK:
+        site_id = item.getAbility().side_id
+        site = elements.loadSite(site_id)
+        if site is not None:
+          self.wstate.setSiteLocked(side_id, False)
+        
     return True
     

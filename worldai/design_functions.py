@@ -1205,9 +1205,8 @@ all_functions = [
               },
             "effect": {
               "type": "string",
-              "enum": [ "sleep", "paralize", "poison",
-                        "brainwash", "capture", "invisible", "kill",
-                        "lock" ],
+              "enum": [ "heal", "hurt", "paralize", "poison", "sleep",
+                        "brainwash", "capture", "invisibility", "unlock" ],
             },
           }
         }

@@ -208,14 +208,13 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(len(items), 2)
 
     self.assertTrue(item.getIsMobile())
-    itemAbility = elements.ItemAbility(action=elements.ItemAction.APPLY,
-                                       state=elements.ItemEffect.CAPTURE)
+    itemAbility = elements.ItemAbility(effect=elements.ItemEffect.CAPTURE)
     item.setAbility(itemAbility)
     item.setIsMobile(False)
     elements.updateItem(self.db, item)
     item = elements.loadItem(self.db, item.id)
-    self.assertEqual(item.getAbility().action,
-                     elements.ItemAction.APPLY)                     
+    self.assertEqual(item.getAbility().effect,
+                     elements.ItemEffect.CAPTURE)
     self.assertFalse(item.getIsMobile())
 
     # List worlds

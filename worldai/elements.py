@@ -68,27 +68,19 @@ class CharacterProps(pydantic.BaseModel):
 class ItemEffect(str, enum.Enum):
   # Possible effects of the item
   NONE = ""
-  SLEEP ="sleep"
+  HEAL = "heal"  
+  HURT = "hurt"
   PARALIZE = "paralize"
   POISON = "poison"
+  SLEEP = "sleep"
   BRAINWASH = "brainwash"
   CAPTURE = "capture"
-  INVISIBLE = "invisible"
-  KILL = "kill"
-  LOCK = "lock"  
-
-class ItemAction(str, enum.Enum):
-  # Item Actions
-  # Items can apply, clear, and toggle states on characters
-  NONE = ""
-  APPLY = "apply"
-  CLEAR = "clear"
-  TOGGLE = "toggle"
+  INVISIBILITY = "invisibility"
+  UNLOCK = "unlock"  
 
 class ItemAbility(pydantic.BaseModel):
-  action: typing.Optional[ItemAction] = ""
   effect: typing.Optional[ItemEffect] = ""
-  target_id: typing.Optional[str] = ""
+  site_id: typing.Optional[str] = ""
   
 class ItemProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""

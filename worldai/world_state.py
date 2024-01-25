@@ -158,6 +158,17 @@ class WorldState:
   def hasPlayerStatus(self, status):
     return self.hasCharacterStatus(PLAYER_ID, status)
 
+  def healCharacter(self, char_id):
+    self.removeCharacterStatus(CharStatus.SLEEPING)
+    self.removeCharacterStatus(CharStatus.POISONED)
+    self.removeCharacterStatus(CharStatus.PARALIZED)
+    self.removeCharacterStatus(CharStatus.BRAINWASHED)
+    self.setCharacterHealth(10)
+    self.setCharacterStrength(8)
+
+  def healPlayer(self):
+    self.healCharacter(PLAYER_ID)
+    
   def getPlayerStrength(self):
     return self.getCharacterStrength(PLAYER_ID)
 
