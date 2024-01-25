@@ -162,12 +162,12 @@ class WorldState:
     return self.hasCharacterStatus(PLAYER_ID, status)
 
   def healCharacter(self, char_id):
-    self.removeCharacterStatus(CharStatus.SLEEPING)
-    self.removeCharacterStatus(CharStatus.POISONED)
-    self.removeCharacterStatus(CharStatus.PARALIZED)
-    self.removeCharacterStatus(CharStatus.BRAINWASHED)
-    self.setCharacterHealth(10)
-    self.setCharacterStrength(8)
+    self.removeCharacterStatus(char_id, CharStatus.SLEEPING)
+    self.removeCharacterStatus(char_id, CharStatus.POISONED)
+    self.removeCharacterStatus(char_id, CharStatus.PARALIZED)
+    self.removeCharacterStatus(char_id, CharStatus.BRAINWASHED)
+    self.setCharacterHealth(char_id, 10)
+    self.setCharacterStrength(char_id, 8)
 
   def healPlayer(self):
     self.healCharacter(PLAYER_ID)

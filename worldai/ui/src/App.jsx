@@ -236,7 +236,9 @@ async function postUseItem(worldId, itemId) {
   return response.json();
 }
 
-function Site({ world, siteId, onClose }) {
+function Site({ world, siteId,
+                selectedItemId, setSelectedItemId,
+                onClose }) {
   const [site, setSite] = useState(null);
   const [view, setView] = useState(null);
   const [characterId, setCharacterId] = useState(null);
@@ -284,6 +286,10 @@ function Site({ world, siteId, onClose }) {
     }
   }
 
+  function selectItem(item_id) {
+    setSelectedItemId(item_id)
+  }
+
   function handleUpdate() {
     setRefresh(refresh + 1);
   }
@@ -320,7 +326,9 @@ function Site({ world, siteId, onClose }) {
   
 
   if (view) {
-    return (<DetailsView view={view} world={ world }
+    return (<DetailsView view={view}
+                         world={ world }
+                         selectItem={selectItem}
                          onClose={clearView}/>);
   }
 
@@ -462,11 +470,17 @@ function CharacterList({ worldId }) {
   );
 }
 
-function ItemListEntry({ item }) {
+function ItemListEntry({ item, selectItem}) {
 
   let in_inventory = "";
   if (item.have_item) {
     in_inventory = <i className="bi-check" style={{ fontSize: "4rem"}}/>
+  }
+
+  function handleClick() {
+    if (selectItem) {
+      selectItem(item.id);
+    }
   }
   
   return (
@@ -487,7 +501,11 @@ function ItemListEntry({ item }) {
           </div>
         </div>
         <div className="col-2">
-          { in_inventory }
+          <Button onClick={handleClick}
+                  disabled={selectItem === null}                  
+                  className="mt-auto">
+            Select
+          </Button>        
         </div>
       </div>
     </div>
@@ -495,7 +513,7 @@ function ItemListEntry({ item }) {
 }
 
 
-function Inventory({ worldId }) {
+function Inventory({ worldId, selectItem }) {
 
   const [itemList, setItemList] = useState([]);
 
@@ -522,7 +540,8 @@ function Inventory({ worldId }) {
   const entries = itemList.filter(
     entry => entry.have_item).map(
       entry => <ItemListEntry key={entry.id}
-                              item={entry}/>);
+                              item={entry}
+                              selectItem={selectItem}/>);
   
   return (
     <Stack className="mt-3">
@@ -531,8 +550,15 @@ function Inventory({ worldId }) {
   );
 }
 
-function DetailsView({view, world, onClose}) {
+function DetailsView({view, world, selectItem, onClose}) {
 
+  function onSelect(item_id) {
+    if (typeof selectItem !== 'undefined') {    
+      selectItem(item_id)
+      onClose()
+    }
+  }
+  
   if (view === "characters") {
     return (
       <div>
@@ -550,7 +576,8 @@ function DetailsView({view, world, onClose}) {
         <h5>
           Inventory
         </h5>
-        <Inventory worldId={world.id}/>                
+        <Inventory worldId={world.id}
+                   selectItem={ typeof selectItem !== 'undefined' ? onSelect : null}/>
       </div>
     );        
   }
@@ -633,7 +660,7 @@ function World({ worldId, setWorldId }) {
   const [siteList, setSiteList] = useState([]);
   const [siteId, setSiteId] = useState(null);
   const [view, setView] = useState(null);
-
+  const [selectedItemId, setSelectedItemId] = useState(null);  
   
   useEffect(() => {
     let ignore = false;
@@ -701,13 +728,18 @@ function World({ worldId, setWorldId }) {
   }
 
   if (view) {
-    return (<DetailsView view={view} world={ world } onClose={clearView}/>);
+    return (<DetailsView view={view}
+                         world={ world }
+                         selectItem={ setSelectedItemId }
+                         onClose={clearView}/>);
   }
 
   // Show a specific site
   if (siteId) {
     return (<Site world={world}
                   siteId={siteId}
+                  selectedItemId={selectedItemId}
+                  setSelectedItemId={setSelectedItemId}
                   onClose={clearSite}/>);
   }
 
