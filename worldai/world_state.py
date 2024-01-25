@@ -147,6 +147,9 @@ class WorldState:
       self.get_char(char_id).status.remove(status)
 
   def hasCharacterStatus(self, char_id, status):
+    logging.info("check character status %s", status)
+    logging.info(self.get_char(char_id).status)
+    logging.info(status in self.get_char(char_id).status)
     return status in self.get_char(char_id).status
 
   def addPlayerStatus(self, status):
@@ -374,6 +377,7 @@ def saveWorldState(db, state):
   Update world state.
   """
   logging.info("world_state: save world state")
+  logging.info("location: %s", state.getLocation())  
   now = time.time()
   c = db.cursor()
   c.execute("BEGIN EXCLUSIVE")  

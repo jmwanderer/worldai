@@ -811,6 +811,7 @@ def site(wid, sid):
       {"id": iid,
        "name": item.getName(),
        "description": item.getDescription(),
+       "mobile": item.getIsMobile(),
        "image": image_prop })
   result["items"] = items
 
@@ -884,6 +885,7 @@ def command(wid):
   changed = False
   command = client_commands.Command(**request.json)
   logging.info("commmand name %s", command.name)
+  logging.info("location: %s", wstate.getLocation())
   client_actions = client_commands.ClientActions(get_db(), world, wstate)
   response = client_actions.ExecCommand(command)
 

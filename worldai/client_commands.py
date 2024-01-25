@@ -85,7 +85,10 @@ class ClientActions:
           response.message = f"Took {item.getName()}"
 
     elif command.name == CommandName.use:
-      if self.UseItem(command.item, command.character, response):
+      item = elements.loadItem(self.db, command.item)
+      if item is None:
+        response.status.result = StatusCode.error
+      elif self.UseItem(item, command.character, response):
         logging.info("use item %s", command.item)
         # TODO: change to result of use
         response.changed = True
@@ -108,26 +111,28 @@ class ClientActions:
       response.changed = True
       response.message = f"Talking to nobody"      
 
-    print(response.model_dump())
+    logging.info("Client command response: %s", response.model_dump())
     return response
   
 
-  def UseItem(self, item_id, cid, response):
+  def UseItem(self, item, cid, response):
     """
     cid is optional
     """
-    # Verify the use can access the item 
-    item = elements.loadItem(self.db, item_id)
     # May be None
     character = elements.loadCharacter(self.db, cid)
 
     if item.getIsMobile():
       # Verify user has the item
-      if not self.wstate.hasItem(item_id):
+      if not self.wstate.hasItem(item.id):
+        logging.info("item %s is mobile, but user does not possess",
+                     item.getName())
         return False
     else:
       # Verify same location
-      if self.wstate.getItemLocation(item_id) != self.wstate.getLocation():
+      if self.wstate.getItemLocation(item.id) != self.wstate.getLocation():
+        logging.info("item %s is not mobile and not in same location",
+                     item.getName())
         return False
 
     sleeping = world_state.CharStatus.SLEEPING
@@ -194,10 +199,11 @@ class ClientActions:
         # Self only - toggle
         if self.wstate.hasPlayerStatus(invisible):
           self.wstate.removePlayerStatus(invisible)
-          response.message = "You are invisible"
+          response.message = "You are now visible"          
         else:
           self.wstate.addPlayerStatus(invisible)
-          response.message = "You are now visible"          
+          response.message = "You are invisible"
+
 
       case elements.ItemEffect.UNLOCK:
         site_id = item.getAbility().side_id
