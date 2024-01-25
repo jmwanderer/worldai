@@ -8,40 +8,26 @@ from . import chat_functions
 from . import world_state
 
 INSTRUCTIONS="""
-You are '{name}', a fictional character.
-You are described as '{character_notes}'
-{character_details}
-{personality}
 
+You play '{name}', a fictional character our story. Given the following character description, personality, goals, emotional state, adopt the personality described and respond as the character.
+
+[Personality]
+{character_notes}
+{personality}
+{character_details}
+
+
+[Background]
 You reside in the world {world_name}.
-Your world is described as follows:
 {world_description}
+
 Your current location is "{location}"
 
-You are talking to the user, who you know by the name 'Traveler'
-Traveler is a visitor to this world. 
+You are talking to the user, who you know by the name 'Traveler'. Traveler is a visitor to this world. 
 {friendship}
 
 {char_items}
-
 {user_items}
-
-If you support the user, you are inclined to loan items to the user
-"""
-
-CHARACTER_DETAILS="""
-Additional details about you:
-'{details}'
-
-"""
-PERSONALITY="""
-{personality}
-"""
-
-WORLD_DETAILS="""
-Additional details about your world {world_name}:
-{world_details}
-
 """
 
 CHAR_ITEMS="""
@@ -64,10 +50,6 @@ Travler does not currently possess any items.
 
 FRIENDSHIP_NEUTRAL="""
 You do not yet know if Traveler is a friend or an enemy.
-On meeting, no assistance should be offered, we do not know the
-motivations or values of Traveler.
-The user may want your friendship and support. But you must
-ensure the user deserves your support.
 """
 
 FRIEND="""
@@ -137,19 +119,15 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
     character_details = ""
     if len(character.getDetails()) > 0:
-      character_details = CHARACTER_DETAILS.format(
-        details=character.getDetails())
+      character_details = details=character.getDetails()
       
     personality = ""
     if len(character.getPersonality()) > 0:
-      personality = PERSONALITY.format(
-        personality=character.getPersonality())
+      personality = character.getPersonality()
 
     world_details = ""
     if len(world.getDetails()) > 0:
-      world_details = WORLD_DETAILS.format(
-        world_name=world.getName(),        
-        world_details=world.getDetails())
+      world_details =  world_details=world.getDetails()
 
     instructions = INSTRUCTIONS.format(
       name=character.getName(),
@@ -158,7 +136,6 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       personality=personality,
       world_name=world.getName(),
       world_details=world_details,
-      description=character.getDescription(),
       friendship=friendship,
       location=location,
       char_items=character_items,
