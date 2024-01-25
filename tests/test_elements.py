@@ -1,4 +1,5 @@
 from worldai import elements
+from worldai import client_commands
 import unittest
 import tempfile
 import os
@@ -27,6 +28,11 @@ class BasicTestCase(unittest.TestCase):
     f_out.write(f_in.read())
     f_in.close()
     f_out.close()
+
+  def testClient(self):
+    response = client_commands.CommandResponse()
+    response.changed = True
+    response.message = "Hi"
     
   def testImages(self):
     parent_id = "my_parent"

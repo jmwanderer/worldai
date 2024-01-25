@@ -885,12 +885,12 @@ def command(wid):
   command = client_commands.Command(**request.json)
   logging.info("commmand name %s", command.name)
   client_actions = client_commands.ClientActions(get_db(), world, wstate)
-  result, changed = client_actions.ExecCommand(command)
+  response = client_actions.ExecCommand(command)
 
-  if changed:
+  if response.changed:
     logging.info("COMMAND: save world state")
     world_state.saveWorldState(get_db(), wstate)
-    
-  return result
+
+  return response.model_dump()
           
   
