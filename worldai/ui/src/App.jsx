@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 
 import './App.css'
 
+import Alert from 'react-bootstrap/Alert';
 import Button from 'react-bootstrap/Button';
 import CloseButton from 'react-bootstrap/CloseButton';
 import Card from 'react-bootstrap/Card';
@@ -73,7 +74,10 @@ async function postCharacterChat(context, user_msg) {
 
 
 
-function ChatCharacter({ world, characterId, setView, onClose, onChange}) {
+function ChatCharacter({ world, characterId,
+                         setView,
+                         statusMessage, selectedItemId,
+                         onClose, onChange}) {
   const [character, setCharacter] = useState(null);
   const [context, setContext ] = useState(
     {
@@ -120,7 +124,12 @@ function ChatCharacter({ world, characterId, setView, onClose, onChange}) {
       </Row>
       <Row>
         <Col xs={6}>
-          <CharacterScreen character={character}/>
+          <Stack>
+            <CharacterScreen character={character}/>
+            <Alert className="mt-3">              
+              { statusMessage }
+            </Alert>
+          </Stack>
         </Col>
         <Col xs={6}>
           <ChatScreen name={character.name}
@@ -162,12 +171,9 @@ function SitePeople({ site, setCharacterId}) {
     </Col>
   );
   
-  return ( <Container className="mt-2">
-             <Row>                 
-               { people }
-             </Row>
-           </Container>
-         );
+  return (<Stack direction="horizontal">
+            { people }
+            </Stack>);
 }
 
 function ItemCard({ item, action, onClick }) {
@@ -202,11 +208,9 @@ function SiteItems({ site, useItemId, takeItemId}) {
     </Col>
   );
   
-  return ( <Container className="mt-2">
-             <Row>       
+  return ( <Stack direction="horizontal">
                { items }
-             </Row>
-           </Container>
+           </Stack>
          );
 }
 
@@ -238,6 +242,7 @@ async function postUseItem(worldId, itemId) {
 
 function Site({ world, siteId,
                 selectedItemId, setSelectedItemId,
+                statusMessage, setStatusMessage,
                 onClose }) {
   const [site, setSite] = useState(null);
   const [view, setView] = useState(null);
@@ -267,7 +272,8 @@ function Site({ world, siteId,
 
   async function takeItem(item_id) {
     try {
-      await postTakeItem(world.id, item_id);
+      let response = await postTakeItem(world.id, item_id);
+      setStatusMessage(response.message)
       handleUpdate()
     } catch (e) {
       // TODO: fix reporting
@@ -278,7 +284,9 @@ function Site({ world, siteId,
   async function useItem(item_id) {
     try {
       // TODO: display some type of result here
-      await postUseItem(world.id, item_id);
+      let response = await postUseItem(world.id, item_id);
+      console.log("set status message: " + response.message);
+      setStatusMessage(response.message)
       handleUpdate()
     } catch (e) {
       // TODO: fix reporting
@@ -337,6 +345,8 @@ function Site({ world, siteId,
       <ChatCharacter world={world}
                      characterId={characterId}
                      setView={setView}
+                     statusMessage={statusMessage}
+                     selectedItem={selectedItemId}
                      onClose={disengageCharacter}
                      onChange={handleUpdate}/>
     );
@@ -351,6 +361,9 @@ function Site({ world, siteId,
         <Col xs={6}>
           <Stack>
             <ElementImages element={site}/>
+            <Alert className="mt-3">
+              { statusMessage }
+            </Alert>
           </Stack>
         </Col>
         <Col xs={6} style={{ textAlign: "left" }}>
@@ -359,13 +372,11 @@ function Site({ world, siteId,
         </Col>                        
       </Row>
       <Row className="mb-2">
-        <SitePeople site={site}
-                    setCharacterId={engageCharacter}/>
-      </Row>
-      <Row>
-        <SiteItems site={site}
-                   takeItemId={takeItem}
-                   useItemId={useItem}/>
+          <SitePeople site={site}
+                      setCharacterId={engageCharacter}/>
+          <SiteItems site={site}
+                     takeItemId={takeItem}
+                     useItemId={useItem}/>
       </Row>
     </Container>            
   );
@@ -660,7 +671,8 @@ function World({ worldId, setWorldId }) {
   const [siteList, setSiteList] = useState([]);
   const [siteId, setSiteId] = useState(null);
   const [view, setView] = useState(null);
-  const [selectedItemId, setSelectedItemId] = useState(null);  
+  const [selectedItemId, setSelectedItemId] = useState(null);
+  const [statusMessage, setStatusMessage] = useState("");    
   
   useEffect(() => {
     let ignore = false;
@@ -740,6 +752,8 @@ function World({ worldId, setWorldId }) {
                   siteId={siteId}
                   selectedItemId={selectedItemId}
                   setSelectedItemId={setSelectedItemId}
+                  statusMessage={statusMessage}
+                  setStatusMessage={setStatusMessage}
                   onClose={clearSite}/>);
   }
 
