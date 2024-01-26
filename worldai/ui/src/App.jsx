@@ -2,7 +2,7 @@ import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
 import { getWorldList, getWorld } from './api.js';
 import { getSiteList, getItemList, getCharacterList } from './api.js';
-import { getSite, getCharacter } from './api.js';
+import { getSite, getItem, getCharacter } from './api.js';
 
 import ChatScreen from './ChatScreen.jsx';
 
@@ -31,8 +31,8 @@ function CharacterScreen({ character }) {
     <Stack style={{ textAlign: "left" }}>
       <h3>{character.name}</h3>
       <ElementImages element={character}/>
-      <h4>Notes:</h4>
-      <h5>{character.description}</h5>
+      <h5>Notes:</h5>
+      {character.description}
       <p>
         Have support: { character.givenSupport ? "Yes" : "No" }
       </p>
@@ -76,7 +76,8 @@ async function postCharacterChat(context, user_msg) {
 
 function ChatCharacter({ world, characterId,
                          setView,
-                         statusMessage, selectedItemId,
+                         statusMessage, selectedItem,
+                         useItem,
                          onClose, onChange}) {
   const [character, setCharacter] = useState(null);
   const [context, setContext ] = useState(
@@ -117,6 +118,13 @@ function ChatCharacter({ world, characterId,
     return <div/>
   }
 
+  let item_card = "";
+  if (selectedItem !== null) {
+    item_card = (<ItemCard item={selectedItem}
+                           action={ "Use" }
+                           onClick={ useItem }/>);
+  }
+
   return (
     <Container>
       <Row>
@@ -126,17 +134,27 @@ function ChatCharacter({ world, characterId,
         <Col xs={6}>
           <Stack>
             <CharacterScreen character={character}/>
-            <Alert className="mt-3">              
-              { statusMessage }
-            </Alert>
+            <Container>
+              <Row>
+                <Col xs={8}>
+                  <Alert className="mt-3">              
+                    { statusMessage }
+                  </Alert>
+
+                </Col>
+                <Col xs={4}>
+                  { item_card }
+                </Col>
+              </Row>
+            </Container>
           </Stack>
         </Col>
         <Col xs={6}>
-          <ChatScreen name={character.name}
-                      context={context}
-                      getChats={getCharacterChats}
-                      postChat={postCharacterChat}
-                      onChange={handleUpdate}/>
+            <ChatScreen name={character.name}
+                        context={context}
+                        getChats={getCharacterChats}
+                        postChat={postCharacterChat}
+                        onChange={handleUpdate}/>
         </Col>
       </Row>
     </Container>
@@ -183,8 +201,8 @@ function ItemCard({ item, action, onClick }) {
     }
   }
   return (
-    <div className="mt-2" style={{ height: "100%"}}>
-      <Card style={{ height: "100%", padding: "1em" }}>
+    <div className="mt-2">
+      <Card style={{ maxWidth:"15vmin",  padding: "1em" }}>
         <Card.Img src={item.image.url}/>
         
         <Card.Title>
@@ -241,7 +259,7 @@ async function postUseItem(worldId, itemId) {
 }
 
 function Site({ world, siteId,
-                selectedItemId, setSelectedItemId,
+                selectedItem, setSelectedItemId,
                 statusMessage, setStatusMessage,
                 onClose }) {
   const [site, setSite] = useState(null);
@@ -294,8 +312,10 @@ function Site({ world, siteId,
     }
   }
 
-  function selectItem(item_id) {
-    setSelectedItemId(item_id)
+  async function useSelectedItem() {
+    if (selectedItem !== null) {
+      useItem(selectedItem.id);
+    }
   }
 
   function handleUpdate() {
@@ -336,7 +356,7 @@ function Site({ world, siteId,
   if (view) {
     return (<DetailsView view={view}
                          world={ world }
-                         selectItem={selectItem}
+                         selectItem={setSelectedItemId}
                          onClose={clearView}/>);
   }
 
@@ -346,10 +366,18 @@ function Site({ world, siteId,
                      characterId={characterId}
                      setView={setView}
                      statusMessage={statusMessage}
-                     selectedItem={selectedItemId}
+                     selectedItem={selectedItem}
+                     useItem={useSelectedItem}
                      onClose={disengageCharacter}
                      onChange={handleUpdate}/>
     );
+  }
+
+  let item_card = "";
+  if (selectedItem !== null) {
+    item_card = (<ItemCard item={selectedItem}
+                           action={ "Use" }
+                           onClick={useSelectedItem}/>);
   }
   
   return (
@@ -367,9 +395,12 @@ function Site({ world, siteId,
           </Stack>
         </Col>
         <Col xs={6} style={{ textAlign: "left" }}>
-          <h2>{site.name}</h2>
-          <h5>{site.description}</h5>
-        </Col>                        
+          <Stack>
+            <h2>{site.name}</h2>
+            <h5>{site.description}</h5>
+            { item_card }
+          </Stack>
+        </Col>
       </Row>
       <Row className="mb-2">
           <SitePeople site={site}
@@ -671,7 +702,7 @@ function World({ worldId, setWorldId }) {
   const [siteList, setSiteList] = useState([]);
   const [siteId, setSiteId] = useState(null);
   const [view, setView] = useState(null);
-  const [selectedItemId, setSelectedItemId] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);  
   const [statusMessage, setStatusMessage] = useState("");    
   
   useEffect(() => {
@@ -726,6 +757,14 @@ function World({ worldId, setWorldId }) {
     setSiteId(site_id);
   }
 
+  async function selectItemId(item_id) {
+    try {
+      const item = await getItem(world.id, item_id);
+      setSelectedItem(item)
+    } catch (e) {
+    }
+  }
+
   async function goToSite(site_id) {
     try {    
       await postGoTo(world.id, site_id);      
@@ -742,7 +781,7 @@ function World({ worldId, setWorldId }) {
   if (view) {
     return (<DetailsView view={view}
                          world={ world }
-                         selectItem={ setSelectedItemId }
+                         selectItem={ selectItemId }
                          onClose={clearView}/>);
   }
 
@@ -750,8 +789,8 @@ function World({ worldId, setWorldId }) {
   if (siteId) {
     return (<Site world={world}
                   siteId={siteId}
-                  selectedItemId={selectedItemId}
-                  setSelectedItemId={setSelectedItemId}
+                  selectedItem={selectedItem}
+                  setSelectedItemId={ selectItemId }
                   statusMessage={statusMessage}
                   setStatusMessage={setStatusMessage}
                   onClose={clearSite}/>);

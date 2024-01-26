@@ -864,7 +864,9 @@ def items(wid, id):
   images = getElementImageProps(item)
   result = item.getAllProperties()
   result["images"] = images
-
+  image_prop = getElementThumbProperty(item)  
+  result["image"] = image_prop
+  
   return result
 
 
