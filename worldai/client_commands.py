@@ -21,6 +21,7 @@ class CallStatus(pydantic.BaseModel):
 class CommandName(str, enum.Enum):
   go = 'go'
   take = 'take'
+  select = 'select'  
   use = 'use'  
   engage = 'engage'
   disengage = 'disengage'
@@ -81,6 +82,19 @@ class ClientActions:
           self.wstate.addItem(item_id)
           response.changed = True
           response.message = f"You picked up {item.getName()}"
+
+    elif command.name == CommandName.select:
+      item_id = command.item
+      if item_id is None or len(item_id) == 0:
+        self.wstate.selectItem("")
+        response.changed = True
+      else:
+        logging.info("select item %s", item_id)
+        if self.wstate.hasItem(item.id):
+          item = elements.loadItem(self.db, item_id)
+          self.wstate.selectItem(item_id)
+          response.changed = True
+          response.message = f"You are holding {item.getName()}"
 
     elif command.name == CommandName.use:
       item = elements.loadItem(self.db, command.item)
@@ -213,4 +227,68 @@ class ClientActions:
           response.message = f"Site {site.getName()} is now unlocked."
         
     return True
-    
+
+class ElemInfo(pydantic.BaseModel):
+  id: str = ""
+  name: str = ""
+  description: str = ""
+
+class CharacterData(pydantic.BaseModel):
+  id: str = ""
+  name: str = ""
+  description: str = ""
+  sleeping: bool = False
+  paralized: bool = False
+  poisoned: bool = False
+  brainwashed: bool = False
+  captured: bool = False
+  invisible: bool = False
+  location: str = ""
+  credits: int = 0
+  health: int = 0
+  strength: int = 0
+  inventory: typing.List[ ElemInfo ] = []
+
+class PlayerData(pydantic.BaseModel):
+  """
+  Vital stats for the player character
+  """
+  status: CharacterData = CharacterData()
+  selected_item: typing.Optional[ElemInfo] = None
+  chat_who: str = ""
+
+def LoadPlayerData(db, world, wstate):
+  data = PlayerData()
+  data.selected_item = wstate.getSelectedItem()
+  data.chat_who = wstate.getChatCharacter()
+  data.status.name = "Traveler"
+  data.status.description = "A visitor"
+  sleeping = world_state.CharStatus.SLEEPING
+  data.status.sleeping = wstate.hasPlayerStatus(sleeping)
+  paralized = world_state.CharStatus.PARALIZED
+  data.status.paralized = wstate.hasPlayerStatus(paralized)
+  poisoned = world_state.CharStatus.POISONED
+  data.status.poisoned = wstate.hasPlayerStatus(poisoned)
+  brainwashed = world_state.CharStatus.BRAINWASHED
+  data.status.brainwashed = wstate.hasPlayerStatus(brainwashed)
+  captured = world_state.CharStatus.CAPTURED
+  data.status.captured= wstate.hasPlayerStatus(captured)  
+  invisible = world_state.CharStatus.INVISIBLE
+  data.status.invisible = wstate.hasPlayerStatus(invisible)
+  data.status.location = wstate.getLocation()
+  data.status.credits = wstate.getPlayerCredits()
+  data.status.health = wstate.getPlayerHealth()
+  data.status.strength = wstate.getPlayerStrength()
+
+  for item_id in wstate.getItems():
+    item = elements.loadItem(db, item_id)
+    if item is None:
+      logging.error("unknown item in inventory: %s", item_id)
+    else:
+      item_info = ElemInfo()
+      item_info.id = item_id
+      item_info.name = item.getName()
+      item_info.description = item.getDescription()
+      data.status.inventory.append(item_info)
+  
+  return data

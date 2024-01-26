@@ -897,4 +897,19 @@ def command(wid):
 
   return response.model_dump()
           
-  
+
+@bp.route('/api/worlds/<wid>/player', methods=["GET"])
+@auth_required
+def player(wid):
+  """
+  API to get player status
+  """
+  session_id = get_session_id()
+  world = elements.loadWorld(get_db(), wid)  
+  if world is None:
+    return { "error", "World not found"}, 400
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)
+
+  response = client_commands.LoadPlayerData(get_db(), world, wstate)
+  return response.model_dump()

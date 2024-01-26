@@ -1,6 +1,6 @@
 import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
-import { getWorldList, getWorld } from './api.js';
+import { getWorldList, getWorld, getPlayerData } from './api.js';
 import { getSiteList, getItemList, getCharacterList } from './api.js';
 import { getSite, getItem, getCharacter } from './api.js';
 
@@ -694,7 +694,8 @@ function World({ worldId, setWorldId }) {
   const [siteId, setSiteId] = useState(null);
   const [view, setView] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);  
-  const [statusMessage, setStatusMessage] = useState("");    
+  const [statusMessage, setStatusMessage] = useState("");
+  const [player, setPlayer] = useState(null);
   
   useEffect(() => {
     let ignore = false;
@@ -704,12 +705,15 @@ function World({ worldId, setWorldId }) {
         // Get the details of the world  and a list of sites.
 
         let calls = Promise.all([ getSiteList(worldId),
-                                  getWorld(worldId) ]);
-        let [sites, world] = await calls;
+                                  getWorld(worldId),
+                                  getPlayerData(worldId)
+                                ]);
+        let [sites, world, player] = await calls;
 
         if (!ignore) {
           setWorld(world);
           setSiteList(sites);
+          setPlayer(player);          
           // Set the site id if we are present at a site
           for (let i = 0; i < sites.length; i++) {
             if (sites[i].present) {

@@ -48,6 +48,7 @@ class CharState(pydantic.BaseModel):
 class PlayerState(pydantic.BaseModel):
   friendship: typing.Dict[ str, int] = {}
   chat_who: str = ""
+  selected_item: str = ""  
 
 class ItemState(pydantic.BaseModel):
   location: str = ""
@@ -205,6 +206,13 @@ class WorldState:
     # True if a character has an item
     return self.get_item(item_id).location == char_id
 
+  def selectItem(self, item_id):
+    # mark item as selected by the player. May be empty string
+    self.model.player_state.selected_item = item_id
+
+  def getSelectedItem(self):
+    return self.model.player_state.selected_item
+    
   def addItem(self, item_id):
     # Give an item to the player
     self.get_item(item_id).location = PLAYER_ID
