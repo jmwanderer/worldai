@@ -175,10 +175,10 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncAcceptItem(db, arguments)
     if function_name == "ChangeLocation":
       result = self.FuncChangeLocation(db, arguments)
-    elif function_name == "ListAllCharacters":
+    elif function_name == "ListCharacters":
       result = [{ "id": entry.getID(), "name": entry.getName() }            
                 for entry in elements.listCharacters(db, self.world_id) ]
-    elif function_name == "ListAllSites":
+    elif function_name == "ListSites":
       result = []
       for entry in elements.listSites(db, self.world_id):   
         site = elements.loadSite(db, entry.getID())
@@ -186,7 +186,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                        "name": site.getName(),
                        "description": site.getDescription() })
 
-    elif function_name == "ListAllItems":
+    elif function_name == "ListItems":
       result = []
       for entry in elements.listItems(db, self.world_id):
         item = elements.loadItem(db, entry.getID())
@@ -245,7 +245,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     wstate = world_state.loadWorldState(db, self.wstate_id)
     item = elements.loadItem(db, item_id)        
     if item is None:
-      return self.funcError(f"Not a valid item id: {item_id}")
+      return self.funcError(f"Not a valid item id. Perhaps call ListItems")
 
     if not wstate.hasCharacterItem(self.character_id, item_id):
       return self.funcError("You do not have this item")
@@ -268,7 +268,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     print(f"take item {item_id}")
     item = elements.loadItem(db, item_id)    
     if item is None:
-      return self.funcError(f"Not a valid item id: {item_id}")
+      return self.funcError(f"Not a valid item id. Perhaps call ListItems")
     
     wstate = world_state.loadWorldState(db, self.wstate_id)
     if not wstate.hasItem(item_id):
@@ -370,7 +370,7 @@ all_functions = [
   },
 
   {
-    "name": "ListAllSites",
+    "name": "ListSites",
     "description": "Get the list of existing sites and IDs",
     "parameters": {
       "type": "object",
@@ -379,7 +379,7 @@ all_functions = [
     },
   },
   {
-    "name": "ListAllItems",
+    "name": "ListItems",
     "description": "Get the list of all existing items and IDs",    
     "parameters": {
       "type": "object",
@@ -397,7 +397,7 @@ all_functions = [
     },
   },
   {
-    "name": "ListAllCharacters",
+    "name": "ListCharacters",
     "description": "Get the list of all existing characters and IDs",        
     "parameters": {
       "type": "object",
