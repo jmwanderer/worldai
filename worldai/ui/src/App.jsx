@@ -134,6 +134,7 @@ function ChatCharacter({ world, characterId,
   let item_card = "";
   if (selectedItem !== null) {
     item_card = (<ItemCard item={selectedItem}
+                           no_title={ true }
                            action={ "Use" }
                            onClick={ useItem }/>);
   }
@@ -203,7 +204,7 @@ function getSitePeople(site, setCharacterId) {
   );
 }
 
-function ItemCard({ item, action, onClick }) {
+function ItemCard({ item, no_title, action, onClick }) {
   function handleClick() {
     if (onClick) {
       onClick(item.id);
@@ -215,7 +216,7 @@ function ItemCard({ item, action, onClick }) {
         <Card.Img src={item.image.url}/>
         
         <Card.Title>
-          { item.name }
+          { no_title ? "" : item.name }
         </Card.Title>
         <Button onClick={handleClick} className="mt-auto">
           { action }
