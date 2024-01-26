@@ -280,7 +280,7 @@ def testLoadChacaterData(client, app):
   id = response.json[0]["id"]
   
   
-  response = client.get(f"/api/worlds/{world_id}/character/stats/{id}",
+  response = client.get(f"/api/worlds/{world_id}/character/instance/{id}",
                          headers={
                            "Authorization": bearer_token(app),
                          })

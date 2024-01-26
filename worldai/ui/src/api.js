@@ -53,6 +53,14 @@ async function getPlayerData(worldId) {
   return values;
 }
 
+async function getCharacterData(worldId, characterId) {
+  const url = `/worlds/${worldId}/character/stats/${characterId}`;
+  const response =
+        await fetch(get_url(url),
+                    { headers: headers_get() });
+  const values = await response.json();
+  return values;
+}
 
 async function getSiteList(worldId) {
   const url = `/worlds/${worldId}/sites`;

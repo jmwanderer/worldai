@@ -914,7 +914,7 @@ def player(wid):
   response = client_commands.LoadPlayerData(get_db(), world, wstate)
   return response.model_dump()
 
-@bp.route('/api/worlds/<wid>/character/stats/<id>', methods=["GET"])
+@bp.route('/api/worlds/<wid>/character/instance/<id>', methods=["GET"])
 @auth_required
 def character_stats(wid, id):
   """

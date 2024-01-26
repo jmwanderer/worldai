@@ -1,6 +1,6 @@
 import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
-import { getWorldList, getWorld } from './api.js';
+import { getWorldList, getWorld, getPlayerData } from './api.js';
 import { getSiteList, getItemList, getCharacterList } from './api.js';
 import { getSite, getItem, getCharacter } from './api.js';
 
@@ -72,9 +72,9 @@ async function postCharacterChat(context, user_msg) {
   return values;
 }
 
-
-
 function ChatCharacter({ world, characterId,
+                         playerData,
+                         setPlayerData,
                          setView,
                          statusMessage, selectedItem,
                          useItem,
@@ -85,7 +85,6 @@ function ChatCharacter({ world, characterId,
       "worldId": world.id,
       "characterId": characterId
     });  
-  const [refresh, setRefresh] = useState(null);    
   useEffect(() => {
     let ignore = false;
     async function getData() {
@@ -103,11 +102,25 @@ function ChatCharacter({ world, characterId,
     return () => {
       ignore = true;
     }
-  }, [world, characterId, refresh]);
+  }, [world, characterId]);
 
-  function handleUpdate() {
-    setRefresh(refresh + 1);
-    onChange()
+  async function handleChatChange() {
+    // Chat signaled state change on server side
+    // Reload player and character
+    console.log("handle chat change");
+    try {
+      let calls = Promise.all([ getCharacter(world.id, characterId),
+                                getPlayerData(world.id)]);
+      let [character, player] = await calls;
+      console.log("set character");
+      console.log("set player data");
+      setCharacter(character);
+      setPlayerData(playerData);
+    } catch (e) {
+      console.log(e);
+    }
+    // Let parent component know
+    onChange();
   }
 
   function clearView() {
@@ -154,7 +167,7 @@ function ChatCharacter({ world, characterId,
                         context={context}
                         getChats={getCharacterChats}
                         postChat={postCharacterChat}
-                        onChange={handleUpdate}/>
+                        onChange={handleChatChange}/>
         </Col>
       </Row>
     </Container>
@@ -224,7 +237,6 @@ function getSiteItems(site, useItemId, takeItemId) {
 }
 
 
-
 async function postTakeItem(worldId, itemId) {
   const url = `/worlds/${worldId}/command`;
   const data = { "name": "take",
@@ -236,6 +248,20 @@ async function postTakeItem(worldId, itemId) {
   });
   return response.json();
 }
+
+
+async function postSelectItem(worldId, itemId) {
+  const url = `/worlds/${worldId}/command`;
+  const data = { "name": "select",
+                 "item": itemId }
+  const response = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()    
+  });
+  return response.json();
+}
+
 
 async function postUseItem(worldId, itemId) {
   const url = `/worlds/${worldId}/command`;
@@ -250,13 +276,13 @@ async function postUseItem(worldId, itemId) {
 }
 
 function Site({ world, siteId,
-                selectedItem, setSelectedItemId,
+                playerData, setPlayerData,
+                selectedItem, selectItem,
                 statusMessage, setStatusMessage,
                 onClose }) {
   const [site, setSite] = useState(null);
   const [view, setView] = useState(null);
   const [characterId, setCharacterId] = useState(null);
-  const [refresh, setRefresh] = useState(null);
   
   useEffect(() => {
     let ignore = false;
@@ -277,13 +303,29 @@ function Site({ world, siteId,
     return () => {
       ignore = true;
     }
-  }, [world, siteId, refresh]);
+  }, [world, siteId]);
+
+  async function reloadState() {
+    try {
+      let calls = Promise.all([ getSite(world.id, siteId),
+                                getPlayerData(world.id)]);
+      let [site, player] = await calls;
+      console.log("set site");
+      console.log("set player data");
+      setSite(site);
+      setPlayerData(playerData);
+    } catch (e) {
+      console.log(e);
+    } 
+  }
 
   async function takeItem(item_id) {
     try {
       let response = await postTakeItem(world.id, item_id);
       setStatusMessage(response.message)
-      handleUpdate()
+      if (response.changed) {
+        reloadState()
+      }
     } catch (e) {
       // TODO: fix reporting
       console.log(e);      
@@ -295,7 +337,9 @@ function Site({ world, siteId,
       // TODO: display some type of result here
       let response = await postUseItem(world.id, item_id);
       setStatusMessage(response.message)
-      handleUpdate()
+      if (response.changed) {
+        reloadState()
+      }
     } catch (e) {
       // TODO: fix reporting
       console.log(e);      
@@ -308,8 +352,9 @@ function Site({ world, siteId,
     }
   }
 
-  function handleUpdate() {
-    setRefresh(refresh + 1);
+  function handleChanges() {
+    console.log("site handle changes - reload state");
+    reloadState();
   }
   
   function clearView() {
@@ -348,7 +393,7 @@ function Site({ world, siteId,
   if (view) {
     return (<DetailsView view={view}
                          world={ world }
-                         selectItem={setSelectedItemId}
+                         selectItem={selectItem}
                          onClose={clearView}/>);
   }
 
@@ -356,12 +401,14 @@ function Site({ world, siteId,
     return (
       <ChatCharacter world={world}
                      characterId={characterId}
+                     playerData={playerData}
+                     setPlayerData={setPlayerData}
                      setView={setView}
                      statusMessage={statusMessage}
                      selectedItem={selectedItem}
                      useItem={useSelectedItem}
                      onClose={disengageCharacter}
-                     onChange={handleUpdate}/>
+                     onChange={handleChanges}/>
     );
   }
 
@@ -694,7 +741,8 @@ function World({ worldId, setWorldId }) {
   const [siteId, setSiteId] = useState(null);
   const [view, setView] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);  
-  const [statusMessage, setStatusMessage] = useState("");    
+  const [statusMessage, setStatusMessage] = useState("");
+  const [playerData, setPlayerData] = useState(null);
   
   useEffect(() => {
     let ignore = false;
@@ -704,12 +752,14 @@ function World({ worldId, setWorldId }) {
         // Get the details of the world  and a list of sites.
 
         let calls = Promise.all([ getSiteList(worldId),
-                                  getWorld(worldId) ]);
-        let [sites, world] = await calls;
+                                  getWorld(worldId),
+                                  getPlayerData(worldId)]);
+        let [sites, world, player] = await calls;
 
         if (!ignore) {
           setWorld(world);
           setSiteList(sites);
+          setPlayerData(player);
           // Set the site id if we are present at a site
           for (let i = 0; i < sites.length; i++) {
             if (sites[i].present) {
@@ -729,6 +779,44 @@ function World({ worldId, setWorldId }) {
       ignore = true;
     }
   }, [worldId]);
+
+  useEffect(() => {
+    // Player Data has changed.
+    // Update related state
+    let ignore = false;
+    console.log("player data changed");
+    async function loadSelectedItem(item_id) {
+      try {
+        const item = await getItem(world.id, item_id);
+        if (!ignore) {
+          console.log("set selected item");
+          setSelectedItem(item);
+        }
+      } 
+      catch (e) {
+        console.log(e);
+      }
+    }
+
+    if (playerData !== null) {
+      if (playerData.selected_item === null) {
+        console.log("clear selected item");
+        setSelectedItem(null);
+      } else if (selectedItem === null) {
+        console.log("load new selected item: '" + playerData.selected_item + "'");
+        loadSelectedItem(playerData.selected_item);
+      } else if (playerData.selected_item !== selectedItem.id) {
+        console.log("change selected item");
+        loadSelectedItem(playerData.selected_item);      
+      } else {
+        console.log("no change selected item");
+      }
+    }
+
+    return () => {
+      ignore = true;
+    }
+  }, [playerData]);
 
   function clickClose() {
     setWorldId("");
@@ -750,14 +838,29 @@ function World({ worldId, setWorldId }) {
     setSiteId(site_id);
   }
 
-  async function selectItemId(item_id) {
+  async function reloadPlayerData() {
     try {
-      const item = await getItem(world.id, item_id);
-      setSelectedItem(item)
+      console.log("reload player data");
+      const playerData = await getPlayerData(world.id);
+      setPlayerData(playerData);
     } catch (e) {
+      console.log(e);
+    } 
+  }
+  
+  async function selectItem(item_id) {
+    try {
+      let response = await postSelectItem(world.id, item_id);
+      setStatusMessage(response.message)
+      if (response.changed) {
+        reloadPlayerData();
+      }
+    } catch (e) {
+      // TODO: fix reporting
+      console.log(e);      
     }
   }
-
+  
   async function goToSite(site_id) {
     try {    
       await postGoTo(world.id, site_id);      
@@ -765,6 +868,7 @@ function World({ worldId, setWorldId }) {
       console.log(e);
     }
   }
+
 
   // Wait until data loads
   if (world === null || siteList === null) {
@@ -774,7 +878,7 @@ function World({ worldId, setWorldId }) {
   if (view) {
     return (<DetailsView view={view}
                          world={ world }
-                         selectItem={ selectItemId }
+                         selectItem={ selectItem }
                          onClose={clearView}/>);
   }
 
@@ -782,8 +886,10 @@ function World({ worldId, setWorldId }) {
   if (siteId) {
     return (<Site world={world}
                   siteId={siteId}
+                  playerData={playerData}
+                  setPlayerData={setPlayerData}
                   selectedItem={selectedItem}
-                  setSelectedItemId={ selectItemId }
+                  selectItem={selectItem}
                   statusMessage={statusMessage}
                   setStatusMessage={setStatusMessage}
                   onClose={clearSite}/>);

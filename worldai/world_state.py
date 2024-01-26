@@ -47,8 +47,9 @@ class CharState(pydantic.BaseModel):
 
 class PlayerState(pydantic.BaseModel):
   friendship: typing.Dict[ str, int] = {}
-  chat_who: str = ""
-  selected_item: str = ""  
+  chat_who: typing.Optional[str] = None      
+  selected_item: typing.Optional[str] = None
+
 
 class ItemState(pydantic.BaseModel):
   location: str = ""

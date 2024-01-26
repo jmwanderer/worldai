@@ -108,7 +108,8 @@ function UserInput({value, onChange, onKeyDown, disabled}) {
 }
 
 
-function ChatScreen({ name, context, getChats, postChat, clearChat, onChange}) {
+function ChatScreen({ name, context, getChats, postChat, clearChat,
+                      onChange, onChatDone}) {
   const [chatHistory, setChatHistory] = useState([]);
   const [currentMessage,
          setCurrentMessage] = useState({ user: "", error: ""});
@@ -145,6 +146,12 @@ function ChatScreen({ name, context, getChats, postChat, clearChat, onChange}) {
     }
   }, []);
 
+  function chatDone() {
+    if (typeof onChatDone !== 'undefined') {
+      onChatDone();
+    }
+  }
+
   function submitClick() {
     let user_msg = userInput
     setCurrentMessage({user: user_msg, error: ""});
@@ -153,14 +160,21 @@ function ChatScreen({ name, context, getChats, postChat, clearChat, onChange}) {
 
     async function getData() {
       // Post the user request
-      try {            
+      try {
+        // Get response
         const values = await postChat(context, user_msg);
+        // Append to history that is displayed
         setChatHistory([...chatHistory, values])
+        // Clear the current message
         setCurrentMessage({user: "", error: "" });
         if (values["enabled"]) {
           setChatState("ready");
         } else {
           setChatState("disabled");            
+        }
+        if (values["updates"].length > 0) {
+          // Server signaled a change in state.
+          onChange();
         }
       } catch (e) {
         console.log(e);
@@ -168,7 +182,8 @@ function ChatScreen({ name, context, getChats, postChat, clearChat, onChange}) {
                            error: "Something went wrong."});
         setChatState("ready")
       }
-      onChange()
+      // Signal chat was completed
+      chatDone();
     }
     getData();
   }

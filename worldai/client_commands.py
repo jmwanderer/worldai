@@ -90,7 +90,7 @@ class ClientActions:
         response.changed = True
       else:
         logging.info("select item %s", item_id)
-        if self.wstate.hasItem(item.id):
+        if self.wstate.hasItem(item_id):
           item = elements.loadItem(self.db, item_id)
           self.wstate.selectItem(item_id)
           response.changed = True
