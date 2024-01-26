@@ -7,6 +7,7 @@ import { getSite, getItem, getCharacter } from './api.js';
 import ChatScreen from './ChatScreen.jsx';
 
 import { useState } from 'react'
+import { useContext } from 'react'
 import { useEffect } from 'react';
 
 import './App.css'
@@ -23,8 +24,6 @@ import Stack from 'react-bootstrap/Stack';
 
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-
-
 
 function CharacterScreen({ character }) {
   return (
@@ -237,6 +236,18 @@ async function postTakeItem(worldId, itemId) {
   return response.json();
 }
 
+async function postSelectItem(worldId, itemId) {
+  const url = `/worlds/${worldId}/command`;
+  const data = { "name": "select",
+                 "item": itemId }
+  const response = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()    
+  });
+  return response.json();
+}
+
 async function postUseItem(worldId, itemId) {
   const url = `/worlds/${worldId}/command`;
   const data = { "name": "use",
@@ -250,7 +261,7 @@ async function postUseItem(worldId, itemId) {
 }
 
 function Site({ world, siteId,
-                selectedItem, setSelectedItemId,
+                player, setSelectedItemId,
                 statusMessage, setStatusMessage,
                 onClose }) {
   const [site, setSite] = useState(null);
@@ -303,9 +314,7 @@ function Site({ world, siteId,
   }
 
   async function useSelectedItem() {
-    if (selectedItem !== null) {
-      useItem(selectedItem.id);
-    }
+    useItem(player.selected_item);
   }
 
   function handleUpdate() {
@@ -366,7 +375,7 @@ function Site({ world, siteId,
   }
 
   let item_card = "";
-  if (selectedItem !== null) {
+  if (player.selected_item !== null) {
     item_card = (<ItemCard item={selectedItem}
                            action={ "Use" }
                            onClick={useSelectedItem}/>);
@@ -696,7 +705,7 @@ function World({ worldId, setWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);  
   const [statusMessage, setStatusMessage] = useState("");
   const [player, setPlayer] = useState(null);
-  
+
   useEffect(() => {
     let ignore = false;
 
@@ -713,7 +722,8 @@ function World({ worldId, setWorldId }) {
         if (!ignore) {
           setWorld(world);
           setSiteList(sites);
-          setPlayer(player);          
+          setPlayer(player);
+          setSelectedItem(player.selected_item);
           // Set the site id if we are present at a site
           for (let i = 0; i < sites.length; i++) {
             if (sites[i].present) {
@@ -756,9 +766,12 @@ function World({ worldId, setWorldId }) {
 
   async function selectItemId(item_id) {
     try {
+      let response = await postSelectItem(world.id, item_id);
+      setStatusMessage(response.message)
       const item = await getItem(world.id, item_id);
       setSelectedItem(item)
     } catch (e) {
+      console.log(e);      
     }
   }
 
@@ -786,8 +799,7 @@ function World({ worldId, setWorldId }) {
   if (siteId) {
     return (<Site world={world}
                   siteId={siteId}
-                  selectedItem={selectedItem}
-                  setSelectedItemId={ selectItemId }
+                  player={player}
                   statusMessage={statusMessage}
                   setStatusMessage={setStatusMessage}
                   onClose={clearSite}/>);

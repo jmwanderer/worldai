@@ -913,3 +913,19 @@ def player(wid):
 
   response = client_commands.LoadPlayerData(get_db(), world, wstate)
   return response.model_dump()
+
+@bp.route('/api/worlds/<wid>/character/stats/<id>', methods=["GET"])
+@auth_required
+def character_stats(wid, id):
+  """
+  API to get character status
+  """
+  session_id = get_session_id()
+  world = elements.loadWorld(get_db(), wid)  
+  if world is None:
+    return { "error", "World not found"}, 400
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)
+
+  response = client_commands.LoadCharacterData(get_db(), world, wstate, id)
+  return response.model_dump()

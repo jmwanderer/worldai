@@ -249,6 +249,46 @@ class CharacterData(pydantic.BaseModel):
   strength: int = 0
   inventory: typing.List[ ElemInfo ] = []
 
+
+def LoadCharacterData(db, world, wstate, cid):
+  data = CharacterData()
+  character = elements.loadCharacter(db, cid)
+  if character is None:
+    return { "error": f"character {cid} does not exist"}
+  
+  data.name = character.getName()
+  data.description = character.getDescription()
+  sleeping = world_state.CharStatus.SLEEPING
+  data.sleeping = wstate.hasCharacterStatus(cid, sleeping)
+  paralized = world_state.CharStatus.PARALIZED
+  data.paralized = wstate.hasCharacterStatus(cid, paralized)
+  poisoned = world_state.CharStatus.POISONED
+  data.poisoned = wstate.hasCharacterStatus(cid, poisoned)
+  brainwashed = world_state.CharStatus.BRAINWASHED
+  data.brainwashed = wstate.hasCharacterStatus(cid, brainwashed)
+  captured = world_state.CharStatus.CAPTURED
+  data.captured= wstate.hasCharacterStatus(cid, captured)  
+  invisible = world_state.CharStatus.INVISIBLE
+  data.invisible = wstate.hasCharacterStatus(cid, invisible)
+  data.location = wstate.getCharacterLocation(cid)
+  data.credits = wstate.getCharacterCredits(cid)
+  data.health = wstate.getCharacterHealth(cid)
+  data.strength = wstate.getCharacterStrength(cid)
+
+  for item_id in wstate.getCharacterItems(cid):
+    item = elements.loadItem(db, item_id)
+    if item is None:
+      logging.error("unknown item in inventory: %s", item_id)
+    else:
+      item_info = ElemInfo()
+      item_info.id = item_id
+      item_info.name = item.getName()
+      item_info.description = item.getDescription()
+      data.inventory.append(item_info)
+  
+  return data
+  
+
 class PlayerData(pydantic.BaseModel):
   """
   Vital stats for the player character
