@@ -254,7 +254,7 @@ class PlayerData(pydantic.BaseModel):
   Vital stats for the player character
   """
   status: CharacterData = CharacterData()
-  selected_item: typing.Optional[ElemInfo] = None
+  selected_item: typing.Optional[str] = None
   chat_who: str = ""
 
 def LoadPlayerData(db, world, wstate):
