@@ -168,8 +168,8 @@ function CharacterItem({ character, onClick }) {
     onClick(character.id);
   }
   return (
-    <div className="mt-2" style={{ height: "100%"}}>
-      <Card style={{ height: "100%", padding: "1em" }}>
+    <div className="mt-2">
+      <Card style={{ maxWidth:"15vmin",  padding: "1em" }}>      
         <Card.Img src={character.image.url}/>
         <Card.Title>
           {character.name }
@@ -179,19 +179,15 @@ function CharacterItem({ character, onClick }) {
     </div>);
 }
 
-function SitePeople({ site, setCharacterId}) {
+function getSitePeople(site, setCharacterId) {
 
-  const people = site.characters.map(entry =>
+    return site.characters.map(entry =>
     <Col key={entry.id} md={2}>
       <CharacterItem key={entry.id}
                      character={entry}
                      onClick={setCharacterId}/>
     </Col>
   );
-  
-  return (<Stack direction="horizontal">
-            { people }
-            </Stack>);
 }
 
 function ItemCard({ item, action, onClick }) {
@@ -216,8 +212,8 @@ function ItemCard({ item, action, onClick }) {
 }
 
 
-function SiteItems({ site, useItemId, takeItemId}) {
-  const items = site.items.map(entry =>
+function getSiteItems(site, useItemId, takeItemId) {
+  return site.items.map(entry =>
     <Col key={entry.id} md={2}>
       <ItemCard key={entry.id}
                 item={entry}
@@ -225,11 +221,6 @@ function SiteItems({ site, useItemId, takeItemId}) {
                 onClick={ entry.mobile ? takeItemId : useItemId }/>
     </Col>
   );
-  
-  return ( <Stack direction="horizontal">
-               { items }
-           </Stack>
-         );
 }
 
 
@@ -303,7 +294,6 @@ function Site({ world, siteId,
     try {
       // TODO: display some type of result here
       let response = await postUseItem(world.id, item_id);
-      console.log("set status message: " + response.message);
       setStatusMessage(response.message)
       handleUpdate()
     } catch (e) {
@@ -336,8 +326,9 @@ function Site({ world, siteId,
 
   async function engageCharacter(char_id) {
     try {    
-      await postEngage(world.id, char_id)
-      setCharacterId(char_id)
+      const response = await postEngage(world.id, char_id);
+      setCharacterId(char_id);
+      setStatusMessage(response.message);      
     } catch (e) {
       console.log(e);
     }
@@ -345,8 +336,9 @@ function Site({ world, siteId,
 
   async function disengageCharacter() {
     try {    
-      await postEngage(world.id, null)
-      setCharacterId(null)      
+      await postEngage(world.id, null);
+      setCharacterId(null);
+      setStatusMessage("");      
     } catch (e) {
       console.log(e);
     }
@@ -389,7 +381,7 @@ function Site({ world, siteId,
         <Col xs={6}>
           <Stack>
             <ElementImages element={site}/>
-            <Alert className="mt-3">
+            <Alert className="m-3">
               { statusMessage }
             </Alert>
           </Stack>
@@ -403,11 +395,10 @@ function Site({ world, siteId,
         </Col>
       </Row>
       <Row className="mb-2">
-          <SitePeople site={site}
-                      setCharacterId={engageCharacter}/>
-          <SiteItems site={site}
-                     takeItemId={takeItem}
-                     useItemId={useItem}/>
+        <Stack direction="horizontal">
+          { getSitePeople(site, engageCharacter) }
+          { getSiteItems(site, useItem, takeItem) }
+        </Stack>
       </Row>
     </Container>            
   );
@@ -676,7 +667,7 @@ async function postGoTo(worldId, siteId) {
     body: JSON.stringify(data),
     headers: headers_post()        
   });
-  return result;
+  return result.json();
 }
 
 async function postEngage(worldId, charId) {
@@ -694,7 +685,7 @@ async function postEngage(worldId, charId) {
     body: JSON.stringify(data),
     headers: headers_post()        
   });
-  return result;
+  return result.json();
 }
 
 function World({ worldId, setWorldId }) {
@@ -748,12 +739,14 @@ function World({ worldId, setWorldId }) {
   }
 
   function clearSite() {
-    goToSite(""); 
+    goToSite("");
+    setStatusMessage("");
     setSiteId(null);
   }
 
   function selectSite(site_id) {
     goToSite(site_id);
+    setStatusMessage("");    
     setSiteId(site_id);
   }
 

@@ -55,7 +55,6 @@ class ClientActions:
     Implement a command from the client.
     Return a json result for the client
     """
-
     response = CommandResponse()
 
     if command.name == CommandName.go:
@@ -71,7 +70,6 @@ class ClientActions:
         logging.info("GO: clear location")        
       response.changed = True
       
-
     elif command.name == CommandName.take:
       item_id = command.item
       logging.info("take item %s", item_id)
@@ -82,7 +80,7 @@ class ClientActions:
         if item.getIsMobile():
           self.wstate.addItem(item_id)
           response.changed = True
-          response.message = f"Took {item.getName()}"
+          response.message = f"You picked up {item.getName()}"
 
     elif command.name == CommandName.use:
       item = elements.loadItem(self.db, command.item)
@@ -104,12 +102,11 @@ class ClientActions:
       response.changed = True
       response.message = f"Talking to {character.getName()}"      
 
-
     elif command.name == CommandName.disengage:
       self.wstate.setChatCharacter("")
       logging.info("disengage character")
       response.changed = True
-      response.message = f"Talking to nobody"      
+      response.message = f"Talking to nobody"
 
     logging.info("Client command response: %s", response.model_dump())
     return response
@@ -145,6 +142,9 @@ class ClientActions:
 
     # Apply an effect
     match item.getAbility().effect:
+      case elements.ItemEffect.NONE:
+        response.message = f"Nothing happened"
+      
       case elements.ItemEffect.HEAL:
         # Self or other
         if cid is None:
