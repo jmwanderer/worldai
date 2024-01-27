@@ -171,8 +171,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncDecreaseFriendship(db)
     elif function_name == "GiveItem":
       result = self.FuncGiveItem(db, arguments)
-    if function_name == "AcceptItem":
-      result = self.FuncAcceptItem(db, arguments)
+    if function_name == "TakeItem":
+      result = self.FuncTakeItem(db, arguments)
     if function_name == "ChangeLocation":
       result = self.FuncChangeLocation(db, arguments)
     elif function_name == "ListCharacters":
@@ -259,9 +259,9 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
     return result
 
-  def FuncAcceptItem(self, db, args):
+  def FuncTakeItem(self, db, args):
     """
-    Record that the player completed the challenge for the current character.
+    Transfer item from user to character
     """
     # TODO: this is where we need lock for updating
     item_id = args["item_id"]
@@ -274,6 +274,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     if not wstate.hasItem(item_id):
       return self.funcError("User does not have this item")
 
+    if wstate.getSelectedItem() == item_id:
+      wstate.selectItem(None)
     wstate.addCharacterItem(self.character_id, item_id)
     world_state.saveWorldState(db, wstate)
 
@@ -328,7 +330,7 @@ all_functions = [
   },
   {
     "name": "GiveItem",
-    "description": "Transfer an item from you to the user.",
+    "description": "Give an item to the user.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -341,8 +343,8 @@ all_functions = [
     },
   },
   {
-    "name": "AcceptItem",
-    "description": "Transfer an item from the user to you.",
+    "name": "TakeItem",
+    "description": "Recieve an item from the user.",
     "parameters": {
       "type": "object",
       "properties": {

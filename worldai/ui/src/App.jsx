@@ -109,13 +109,10 @@ function ChatCharacter({ world, characterId,
     // Reload player and character
     console.log("handle chat change");
     try {
-      let calls = Promise.all([ getCharacter(world.id, characterId),
-                                getPlayerData(world.id)]);
-      let [character, player] = await calls;
+      console.log("handle chat change");
+      const character = await getCharacter(world.id, characterId);
       console.log("set character");
-      console.log("set player data");
       setCharacter(character);
-      setPlayerData(playerData);
     } catch (e) {
       console.log(e);
     }
@@ -311,10 +308,11 @@ function Site({ world, siteId,
       let calls = Promise.all([ getSite(world.id, siteId),
                                 getPlayerData(world.id)]);
       let [site, player] = await calls;
+      console.log("reload state");
       console.log("set site");
       console.log("set player data");
       setSite(site);
-      setPlayerData(playerData);
+      setPlayerData(player);
     } catch (e) {
       console.log(e);
     } 
@@ -322,6 +320,7 @@ function Site({ world, siteId,
 
   async function takeItem(item_id) {
     try {
+      console.log("take item" + item_id);
       let response = await postTakeItem(world.id, item_id);
       setStatusMessage(response.message)
       if (response.changed) {
@@ -337,6 +336,7 @@ function Site({ world, siteId,
     try {
       // TODO: display some type of result here
       let response = await postUseItem(world.id, item_id);
+      console.log("use item: " + response.message);
       setStatusMessage(response.message)
       if (response.changed) {
         reloadState()
@@ -786,34 +786,33 @@ function World({ worldId, setWorldId }) {
     // Update related state
     let ignore = false;
     console.log("player data changed");
-    async function loadSelectedItem(item_id) {
-      try {
-        const item = await getItem(world.id, item_id);
-        if (!ignore) {
+    if (!ignore) {    
+      async function loadSelectedItem(item_id) {
+        try {
+          const item = await getItem(world.id, item_id);
           console.log("set selected item");
           setSelectedItem(item);
+        } 
+        catch (e) {
+          console.log(e);
         }
-      } 
-      catch (e) {
-        console.log(e);
+      }
+
+      if (playerData !== null) {
+        if (playerData.selected_item === null) {
+          console.log("clear selected item");
+          setSelectedItem(null);
+        } else if (selectedItem === null) {
+          console.log("load new selected item: '" + playerData.selected_item + "'");
+          loadSelectedItem(playerData.selected_item);
+        } else if (playerData.selected_item !== selectedItem.id) {
+          console.log("change selected item");
+          loadSelectedItem(playerData.selected_item);      
+        } else {
+          console.log("no change selected item");
+        }
       }
     }
-
-    if (playerData !== null) {
-      if (playerData.selected_item === null) {
-        console.log("clear selected item");
-        setSelectedItem(null);
-      } else if (selectedItem === null) {
-        console.log("load new selected item: '" + playerData.selected_item + "'");
-        loadSelectedItem(playerData.selected_item);
-      } else if (playerData.selected_item !== selectedItem.id) {
-        console.log("change selected item");
-        loadSelectedItem(playerData.selected_item);      
-      } else {
-        console.log("no change selected item");
-      }
-    }
-
     return () => {
       ignore = true;
     }
