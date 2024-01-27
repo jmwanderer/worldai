@@ -26,15 +26,14 @@ Your current location is "{location}"
 You are talking to the user, who you know by the name 'Traveler'. We greet with curiousity.
 {friendship}
 
-{char_items}
-{user_items}
+{char_state}
+{user_state}
 
-Call IncreaseFriendship if you favor Traveler, call DecreaseFriendship if you do not favor Traveler.
+If you favor Travler, call IncreaseFriendship, otherwise call DecreaseFriendship.
 """
 
 CHAR_ITEMS="""
-{name} possesses the following items:
-'{char_items}'
+{name} possesses interesting items.
 """
 
 NO_CHAR_ITEMS="""
@@ -42,12 +41,7 @@ NO_CHAR_ITEMS="""
 """
 
 USER_ITEMS="""
-Travler possesses the following items:
-'{user_items}'
-"""
-
-NO_USER_ITEMS="""
-Travler does not currently possess any items.
+You see that Travler is holding an interesting item: '{selected_item}'
 """
 
 FRIENDSHIP_NEUTRAL="""
@@ -95,30 +89,32 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       site = elements.loadSite(db, site_id)
       location = site.getName()
     
-    character_items_list = []
-    for item_id in wstate.getCharacterItems(self.character_id):
-      item = elements.loadItem(db, item_id)
-      character_items_list.append(item.getName())
-
-    if len(character_items_list) > 0:
-      character_items=CHAR_ITEMS.format(
-        name=character.getName(),
-        char_items=",".join(character_items_list))
+    if len(wstate.getCharacterItems(self.character_id)) > 0:
+      character_state=CHAR_ITEMS.format(
+        name=character.getName())
     else:
-      character_items=NO_CHAR_ITEMS.format(
-                name=character.getName())
+      character_state=NO_CHAR_ITEMS.format(
+        name=character.getName())
 
-    user_items_list = []
-    for item_id in wstate.getItems():
-      item = elements.loadItem(db, item_id)
-      user_items_list.append(item.getName())
-
-    if len(user_items_list) > 0:
-      user_items = USER_ITEMS.format(
-        user_items=",".join(user_items_list))
+    user_state = []
+        
+    # Invisibility
+    invisible = world_state.CharStatus.INVISIBLE    
+    if wstate.hasPlayerStatus(invisible):
+      user_state.append("Traveler is here, but invisible. You can not see them")
     else:
-      user_items = NO_USER_ITEMS
+      user_state.append("You can see that Traveler is here with you at %s" %
+                        location)
+      # Selected item
+      if wstate.getSelectedItem() != None:
+        item = elements.loadItem(db, wstate.getSelectedItem())
+        user_state.append(USER_ITEMS.format(
+          selected_item=item.getName()))
+      # Injured -  TODO
 
+    # Convert into a string.
+    user_state = '\n'.join(user_state)
+    
     character_details = ""
     if len(character.getDetails()) > 0:
       character_details = details=character.getDetails()
@@ -140,8 +136,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       world_details=world_details,
       friendship=friendship,
       location=location,
-      char_items=character_items,
-      user_items=user_items,
+      char_state=character_state,
+      user_state=user_state,
       world_description=world.getDescription())
 
     return instructions
@@ -244,16 +240,19 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     item_id = args["item_id"]
     print(f"give item {item_id}")
     wstate = world_state.loadWorldState(db, self.wstate_id)
-    item = elements.loadItem(db, item_id)        
+    item = elements.loadItem(db, item_id)
     if item is None:
       return self.funcError(f"Not a valid item id. Perhaps call ListItems")
 
+    text = ""
     if wstate.hasCharacterItem(self.character_id, item_id):
       # Charracter has item to give to the user
       wstate.addItem(item_id)
+      text = character.getName() + " gave the " + item.getName()       
     elif wstate.hasItem(item_id):
       # User has item to give to the character
       wstate.addCharacterItem(self.character_id, item_id)
+      text = character.getName() + " accepted the " + item.getName()
       if wstate.getSelectedItem() == item_id:
         wstate.selectItem(None)
     else:
@@ -262,8 +261,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     world_state.saveWorldState(db, wstate)    
     character = elements.loadCharacter(db, self.character_id)
     result = { "response": self.funcStatus("OK"),
-               "text": character.getName() + " gave the " +
-               item.getName() }
+               "text": text }
 
     return result
 
