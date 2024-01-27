@@ -171,8 +171,6 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncDecreaseFriendship(db)
     elif function_name == "GiveItem":
       result = self.FuncGiveItem(db, arguments)
-    if function_name == "TakeItem":
-      result = self.FuncTakeItem(db, arguments)
     if function_name == "ChangeLocation":
       result = self.FuncChangeLocation(db, arguments)
     elif function_name == "ListCharacters":
@@ -238,6 +236,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
   def FuncGiveItem(self, db, args):
     """
+    Give or receive an item
     """
     # TODO: this is where we need lock for updating
     item_id = args["item_id"]
@@ -247,10 +246,17 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     if item is None:
       return self.funcError(f"Not a valid item id. Perhaps call ListItems")
 
-    if not wstate.hasCharacterItem(self.character_id, item_id):
-      return self.funcError("You do not have this item")
+    if wstate.hasCharacterItem(self.character_id, item_id):
+      # Charracter has item to give to the user
+      wstate.addItem(item_id)
+    elif wstate.hasItem(item_id):
+      # User has item to give to the character
+      wstate.addCharacterItem(self.character_id, item_id)
+      if wstate.getSelectedItem() == item_id:
+        wstate.selectItem(None)
+    else:
+      return self.funcError("Niether you or the user have this item")
     
-    wstate.addItem(item_id)
     world_state.saveWorldState(db, wstate)    
     character = elements.loadCharacter(db, self.character_id)
     result = { "response": self.funcStatus("OK"),
@@ -259,32 +265,6 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
     return result
 
-  def FuncTakeItem(self, db, args):
-    """
-    Transfer item from user to character
-    """
-    # TODO: this is where we need lock for updating
-    item_id = args["item_id"]
-    print(f"take item {item_id}")
-    item = elements.loadItem(db, item_id)    
-    if item is None:
-      return self.funcError(f"Not a valid item id. Perhaps call ListItems")
-    
-    wstate = world_state.loadWorldState(db, self.wstate_id)
-    if not wstate.hasItem(item_id):
-      return self.funcError("User does not have this item")
-
-    if wstate.getSelectedItem() == item_id:
-      wstate.selectItem(None)
-    wstate.addCharacterItem(self.character_id, item_id)
-    world_state.saveWorldState(db, wstate)
-
-    character = elements.loadCharacter(db, self.character_id)
-    result = { "response": self.funcStatus("OK"),
-               "text": character.getName() + " took the " +
-               item.getName() }
-    
-    return result
 
   def FuncChangeLocation(self, db, args):
     """
@@ -330,21 +310,7 @@ all_functions = [
   },
   {
     "name": "GiveItem",
-    "description": "Give an item to the user.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "item_id": {
-          "type": "string",
-          "description": "Unique identifier of the item.",
-        },
-      },
-      "required": [ "item_id" ],
-    },
-  },
-  {
-    "name": "TakeItem",
-    "description": "Recieve an item from the user.",
+    "description": "Give or recieve an item.",
     "parameters": {
       "type": "object",
       "properties": {
