@@ -74,7 +74,6 @@ async function postCharacterChat(context, user_msg) {
 
 function ChatCharacter({ world, characterId,
                          playerData,
-                         setPlayerData,
                          setView,
                          statusMessage, selectedItem,
                          useItem,
@@ -274,7 +273,7 @@ async function postUseItem(worldId, itemId) {
 }
 
 function Site({ world, siteId,
-                playerData, setPlayerData,
+                playerData, updateWorldData,
                 selectedItem, selectItem,
                 statusMessage, setStatusMessage,
                 onClose }) {
@@ -305,14 +304,11 @@ function Site({ world, siteId,
 
   async function reloadState() {
     try {
-      let calls = Promise.all([ getSite(world.id, siteId),
-                                getPlayerData(world.id)]);
-      let [newSite, newPlayer] = await calls;
+      updateWorldData()
+      const newSite = await getSite(world.id, siteId);
       console.log("reload state");
       console.log("set site");
-      console.log("set player data");
       setSite(newSite);
-      setPlayerData(newPlayer);
     } catch (e) {
       console.log(e);
     } 
@@ -403,7 +399,6 @@ function Site({ world, siteId,
       <ChatCharacter world={world}
                      characterId={characterId}
                      playerData={playerData}
-                     setPlayerData={setPlayerData}
                      setView={setView}
                      statusMessage={statusMessage}
                      selectedItem={selectedItem}
@@ -761,8 +756,9 @@ function World({ worldId, setWorldId }) {
           setWorld(newWorld);
           setSiteList(newSites);
           setPlayerData(newPlayer);
+          loadSelectedItem(newWorld, newPlayer);
           // Set the site id if we are present at a site
-          for (let i = 0; i < sites.length; i++) {
+          for (let i = 0; i < newSites.length; i++) {
             if (newSites[i].present) {
               setSiteId(newSites[i].id);
               break;
@@ -780,43 +776,6 @@ function World({ worldId, setWorldId }) {
       ignore = true;
     }
   }, [worldId]);
-
-  useEffect(() => {
-    // Player Data has changed.
-    // Update related state
-    let ignore = false;
-    console.log("player data changed");
-    if (!ignore) {    
-      async function loadSelectedItem(item_id) {
-        try {
-          const newItem = await getItem(world.id, item_id);
-          console.log("set selected item");
-          setSelectedItem(newItem);
-        } 
-        catch (e) {
-          console.log(e);
-        }
-      }
-
-      if (playerData !== null) {
-        if (playerData.selected_item === null) {
-          console.log("clear selected item");
-          setSelectedItem(null);
-        } else if (selectedItem === null) {
-          console.log("load new selected item: '" + playerData.selected_item + "'");
-          loadSelectedItem(playerData.selected_item);
-        } else if (playerData.selected_item !== selectedItem.id) {
-          console.log("change selected item");
-          loadSelectedItem(playerData.selected_item);      
-        } else {
-          console.log("no change selected item");
-        }
-      }
-    }
-    return () => {
-      ignore = true;
-    }
-  }, [playerData]);
 
   function clickClose() {
     setWorldId("");
@@ -838,14 +797,40 @@ function World({ worldId, setWorldId }) {
     setSiteId(site_id);
   }
 
-  async function reloadPlayerData() {
+  async function loadSelectedItem(world, playerData) {
+    try {    
+      if (playerData.selected_item === null) {
+        console.log("clear selected item");
+        setSelectedItem(null);
+      } else if (selectedItem === null) {
+        console.log("load new selected item: '" + playerData.selected_item + "'");
+        const newItem = await getItem(world.id, playerData.selected_item);
+        console.log("set selected item");
+        setSelectedItem(newItem);
+      } else if (playerData.selected_item !== selectedItem.id) {
+        console.log("change selected item");
+        const newItem = await getItem(world.id, playerData.selected_item);        
+        setSelectedItem(newItem);
+      } else {
+        console.log("no change selected item");
+      }
+    } 
+    catch (e) {
+      console.log(e);
+    }
+  }
+  
+  async function updateWorldData() {
+    // Reload player data and dependent information.
     try {
       console.log("reload player data");
       const newPlayerData = await getPlayerData(world.id);
       setPlayerData(newPlayerData);
+      loadSelectedItem(world, newPlayerData);
     } catch (e) {
       console.log(e);
-    } 
+    }
+      
   }
   
   async function selectItem(item_id) {
@@ -853,7 +838,7 @@ function World({ worldId, setWorldId }) {
       let response = await postSelectItem(world.id, item_id);
       setStatusMessage(response.message)
       if (response.changed) {
-        reloadPlayerData();
+        updateWorldData();
       }
     } catch (e) {
       // TODO: fix reporting
@@ -887,7 +872,7 @@ function World({ worldId, setWorldId }) {
     return (<Site world={world}
                   siteId={siteId}
                   playerData={playerData}
-                  setPlayerData={setPlayerData}
+                  updateWorldData={updateWorldData}
                   selectedItem={selectedItem}
                   selectItem={selectItem}
                   statusMessage={statusMessage}
