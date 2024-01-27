@@ -110,9 +110,9 @@ function ChatCharacter({ world, characterId,
     console.log("handle chat change");
     try {
       console.log("handle chat change");
-      const character = await getCharacter(world.id, characterId);
+      const value = await getCharacter(world.id, characterId);
       console.log("set character");
-      setCharacter(character);
+      setCharacter(value);
     } catch (e) {
       console.log(e);
     }
@@ -307,12 +307,12 @@ function Site({ world, siteId,
     try {
       let calls = Promise.all([ getSite(world.id, siteId),
                                 getPlayerData(world.id)]);
-      let [site, player] = await calls;
+      let [newSite, newPlayer] = await calls;
       console.log("reload state");
       console.log("set site");
       console.log("set player data");
-      setSite(site);
-      setPlayerData(player);
+      setSite(newSite);
+      setPlayerData(newPlayer);
     } catch (e) {
       console.log(e);
     } 
@@ -755,16 +755,16 @@ function World({ worldId, setWorldId }) {
         let calls = Promise.all([ getSiteList(worldId),
                                   getWorld(worldId),
                                   getPlayerData(worldId)]);
-        let [sites, world, player] = await calls;
+        let [newSites, newWorld, newPlayer] = await calls;
 
         if (!ignore) {
-          setWorld(world);
-          setSiteList(sites);
-          setPlayerData(player);
+          setWorld(newWorld);
+          setSiteList(newSites);
+          setPlayerData(newPlayer);
           // Set the site id if we are present at a site
           for (let i = 0; i < sites.length; i++) {
-            if (sites[i].present) {
-              setSiteId(sites[i].id);
+            if (newSites[i].present) {
+              setSiteId(newSites[i].id);
               break;
             }
           }
@@ -789,9 +789,9 @@ function World({ worldId, setWorldId }) {
     if (!ignore) {    
       async function loadSelectedItem(item_id) {
         try {
-          const item = await getItem(world.id, item_id);
+          const newItem = await getItem(world.id, item_id);
           console.log("set selected item");
-          setSelectedItem(item);
+          setSelectedItem(newItem);
         } 
         catch (e) {
           console.log(e);
@@ -841,8 +841,8 @@ function World({ worldId, setWorldId }) {
   async function reloadPlayerData() {
     try {
       console.log("reload player data");
-      const playerData = await getPlayerData(world.id);
-      setPlayerData(playerData);
+      const newPlayerData = await getPlayerData(world.id);
+      setPlayerData(newPlayerData);
     } catch (e) {
       console.log(e);
     } 
