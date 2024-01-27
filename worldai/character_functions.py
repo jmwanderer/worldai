@@ -9,7 +9,7 @@ from . import world_state
 
 INSTRUCTIONS="""
 
-You play '{name}', a fictional character our story. Given the following character description, personality, goals, emotional state, adopt the personality described and respond as the character.
+You are an actor playing '{name}', a fictional character our story. Given the following character description, personality, goals, emotional state, adopt the personality described and respond as the character.
 
 [Personality]
 {character_notes}
@@ -28,6 +28,8 @@ You are talking to the user, who you know by the name 'Traveler'. We greet with 
 
 {char_items}
 {user_items}
+
+Call IncreaseFriendship if you favor Traveler, call DecreaseFriendship if you do not favor Traveler.
 """
 
 CHAR_ITEMS="""
