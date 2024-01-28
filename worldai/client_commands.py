@@ -66,6 +66,7 @@ class ClientActions:
         self.wstate.setLocation(site_id)
         logging.info("GO: set location %s",  site_id)
         response.message = f"Go {site.getName()}"
+        self.wstate.advanceTime(30)
       else:
         self.wstate.setLocation("")
         logging.info("GO: clear location")        
@@ -104,6 +105,7 @@ class ClientActions:
         logging.info("use item %s", command.item)
         # TODO: change to result of use
         response.changed = True
+        self.wstate.advanceTime(5)        
       else:
         response.message = f"Unable to use {item.getName()}"
 
@@ -118,6 +120,7 @@ class ClientActions:
         response.message = f"Talking to {character.getName()}"
       else:
         response.message = f"{character.getName()} is dead"
+      self.wstate.advanceTime(5)
 
     elif command.name == CommandName.disengage:
       self.wstate.setChatCharacter(None)
@@ -321,6 +324,7 @@ class PlayerData(pydantic.BaseModel):
   status: CharacterData = CharacterData()
   selected_item: typing.Optional[str] = None
   chat_who: str = ""
+  # Time in minutes
 
 def LoadPlayerData(db, world, wstate):
   data = PlayerData()

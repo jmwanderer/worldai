@@ -799,6 +799,7 @@ def site(wid, sid):
 
   result["characters"] = characters    
   result["chatting"] = chat_char_id
+  result["current_time"] = wstate.getCurrentTime()
       
   items = []
   iid_list = wstate.getItemsAtLocation(sid)
@@ -910,8 +911,10 @@ def player(wid):
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
   wstate = world_state.loadWorldState(get_db(), wstate_id)
 
-  response = client_commands.LoadPlayerData(get_db(), world, wstate)
-  return response.model_dump()
+  player_data = client_commands.LoadPlayerData(get_db(), world, wstate)
+  response = player_data.model_dump()
+  response["current_time"] = wstate.getCurrentTime()  
+  return response
 
 @bp.route('/api/worlds/<wid>/characters/<id>/instance', methods=["GET"])
 @auth_required
@@ -926,5 +929,8 @@ def character_stats(wid, id):
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
   wstate = world_state.loadWorldState(get_db(), wstate_id)
 
-  response = client_commands.LoadCharacterData(get_db(), world, wstate, id)
-  return response.model_dump()
+  character_data = client_commands.LoadCharacterData(get_db(),
+                                                     world, wstate, id)
+  response = character_data.model_dump()
+  response["current_time"] = wstate.getCurrentTime()  
+  return response

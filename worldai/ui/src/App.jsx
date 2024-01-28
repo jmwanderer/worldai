@@ -188,6 +188,7 @@ function ChatCharacter({ world, characterId,
                          setView,
                          statusMessage, setStatusMessage,
                          selectedItem,
+                         currentTime,  setCurrentTime,                         
                          onClose, onChange}) {
   const [character, setCharacter] = useState(null);
   const [characterData, setCharacterData] = useState(null);
@@ -209,7 +210,8 @@ function ChatCharacter({ world, characterId,
         if (!ignore) {
           setCharacter(character);
           setCharacterData(characterData);
-          setChatEnabled(characterData.can_chat);          
+          setChatEnabled(characterData.can_chat);
+          setCurrentTime(characterData.current_time);
         }
       } catch (e) {
         console.log(e);        
@@ -236,6 +238,7 @@ function ChatCharacter({ world, characterId,
       setCharacter(character);
       setCharacterData(characterData);
       setChatEnabled(characterData.can_chat);
+      setCurrentTime(characterData.current_time);      
       
     } catch (e) {
       console.log(e);
@@ -284,7 +287,9 @@ function ChatCharacter({ world, characterId,
   return (
     <Container>
       <Row>
-        <Navigation onClose={onClose} setView={ setView }/>
+        <Navigation time={currentTime}
+                    onClose={onClose}
+                    setView={ setView }/>
       </Row>
       <Row>
         <Col xs={6}>
@@ -424,6 +429,7 @@ function Site({ world, siteId,
                 playerData, updateWorldData,
                 selectedItem, selectItem,
                 statusMessage, setStatusMessage,
+                currentTime,  setCurrentTime,
                 onClose }) {
   const [site, setSite] = useState(null);
   const [view, setView] = useState(null);
@@ -438,6 +444,7 @@ function Site({ world, siteId,
         const value = await getSite(world.id, siteId)
         if (!ignore) {
           setSite(value);
+          setCurrentTime(value.current_time);
           setCharacterId(value.chatting);
         }
       } catch (e) {
@@ -455,6 +462,7 @@ function Site({ world, siteId,
       updateWorldData()
       const newSite = await getSite(world.id, siteId);
       setSite(newSite);
+      setCurrentTime(newSite.current_time);      
     } catch (e) {
       console.log(e);
     } 
@@ -546,6 +554,8 @@ function Site({ world, siteId,
                      statusMessage={statusMessage}
                      setStatusMessage={setStatusMessage}                     
                      selectedItem={selectedItem}
+                     currentTime={currentTime}
+                     setCurrentTime={setCurrentTime}
                      onClose={disengageCharacter}
                      onChange={handleChanges}/>
     );
@@ -561,7 +571,9 @@ function Site({ world, siteId,
   return (
     <Container>
       <Row>
-        <Navigation onClose={clickClose} setView={ setView }/>
+        <Navigation time={currentTime}
+                    onClose={clickClose}
+                    setView={ setView }/>
       </Row>
       <Row>
         <Col xs={6}>
@@ -592,8 +604,23 @@ function Site({ world, siteId,
 }
 
 
+function getTimeString(time) {
+  // Convert time in minutes to days, hours, min
+  let days = Math.floor(time / (60 * 24));
+  time = time - (days * 60 * 24);
+  let hours = Math.floor(time / 60);
+  let minutes = time - (hours * 60 );
+  return ("Day " + (days + 1) + " " +
+          hours.toLocaleString('en-US',  {minimumIntegerDigits: 2,
+                                          useGrouping:false}) +
+          ":" + 
+          minutes.toLocaleString('en-US',  {minimumIntegerDigits: 2,
+                                            useGrouping:false}));
+  
+}
 
-function Navigation({ onClose, setView}) {
+
+function Navigation({ time, onClose, setView}) {
 
   function setCharactersView() {
     setView("characters");        
@@ -608,6 +635,8 @@ function Navigation({ onClose, setView}) {
     <Navbar expand="lg" className="bg-body-tertiary">
       <Container>
         <CloseButton onClick={onClose}/>
+        <Navbar.Brand>Story Quest</Navbar.Brand>
+        <Navbar.Text>{getTimeString(time)}</Navbar.Text>
         <Nav>
           <Nav.Link onClick={setCharactersView}>
             Characters
@@ -874,6 +903,7 @@ function World({ worldId, setWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);  
   const [statusMessage, setStatusMessage] = useState("");
   const [playerData, setPlayerData] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);  
   
   useEffect(() => {
     let ignore = false;
@@ -891,6 +921,7 @@ function World({ worldId, setWorldId }) {
           setWorld(newWorld);
           setSiteList(newSites);
           setPlayerData(newPlayer);
+          setCurrentTime(newPlayer.current_time);  // TODO - decide on this
           loadSelectedItem(newWorld, newPlayer);
           // Set the site id if we are present at a site
           for (let i = 0; i < newSites.length; i++) {
@@ -955,6 +986,7 @@ function World({ worldId, setWorldId }) {
       const newPlayerData = await getPlayerData(world.id);
       setPlayerData(newPlayerData);
       loadSelectedItem(world, newPlayerData);
+      setCurrentTime(newPlayerData.current_time);  // TODO - decide on this 
     } catch (e) {
       console.log(e);
     }
@@ -1005,6 +1037,8 @@ function World({ worldId, setWorldId }) {
                   selectItem={selectItem}
                   statusMessage={statusMessage}
                   setStatusMessage={setStatusMessage}
+                  currentTime={currentTime}
+                  setCurrentTime={setCurrentTime}
                   onClose={clearSite}/>);
   }
 
@@ -1013,7 +1047,9 @@ function World({ worldId, setWorldId }) {
   return (
     <Container>
       <Row>
-        <Navigation onClose={clickClose} setView={ setView }/>
+        <Navigation time={currentTime}
+                    onClose={clickClose}
+                    setView={ setView }/>
       </Row>
       <Row >
         <Col xs={6}>

@@ -67,6 +67,7 @@ class WorldStateModel(pydantic.BaseModel):
   player_state: PlayerState = PlayerState()
   item_state: typing.Dict[str, ItemState] = {}
   site_state: typing.Dict[str, SiteState] = {}
+  current_time: int = 0
 
 class WorldState:
   def __init__(self, wstate_id):
@@ -95,6 +96,13 @@ class WorldState:
     if not site_id in self.model.site_state.keys():
       self.model.site_state[site_id] = SiteState()
     return self.model.site_state[site_id]
+
+  def getCurrentTime(self):
+    # Return time in minutes
+    return self.model.current_time
+
+  def advanceTime(self, minutes):
+    self.model.current_time = self.model.current_time + minutes
 
   def getCharacterLocation(self, char_id):
     return self.get_char(char_id).location
