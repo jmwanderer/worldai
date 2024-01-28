@@ -46,12 +46,13 @@ function CharacterStats({ charStats }) {
   let friend_icon = getFriendship(charStats.friendship);
   let health = ""
   if (charStats.health < 100 || charStats.poisoned) {
-    health = <i className="bi bi-bandaid"/>;
+    health = <i className="bi bi-bandaid"/>
   } else {
-    health = <i className="bi bi-check-circle"/>;
+    health = <i className="bi bi-check-circle"/>
   }
+  let state = ""
   if (charStats.sleeping || charStats.paralized) {
-    health += <i className="bi bi-emoji-dizzy"/>;
+    state = <i className="bi bi-emoji-dizzy"/>
   }
   
   return (
@@ -64,8 +65,13 @@ function CharacterStats({ charStats }) {
       </thead>
       <tbody>      
         <tr>
-          <td>{ health }</td>
-          <td><i className={friend_icon}/> {status} </td>
+          <td>
+            <Stack direction="horizontal">
+              {health}
+              {state}
+            </Stack>
+          </td>
+          <td><i className={friend_icon}/></td>
         </tr>
       </tbody>
     </Table>
@@ -73,12 +79,13 @@ function CharacterStats({ charStats }) {
 }
 
 function PlayerStats({ charStats }) {
-  let status = ""
+  let visible = ""
   if (charStats.invisible) {
-    status += <i className="bi bi-eye-slash"/>;
+    visible = <i className="bi bi-eye-slash"/>
   }
+  let poisoned = ""
   if (charStats.poisoned) {
-    status += <i className="bi bi-exclamation-circle"/>;
+    poisoned = <i className="bi bi-exclamation-circle"/>
   }
   return (
     <Table striped bordered hover>
@@ -95,7 +102,12 @@ function PlayerStats({ charStats }) {
           <td>{ charStats.health }%</td>
           <td>{ charStats.strength }%</td>
           <td>{ charStats.credits }</td>
-          <td>{ status }</td>          
+          <td>
+            <Stack direction="horizontal">
+              { visible }
+              { poisoned }
+            </Stack>
+          </td>
         </tr>
       </tbody>
     </Table>
