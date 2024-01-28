@@ -45,25 +45,25 @@ function getFriendship(level) {
 function getCharStates(charStats) {
   let state = [];
   if (charStats.health < 1) {
-    state.push(<i className="bi bi-person-x"/>);    
+    state.push(<i key="dead" className="bi bi-person-x"/>);    
   }
   if (charStats.health < 100) {  
-    state.push(<i className="bi bi-bandaid"/>);
+    state.push(<i key="health" className="bi bi-bandaid"/>);
   }
   if (charStats.invisible) {
-    state.push(<i className="bi bi-eye-slash"/>);
+    state.push(<i key="invisible" className="bi bi-eye-slash"/>);
   }
   if (charStats.poisoned) {
-    poisoned = <i className="bi bi-exclamation-circle"/>    
+    poisoned = <i key="poisoned" className="bi bi-exclamation-circle"/>    
   } 
   if (charStats.sleeping) {
-    state.push(<i className="bi bi-lightbulb-off"/>);
+    state.push(<i key="sleeping" className="bi bi-lightbulb-off"/>);
   }
   if (charStats.paralized) {
-    state.push(<i className="bi bi-emoji-dizzy"/>);
+    state.push(<i key="paralized" className="bi bi-emoji-dizzy"/>);
   }
   if (charStats.brainwashed) {
-    state.push(<i className="bi bi-emoji-sunglasses"/>);
+    state.push(<i key="brainwashed" className="bi bi-emoji-sunglasses"/>);
   }
   return state;
 }
@@ -73,9 +73,9 @@ function CharacterStats({ charStats }) {
   let health = [];
   for (let i = 0; i < 10; i++) {
     if (i < charStats.health / 10) {
-      health.push(<i className="bi bi-heart-fill"/>);
+      health.push(<i key={i} className="bi bi-heart-fill"/>);
     } else {
-      health.push(<i className="bi bi-heart"/>);
+      health.push(<i key={i} className="bi bi-heart"/>);
     }
   }
   
@@ -113,9 +113,9 @@ function PlayerStats({ charStats }) {
   let health = [];
   for (let i = 0; i < 10; i++) {
     if (i < charStats.health / 10) {
-      health.push(<i className="bi bi-heart-fill"/>);
+      health.push(<i key={i} className="bi bi-heart-fill"/>);
     } else {
-      health.push(<i className="bi bi-heart"/>);
+      health.push(<i key={i} className="bi bi-heart"/>);
     }
   }
   return (
@@ -190,7 +190,8 @@ function ChatCharacter({ world, characterId,
                          selectedItem,
                          onClose, onChange}) {
   const [character, setCharacter] = useState(null);
-  const [characterData, setCharacterData] = useState(null);  
+  const [characterData, setCharacterData] = useState(null);
+  const [chatEnabled, setChatEnabled] = useState(true);
   const [context, setContext ] = useState(
     {
       "worldId": world.id,
@@ -208,6 +209,7 @@ function ChatCharacter({ world, characterId,
         if (!ignore) {
           setCharacter(character);
           setCharacterData(characterData);
+          setChatEnabled(characterData.can_chat);          
         }
       } catch (e) {
         console.log(e);        
@@ -233,6 +235,8 @@ function ChatCharacter({ world, characterId,
       
       setCharacter(character);
       setCharacterData(characterData);
+      setChatEnabled(characterData.can_chat);
+      
     } catch (e) {
       console.log(e);
     }
@@ -306,6 +310,7 @@ function ChatCharacter({ world, characterId,
                         context={context}
                         getChats={getCharacterChats}
                         postChat={postCharacterChat}
+                        chatEnabled={chatEnabled}
                         onChange={handleChatChange}/>
         </Col>
       </Row>

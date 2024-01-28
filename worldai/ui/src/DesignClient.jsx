@@ -445,6 +445,7 @@ function DesignChat({name, chatView, setChatView}) {
                          context={ chatView }
                          getChats={getDesignChats}
                          postChat={postDesignChat}
+                         chatEnabled={true}
                          clearChat={clearDesignChat}
                          onChange={handleUpdate}/>
            </div> );

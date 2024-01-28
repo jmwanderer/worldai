@@ -109,7 +109,7 @@ function UserInput({value, onChange, onKeyDown, disabled}) {
 
 
 function ChatScreen({ name, context, getChats, postChat, clearChat,
-                      onChange, onChatDone}) {
+                      chatEnabled, onChange, onChatDone}) {
   const [chatHistory, setChatHistory] = useState([]);
   const [currentMessage,
          setCurrentMessage] = useState({ user: "", error: ""});
@@ -214,8 +214,8 @@ function ChatScreen({ name, context, getChats, postChat, clearChat,
   }
 
 
-  let disabled = (chatState !== "ready");
-  let text_disabled = (chatState === "disabled");
+  let disabled = (chatState !== "ready") || !chatEnabled;
+  let text_disabled = (chatState === "disabled") || !chatEnabled;
   
   let clearButton = ""
   if (typeof clearChat !== 'undefined') {

@@ -114,7 +114,10 @@ class ClientActions:
       logging.info("engage character %s", character_id)
       logging.info("ENGAGE: location: %s", self.wstate.getLocation())   
       response.changed = True
-      response.message = f"Talking to {character.getName()}"      
+      if not self.wstate.isCharacterDead(character_id):
+        response.message = f"Talking to {character.getName()}"
+      else:
+        response.message = f"{character.getName()} is dead"
 
     elif command.name == CommandName.disengage:
       self.wstate.setChatCharacter(None)
@@ -261,7 +264,8 @@ class CharacterData(pydantic.BaseModel):
   credits: int = 0
   health: int = 0
   strength: int = 0
-  friendship: int = 0  
+  friendship: int = 0
+  can_chat: bool = True
   inventory: typing.List[ ElemInfo ] = []
 
 
@@ -301,6 +305,11 @@ def LoadCharacterData(db, world, wstate, cid):
       item_info.name = item.getName()
       item_info.description = item.getDescription()
       data.inventory.append(item_info)
+
+  # Check if character can chat with player
+  if (data.sleeping or wstate.isCharacterDead(cid) or
+      data.location != wstate.getLocation()):
+    data.can_chat = False
   
   return data
   
