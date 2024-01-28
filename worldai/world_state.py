@@ -135,6 +135,9 @@ class WorldState:
   def getCharacterHealth(self, char_id):
     return self.get_char(char_id).health
 
+  def isCharacterDead(self, char_id):
+    return self.get_char(char_id).health < 1
+
   def getCharacterHealthPercent(self, char_id):
     char = self.get_char(char_id)
     return int((char.health / char.max_health) * 100.0 )

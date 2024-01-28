@@ -159,10 +159,8 @@ class ClientActions:
     logging.info("use item - %s", item.getAbility().effect)    
 
     # Apply an effect
+    response.message = f"Nothing happened"    
     match item.getAbility().effect:
-      case elements.ItemEffect.NONE:
-        response.message = f"Nothing happened"
-      
       case elements.ItemEffect.HEAL:
         # Self or other
         if cid is None:
@@ -172,18 +170,25 @@ class ClientActions:
           else:
             response.message = "You are already heathly"
         else:
-          if not self.wstate.isCharacterHealthy(cid):
-            self.wstate.healCharacter(cid)
-            response.message = f"{character.getName()} is healed"
-          else:
-            response.message = f"{character.getName()} is already healthy"
+          if not self.wstate.isCharacterDead(cid):
+            if not self.wstate.isCharacterHealthy(cid):
+              self.wstate.healCharacter(cid)
+              response.message = f"{character.getName()} is healed"
+            else:
+              response.message = f"{character.getName()} is already healthy"
             
       case elements.ItemEffect.HURT:
         # Only other TODO: extend so characters can use
         if cid is not None:
-          health = self.wstate.getCharacterHealth(cid) - 5
+          health = self.wstate.getCharacterHealth(cid) - 4
+          if health < 0:
+            health = 0
           self.wstate.setCharacterHealth(cid, health)
-          response.message = f"{character.getName()} took damage"          
+          if self.wstate.isCharacterDead(cid):          
+            response.message = f"{character.getName()} is dead"
+          else:
+            response.message = f"{character.getName()} took damage"
+            
 
       case elements.ItemEffect.PARALIZE:
         # Only other TODO: extend so characters can use
@@ -227,7 +232,6 @@ class ClientActions:
         else:
           self.wstate.addPlayerStatus(invisible)
           response.message = "You are invisible"
-
 
       case elements.ItemEffect.UNLOCK:
         site_id = item.getAbility().side_id

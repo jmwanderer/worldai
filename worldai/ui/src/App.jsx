@@ -42,6 +42,32 @@ function getFriendship(level) {
   return friend_icon;
 }
 
+function getCharStates(charStats) {
+  let state = [];
+  if (charStats.health < 1) {
+    state.push(<i className="bi bi-person-x"/>);    
+  }
+  if (charStats.health < 100) {  
+    state.push(<i className="bi bi-bandaid"/>);
+  }
+  if (charStats.invisible) {
+    state.push(<i className="bi bi-eye-slash"/>);
+  }
+  if (charStats.poisoned) {
+    poisoned = <i className="bi bi-exclamation-circle"/>    
+  } 
+  if (charStats.sleeping) {
+    state.push(<i className="bi bi-lightbulb-off"/>);
+  }
+  if (charStats.paralized) {
+    state.push(<i className="bi bi-emoji-dizzy"/>);
+  }
+  if (charStats.brainwashed) {
+    state.push(<i className="bi bi-emoji-sunglasses"/>);
+  }
+  return state;
+}
+
 function CharacterStats({ charStats }) {
   let friend_icon = getFriendship(charStats.friendship);
   let health = [];
@@ -53,23 +79,14 @@ function CharacterStats({ charStats }) {
     }
   }
   
-  let state = [];
-  if (charStats.health < 100 || charStats.poisoned) {
-    state.push(<i className="bi bi-bandaid"/>);
-  } 
-  if (charStats.sleeping || charStats.paralized) {
-    state.push(<i className="bi bi-emoji-dizzy"/>);
-  }
-  if (charStats.brainwashed) {
-    state.push(<i className="bi bi-emoji-sunglasses"/>);
-  }
+  let state = getCharStates(charStats);
   return (
     <Table striped bordered hover>
       <thead>
         <tr>
           <th>Health</th>
           <th>State</th>          
-          <th>Friendship</th>          
+          <th>Feel</th>
         </tr>
       </thead>
       <tbody>      
@@ -92,14 +109,7 @@ function CharacterStats({ charStats }) {
 }
 
 function PlayerStats({ charStats }) {
-  let visible = ""
-  if (charStats.invisible) {
-    visible = <i className="bi bi-eye-slash"/>
-  }
-  let poisoned = ""
-  if (charStats.poisoned) {
-    poisoned = <i className="bi bi-exclamation-circle"/>
-  }
+  let state = getCharStates(charStats);  
   let health = [];
   for (let i = 0; i < 10; i++) {
     if (i < charStats.health / 10) {
@@ -121,8 +131,7 @@ function PlayerStats({ charStats }) {
           <td>{ health }</td>
           <td>
             <Stack direction="horizontal">
-              { visible }
-              { poisoned }
+              { state }
             </Stack>
           </td>
         </tr>
