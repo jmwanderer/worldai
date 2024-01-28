@@ -46,12 +46,12 @@ function CharacterStats({ charStats }) {
   let friend_icon = getFriendship(charStats.friendship);
   let health = ""
   if (charStats.health < 100 || charStats.poisoned) {
-    health = (<i className="bi bi-bandaid"/>);
+    health = <i className="bi bi-bandaid"/>;
   } else {
-    health = (<i className="bi bi-check-circle"/>);
+    health = <i className="bi bi-check-circle"/>;
   }
   if (charStats.sleeping || charStats.paralized) {
-    health += (<i className="bi bi-emoji-dizzy"/>);
+    health += <i className="bi bi-emoji-dizzy"/>;
   }
   
   return (
@@ -75,10 +75,10 @@ function CharacterStats({ charStats }) {
 function PlayerStats({ charStats }) {
   let status = ""
   if (charStats.invisible) {
-    status += (<i className="bi bi-eye-slash"/>);
+    status += <i className="bi bi-eye-slash"/>;
   }
   if (charStats.poisoned) {
-    status += (<i className="bi bi-exclamation-circle"/>);
+    status += <i className="bi bi-exclamation-circle"/>;
   }
   return (
     <Table striped bordered hover>
