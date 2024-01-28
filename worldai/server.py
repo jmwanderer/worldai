@@ -563,9 +563,9 @@ def get_init_data():
            "world_id": world_id }
 
 
-@bp.route('/api/threads/worlds/<wid>/characters/<id>', methods=["GET","POST"])
+@bp.route('/api/worlds/<wid>/characters/<id>/thread', methods=["GET","POST"])
 @auth_required
-def threads_api(wid, id):
+def thread_api(wid, id):
   """
   Character chat interface
   """
@@ -729,7 +729,6 @@ def characters(wid, id):
   images = getElementImageProps(character)
   result = character.getAllProperties()
   result["images"] = images
-  result["givenSupport"] = wstate.getFriendship(id) > 0
 
   return result
 
@@ -914,7 +913,7 @@ def player(wid):
   response = client_commands.LoadPlayerData(get_db(), world, wstate)
   return response.model_dump()
 
-@bp.route('/api/worlds/<wid>/character/instance/<id>', methods=["GET"])
+@bp.route('/api/worlds/<wid>/character/<id>/instance', methods=["GET"])
 @auth_required
 def character_stats(wid, id):
   """

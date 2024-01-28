@@ -2,7 +2,7 @@ import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
 import { getWorldList, getWorld, getPlayerData } from './api.js';
 import { getSiteList, getItemList, getCharacterList } from './api.js';
-import { getSite, getItem, getCharacter } from './api.js';
+import { getSite, getItem, getCharacter, getCharacterData } from './api.js';
 
 import ChatScreen from './ChatScreen.jsx';
 
@@ -18,13 +18,89 @@ import Card from 'react-bootstrap/Card';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
+import Table from 'react-bootstrap/Table';
 import Image from 'react-bootstrap/Image';
 import Stack from 'react-bootstrap/Stack';
 
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 
+function getFriendship(level) {
+  let friend_icon = "bi bi-emoji-neutral";
+  if (level > 0) {
+    friend_icon = "bi bi-emoji-smile";
+  }
+  if (level > 5) {
+    friend_icon = "bi bi-emoji-grin";
+  }
+  if (level < 0) {
+    friend_icon = "bi bi-emoji-frown";
+  }
+  if (level < -5) {
+    friend_icon = "bi bi-emoji-angry";
+  }
+  return friend_icon;
+}
 
+function CharacterStats({ charStats }) {
+  let friend_icon = getFriendship(charStats.friendship);
+  let health = ""
+  if (charStats.health < 100 || charStats.poisoned) {
+    health = (<i className="bi bi-bandaid"/>);
+  } else {
+    health = (<i className="bi bi-check-circle"/>);
+  }
+  if (charStats.sleeping || charStats.paralized) {
+    health += (<i className="bi bi-emoji-dizzy"/>);
+  }
+  
+  return (
+    <Table striped bordered hover>
+      <thead>
+        <tr>
+          <th>Health</th>
+          <th>Friendship</th>          
+        </tr>
+      </thead>
+      <tbody>      
+        <tr>
+          <td>{ health }</td>
+          <td><i className={friend_icon}/> {status} </td>
+        </tr>
+      </tbody>
+    </Table>
+  );
+}
+
+function PlayerStats({ charStats }) {
+  let status = ""
+  if (charStats.invisible) {
+    status += (<i className="bi bi-eye-slash"/>);
+  }
+  if (charStats.poisoned) {
+    status += (<i className="bi bi-exclamation-circle"/>);
+  }
+  return (
+    <Table striped bordered hover>
+      <thead>
+        <tr>
+          <th>Health</th>
+          <th>Strength</th>
+          <th>$$$</th>
+          <th>State</th>          
+        </tr>
+      </thead>
+      <tbody>      
+        <tr>
+          <td>{ charStats.health }%</td>
+          <td>{ charStats.strength }%</td>
+          <td>{ charStats.credits }</td>
+          <td>{ status }</td>          
+        </tr>
+      </tbody>
+    </Table>
+  );
+}
 
 function CharacterScreen({ character }) {
   return (
@@ -33,9 +109,6 @@ function CharacterScreen({ character }) {
       <ElementImages element={character}/>
       <h5>Notes:</h5>
       {character.description}
-      <p>
-        Have support: { character.givenSupport ? "Yes" : "No" }
-      </p>
     </Stack>
   );
 }
@@ -43,7 +116,7 @@ function CharacterScreen({ character }) {
 async function getCharacterChats(context) {
   const worldId = context.worldId
   const characterId = context.characterId  
-  const url = `/threads/worlds/${worldId}/characters/${characterId}`;
+  const url = `/worlds/${worldId}/characters/${characterId}/thread`;
   const response =
         await fetch(get_url(url),
                     { headers: headers_get() });
@@ -61,7 +134,7 @@ async function postCharacterChat(context, user_msg) {
   const worldId = context.worldId
   const characterId = context.characterId  
   const data = { "user": user_msg }
-  const url = `/threads/worlds/${worldId}/characters/${characterId}`;
+  const url = `/worlds/${worldId}/characters/${characterId}/thread`;
   // Post the user request
   const response = await fetch(get_url(url), {
     method: 'POST',
@@ -79,6 +152,7 @@ function ChatCharacter({ world, characterId,
                          useItem,
                          onClose, onChange}) {
   const [character, setCharacter] = useState(null);
+  const [characterData, setCharacterData] = useState(null);  
   const [context, setContext ] = useState(
     {
       "worldId": world.id,
@@ -89,9 +163,13 @@ function ChatCharacter({ world, characterId,
     async function getData() {
       // Load the character
       try {
-        const value = await getCharacter(world.id, characterId);
+        let calls = Promise.all([ getCharacter(world.id, characterId),
+                                  getCharacterData(world.id, characterId)]);
+        const [character, characterData] = await calls;
+                                  
         if (!ignore) {
-          setCharacter(value);
+          setCharacter(character);
+          setCharacterData(characterData);
         }
       } catch (e) {
         console.log(e);        
@@ -109,9 +187,13 @@ function ChatCharacter({ world, characterId,
     console.log("handle chat change");
     try {
       console.log("handle chat change");
-      const value = await getCharacter(world.id, characterId);
+      let calls = Promise.all([ getCharacter(world.id, characterId),
+                                getCharacterData(world.id, characterId)]);
+      const [character, characterData] = await calls;
+      
       console.log("set character");
-      setCharacter(value);
+      setCharacter(character);
+      setCharacterData(characterData);
     } catch (e) {
       console.log(e);
     }
@@ -150,7 +232,7 @@ function ChatCharacter({ world, characterId,
                   <Alert className="mt-3">              
                     { statusMessage }
                   </Alert>
-
+                  <CharacterStats charStats={characterData}/>
                 </Col>
                 <Col xs={4}>
                   { item_card }
@@ -433,6 +515,7 @@ function Site({ world, siteId,
           <Stack>
             <h2>{site.name}</h2>
             <h5>{site.description}</h5>
+            <PlayerStats charStats={playerData.status}/>
             { item_card }
           </Stack>
         </Col>
@@ -478,12 +561,6 @@ function Navigation({ onClose, setView}) {
 
 
 function CharacterListEntry({ character }) {
-
-  let has_support = "";
-  if (character.givenSupport) {
-    has_support = <i className="bi-heart" style={{ fontSize: "4rem"}}/>
-  }
-
   return (
     <div className="card mb-3 container">
       <div className="row">
@@ -500,9 +577,6 @@ function CharacterListEntry({ character }) {
               { character.description }
             </p>
           </div>
-        </div>
-        <div className="col-2">
-          { has_support }
         </div>
       </div>
     </div>
@@ -549,8 +623,8 @@ function CharacterList({ worldId }) {
 function ItemListEntry({ item, selectItem}) {
 
   let in_inventory = "";
-  if (item.have_item) {
-    in_inventory = <i className="bi-check" style={{ fontSize: "4rem"}}/>
+  if (item.have_item || true) {
+    in_inventory = <i className="bi bi-check" style={{ fontSize: "4rem"}}/>
   }
 
   function handleClick() {
@@ -581,7 +655,7 @@ function ItemListEntry({ item, selectItem}) {
                   disabled={selectItem === null}                  
                   className="mt-auto">
             Select
-          </Button>        
+          </Button>
         </div>
       </div>
     </div>

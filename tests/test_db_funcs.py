@@ -81,7 +81,7 @@ class BasicTestCase(unittest.TestCase):
     state.increaseFriendship(char_id)
     self.assertTrue(state.getFriendship(char_id) > 0)
 
-    self.assertEqual(len(state.getChatCharacter()), 0)
+    self.assertIsNone(state.getChatCharacter())
     state.setChatCharacter(char_id)
 
     self.assertEqual(len(state.getItems()), 0)
@@ -111,7 +111,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertTrue(state.getFriendship(char_id) > 0)
     self.assertEqual(len(state.getItems()), 1)
     self.assertNotEqual(len(state.getLocation()), 0)
-    self.assertNotEqual(len(state.getChatCharacter()), 0)
+    self.assertIsNotNone(state.getChatCharacter())
     self.assertTrue(state.getSiteLocked(site_id))
     self.assertTrue(state.hasPlayerStatus(sleeping))
     self.assertFalse(state.hasPlayerStatus(poisoned))

@@ -40,9 +40,11 @@ class CharState(pydantic.BaseModel):
   Either a player or an NPC
   """
   location: str = ""
-  credits: int = 100
+  credits: int = 1000
   health: int = 10
+  max_health: int = 10  
   strength: int = 8
+  max_strength: int = 8  
   status: typing.List[ CharStatus ] = []
 
 class PlayerState(pydantic.BaseModel):
@@ -117,14 +119,28 @@ class WorldState:
   def getCharacterStrength(self, char_id):
     return self.get_char(char_id).strength
 
+  def getCharacterStrengthPercent(self, char_id):
+    char = self.get_char(char_id)
+    return int((char.strength / char.max_strength) * 100)
+
   def setCharacterStrength(self, char_id, value):
     self.get_char(char_id).strength = value
+
+  def setMaxCharacterStrength(self, char_id):
+    self.get_char(char_id).strength = self.get_char(char_id).max_strength
 
   def getCharacterHealth(self, char_id):
     return self.get_char(char_id).health
 
+  def getCharacterHealthPercent(self, char_id):
+    char = self.get_char(char_id)
+    return int((char.health / char.max_health) * 100.0 )
+
   def setCharacterHealth(self, char_id, value):
     self.get_char(char_id).health = value
+
+  def setMaxCharacterHealth(self, char_id):
+    self.get_char(char_id).health = self.get_char(char_id).max_health
 
   def getCharacterCredits(self, char_id):
     return self.get_char(char_id).credits
@@ -168,8 +184,8 @@ class WorldState:
     self.removeCharacterStatus(char_id, CharStatus.POISONED)
     self.removeCharacterStatus(char_id, CharStatus.PARALIZED)
     self.removeCharacterStatus(char_id, CharStatus.BRAINWASHED)
-    self.setCharacterHealth(char_id, 10)
-    self.setCharacterStrength(char_id, 8)
+    self.setCharacterMaxHealth(char_id)
+    self.setCharacterMaxStrength(char_id)
 
   def healPlayer(self):
     self.healCharacter(PLAYER_ID)
@@ -177,21 +193,32 @@ class WorldState:
   def getPlayerStrength(self):
     return self.getCharacterStrength(PLAYER_ID)
 
+  def getPlayerStrengthPercent(self):
+    return self.getCharacterStrengthPercent(PLAYER_ID)
+
   def setPlayerStrength(self, value):
     self.setCharacterStrength(PLAYER_ID, value)
+
+  def setPlayerMaxStrength(self, value):
+    self.setCharacterMaxStrength(PLAYER_ID, value)
 
   def getPlayerHealth(self):
     return self.getCharacterHealth(PLAYER_ID)
 
+  def getPlayerHealthPercent(self):
+    return self.getCharacterHealthPercent(PLAYER_ID)
+
   def setPlayerHealth(self, value):
     self.setCharacterHealth(PLAYER_ID, value)
+
+  def setPlayerMaxHealth(self, value):
+    self.setCharacterMaxHealth(PLAYER_ID, value)
 
   def getPlayerCredits(self):
     return self.getCharacterCredits(PLAYER_ID)
 
   def setPlayerCredits(self, value):
     self.setCharacterCredits(PLAYER_ID, value)
-    
     
   def getCharacterItems(self, char_id):
     result = []

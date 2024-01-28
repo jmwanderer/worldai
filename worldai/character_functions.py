@@ -41,7 +41,7 @@ NO_CHAR_ITEMS="""
 """
 
 USER_ITEMS="""
-You see that Travler is holding an interesting item: '{selected_item}'
+Travler is holding an interesting item: '{selected_item}'
 """
 
 FRIENDSHIP_NEUTRAL="""
@@ -244,6 +244,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     if item is None:
       return self.funcError(f"Not a valid item id. Perhaps call ListItems")
 
+    character = elements.loadCharacter(db, self.character_id)
     text = ""
     if wstate.hasCharacterItem(self.character_id, item_id):
       # Charracter has item to give to the user
@@ -259,7 +260,6 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       return self.funcError("Niether you or the user have this item")
     
     world_state.saveWorldState(db, wstate)    
-    character = elements.loadCharacter(db, self.character_id)
     result = { "response": self.funcStatus("OK"),
                "text": text }
 

@@ -53,11 +53,11 @@ class BasicTestCase(unittest.TestCase):
 
     # Health
     self.assertEqual(self.wstate.getCharacterHealth(cid), 10)
-    self.wstate.setCharacterHealth(cid, 100)
-    self.assertEqual(self.wstate.getCharacterHealth(cid), 100)
+    self.wstate.setCharacterHealth(cid, 1000)
+    self.assertEqual(self.wstate.getCharacterHealth(cid), 1000)
     
     # Credits
-    self.assertEqual(self.wstate.getCharacterCredits(cid), 100)
+    self.assertEqual(self.wstate.getCharacterCredits(cid), 1000)
     self.wstate.setCharacterCredits(cid, 2000)
     self.assertEqual(self.wstate.getCharacterCredits(cid), 2000)
 
@@ -134,7 +134,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(self.wstate.getPlayerHealth(), 100)
     
     # Credits
-    self.assertEqual(self.wstate.getPlayerCredits(), 100)
+    self.assertEqual(self.wstate.getPlayerCredits(), 1000)
     self.wstate.setPlayerCredits(2000)
     self.assertEqual(self.wstate.getPlayerCredits(), 2000)
 

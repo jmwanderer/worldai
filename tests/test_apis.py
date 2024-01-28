@@ -76,7 +76,7 @@ def test_character_chat(client, app):
   char_id = response.json[0]["id"]
 
   # Post chat
-  response = client.post(f"/api/threads/worlds/{world_id}/characters/{char_id}",
+  response = client.post(f"/api/worlds/{world_id}/characters/{char_id}/thread",
                          headers={
                            'Content-Type': 'application/json',
                            "Authorization": bearer_token(app),
@@ -89,7 +89,7 @@ def test_character_chat(client, app):
 
 
   # Get chat history
-  response = client.get(f"/api/threads/worlds/{world_id}/characters/{char_id}",
+  response = client.get(f"/api/worlds/{world_id}/characters/{char_id}/thread",
                         headers= {
                           "Authorization": bearer_token(app)})
   assert response.status_code == 200
@@ -280,7 +280,7 @@ def testLoadChacaterData(client, app):
   id = response.json[0]["id"]
   
   
-  response = client.get(f"/api/worlds/{world_id}/character/instance/{id}",
+  response = client.get(f"/api/worlds/{world_id}/character/{id}/instance",
                          headers={
                            "Authorization": bearer_token(app),
                          })

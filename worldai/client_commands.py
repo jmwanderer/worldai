@@ -247,6 +247,7 @@ class CharacterData(pydantic.BaseModel):
   credits: int = 0
   health: int = 0
   strength: int = 0
+  friendship: int = 0  
   inventory: typing.List[ ElemInfo ] = []
 
 
@@ -272,8 +273,9 @@ def LoadCharacterData(db, world, wstate, cid):
   data.invisible = wstate.hasCharacterStatus(cid, invisible)
   data.location = wstate.getCharacterLocation(cid)
   data.credits = wstate.getCharacterCredits(cid)
-  data.health = wstate.getCharacterHealth(cid)
-  data.strength = wstate.getCharacterStrength(cid)
+  data.health = wstate.getCharacterHealthPercent(cid)
+  data.strength = wstate.getCharacterStrengthPercent(cid)
+  data.friendship = wstate.getFriendship(cid)
 
   for item_id in wstate.getCharacterItems(cid):
     item = elements.loadItem(db, item_id)
@@ -317,8 +319,8 @@ def LoadPlayerData(db, world, wstate):
   data.status.invisible = wstate.hasPlayerStatus(invisible)
   data.status.location = wstate.getLocation()
   data.status.credits = wstate.getPlayerCredits()
-  data.status.health = wstate.getPlayerHealth()
-  data.status.strength = wstate.getPlayerStrength()
+  data.status.health = wstate.getPlayerHealthPercent()
+  data.status.strength = wstate.getPlayerStrengthPercent()
 
   for item_id in wstate.getItems():
     item = elements.loadItem(db, item_id)

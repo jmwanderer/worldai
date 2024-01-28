@@ -54,7 +54,7 @@ async function getPlayerData(worldId) {
 }
 
 async function getCharacterData(worldId, characterId) {
-  const url = `/worlds/${worldId}/character/stats/${characterId}`;
+  const url = `/worlds/${worldId}/character/${characterId}/instance`;
   const response =
         await fetch(get_url(url),
                     { headers: headers_get() });
@@ -88,4 +88,4 @@ async function getCharacterList(worldId) {
 
 
 export { getWorldList, getWorld, getSiteList, getItemList, getCharacterList };
-export { getCharacter, getSite, getItem, getPlayerData };
+export { getCharacter, getSite, getItem, getPlayerData, getCharacterData };
