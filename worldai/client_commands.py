@@ -117,7 +117,7 @@ class ClientActions:
       response.message = f"Talking to {character.getName()}"      
 
     elif command.name == CommandName.disengage:
-      self.wstate.setChatCharacter("")
+      self.wstate.setChatCharacter(None)
       logging.info("disengage character")
       response.changed = True
       response.message = f"Talking to nobody"
@@ -130,8 +130,12 @@ class ClientActions:
     """
     cid is optional
     """
+    logging.info("Use item %s character id %s" % (item.getName(), cid));
     # May be None
     character = elements.loadCharacter(self.db, cid)
+    # Guard against unexpected inputs
+    if character is None:
+      cid = None
 
     if item.getIsMobile():
       # Verify user has the item
@@ -162,17 +166,23 @@ class ClientActions:
       case elements.ItemEffect.HEAL:
         # Self or other
         if cid is None:
-          response.message = "You are healed"
-          self.wstate.healPlayer()
+          if not self.wstate.isPlayerHealthy():
+            response.message = "You are healed"
+            self.wstate.healPlayer()
+          else:
+            response.message = "You are already heathly"
         else:
-          self.wstate.healCharacter(cid)
-          response.message = f"{character.getName()} is healed"
-        
+          if not self.wstate.isCharacterHealthy(cid):
+            self.wstate.healCharacter(cid)
+            response.message = f"{character.getName()} is healed"
+          else:
+            response.message = f"{character.getName()} is already healthy"
+            
       case elements.ItemEffect.HURT:
         # Only other TODO: extend so characters can use
         if cid is not None:
-          strength = self.wstate.getCharacterStrength(cid) - 5
-          self.wstate.setCharacterStrenth(strength)
+          health = self.wstate.getCharacterHealth(cid) - 5
+          self.wstate.setCharacterHealth(cid, health)
           response.message = f"{character.getName()} took damage"          
 
       case elements.ItemEffect.PARALIZE:

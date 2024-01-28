@@ -9,7 +9,7 @@ from . import world_state
 
 INSTRUCTIONS="""
 
-You are an actor playing '{name}', a fictional character our story. Given the following character description, personality, goals, emotional state, adopt the personality described and respond as the character.
+You are an actor playing '{name}', a fictional character our story. Given the following character description, personality, goals, emotional state, adopt the personality described and respond as the character in a physical world.
 
 [Personality]
 {character_notes}
@@ -258,7 +258,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         wstate.selectItem(None)
     else:
       return self.funcError("Niether you or the user have this item")
-    
+
     world_state.saveWorldState(db, wstate)    
     result = { "response": self.funcStatus("OK"),
                "text": text }

@@ -54,7 +54,10 @@ function CharacterStats({ charStats }) {
   if (charStats.sleeping || charStats.paralized) {
     state = <i className="bi bi-emoji-dizzy"/>
   }
-  
+  let brainwashed = ""
+  if (charStats.brainwashed) {
+    brainwashed = <i className="bi bi-emoji-sunglasses"/>
+  }
   return (
     <Table striped bordered hover>
       <thead>
@@ -69,6 +72,7 @@ function CharacterStats({ charStats }) {
             <Stack direction="horizontal">
               {health}
               {state}
+              {brainwashed}              
             </Stack>
           </td>
           <td><i className={friend_icon}/></td>
@@ -160,8 +164,8 @@ async function postCharacterChat(context, user_msg) {
 function ChatCharacter({ world, characterId,
                          playerData,
                          setView,
-                         statusMessage, selectedItem,
-                         useItem,
+                         statusMessage, setStatusMessage,
+                         selectedItem,
                          onClose, onChange}) {
   const [character, setCharacter] = useState(null);
   const [characterData, setCharacterData] = useState(null);  
@@ -193,17 +197,18 @@ function ChatCharacter({ world, characterId,
     }
   }, [world, characterId]);
 
-  async function handleChatChange() {
+  function handleChatChange() {
+    reloadState();
+  }
+  
+  async function reloadState() {
     // Chat signaled state change on server side
     // Reload player and character
-    console.log("handle chat change");
     try {
-      console.log("handle chat change");
       let calls = Promise.all([ getCharacter(world.id, characterId),
                                 getCharacterData(world.id, characterId)]);
       const [character, characterData] = await calls;
       
-      console.log("set character");
       setCharacter(character);
       setCharacterData(characterData);
     } catch (e) {
@@ -221,12 +226,33 @@ function ChatCharacter({ world, characterId,
     return <div/>
   }
 
+  async function useItem(item_id, character_id) {
+    try {
+      // TODO: display some type of result here
+      let response = await postUseItem(world.id, item_id, character_id);
+      setStatusMessage(response.message)
+      if (response.changed) {
+        reloadState();
+      }
+    } catch (e) {
+      // TODO: fix reporting
+      console.log(e);      
+    }
+  }
+
+  async function useSelectedItem() {
+    if (selectedItem !== null) {
+      useItem(selectedItem.id, characterId);
+    }
+  }
+  
+
   let item_card = "";
   if (selectedItem !== null) {
     item_card = (<ItemCard item={selectedItem}
                            no_title={ true }
                            action={ "Use" }
-                           onClick={ useItem }/>);
+                           onClick={ useSelectedItem }/>);
   }
 
   return (
@@ -354,10 +380,11 @@ async function postSelectItem(worldId, itemId) {
 }
 
 
-async function postUseItem(worldId, itemId) {
+async function postUseItem(worldId, itemId, characterId) {
   const url = `/worlds/${worldId}/command`;
   const data = { "name": "use",
-                 "item": itemId }
+                 "item": itemId,
+                 "character": characterId }  
   const response = await fetch(get_url(url), {
     method: 'POST',
     body: JSON.stringify(data),
@@ -400,8 +427,6 @@ function Site({ world, siteId,
     try {
       updateWorldData()
       const newSite = await getSite(world.id, siteId);
-      console.log("reload state");
-      console.log("set site");
       setSite(newSite);
     } catch (e) {
       console.log(e);
@@ -410,7 +435,6 @@ function Site({ world, siteId,
 
   async function takeItem(item_id) {
     try {
-      console.log("take item" + item_id);
       let response = await postTakeItem(world.id, item_id);
       setStatusMessage(response.message)
       if (response.changed) {
@@ -422,11 +446,10 @@ function Site({ world, siteId,
     }
   }
 
-  async function useItem(item_id) {
+  async function useItem(item_id, character_id) {
     try {
       // TODO: display some type of result here
-      let response = await postUseItem(world.id, item_id);
-      console.log("use item: " + response.message);
+      let response = await postUseItem(world.id, item_id, character_id);
       setStatusMessage(response.message)
       if (response.changed) {
         reloadState()
@@ -439,12 +462,11 @@ function Site({ world, siteId,
 
   async function useSelectedItem() {
     if (selectedItem !== null) {
-      useItem(selectedItem.id);
+      useItem(selectedItem.id, characterId);
     }
   }
 
   function handleChanges() {
-    console.log("site handle changes - reload state");
     reloadState();
   }
   
@@ -495,8 +517,8 @@ function Site({ world, siteId,
                      playerData={playerData}
                      setView={setView}
                      statusMessage={statusMessage}
+                     setStatusMessage={setStatusMessage}                     
                      selectedItem={selectedItem}
-                     useItem={useSelectedItem}
                      onClose={disengageCharacter}
                      onChange={handleChanges}/>
     );
@@ -886,19 +908,13 @@ function World({ worldId, setWorldId }) {
   async function loadSelectedItem(world, playerData) {
     try {    
       if (playerData.selected_item === null) {
-        console.log("clear selected item");
         setSelectedItem(null);
       } else if (selectedItem === null) {
-        console.log("load new selected item: '" + playerData.selected_item + "'");
         const newItem = await getItem(world.id, playerData.selected_item);
-        console.log("set selected item");
         setSelectedItem(newItem);
       } else if (playerData.selected_item !== selectedItem.id) {
-        console.log("change selected item");
         const newItem = await getItem(world.id, playerData.selected_item);        
         setSelectedItem(newItem);
-      } else {
-        console.log("no change selected item");
       }
     } 
     catch (e) {
@@ -909,7 +925,6 @@ function World({ worldId, setWorldId }) {
   async function updateWorldData() {
     // Reload player data and dependent information.
     try {
-      console.log("reload player data");
       const newPlayerData = await getPlayerData(world.id);
       setPlayerData(newPlayerData);
       loadSelectedItem(world, newPlayerData);

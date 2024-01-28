@@ -54,7 +54,7 @@ async function getPlayerData(worldId) {
 }
 
 async function getCharacterData(worldId, characterId) {
-  const url = `/worlds/${worldId}/character/${characterId}/instance`;
+  const url = `/worlds/${worldId}/characters/${characterId}/instance`;
   const response =
         await fetch(get_url(url),
                     { headers: headers_get() });

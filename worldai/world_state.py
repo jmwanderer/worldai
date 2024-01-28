@@ -119,6 +119,9 @@ class WorldState:
   def getCharacterStrength(self, char_id):
     return self.get_char(char_id).strength
 
+  def getCharacterMaxStrength(self, char_id):
+    return self.get_char(char_id).max_strength
+
   def getCharacterStrengthPercent(self, char_id):
     char = self.get_char(char_id)
     return int((char.strength / char.max_strength) * 100)
@@ -126,7 +129,7 @@ class WorldState:
   def setCharacterStrength(self, char_id, value):
     self.get_char(char_id).strength = value
 
-  def setMaxCharacterStrength(self, char_id):
+  def setCharacterMaxStrength(self, char_id):
     self.get_char(char_id).strength = self.get_char(char_id).max_strength
 
   def getCharacterHealth(self, char_id):
@@ -139,8 +142,11 @@ class WorldState:
   def setCharacterHealth(self, char_id, value):
     self.get_char(char_id).health = value
 
-  def setMaxCharacterHealth(self, char_id):
+  def setCharacterMaxHealth(self, char_id):
     self.get_char(char_id).health = self.get_char(char_id).max_health
+
+  def getCharacterMaxHealth(self, char_id):
+    return self.get_char(char_id).max_health
 
   def getCharacterCredits(self, char_id):
     return self.get_char(char_id).credits
@@ -187,11 +193,22 @@ class WorldState:
     self.setCharacterMaxHealth(char_id)
     self.setCharacterMaxStrength(char_id)
 
+  def isCharacterHealthy(self, cid):
+    return (self.getCharacterHealth(cid) == self.getCharacterMaxHealth(cid) and
+            self.getCharacterStrength(cid) == self.getCharacterMaxStrength(cid) and
+            not self.hasCharacterStatus(cid,CharStatus.SLEEPING) and
+            not self.hasCharacterStatus(cid,CharStatus.POISONED) and
+            not self.hasCharacterStatus(cid,CharStatus.PARALIZED) and
+            not self.hasCharacterStatus(cid,CharStatus.BRAINWASHED))
+
   def healPlayer(self):
     self.healCharacter(PLAYER_ID)
     
   def getPlayerStrength(self):
     return self.getCharacterStrength(PLAYER_ID)
+
+  def getPlayerMaxStrength(self):
+    return self.getCharacterMaxStrength(PLAYER_ID)
 
   def getPlayerStrengthPercent(self):
     return self.getCharacterStrengthPercent(PLAYER_ID)
@@ -213,6 +230,12 @@ class WorldState:
 
   def setPlayerMaxHealth(self, value):
     self.setCharacterMaxHealth(PLAYER_ID, value)
+
+  def getPlayerMaxHealth(self):
+    return self.getCharacterMaxHealth(PLAYER_ID)
+
+  def isPlayerHealthy(self):
+    return self.isCharacterHealthy(PLAYER_ID)
 
   def getPlayerCredits(self):
     return self.getCharacterCredits(PLAYER_ID)
@@ -370,6 +393,7 @@ def checkWorldState(db, wstate):
       # Set item location - character or site
       for item_entry in items:
         if wstate.model.item_state.get(item_entry.getID()) is None:
+          changed = True
           item = elements.loadItem(db, item_entry.getID())
           # Place non-mobile items at sites
           if item.getIsMobile():
@@ -380,8 +404,7 @@ def checkWorldState(db, wstate):
           logging.info("place item %s: %s",
                        item.getName(),
                        place.getName())
-        changed = True
-        
+          
   return changed
 
 
@@ -403,6 +426,7 @@ def loadWorldState(db, wstate_id):
     wstate.set_model_str(r[2])
 
     if checkWorldState(db, wstate):
+      logging.info("check world state changed!")
       saveWorldState(db, wstate)
     
   return wstate
