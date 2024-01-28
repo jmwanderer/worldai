@@ -44,25 +44,31 @@ function getFriendship(level) {
 
 function CharacterStats({ charStats }) {
   let friend_icon = getFriendship(charStats.friendship);
-  let health = ""
+  let health = [];
+  for (let i = 0; i < 10; i++) {
+    if (i < charStats.health / 10) {
+      health.push(<i className="bi bi-heart-fill"/>);
+    } else {
+      health.push(<i className="bi bi-heart"/>);
+    }
+  }
+  
+  let state = [];
   if (charStats.health < 100 || charStats.poisoned) {
-    health = <i className="bi bi-bandaid"/>
-  } else {
-    health = <i className="bi bi-check-circle"/>
-  }
-  let state = ""
+    state.push(<i className="bi bi-bandaid"/>);
+  } 
   if (charStats.sleeping || charStats.paralized) {
-    state = <i className="bi bi-emoji-dizzy"/>
+    state.push(<i className="bi bi-emoji-dizzy"/>);
   }
-  let brainwashed = ""
   if (charStats.brainwashed) {
-    brainwashed = <i className="bi bi-emoji-sunglasses"/>
+    state.push(<i className="bi bi-emoji-sunglasses"/>);
   }
   return (
     <Table striped bordered hover>
       <thead>
         <tr>
           <th>Health</th>
+          <th>State</th>          
           <th>Friendship</th>          
         </tr>
       </thead>
@@ -71,10 +77,13 @@ function CharacterStats({ charStats }) {
           <td>
             <Stack direction="horizontal">
               {health}
-              {state}
-              {brainwashed}              
             </Stack>
-          </td>
+          </td>            
+          <td>
+            <Stack direction="horizontal">
+              {state}
+            </Stack>
+          </td>            
           <td><i className={friend_icon}/></td>
         </tr>
       </tbody>
@@ -91,21 +100,25 @@ function PlayerStats({ charStats }) {
   if (charStats.poisoned) {
     poisoned = <i className="bi bi-exclamation-circle"/>
   }
+  let health = [];
+  for (let i = 0; i < 10; i++) {
+    if (i < charStats.health / 10) {
+      health.push(<i className="bi bi-heart-fill"/>);
+    } else {
+      health.push(<i className="bi bi-heart"/>);
+    }
+  }
   return (
     <Table striped bordered hover>
       <thead>
         <tr>
           <th>Health</th>
-          <th>Strength</th>
-          <th>$$$</th>
           <th>State</th>          
         </tr>
       </thead>
       <tbody>      
         <tr>
-          <td>{ charStats.health }%</td>
-          <td>{ charStats.strength }%</td>
-          <td>{ charStats.credits }</td>
+          <td>{ health }</td>
           <td>
             <Stack direction="horizontal">
               { visible }
