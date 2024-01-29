@@ -8,6 +8,7 @@ import ChatScreen from './ChatScreen.jsx';
 
 import { useState } from 'react'
 import { useEffect } from 'react';
+import { useRef } from 'react';
 
 import './App.css'
 
@@ -188,7 +189,7 @@ function ChatCharacter({ world, characterId,
                          setView,
                          statusMessage, setStatusMessage,
                          selectedItem,
-                         currentTime,  setCurrentTime,                         
+                         currentTime,  setCurrentTime,
                          onClose, onChange}) {
   const [character, setCharacter] = useState(null);
   const [characterData, setCharacterData] = useState(null);
@@ -197,7 +198,11 @@ function ChatCharacter({ world, characterId,
     {
       "worldId": world.id,
       "characterId": characterId
-    });  
+    });
+  // Hook to a function defined in the ChatScreen to run an action
+  const submitActionRef = useRef(null);
+
+  
   useEffect(() => {
     let ignore = false;
     async function getData() {
@@ -255,23 +260,9 @@ function ChatCharacter({ world, characterId,
     return <div/>
   }
 
-  async function useItem(item_id, character_id) {
-    try {
-      // TODO: display some type of result here
-      let response = await postUseItem(world.id, item_id, character_id);
-      setStatusMessage(response.message)
-      if (response.changed) {
-        reloadState();
-      }
-    } catch (e) {
-      // TODO: fix reporting
-      console.log(e);      
-    }
-  }
-
   async function useSelectedItem() {
-    if (selectedItem !== null) {
-      useItem(selectedItem.id, characterId);
+    if (selectedItem !== null && submitActionRef.current !== null) {
+      submitActionRef.current(item_id, character_id);
     }
   }
   
@@ -316,7 +307,8 @@ function ChatCharacter({ world, characterId,
                         getChats={getCharacterChats}
                         postChat={postCharacterChat}
                         chatEnabled={chatEnabled}
-                        onChange={handleChatChange}/>
+                        onChange={handleChatChange}
+                        submitActionRef={submitActionRef}/>
         </Col>
       </Row>
     </Container>
@@ -412,11 +404,10 @@ async function postSelectItem(worldId, itemId) {
 }
 
 
-async function postUseItem(worldId, itemId, characterId) {
+async function postUseItem(worldId, itemId) {
   const url = `/worlds/${worldId}/command`;
   const data = { "name": "use",
-                 "item": itemId,
-                 "character": characterId }  
+                 "item": itemId }
   const response = await fetch(get_url(url), {
     method: 'POST',
     body: JSON.stringify(data),
@@ -481,10 +472,11 @@ function Site({ world, siteId,
     }
   }
 
-  async function useItem(item_id, character_id) {
+  async function useItem(item_id) {
+    // Use item not in the presence of a character
     try {
       // TODO: display some type of result here
-      let response = await postUseItem(world.id, item_id, character_id);
+      let response = await postUseItem(world.id, item_id);
       setStatusMessage(response.message)
       if (response.changed) {
         reloadState()

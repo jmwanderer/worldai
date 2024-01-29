@@ -109,7 +109,7 @@ function UserInput({value, onChange, onKeyDown, disabled}) {
 
 
 function ChatScreen({ name, context, getChats, postChat, clearChat,
-                      chatEnabled, onChange, onChatDone}) {
+                      chatEnabled, onChange, onChatDone, submitActionRef}) {
   const [chatHistory, setChatHistory] = useState([]);
   const [currentMessage,
          setCurrentMessage] = useState({ user: "", error: ""});
@@ -131,6 +131,10 @@ function ChatScreen({ name, context, getChats, postChat, clearChat,
           } else {
             setChatState("disabled");
           }
+          if (typeof submitActionRef !== 'undefined') {
+            // update to refer to a function that can run an action
+            submitActionRef.current = submitAction;
+          }
         }
       } catch (e) {
         console.log(e);
@@ -150,6 +154,30 @@ function ChatScreen({ name, context, getChats, postChat, clearChat,
     if (typeof onChatDone !== 'undefined') {
       onChatDone();
     }
+  }
+
+  // Post a user action for the character
+  function submitAction(item_id, character_id) {
+    setCurrentMessage({user: "", error: ""});
+    setUserInput("");
+    setChatState("waiting");
+
+    async function helper() {
+      // Post the user request
+      try {
+        console.log("Submit action: " + item_id +", " + character_id);
+        setChatState("ready");
+      } catch (e) {
+        console.log(e);
+        setCurrentMessage({user: user_msg,
+                           error: "Something went wrong."});
+        setChatState("ready")
+      }
+      // Signal chat was completed
+      chatDone();
+      // TODO - return a result
+    }
+    helper();
   }
 
   function submitClick() {

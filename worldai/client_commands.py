@@ -101,7 +101,7 @@ class ClientActions:
       item = elements.loadItem(self.db, command.item)
       if item is None:
         response.status.result = StatusCode.error
-      elif self.UseItem(item, command.character, response):
+      elif self.UseItem(item, None, response):
         logging.info("use item %s", command.item)
         # TODO: change to result of use
         response.changed = True
