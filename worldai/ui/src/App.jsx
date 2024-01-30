@@ -262,11 +262,10 @@ function ChatCharacter({ world, characterId,
 
   async function useSelectedItem() {
     if (selectedItem !== null && submitActionRef.current !== null) {
-      submitActionRef.current(item_id, character_id);
+      submitActionRef.current(selectedItem.id, character.id);
     }
   }
   
-
   let item_card = "";
   if (selectedItem !== null) {
     item_card = (<ItemCard item={selectedItem}

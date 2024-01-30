@@ -247,7 +247,7 @@ class ChatSession:
       # Make completion request call with the messages we have
       # selected from the message history and potentially
       # available tools and specified tool choice.
-      print(json.dumps(messages))
+      #print(json.dumps(messages))
       response = chat_completion_request(
         messages,
         tools=tools,
