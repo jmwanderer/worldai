@@ -179,9 +179,9 @@ class ChatSession:
     messages = []
     history.clearIncluded()
     
-    history.setSystemMessage({"role": "system",
-                              "content": instructions,
-                              })
+    history.setInitSystemMessage({"role": "system",
+                                  "content": instructions,
+                                  })
 
     functions = self.chatFunctions.get_available_tools()
     history.setFunctions(self.enc, functions)
@@ -212,15 +212,20 @@ class ChatSession:
     return { "messages": messages }
   
   
-  def chat_exchange(self, db, user):
+  def chat_exchange(self, db, user=None, system=None):
     function_call = False
     assistant_message = None
     messages = []
     tool_choice = None
 
     self.chatFunctions.clearChanges()
-    self.history.addRequestMessage(self.enc,
-                                   {"role": "user", "content": user})
+    if system is not None:
+      self.history.addSystemMessage(self.enc,
+                                    {"role": "system", "content": system})
+    if user is not None:
+      self.history.addRequestMessage(self.enc,
+                                     {"role": "user", "content": user})
+      
     call_count = 0
     done = False
     while not done:
@@ -242,7 +247,7 @@ class ChatSession:
       # Make completion request call with the messages we have
       # selected from the message history and potentially
       # available tools and specified tool choice.
-      #logging.info(json.dumps(messages))
+      print(json.dumps(messages))
       response = chat_completion_request(
         messages,
         tools=tools,

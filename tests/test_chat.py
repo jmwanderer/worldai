@@ -13,8 +13,11 @@ import os
 import tiktoken
 import sqlite3    
 
-def getSystemMessage():
+def getInitSystemMessage():
   return { "role": "system", "content": "You are a friendly assistant."}
+
+def getSystemMessage():
+  return { "role": "system", "content": "You are no longer friendly."}
 
 def getUserMessage():
   return { "role": "user", "content": "How do I get to San Jose?"}
@@ -45,22 +48,28 @@ class RecordsTestCase(unittest.TestCase):
   def testMessageRecords(self):
     enc = tiktoken.encoding_for_model(chat.GPT_MODEL)    
     records = message_records.MessageRecords()
-    records.setSystemMessage(getSystemMessage())
+    records.setInitSystemMessage(getInitSystemMessage())
+
     records.addRequestMessage(enc, getUserMessage())
     records.addResponseMessage(enc, getAssistantMessage())
+    
     # Just system message included
     self.assertEqual(records.getThreadTokenCount(enc), 13)
-
     records.message_sets()[0].setIncluded()
     self.assertNotEqual(records.getThreadTokenCount(enc), 0)
 
     records.clearIncluded()
-    self.assertEqual(records.getThreadTokenCount(enc), 13)    
+    self.assertEqual(records.getThreadTokenCount(enc), 13)
 
+    records.addSystemMessage(enc, getSystemMessage())
+    records.addToolRequestMessage(enc, getToolRequestMessage())
+    records.addToolResponseMessage(enc, getToolResponseMessage())
+    records.addResponseMessage(enc, getAssistantMessage())
+    
     records.addRequestMessage(enc, getUserMessage())
     records.addToolRequestMessage(enc, getToolRequestMessage())
     records.addToolResponseMessage(enc, getToolResponseMessage())
-    records.addResponseMessage(enc, getAssistantMessage())    
+    records.addResponseMessage(enc, getAssistantMessage())
 
     message_set = records.message_sets()[1]
     self.assertTrue(message_set.hasToolCall("lookup_route", {}))
@@ -76,6 +85,11 @@ class RecordsTestCase(unittest.TestCase):
     records.addIncludedMessagesToList(messages)
     self.assertEqual(len(messages), 7)
 
+    content = records.current_message_set().getMessageContent()
+    self.assertEqual(content["user"], getUserMessage()["content"]) 
+    self.assertEqual(content["assistant"], getAssistantMessage()["content"])
+    self.assertEqual(content["updates"], "")    
+
     print(records.jsonString())
 
 
@@ -89,7 +103,7 @@ class ExtendedRecordsTestCase(unittest.TestCase):
   def testMessageRecords(self):
     enc = ExtendedRecordsTestCase.Encode()
     records = message_records.MessageRecords()
-    records.setSystemMessage(getSystemMessage())
+    records.setInitSystemMessage(getInitSystemMessage())
     records.addRequestMessage(enc, getUserMessage())
 
     # Repeated tool calls

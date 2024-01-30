@@ -56,7 +56,7 @@ class CharacterChat:
     return history
 
   def chat_message(self, db, user):
-    return self.chat.chat_exchange(db, user)
+    return self.chat.chat_exchange(db, user=user)
         
 
 

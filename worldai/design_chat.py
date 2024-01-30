@@ -80,7 +80,7 @@ class DesignChatSession:
         world = elements.loadWorld(db, next_view.getWorldID())
         message = "Show world '%s'" % world.getName()
         self.chatFunctions.current_state = design_functions.STATE_WORLDS
-        self.chat.chat_exchange(db, message)
+        self.chat.chat_exchange(db, user=message)
 
       # Handle when next view is world.
       if next_view.getType() == elements.ElementType.WorldType():
@@ -110,9 +110,9 @@ class DesignChatSession:
 
         self.chatFunctions.current_state = new_state
         if message is not None:
-          self.chat.chat_exchange(db, message)
+          self.chat.chat_exchange(db, user=message)
 
 
-    return self.chat.chat_exchange(db, user)
+    return self.chat.chat_exchange(db, user=user)
 
     

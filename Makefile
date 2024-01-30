@@ -1,5 +1,6 @@
 .PHONY: test
 test:
+	mypy worldai/*.py
 	PYTHONPATH=. pytest
 
 .PHONY: build
