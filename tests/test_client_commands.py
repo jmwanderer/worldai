@@ -194,11 +194,43 @@ def test_use_command(app):
   env.wstate.addItem(item_id)
   response = client_actions.ExecCommand(command)
   assert response.changed
-
   
 
 def test_use_character(app):
   env = Environment.get_env(app)
-  
+  client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
 
+  # Not real cid, item
+  item_id = "id123"
+  cid = "id456"
+  (changed, message, chat) = client_actions.UseItemCharacter(item_id, cid)
+  assert not changed
+
+  # Real cid, not real item
+  item_id = "id123"
+  cid = elements.listCharacters(env.db, env.world.id)[0].id  
+  (changed, message, chat) = client_actions.UseItemCharacter(item_id, cid)
+  assert not changed
+
+  # Not real cid, real item
+  item_id = elements.listItems(env.db, env.world.id)[0].id  
+  cid = "id456"
+  (changed, message, chat) = client_actions.UseItemCharacter(item_id, cid)
+  assert not changed
+
+  # Real item and cid, same location and engaged
+  item_id = elements.listItems(env.db, env.world.id)[0].id
+  cid = elements.listCharacters(env.db, env.world.id)[0].id
+  site_id = elements.listSites(env.db, env.world.id)[0].id
+
+  # Not yet necessary to do all of this - but mimic real use
+  env.wstate.setLocation(site_id)
+  env.wstate.setCharacterLocation(cid, site_id)
+  env.wstate.addItem(item_id)
+  env.wstate.setChatCharacter(cid)
+
+  (changed, message, chat) = client_actions.UseItemCharacter(item_id, cid)
+  assert changed
+  assert message is not None
+  assert chat is not None
   

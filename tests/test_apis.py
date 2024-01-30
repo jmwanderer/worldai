@@ -266,7 +266,7 @@ def testLoadPlayerData(client, app):
   assert response.status_code == 200
   
 
-def testLoadChacaterData(client, app):
+def testLoadCharacterData(client, app):
   response = client.get("/api/worlds",
                        headers= {
                          "Authorization": bearer_token(app)})
@@ -287,4 +287,41 @@ def testLoadChacaterData(client, app):
   assert response.status_code == 200
   
 
+def testCharacterAction(client, app):
+  response = client.get("/api/worlds",
+                       headers= {
+                         "Authorization": bearer_token(app)})
+  wid = response.json[0]["id"]
+
+  response = client.get(f"/api/worlds/{wid}/characters",
+                       headers= {
+                         "Authorization": bearer_token(app)})
+  cid = response.json[0]["id"]
+
+  response = client.get(f"/api/worlds/{wid}/items",
+                       headers= {
+                         "Authorization": bearer_token(app)})
+  item_id = response.json[0]["id"]
+  
+  response = client.post(f"/api/worlds/{wid}/characters/{cid}/action",
+                         headers={
+                           'Content-Type': 'application/json',
+                           "Authorization": bearer_token(app),
+                         },
+                         json={
+                           "item": item_id
+                         })
+  assert response.status_code == 200
+  content = response.json
+  # TODO: setup test data for succesful usage
+  #assert content["changed"]
+  #assert content["event"] is not None
+  #assert len(content["event"]) > 0
+  #assert content["reply"] is not None
+  #assert len(content["reply"]) > 0
+  assert content["message"] is not None
+  assert len(content["message"]) > 0
+
+  
+  
 

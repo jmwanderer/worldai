@@ -563,50 +563,6 @@ def get_init_data():
            "world_id": world_id }
 
 
-@bp.route('/api/worlds/<wid>/characters/<id>/thread', methods=["GET","POST"])
-@auth_required
-def thread_api(wid, id):
-  """
-  Character chat interface
-  """
-  session_id = get_session_id()
-  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
-  # TODO: this is where we need lock for updating  
-  chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
-                                                              wstate_id,
-                                                              wid,
-                                                              id)
-  if request.method == "GET":
-    history = chat_session.chat_history()    
-    content = { "messages": history }
-  elif request.json.get("user") is not None:
-      user_msg = request.json.get("user")
-      reply = chat_session.chat_message(get_db(), user_msg)
-      assistant_message = reply["assistant"]
-      text = reply.get("updates", "")
-      content = {
-        "id": os.urandom(4).hex(),
-        "user": user_msg,
-        "reply": assistant_message,
-        "updates": text
-      }
-  else:
-    content = { "error": "malformed input" }
-
-  # Player and character must be in same location to chat.
-  logging.info("threads API: load world state")
-  wstate = world_state.loadWorldState(get_db(), wstate_id)  
-  enabled = (wstate.getCharacterLocation(id) == wstate.getLocation())
-  logging.info("location: %s", wstate.getLocation())
-  logging.info("char location: %s", wstate.getCharacterLocation(id)) 
-  engaged = (wstate.getChatCharacter() == id)
-  logging.info("enabled: %s", enabled)
-  logging.info("engaged: %s", engaged)  
-  content["enabled"] = enabled and engaged
-
-  chat_session.saveChatSession(get_db())
-  return content
-
 
 @bp.route('/api/worlds', methods=["GET"])
 @auth_required
@@ -933,3 +889,113 @@ def character_stats(wid, id):
   response = character_data.model_dump()
   response["current_time"] = wstate.getCurrentTime()  
   return response
+
+@bp.route('/api/worlds/<wid>/characters/<id>/thread', methods=["GET","POST"])
+@auth_required
+def thread_api(wid, id):
+  """
+  Character chat interface
+  """
+  session_id = get_session_id()
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  # TODO: this is where we need lock for updating  
+  chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
+                                                              wstate_id,
+                                                              wid,
+                                                              id)
+  if request.method == "GET":
+    history = chat_session.chat_history()    
+    content = { "messages": history }
+  elif request.json.get("user") is not None:
+      user_msg = request.json.get("user")
+      reply = chat_session.chat_message(get_db(), user_msg)
+      assistant_message = reply["assistant"]
+      text = reply.get("updates", "")
+      content = {
+        "id": os.urandom(4).hex(),
+        "user": user_msg,
+        "reply": assistant_message,
+        "updates": text
+      }
+  else:
+    content = { "error": "malformed input" }
+
+  # Player and character must be in same location to continue to chat.
+  logging.info("threads API: load world state")
+  wstate = world_state.loadWorldState(get_db(), wstate_id)  
+  enabled = (wstate.getCharacterLocation(id) == wstate.getLocation())
+  logging.info("location: %s", wstate.getLocation())
+  logging.info("char location: %s", wstate.getCharacterLocation(id)) 
+  engaged = (wstate.getChatCharacter() == id)
+  logging.info("enabled: %s", enabled)
+  logging.info("engaged: %s", engaged)  
+  content["enabled"] = enabled and engaged
+
+  chat_session.saveChatSession(get_db())
+  return content
+
+
+@bp.route('/api/worlds/<wid>/characters/<cid>/action', methods=["POST"])
+@auth_required
+def action_api(wid, cid):
+  """
+  Action with character
+
+  Combination use artifact with a character chat.
+  """
+  session_id = get_session_id()
+  world = elements.loadWorld(get_db(), wid)  
+  if world is None:
+    return { "error", "World not found"}, 400
+  
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)  
+  item_id = request.json.get("item")
+
+  
+  # Run the use command
+  client_actions = client_commands.ClientActions(get_db(), world, wstate)
+  print("use item %s on character %s" % (item_id, cid))
+  (changed, message, chat) = client_actions.UseItemCharacter(item_id, cid)
+  print("result - changed: %s, message: %s, chat: %s" % (changed,
+                                                         message,
+                                                         chat))
+  if not changed:
+    content = {
+      "changed": False,
+      "message": message
+    }
+    return content
+
+  # Save state since chat functions may load it again
+  world_state.saveWorldState(get_db(), wstate)
+
+  chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
+                                                              wstate_id,
+                                                              wid,
+                                                              cid)
+
+  # Run event
+  reply = chat_session.chat_event(get_db(), chat)
+  chat_session.saveChatSession(get_db())
+  
+  # Build reply
+  assistant_message = reply["assistant"]
+  text = reply.get("updates", "")
+  content = {
+    "changed": True,
+    "id": os.urandom(4).hex(),
+    "message": message,
+    "event": chat,
+    "reply": assistant_message,
+    "updates": text
+  }
+
+  # Player and character must be in same location to continue chat.
+  wstate = world_state.loadWorldState(get_db(), wstate_id)  
+  enabled = (wstate.getCharacterLocation(id) == wstate.getLocation())
+  engaged = (wstate.getChatCharacter() == id)
+  content["enabled"] = enabled and engaged
+
+  return content
+

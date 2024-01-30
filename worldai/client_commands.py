@@ -141,11 +141,13 @@ class ClientActions:
     return response
 
 
-  def UseItemCharacter(self, name, item_id, cid):
+  def UseItemCharacter(self, item_id, cid):
       item = elements.loadItem(self.db, item_id)
       character = elements.loadCharacter(self.db, cid)
       if item is None or character is None:
-        return False
+        return (False, None, None)
+
+      # TODO: check character is engaged, same location
 
       logging.info("use character %s item %s", item)
       (changed, message, chat) = self.UseItem("Travler", item, character)
