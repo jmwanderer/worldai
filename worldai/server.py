@@ -884,7 +884,6 @@ def command(wid):
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
   wstate = world_state.loadWorldState(get_db(), wstate_id)
 
-  changed = False
   command = client_commands.Command(**request.json)
   logging.info("commmand name %s", command.name)
   logging.info("location: %s", wstate.getLocation())

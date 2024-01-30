@@ -75,10 +75,11 @@ class ClientActions:
     elif command.name == CommandName.take:
       item_id = command.item
       logging.info("take item %s", item_id)
-      
+      item = elements.loadItem(self.db, item_id)
+      if item is None:
+        response.status.result = StatusCode.error
       # Verify 
-      if self.wstate.getItemLocation(item_id) == self.wstate.getLocation():
-        item = elements.loadItem(self.db, item_id)
+      elif self.wstate.getItemLocation(item_id) == self.wstate.getLocation():
         if item.getIsMobile():
           self.wstate.addItem(item_id)
           response.changed = True
@@ -112,15 +113,23 @@ class ClientActions:
     elif command.name == CommandName.engage:
       character_id = command.character
       character = elements.loadCharacter(self.db, character_id)
-      self.wstate.setChatCharacter(character_id)
-      logging.info("engage character %s", character_id)
-      logging.info("ENGAGE: location: %s", self.wstate.getLocation())   
-      response.changed = True
-      if not self.wstate.isCharacterDead(character_id):
-        response.message = f"Talking to {character.getName()}"
+      if character is None:
+        response.status.result = StatusCode.error
+
+      elif (self.wstate.getLocation() !=
+            self.wstate.getCharacterLocation(character_id)):
+        # Check same location
+        response.message = f"{character.getName()} is not here"
       else:
-        response.message = f"{character.getName()} is dead"
-      self.wstate.advanceTime(5)
+        self.wstate.setChatCharacter(character_id)
+        logging.info("engage character %s", character_id)
+        logging.info("ENGAGE: location: %s", self.wstate.getLocation())   
+        response.changed = True
+        if not self.wstate.isCharacterDead(character_id):
+          response.message = f"Talking to {character.getName()}"
+        else:
+          response.message = f"{character.getName()} is dead"
+        self.wstate.advanceTime(5)
 
     elif command.name == CommandName.disengage:
       self.wstate.setChatCharacter(None)
@@ -132,7 +141,7 @@ class ClientActions:
     return response
 
 
-  def UseCharacterItem(self, name, item_id, cid):
+  def UseItemCharacter(self, name, item_id, cid):
       item = elements.loadItem(self.db, item_id)
       character = elements.loadCharacter(self.db, cid)
       if item is None or character is None:
@@ -144,6 +153,7 @@ class ClientActions:
         self.wstate.advanceTime(5)
       return (changed, message, chat)
 
+    
   def UseItem(self, name, item, character=None):
     """
     Returns (changed: bool, response: str, chat: str)
@@ -198,7 +208,7 @@ class ClientActions:
             if not self.wstate.isCharacterHealthy(cid):
               self.wstate.healCharacter(cid)
               response_message = f"{character.getName()} is healed"
-              chat_message = f"{name} has healed you"
+              chat_message = f"{name} used {item.getName()} to heal you"
             else:
               response_message = f"{character.getName()} is already healthy"
             
@@ -213,21 +223,21 @@ class ClientActions:
             response_message = f"{character.getName()} is dead"
           else:
             response_message = f"{character.getName()} took damage"
-            chat_message = f"{name} has caused you physical harm"
+            chat_message = f"{name} used {item.getName()} to cause you harm"
             
       case elements.ItemEffect.PARALIZE:
         # Only other TODO: extend so characters can use
         if cid is not None:
           self.wstate.addCharacterStatus(cid, paralized)
           response_message = f"{character.getName()} is paralized"
-          chat_message = f"{name} has paralized you"
+          chat_message = f"{name} used {item.getName()} to paralize you"
             
       case elements.ItemEffect.POISON:
         # Other
         if cid is not None:
           self.wstate.addCharacterStatus(cid, poisoned)
           response_message = f"{character.getName()} is poisoned"
-          chat_message = f"{name} has poisoned you"
+          chat_message = f"{name} used {item.getName()} to poison you"
 
       case elements.ItemEffect.SLEEP:
         # Other character
@@ -247,11 +257,11 @@ class ClientActions:
           if self.wstate.hasCharacterStatus(cid, captured):
             self.wstate.removeCharacterStatus(cid, captured)
             response_message = f"{character.getName()} is released"
-            chat_message = f"{name} has released you from capture"
+            chat_message = f"{name} used {item.getName()} to release you from capture"
           else:
             self.wstate.addCharacterStatus(cid, captured)
             response_message = f"{character.getName()} is captured"
-            chat_message = f"{name} has captured you"
+            chat_message = f"{name} used {item.getName()} to capture you"
             
       case elements.ItemEffect.INVISIBILITY:
         # Self only - toggle
@@ -262,7 +272,7 @@ class ClientActions:
         else:
           self.wstate.addPlayerStatus(invisible)
           response_message = "You are invisible"
-          chat_message = f"{name} has turned invisible"
+          chat_message = f"{name} used {item.getName()} to turn invisible"
 
       case elements.ItemEffect.UNLOCK:
         site_id = item.getAbility().side_id
