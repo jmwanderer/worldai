@@ -27,21 +27,27 @@ class ElementType:
                 "Site",
                 "Item" ]
 
+  @staticmethod
   def typeToName(element_type):
     return ElementType.typeNames[element_type]
 
+  @staticmethod  
   def NoneType():
     return ElementType.typeToName(ElementType.NONE)
 
+  @staticmethod  
   def WorldType():
     return ElementType.typeToName(ElementType.WORLD)
 
+  @staticmethod  
   def CharacterType():
     return ElementType.typeToName(ElementType.CHARACTER)
 
+  @staticmethod  
   def SiteType():
     return ElementType.typeToName(ElementType.SITE)
 
+  @staticmethod  
   def ItemType():
     return ElementType.typeToName(ElementType.ITEM)
 
@@ -79,7 +85,7 @@ class ItemEffect(str, enum.Enum):
   UNLOCK = "unlock"  
 
 class ItemAbility(pydantic.BaseModel):
-  effect: typing.Optional[ItemEffect] = ""
+  effect: typing.Optional[ItemEffect] = ItemEffect.NONE
   site_id: typing.Optional[str] = ""
   
 class ItemProps(pydantic.BaseModel):
