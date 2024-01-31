@@ -51,8 +51,15 @@ class CharacterChat:
       history.append({ "id": os.urandom(4).hex(),
                        "user": message["user"],
                        "reply": message["assistant"],
+                       "event": message["system"],
                        "updates": message.get("updates", "")
                       })
+
+      print("user: " + message["user"])
+      print("reply: " + message["assistant"])
+      print("event: " +  message["system"])
+      print("updates: " + message.get("updates", ""))
+      
     return history
 
   def chat_message(self, db, user):

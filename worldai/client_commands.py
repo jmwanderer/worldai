@@ -149,7 +149,7 @@ class ClientActions:
 
       # TODO: check character is engaged, same location
 
-      logging.info("use character %s item %s", item)
+      logging.info("use character %s item %s", cid, item_id)
       (changed, message, chat) = self.UseItem("Travler", item, character)
       if changed:
         self.wstate.advanceTime(5)

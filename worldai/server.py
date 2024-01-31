@@ -910,12 +910,14 @@ def thread_api(wid, id):
       user_msg = request.json.get("user")
       reply = chat_session.chat_message(get_db(), user_msg)
       assistant_message = reply["assistant"]
+      event = reply.get("event", "")
       text = reply.get("updates", "")
       content = {
         "id": os.urandom(4).hex(),
         "user": user_msg,
         "reply": assistant_message,
-        "updates": text
+        "updates": text,
+        "event": event
       }
   else:
     content = { "error": "malformed input" }
@@ -952,7 +954,6 @@ def action_api(wid, cid):
   wstate = world_state.loadWorldState(get_db(), wstate_id)  
   item_id = request.json.get("item")
 
-  
   # Run the use command
   client_actions = client_commands.ClientActions(get_db(), world, wstate)
   print("use item %s on character %s" % (item_id, cid))
@@ -960,31 +961,31 @@ def action_api(wid, cid):
   print("result - changed: %s, message: %s, chat: %s" % (changed,
                                                          message,
                                                          chat))
-  if not changed:
-    content = {
-      "changed": False,
-      "message": message
-    }
-    return content
+  if changed:
+    # Save state since chat functions may load it again
+    world_state.saveWorldState(get_db(), wstate)
 
-  # Save state since chat functions may load it again
-  world_state.saveWorldState(get_db(), wstate)
 
-  chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
-                                                              wstate_id,
-                                                              wid,
-                                                              cid)
-
-  # Run event
-  reply = chat_session.chat_event(get_db(), chat)
-  chat_session.saveChatSession(get_db())
+  if len(chat) > 0:
+    chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
+                                                                wstate_id,
+                                                                wid,
+                                                                cid)
+    # Run event
+    reply = chat_session.chat_event(get_db(), chat)
+    chat_session.saveChatSession(get_db())
   
-  # Build reply
-  assistant_message = reply["assistant"]
-  text = reply.get("updates", "")
+    # Build reply
+    assistant_message = reply["assistant"]
+    text = reply.get("updates", "")
+  else:
+    assistant_message = ""
+    text = ""
+    
   content = {
-    "changed": True,
+    "changed": changed,
     "id": os.urandom(4).hex(),
+    "user": "",
     "message": message,
     "event": chat,
     "reply": assistant_message,
@@ -993,8 +994,8 @@ def action_api(wid, cid):
 
   # Player and character must be in same location to continue chat.
   wstate = world_state.loadWorldState(get_db(), wstate_id)  
-  enabled = (wstate.getCharacterLocation(id) == wstate.getLocation())
-  engaged = (wstate.getChatCharacter() == id)
+  enabled = (wstate.getCharacterLocation(cid) == wstate.getLocation())
+  engaged = (wstate.getChatCharacter() == cid)
   content["enabled"] = enabled and engaged
 
   return content

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRef } from 'react';
 import { useEffect } from 'react';
 import { forwardRef } from 'react';
+import { useImperativeHandle } from 'react';
 import Markdown from 'react-markdown';
 
 import './App.css'
@@ -17,7 +18,8 @@ import Stack from 'react-bootstrap/Stack';
 // Shows a single message exchange.
 function MessageExchange({ name, message }) {
   let user_message = "";
-  let updates_message = "";    
+  let updates_message = "";
+  let event_message = "";      
 
   if (message.user.length > 0) {
     user_message = (
@@ -31,9 +33,16 @@ function MessageExchange({ name, message }) {
         <i>{ message.updates }</i>
       </div>);
   }
+  if (message.event && message.event.length > 0) {
+    event_message = (
+      <div className="App-message">            
+        <i>{ message.event }</i>
+      </div>);
+  }
   return (
     <div>
       { user_message }
+      { event_message }      
       <div className="App-message">
         <b> {name}: </b>
           <Markdown>
@@ -108,8 +117,10 @@ function UserInput({value, onChange, onKeyDown, disabled}) {
 }
 
 
-function ChatScreen({ name, context, getChats, postChat, clearChat,
-                      chatEnabled, onChange, onChatDone, submitActionRef}) {
+const ChatScreen = forwardRef(({ name, context, getChats, postChat,
+                                    clearChat, postChatAction,
+                                    chatEnabled, onChange, onChatDone},
+                                  submitActionRef) => {
   const [chatHistory, setChatHistory] = useState([]);
   const [currentMessage,
          setCurrentMessage] = useState({ user: "", error: ""});
@@ -130,10 +141,6 @@ function ChatScreen({ name, context, getChats, postChat, clearChat,
             setChatState("ready");
           } else {
             setChatState("disabled");
-          }
-          if (typeof submitActionRef !== 'undefined') {
-            // update to refer to a function that can run an action
-            submitActionRef.current = submitAction;
           }
         }
       } catch (e) {
@@ -156,8 +163,19 @@ function ChatScreen({ name, context, getChats, postChat, clearChat,
     }
   }
 
-  // Post a user action for the character
-  function submitAction(item_id, character_id) {
+  if (typeof submitActionRef !== 'undefined') {
+    useImperativeHandle(submitActionRef, (item_id, character_id) => ({
+      submitAction: (item_id, character_id) => {
+        runChatAction(item_id, character_id);
+      }}))
+  }
+
+  function runChatAction(item_id, character_id) {
+    if (!chatEnabled) {
+      return
+    }
+
+    // Post a user action for the character        
     setCurrentMessage({user: "", error: ""});
     setUserInput("");
     setChatState("waiting");
@@ -166,11 +184,28 @@ function ChatScreen({ name, context, getChats, postChat, clearChat,
       // Post the user request
       try {
         console.log("Submit action: " + item_id +", " + character_id);
-        setChatState("ready");
+        const values = await postChatAction(context,
+                                            item_id,
+                                            character_id);
+        
+        // Append to history that is displayed
+        setChatHistory([...chatHistory, values])
+        // Clear the current message
+        setCurrentMessage({user: "", error: "" });
+        console.log("enabled: " + values["enabled"]);
+        
+        if (values["enabled"]) {
+          setChatState("ready");
+        } else {
+          setChatState("disabled");            
+        }
+        if (values["updates"].length > 0) {
+          // Server signaled a change in state.
+          onChange();
+        }
       } catch (e) {
         console.log(e);
-        setCurrentMessage({user: user_msg,
-                           error: "Something went wrong."});
+        setCurrentMessage({error: "Something went wrong."});
         setChatState("ready")
       }
       // Signal chat was completed
@@ -179,7 +214,7 @@ function ChatScreen({ name, context, getChats, postChat, clearChat,
     }
     helper();
   }
-
+                                    
   function submitClick() {
     let user_msg = userInput
     setCurrentMessage({user: user_msg, error: ""});
@@ -191,6 +226,7 @@ function ChatScreen({ name, context, getChats, postChat, clearChat,
       try {
         // Get response
         const values = await postChat(context, user_msg);
+
         // Append to history that is displayed
         setChatHistory([...chatHistory, values])
         // Clear the current message
@@ -282,6 +318,6 @@ function ChatScreen({ name, context, getChats, postChat, clearChat,
       </Container>
     </Stack>
   );
-}
+});
 
 export default ChatScreen;

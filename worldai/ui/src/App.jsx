@@ -184,6 +184,20 @@ async function postCharacterChat(context, user_msg) {
   return values;
 }
 
+async function postCharacterAction(context, itemId, characterId) {
+  const worldId = context.worldId
+  const data = { "item": itemId }
+  const url = `/worlds/${worldId}/characters/${characterId}/action`;
+  // Post the user request
+  const response = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()
+  });
+  const values = await response.json();
+  return values;
+}
+
 function ChatCharacter({ world, characterId,
                          playerData,
                          setView,
@@ -262,8 +276,17 @@ function ChatCharacter({ world, characterId,
 
   async function useSelectedItem() {
     if (selectedItem !== null && submitActionRef.current !== null) {
-      submitActionRef.current(selectedItem.id, character.id);
+      submitActionRef.current.submitAction(selectedItem.id, character.id);
     }
+  }
+
+  async function characterAction(context, itemId, characterId) {
+    let values = await postCharacterAction(context, itemId, characterId);
+    setStatusMessage(values.message)
+    if (values["changed"]) {
+      reloadState();
+    }
+    return values
   }
   
   let item_card = "";
@@ -305,15 +328,15 @@ function ChatCharacter({ world, characterId,
                         context={context}
                         getChats={getCharacterChats}
                         postChat={postCharacterChat}
+                        postChatAction={characterAction}
                         chatEnabled={chatEnabled}
                         onChange={handleChatChange}
-                        submitActionRef={submitActionRef}/>
+                        ref={submitActionRef}/>
         </Col>
       </Row>
     </Container>
   );
 }
-
 
 
 function CharacterItem({ character, onClick }) {
