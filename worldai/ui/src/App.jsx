@@ -184,8 +184,10 @@ async function postCharacterChat(context, user_msg) {
   return values;
 }
 
-async function postCharacterAction(context, itemId, characterId) {
+async function postCharacterAction(context) {
   const worldId = context.worldId
+  const characterId = context.characterId
+  const itemId = context.itemId
   const data = { "item": itemId }
   const url = `/worlds/${worldId}/characters/${characterId}/action`;
   // Post the user request
@@ -211,6 +213,7 @@ function ChatCharacter({ world, characterId,
   const [context, setContext ] = useState(
     {
       "worldId": world.id,
+      "itemId": selectedItem.id,
       "characterId": characterId
     });
   // Hook to a function defined in the ChatScreen to run an action
@@ -280,8 +283,8 @@ function ChatCharacter({ world, characterId,
     }
   }
 
-  async function characterAction(context, itemId, characterId) {
-    let values = await postCharacterAction(context, itemId, characterId);
+  async function runCharacterAction(context) {
+    let values = await postCharacterAction(context);
     setStatusMessage(values.message)
     if (values["changed"]) {
       reloadState();
@@ -297,6 +300,15 @@ function ChatCharacter({ world, characterId,
                            onClick={ useSelectedItem }/>);
   }
 
+  const calls = {
+    context: context,
+    getChats: getCharacterChats,
+    postChat: postCharacterChat,                      
+    clearChat: null,
+    postChatAction: runCharacterAction
+  };
+  
+  
   return (
     <Container>
       <Row>
@@ -325,10 +337,7 @@ function ChatCharacter({ world, characterId,
         </Col>
         <Col xs={6}>
             <ChatScreen name={character.name}
-                        context={context}
-                        getChats={getCharacterChats}
-                        postChat={postCharacterChat}
-                        postChatAction={characterAction}
+                        calls={calls}
                         chatEnabled={chatEnabled}
                         onChange={handleChatChange}
                         ref={submitActionRef}/>

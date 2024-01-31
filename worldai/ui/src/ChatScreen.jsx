@@ -117,10 +117,10 @@ function UserInput({value, onChange, onKeyDown, disabled}) {
 }
 
 
-const ChatScreen = forwardRef(({ name, context, getChats, postChat,
-                                    clearChat, postChatAction,
-                                    chatEnabled, onChange, onChatDone},
-                                  submitActionRef) => {
+const ChatScreen = forwardRef(({ name, calls,
+                                 chatEnabled, onChange, onChatDone},
+                               submitActionRef) =>
+{
   const [chatHistory, setChatHistory] = useState([]);
   const [currentMessage,
          setCurrentMessage] = useState({ user: "", error: ""});
@@ -134,7 +134,7 @@ const ChatScreen = forwardRef(({ name, context, getChats, postChat,
       // Get the chat history.
       try { 
         setChatState("waiting");                
-        const values = await getChats(context);
+        const values = await calls.getChats(calls.context);
         if (!ignore) {
           setChatHistory(values["messages"]);
           if (values["enabled"]) {
@@ -170,49 +170,44 @@ const ChatScreen = forwardRef(({ name, context, getChats, postChat,
       }}))
   }
 
-  function runChatAction(item_id, character_id) {
+  function processChatMessage(values) {
+    // Append to history that is displayed
+    setChatHistory([...chatHistory, values])
+    // Clear the current message
+    setCurrentMessage({user: "", error: "" });
+    console.log("enabled: " + values["enabled"]);
+        
+    if (values["enabled"]) {
+      setChatState("ready");
+    } else {
+      setChatState("disabled");            
+    }
+    if (values["updates"].length > 0) {
+      // Server signaled a change in state.
+      onChange();
+    }
+  }
+  
+  async function runChatAction() {
     if (!chatEnabled) {
       return
     }
 
     // Post a user action for the character        
     setCurrentMessage({user: "", error: ""});
-    setUserInput("");
     setChatState("waiting");
 
-    async function helper() {
-      // Post the user request
-      try {
-        console.log("Submit action: " + item_id +", " + character_id);
-        const values = await postChatAction(context,
-                                            item_id,
-                                            character_id);
-        
-        // Append to history that is displayed
-        setChatHistory([...chatHistory, values])
-        // Clear the current message
-        setCurrentMessage({user: "", error: "" });
-        console.log("enabled: " + values["enabled"]);
-        
-        if (values["enabled"]) {
-          setChatState("ready");
-        } else {
-          setChatState("disabled");            
-        }
-        if (values["updates"].length > 0) {
-          // Server signaled a change in state.
-          onChange();
-        }
-      } catch (e) {
-        console.log(e);
-        setCurrentMessage({error: "Something went wrong."});
-        setChatState("ready")
-      }
-      // Signal chat was completed
-      chatDone();
-      // TODO - return a result
+    try {
+      const values = await calls.postChatAction(calls.context);
+      processChatMessage(values);
+    } catch (e) {
+      console.log(e);
+      setCurrentMessage({error: "Something went wrong."});
+      setChatState("ready")
     }
-    helper();
+    // Signal chat was completed
+    chatDone();
+    // TODO - return a result
   }
                                     
   function submitClick() {
@@ -225,21 +220,8 @@ const ChatScreen = forwardRef(({ name, context, getChats, postChat,
       // Post the user request
       try {
         // Get response
-        const values = await postChat(context, user_msg);
-
-        // Append to history that is displayed
-        setChatHistory([...chatHistory, values])
-        // Clear the current message
-        setCurrentMessage({user: "", error: "" });
-        if (values["enabled"]) {
-          setChatState("ready");
-        } else {
-          setChatState("disabled");            
-        }
-        if (values["updates"].length > 0) {
-          // Server signaled a change in state.
-          onChange();
-        }
+        const values = await calls.postChat(calls.context, user_msg);
+        processChatMessage(values);
       } catch (e) {
         console.log(e);
         setCurrentMessage({user: user_msg,
@@ -255,7 +237,7 @@ const ChatScreen = forwardRef(({ name, context, getChats, postChat,
   function submitClear() {
     try {
       setChatState("disabled");      
-      clearChat(context);
+      calls.clearChat(calls.context);
       setChatHistory([]);
       setChatState("ready")      
     } catch (e) {
@@ -282,7 +264,7 @@ const ChatScreen = forwardRef(({ name, context, getChats, postChat,
   let text_disabled = (chatState === "disabled") || !chatEnabled;
   
   let clearButton = ""
-  if (typeof clearChat !== 'undefined') {
+  if (typeof calls.clearChat !== 'undefined') {
     clearButton = (
       <Col>
         <Button disabled={disabled}

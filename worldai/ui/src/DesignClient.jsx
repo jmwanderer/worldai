@@ -440,13 +440,19 @@ function DesignChat({name, chatView, setChatView}) {
   function handleUpdate() {
   }
 
+  const calls = {
+    context: chatView,
+    getChats: getDesignChats,
+    postChat: postDesignChat,                      
+    clearChat: clearDesignChat,
+    postChatAction: null
+  };
+  
+
   return ( <div style={{ height: "100%", maxHeight: "90vh" }}>
              <ChatScreen name={name}
-                         context={ chatView }
-                         getChats={getDesignChats}
-                         postChat={postDesignChat}
                          chatEnabled={true}
-                         clearChat={clearDesignChat}
+                         calls={calls}
                          onChange={handleUpdate}/>
            </div> );
 }
