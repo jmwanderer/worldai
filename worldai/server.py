@@ -961,12 +961,13 @@ def action_api(wid, cid):
   print("result - changed: %s, message: %s, chat: %s" % (changed,
                                                          message,
                                                          chat))
+  character = client_commands.LoadCharacterData(get_db(),
+                                                world, wstate, cid)
   if changed:
     # Save state since chat functions may load it again
     world_state.saveWorldState(get_db(), wstate)
 
-
-  if len(chat) > 0:
+  if len(chat) > 0 and character.can_chat:
     chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
                                                                 wstate_id,
                                                                 wid,

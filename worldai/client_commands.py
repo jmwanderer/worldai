@@ -145,7 +145,7 @@ class ClientActions:
       item = elements.loadItem(self.db, item_id)
       character = elements.loadCharacter(self.db, cid)
       if item is None or character is None:
-        return (False, None, None)
+        return (False, "", "")
 
       # TODO: check character is engaged, same location
 
@@ -210,7 +210,7 @@ class ClientActions:
             if not self.wstate.isCharacterHealthy(cid):
               self.wstate.healCharacter(cid)
               response_message = f"{character.getName()} is healed"
-              chat_message = f"{name} used {item.getName()} to heal you"
+              chat_message = f"{name} used {item.getName()} to heal {character.getName()}"
             else:
               response_message = f"{character.getName()} is already healthy"
             
@@ -225,21 +225,21 @@ class ClientActions:
             response_message = f"{character.getName()} is dead"
           else:
             response_message = f"{character.getName()} took damage"
-            chat_message = f"{name} used {item.getName()} to cause you harm"
+          chat_message = f"{name} used {item.getName()} to cause {character.getName()} harm"
             
       case elements.ItemEffect.PARALIZE:
         # Only other TODO: extend so characters can use
         if cid is not None:
           self.wstate.addCharacterStatus(cid, paralized)
           response_message = f"{character.getName()} is paralized"
-          chat_message = f"{name} used {item.getName()} to paralize you"
+          chat_message = f"{name} used {item.getName()} to paralize {character.getName()}"
             
       case elements.ItemEffect.POISON:
         # Other
         if cid is not None:
           self.wstate.addCharacterStatus(cid, poisoned)
           response_message = f"{character.getName()} is poisoned"
-          chat_message = f"{name} used {item.getName()} to poison you"
+          chat_message = f"{name} used {item.getName()} to poison {character.getName()}"
 
       case elements.ItemEffect.SLEEP:
         # Other character
@@ -259,11 +259,11 @@ class ClientActions:
           if self.wstate.hasCharacterStatus(cid, captured):
             self.wstate.removeCharacterStatus(cid, captured)
             response_message = f"{character.getName()} is released"
-            chat_message = f"{name} used {item.getName()} to release you from capture"
+            chat_message = f"{name} used {item.getName()} to release {character.getName()} from capture"
           else:
             self.wstate.addCharacterStatus(cid, captured)
             response_message = f"{character.getName()} is captured"
-            chat_message = f"{name} used {item.getName()} to capture you"
+            chat_message = f"{name} used {item.getName()} to capture {character.getName()}"
             
       case elements.ItemEffect.INVISIBILITY:
         # Self only - toggle

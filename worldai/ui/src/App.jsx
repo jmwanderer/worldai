@@ -213,12 +213,11 @@ function ChatCharacter({ world, characterId,
   const [context, setContext ] = useState(
     {
       "worldId": world.id,
-      "itemId": selectedItem.id,
+      "itemId": selectedItem === null ? null : selectedItem.id,
       "characterId": characterId
     });
   // Hook to a function defined in the ChatScreen to run an action
   const submitActionRef = useRef(null);
-
   
   useEffect(() => {
     let ignore = false;
@@ -244,6 +243,14 @@ function ChatCharacter({ world, characterId,
       ignore = true;
     }
   }, [world, characterId]);
+
+  useEffect(() => {
+    setContext({
+      "worldId": world.id,
+      "itemId": selectedItem === null ? null : selectedItem.id,      
+      "characterId": characterId
+    });
+  }, [ selectedItem ]);
 
   function handleChatChange() {
     reloadState();
@@ -279,7 +286,7 @@ function ChatCharacter({ world, characterId,
 
   async function useSelectedItem() {
     if (selectedItem !== null && submitActionRef.current !== null) {
-      submitActionRef.current.submitAction(selectedItem.id, character.id);
+      submitActionRef.current.submitAction();
     }
   }
 

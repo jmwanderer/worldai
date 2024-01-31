@@ -19,7 +19,8 @@ import Stack from 'react-bootstrap/Stack';
 function MessageExchange({ name, message }) {
   let user_message = "";
   let updates_message = "";
-  let event_message = "";      
+  let event_message = "";
+  let reply_message = "";        
 
   if (message.user.length > 0) {
     user_message = (
@@ -39,17 +40,22 @@ function MessageExchange({ name, message }) {
         <i>{ message.event }</i>
       </div>);
   }
-  return (
-    <div>
-      { user_message }
-      { event_message }      
+  if (message.reply && message.reply.length > 0) {
+    reply_message = (
       <div className="App-message">
         <b> {name}: </b>
           <Markdown>
               { message.reply}
           </Markdown>
       </div>
+    )
+  }
+  return (
+    <div>
+      { user_message }
+      { event_message }
       { updates_message }
+      { reply_message }
     </div>
   );
 }
@@ -264,7 +270,7 @@ const ChatScreen = forwardRef(({ name, calls,
   let text_disabled = (chatState === "disabled") || !chatEnabled;
   
   let clearButton = ""
-  if (typeof calls.clearChat !== 'undefined') {
+  if (calls.clearChat !== null) {
     clearButton = (
       <Col>
         <Button disabled={disabled}
