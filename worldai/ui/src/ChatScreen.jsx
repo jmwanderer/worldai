@@ -195,7 +195,7 @@ const ChatScreen = forwardRef(({ name, calls,
   }
   
   async function runChatAction() {
-    if (!chatEnabled) {
+    if (!chatEnabled || chatState !== "ready") {
       return
     }
 

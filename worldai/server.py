@@ -967,7 +967,7 @@ def action_api(wid, cid):
     # Save state since chat functions may load it again
     world_state.saveWorldState(get_db(), wstate)
 
-  if len(chat) > 0 and character.can_chat:
+  if len(chat) > 0:
     chat_session = character_chat.CharacterChat.loadChatSession(get_db(),
                                                                 wstate_id,
                                                                 wid,

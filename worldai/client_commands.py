@@ -223,9 +223,10 @@ class ClientActions:
           self.wstate.setCharacterHealth(cid, health)
           if self.wstate.isCharacterDead(cid):          
             response_message = f"{character.getName()} is dead"
+            chat_message = f"{name} used {item.getName()} to kill {character.getName()}. " + response_message
           else:
             response_message = f"{character.getName()} took damage"
-          chat_message = f"{name} used {item.getName()} to cause {character.getName()} harm"
+            chat_message = f"{name} used {item.getName()} to cause {character.getName()} harm"
             
       case elements.ItemEffect.PARALIZE:
         # Only other TODO: extend so characters can use
