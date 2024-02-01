@@ -3,10 +3,20 @@ Plans
 - Basic world design - DONE
 - Basic character interaction - DONE
 - Add user approval to some tool functions
-- Add item properties and use item
+- Add item properties and use item - DONE
 - Add character tags
 - Add topology
-- Time keeping
+- Time keeping - DONE
+
+Bugs
+----
+
+- modes too restrictive? AI wants to call CreateWorld, not there
+- ShowWorld - 
+- removing and restoring elements only works if the mode is correct
+- removing an element may not refresh the list of elements in the
+  message thread
+
 
 TODO
 ----
@@ -20,12 +30,6 @@ TODO
 - standard character / player data store
 - serialize threads in JSON, not pickle
 
-Bugs
-----
-
-- removing and restoring elements only works if the mode is correct
-- removing an element may not refresh the list of elements in the
-  message thread
 
 
 Details

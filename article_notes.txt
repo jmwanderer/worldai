@@ -1,0 +1,7 @@
+1. Undo
+
+In the design tool, we would want an undo function. It is easy for the AI to
+change something that we don't like
+
+2. Prompt for permission - good idea on modify
+

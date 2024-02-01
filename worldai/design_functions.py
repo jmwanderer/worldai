@@ -40,7 +40,7 @@ def elemTypeToState(element_type):
 
 states = {
   STATE_WORLDS: [ "ListWorlds", "ShowWorld", "CreateWorld" ],
-  STATE_WORLD: [ "ReadPlanningNotes", 
+  STATE_WORLD: [ "ReadPlanningNotes", "ShowWorld",
                  "ShowCharacter", "ShowItem", "ShowSite",
                  "ChangeState", "EditWorld" ],
 

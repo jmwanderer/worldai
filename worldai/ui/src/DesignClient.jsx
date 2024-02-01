@@ -10,6 +10,7 @@ import './App.css'
 import { useState } from 'react'
 import { useEffect } from 'react';
 
+import Markdown from 'react-markdown';
 import Button from 'react-bootstrap/Button';
 import CloseButton from 'react-bootstrap/CloseButton';
 import Card from 'react-bootstrap/Card';
@@ -289,7 +290,7 @@ function World({ tag, setChatView }) {
           <ElementImages element={world}/>
           <Container >
             <h2>{world.name}</h2>
-            <h5>{world.description}</h5>
+            {world.description}
           </Container>
         </Stack>
         <h2>Details:</h2>
@@ -310,6 +311,10 @@ function World({ tag, setChatView }) {
           { item_list }
         </ul>
 
+        <h2>Planning Notes:</h2>
+        <Markdown>
+          { world.plans }          
+        </Markdown>
       </Stack>
     );
   } else {

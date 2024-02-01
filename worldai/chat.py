@@ -252,7 +252,6 @@ class ChatSession:
       # selected from the message history and potentially
       # available tools and specified tool choice.
       #print(json.dumps(messages))
-      print(json.dumps(tool_choice))      
       response = chat_completion_request(
         messages,
         tools=tools,
