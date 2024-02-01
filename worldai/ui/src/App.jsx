@@ -953,13 +953,7 @@ function World({ worldId, setWorldId }) {
           setPlayerData(newPlayer);
           setCurrentTime(newPlayer.current_time);  // TODO - decide on this
           loadSelectedItem(newWorld, newPlayer);
-          // Set the site id if we are present at a site
-          for (let i = 0; i < newSites.length; i++) {
-            if (newSites[i].present) {
-              setSiteId(newSites[i].id);
-              break;
-            }
-          }
+          setSiteId(newPlayer.status.location);
         }
       } 
       catch (e) {
@@ -989,8 +983,6 @@ function World({ worldId, setWorldId }) {
 
   function selectSite(site_id) {
     goToSite(site_id);
-    setStatusMessage("");    
-    setSiteId(site_id);
   }
 
   async function loadSelectedItem(world, playerData) {
@@ -1015,6 +1007,7 @@ function World({ worldId, setWorldId }) {
     try {
       const newPlayerData = await getPlayerData(world.id);
       setPlayerData(newPlayerData);
+      setSiteId(newPlayerData.status.location);      
       loadSelectedItem(world, newPlayerData);
       setCurrentTime(newPlayerData.current_time);  // TODO - decide on this 
     } catch (e) {
@@ -1038,7 +1031,11 @@ function World({ worldId, setWorldId }) {
   
   async function goToSite(site_id) {
     try {    
-      await postGoTo(world.id, site_id);      
+      let response = await postGoTo(world.id, site_id);
+      setStatusMessage(response.message);    
+      if (response.changed) {
+        updateWorldData();
+      }
     } catch (e) {
       console.log(e);
     }
@@ -1083,7 +1080,12 @@ function World({ worldId, setWorldId }) {
       </Row>
       <Row >
         <Col xs={6}>
-          <ElementImages element={world}/>
+          <Stack>
+            <ElementImages element={world}/>
+            <Alert className="m-3">
+              { statusMessage }
+            </Alert>
+          </Stack>
         </Col>
         <Col xs={6} style={{ textAlign: "left" }}>
           <h2>{world.name}</h2>

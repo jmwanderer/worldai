@@ -97,7 +97,7 @@ class ItemProps(pydantic.BaseModel):
 class SiteProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""
   details: typing.Optional[str] = ""
-  default_locked: typing.Optional[bool] = False
+  locked: typing.Optional[bool] = False
 
   
 class IdName:
@@ -363,10 +363,10 @@ class Site(Element):
     self.prop_model = SiteProps(**properties)
 
   def getDefaultLocked(self):
-    return self.prop_model.default_locked
+    return self.prop_model.locked
 
   def setDefaultLocked(self, value):
-    self.prop_model.default_locked =  value
+    self.prop_model.locked =  value
     
 class Item(Element):
   """

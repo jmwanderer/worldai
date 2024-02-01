@@ -1,12 +1,37 @@
 Plans
 -----
+
+- Add user approval to some tool functions
+
+- Convert from IDs to names for the AI func calls
+- Add history of conversations and use in RAG calls
+- Add world knowledege and facts - use RAG
+- Add per character knowledge, use RAG
+- find character and items?
+
+- Features: unlock site. design attribute for locked sites, player died
+
+- Important character attributes:
+  - what do they want? what is important? what do they need?
+  - will make deals - what type of deals
+- Features: slow poison,  capture, brainwash
+- More interesting features?
+- Add win criteria: character y is at x, has x. character has x, is at x.
+
+- Use templates to drive design creation?
+
+- Add topology?
+- Walk from site to site connected
+- Site with subsites? - areas?
+
+
+
 - Basic world design - DONE
 - Basic character interaction - DONE
-- Add user approval to some tool functions
+- Add character tags - DONE
 - Add item properties and use item - DONE
-- Add character tags
-- Add topology
 - Time keeping - DONE
+
 
 Bugs
 ----
@@ -20,13 +45,12 @@ Bugs
 
 TODO
 ----
-- Make chat interaction use Pydantic
-- support chat in response to actions
-- tool choice in character chat
-- complete API test coverage
+- Make chat interaction use Pydantic - DONE
+- support chat in response to actions - DONE
+- tool choice in character chat 
+- complete API test coverage - DONE, but missing cases
   - check if mock test env is reusable for all
-- client command test coverage
-- character history with user
+- client command test coverage - DONE
 - standard character / player data store
 - serialize threads in JSON, not pickle
 

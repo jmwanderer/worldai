@@ -63,6 +63,8 @@ function Site({ tag, setChatView }) {
               <Container >
                 <h2>{site.name}</h2>
                 <h5>{site.description}</h5>
+                <br></br>
+                Default Locked: {site.locked ? "Yes" : "No" }
               </Container>
             </Stack>
             <h2>Details:</h2>

@@ -92,6 +92,9 @@ class WorldState:
       self.model.item_state[item_id] = ItemState()
     return self.model.item_state[item_id]
 
+  def isSiteInitialized(self, site_id):
+    return site_id in self.model.site_state.keys()
+  
   def get_site(self, site_id):
     if not site_id in self.model.site_state.keys():
       self.model.site_state[site_id] = SiteState()
@@ -331,7 +334,7 @@ class WorldState:
     """
     return self.model.player_state.chat_who
 
-  def getSiteLocked(self, site_id):
+  def isSiteLocked(self, site_id):
     """
     Returns True if the site is locked.
     """
@@ -385,6 +388,15 @@ def checkWorldState(db, wstate):
   characters = elements.listCharacters(db, wstate.world_id)
   sites = elements.listSites(db, wstate.world_id)
   items = elements.listItems(db, wstate.world_id)
+
+  # Initialize sites
+  for entry in sites:
+    site = elements.loadSite(db, entry.getID())
+    if site is not None and not wstate.isSiteInitialized(site.id):
+      logging.info("init site %s: locked %s",
+                   site.id, site.getDefaultLocked())
+      wstate.setSiteLocked(site.id, site.getDefaultLocked())
+      changed = True
 
   if len(sites) > 0:
     # Assign characters to sites

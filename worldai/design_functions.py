@@ -1330,6 +1330,10 @@ all_functions = [
           "type": "string",
           "description": "Detailed information about the site.",
         },
+        "locked": {
+          "type": "boolean",
+          "description": "True if locked agained user access.",
+        },
       },
       "required": [ "id"]      
     }
