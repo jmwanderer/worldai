@@ -26,13 +26,6 @@ class BaseChatFunctions:
     world_id = 0
     track_tokens(db, world_id, prompt, complete, total)
 
-  def checkToolChoice(self, history):
-    """
-    Determine if we need to fetch additional information
-    to act on requests.
-    """
-    return None
-    
   def execute_function_call(self, db, function_name, arguments):
     """
     Dispatch function for function_name

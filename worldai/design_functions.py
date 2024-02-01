@@ -4,6 +4,7 @@ import openai
 import requests
 import logging
 from PIL import Image
+import enum
 
 from . import elements
 from . import chat_functions
@@ -12,6 +13,11 @@ from . import chat_functions
 IMAGE_DIRECTORY="/tmp"
 TESTING=False
 
+class ChatMode(str, enum.Enum):
+  # Normal user chat
+  NORMAL = "normal"
+  # Automated loading of data for next_view
+  LOAD = "load"
 
 STATE_WORLDS = "State_Worlds"
 STATE_WORLD = "State_World"
@@ -218,7 +224,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
   def __init__(self):
     chat_functions.BaseChatFunctions.__init__(self)
     self.current_state = STATE_WORLDS
-
+    self.chat_mode = ChatMode.NORMAL
+      
     # Tracks current world, current element
     self.current_view = elements.ElemTag()
     
@@ -250,9 +257,17 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.current_view = elements.ElemTag()
     
   def get_instructions(self, db):
-    global_instructions = GLOBAL_INSTRUCTIONS.format(
-      current_state=self.current_state)
-    return global_instructions + "\n" + self.get_state_instructions(db)
+    if self.chat_mode == ChatMode.NORMAL:
+      global_instructions = GLOBAL_INSTRUCTIONS.format(
+        current_state=self.current_state)
+      return global_instructions + "\n" + self.get_state_instructions(db)
+
+    # Special instructions for loading data
+    if self.current_state == STATE_WORLDS:
+      load_id = self.next_view.getWorldID()
+    else:
+      load_id = self.next_view.getID()
+    return f"Show ID '{load_id}'"
   
   def get_state_instructions(self, db):
     value = instructions[self.current_state].format(
@@ -293,42 +308,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     logging.info("current view -- %s", self.current_view.jsonStr())    
     self.next_view = next_view
 
-
-  def checkToolChoice(self, history):
-    """
-    Determine if we need to fetch additional information
-    to act on requests.
-
-    Use the current state and the presense of included messages
-    to make decisions.
-    """
-    tool_func = None
-
-    logging.info(f"state: {self.current_state}")
-    logging.info("current view: %s",
-                 self.current_view.jsonStr())
-    logging.info("next view: %s",
-                 self.next_view.jsonStr())
-      
-    # Check if the proper list is loaded for the current state.
-    if self.current_state == STATE_WORLDS:
-      if not history.hasToolCall("ListWorlds", {}):
-        tool_func = "ListWorlds"
-    elif self.current_state == STATE_CHARACTERS:
-      if not history.hasToolCall("ListCharacters", {}):
-        tool_func = "ListCharacters"
-    elif self.current_state == STATE_ITEMS:
-      if not history.hasToolCall("ListItems", {}):
-        tool_func = "ListItems"
-    elif self.current_state == STATE_SITES:
-      if not history.hasToolCall("ListSites", {}):
-        tool_func = "ListSites"
-
-    if tool_func is not None:
-      return { "type": "function",
-               "function": { "name": tool_func }}
-    return None
-    
   def execute_function_call(self, db, function_name, arguments):
     """
     Dispatch function for function_name
@@ -936,7 +915,7 @@ all_functions = [
           "description": "Unique identifier for world intance.",
         },
       },
-      "required": [ "id"]
+      "required": ["id"]      
     },
   },
   

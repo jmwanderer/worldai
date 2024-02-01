@@ -212,11 +212,11 @@ class ChatSession:
     return { "messages": messages }
   
   
-  def chat_exchange(self, db, user=None, system=None):
+  def chat_exchange(self, db, user=None, system=None, tool_choice=None,
+                    call_limit=11):
     function_call = False
     assistant_message = None
     messages = []
-    tool_choice = None
 
     self.chatFunctions.clearChanges()
     if system is not None:
@@ -225,19 +225,23 @@ class ChatSession:
     if user is not None:
       self.history.addRequestMessage(self.enc,
                                      {"role": "user", "content": user})
+
+    if tool_choice is not None:
+      logging.info("ChatEx called with tool: %s, limit %d",
+                   tool_choice,
+                   call_limit)
+      tool_choice = { "type": "function",
+                      "function": { "name": tool_choice }}
       
     call_count = 0
     done = False
-    while not done:
+    while not done and call_count < call_limit:
       instructions = self.chatFunctions.get_instructions(db)      
       messages = self.BuildMessages(self.history, instructions)
 
-      # See if we need to call any functions.
-      tool_choice = self.chatFunctions.checkToolChoice(self.history)
-
       print_log(f"[{call_count}]: Chat completion call...")
       # Limit tools call to 6
-      if call_count < 6:
+      if call_count < 8:
         call_count += 1
         tools=self.chatFunctions.get_available_tools()
       else:
@@ -248,6 +252,7 @@ class ChatSession:
       # selected from the message history and potentially
       # available tools and specified tool choice.
       #print(json.dumps(messages))
+      print(json.dumps(tool_choice))      
       response = chat_completion_request(
         messages,
         tools=tools,

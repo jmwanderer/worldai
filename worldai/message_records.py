@@ -227,16 +227,22 @@ class MessageRecords:
     self.current_message.setSystemMessage(enc, message)
 
   def addToolRequestMessage(self, enc, message):
-    if self.current_message is not None:
-      self.current_message.addToolRequestMessage(enc, message)
+    if self.current_message is None:
+      self.current_message = MessageSetRecord()
+      self.message_history.append(self.current_message)
+    self.current_message.addToolRequestMessage(enc, message)
     
   def addToolResponseMessage(self, enc, message, text=None):
-    if self.current_message is not None:
-      self.current_message.addToolResponseMessage(enc, message, text)
+    if self.current_message is None:
+      self.current_message = MessageSetRecord()
+      self.message_history.append(self.current_message)
+    self.current_message.addToolResponseMessage(enc, message, text)
 
   def addResponseMessage(self, enc, message):
-    if self.current_message is not None:
-      self.current_message.setResponseMessage(enc, message)
+    if self.current_message is None:
+      self.current_message = MessageSetRecord()
+      self.message_history.append(self.current_message)
+    self.current_message.setResponseMessage(enc, message)
 
   def message_sets(self):
     return self.message_history
