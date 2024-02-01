@@ -92,9 +92,9 @@ class BasicTestCase(unittest.TestCase):
 
   def testSiteFunctions(self):
     site_id = self.site_ids[0]
-    self.assertFalse(self.wstate.getSiteLocked(site_id))
+    self.assertFalse(self.wstate.isSiteLocked(site_id))
     self.wstate.setSiteLocked(site_id, True)
-    self.assertTrue(self.wstate.getSiteLocked(site_id))
+    self.assertTrue(self.wstate.isSiteLocked(site_id))
 
     
   def testPlayerFunctions(self):

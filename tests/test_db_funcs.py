@@ -112,7 +112,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(len(state.getItems()), 1)
     self.assertNotEqual(len(state.getLocation()), 0)
     self.assertIsNotNone(state.getChatCharacter())
-    self.assertTrue(state.getSiteLocked(site_id))
+    self.assertTrue(state.isSiteLocked(site_id))
     self.assertTrue(state.hasPlayerStatus(sleeping))
     self.assertFalse(state.hasPlayerStatus(poisoned))
 
