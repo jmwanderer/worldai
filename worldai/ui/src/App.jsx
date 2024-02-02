@@ -392,7 +392,6 @@ function ItemCard({ item, no_title, action, onClick }) {
     <div className="mt-2">
       <Card style={{ maxWidth:"15vmin",  padding: "1em" }}>
         <Card.Img src={item.image.url}/>
-        
         <Card.Title>
           { no_title ? "" : item.name }
         </Card.Title>
@@ -867,6 +866,7 @@ function SiteItem({ site, onClick }) {
         <Card.Img src={site.image.url}/>
         <Card.Title>
           { site.name }
+          { site.locked ? <i className="bi bi-lock" style={{ position: "absolute"}}/> : "" }
         </Card.Title>
         <Button onClick={handleClick} className="mt-auto">Go</Button>        
       </Card>

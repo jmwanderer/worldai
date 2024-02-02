@@ -716,6 +716,7 @@ def site_list(wid):
        "name": site.getName(),
        "description": site.getDescription(),
        "present": wstate.getLocation() == id,
+       "locked": wstate.isSiteLocked(id),
        "image": image_prop })
   return site_list
 

@@ -3,18 +3,27 @@ Plans
 
 - Add user approval to some tool functions
 
+- Probably need to reset thread in design client on world changes
+
 - Convert from IDs to names for the AI func calls
 - Add history of conversations and use in RAG calls
 - Add world knowledege and facts - use RAG
 - Add per character knowledge, use RAG
 - find character and items?
 
-- Features: unlock site. design attribute for locked sites, player died
+- Features:
+  -unlock site. design attribute for locked sites, - DONE
+  - player died
+  - slow poison,  capture, brainwash
+  - character status in character list
+
+- Refactor design vs instance interfaces.
+- Variable number of items per type
 
 - Important character attributes:
   - what do they want? what is important? what do they need?
   - will make deals - what type of deals
-- Features: slow poison,  capture, brainwash
+
 - More interesting features?
 - Add win criteria: character y is at x, has x. character has x, is at x.
 
