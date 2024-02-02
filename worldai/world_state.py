@@ -411,7 +411,10 @@ def checkWorldState(db, wstate):
 
     places = []
     places.extend(characters)
-    places.extend(sites)
+    for site in sites:
+      if not wstate.isSiteLocked(site.getID()):
+        places.append(site)
+
     if len(characters) > 0 and len(sites) > 0:
       # Set item location - character or site
       for item_entry in items:
