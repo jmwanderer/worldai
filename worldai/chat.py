@@ -214,11 +214,33 @@ class ChatSession:
   
   def chat_exchange(self, db, user=None, system=None, tool_choice=None,
                     call_limit=11):
-    function_call = False
-    assistant_message = None
-    messages = []
+    """
+    Loop through steps in a chat exchange.
+    - start
+    - continue with tools calls and following chats
+    """
+    call_count = 0
+    result = self.chat_start(db, user=user,
+                             system=system,
+                             tool_name=tool_choice)
+    done = result["done"]
 
+    while not done and call_count < call_limit:
+      result = self.chat_continue(db)
+      done = result["done"]
+    return result
+
+
+  def chat_start(self, db, user=None, system=None, tool_name=None):
+    """
+    Initiate a new chat
+    """
+    self.msg_id = os.urandom(8).hex()
+    self.tool_choice = None
+    self.call_count = 0
+    self.tool_call = None
     self.chatFunctions.clearChanges()
+
     if system is not None:
       self.history.addSystemMessage(self.enc,
                                     {"role": "system", "content": system})
@@ -226,100 +248,124 @@ class ChatSession:
       self.history.addRequestMessage(self.enc,
                                      {"role": "user", "content": user})
 
-    if tool_choice is not None:
+    if tool_name is not None:
       logging.info("ChatEx called with tool: %s, limit %d",
                    tool_choice,
                    call_limit)
-      tool_choice = { "type": "function",
-                      "function": { "name": tool_choice }}
+      self.tool_choice = { "type": "function",
+                           "function": { "name": tool_choice }}
       
-    call_count = 0
-    done = False
-    while not done and call_count < call_limit:
-      instructions = self.chatFunctions.get_instructions(db)      
-      messages = self.BuildMessages(self.history, instructions)
+    # First run a chat completion, may be the last operation
+    return self.chat_message(db)
+  
 
-      print_log(f"[{call_count}]: Chat completion call...")
+  def chat_message(self, db):
+    """
+    Process a chat message completion call.
+    - May result in a complete exchange
+    - May result in tools calls to be done
+    """
+    instructions = self.chatFunctions.get_instructions(db)      
+    messages = self.BuildMessages(self.history, instructions)
+    print_log(f"[{self.call_count}]: Chat completion call...")
       # Limit tools call to 6
-      if call_count < 8:
-        call_count += 1
-        tools=self.chatFunctions.get_available_tools()
-      else:
-        tools = None
-        tool_choice=None
+    if self.call_count < 8:
+       tools=self.chatFunctions.get_available_tools()
+    else:
+      tools = None
+    self.call_count += 1
 
-      # Make completion request call with the messages we have
-      # selected from the message history and potentially
-      # available tools and specified tool choice.
-      #print(json.dumps(messages))
-      response = chat_completion_request(
-        messages,
-        tools=tools,
-        tool_choice=tool_choice
-      )
-      logging.info("Response: %s", json.dumps(response))
+    # Make completion request call with the messages we have
+    # selected from the message history and potentially
+    # available tools and specified tool choice.
+    #print(json.dumps(messages))
+    response = chat_completion_request(
+      messages,
+      tools=tools,
+      tool_choice=self.tool_choice
+    )
+    logging.info("Response: %s", json.dumps(response))
 
-      # Clear tool choice, only force a tool call on the first request.
-      tool_choice = None
+    # Clear tool choice, only force a tool call on the first request.
+    self.tool_choice = None
 
-      # Check for an error
-      if response.get("usage") is not None:
-        usage = response["usage"]
-        self.track_tokens(db,
-                          usage["prompt_tokens"],
-                          usage["completion_tokens"],
-                          usage["total_tokens"])
-        print_log("prompt tokens: %s" % usage["prompt_tokens"])
-      else:
-        logging.error("no usage in response")
+    # Check for an error
+    if response.get("usage") is not None:
+      usage = response["usage"]
+      self.track_tokens(db,
+                        usage["prompt_tokens"],
+                        usage["completion_tokens"],
+                        usage["total_tokens"])
+      print_log("prompt tokens: %s" % usage["prompt_tokens"])
+    else:
+      logging.error("no usage in response")
 
-      # Process resulting message
-      # TODO: handle error messages.
-      if response.get("choices") is not None:
-        assistant_message = response["choices"][0]["message"]
-        log_chat_message(messages, assistant_message)        
-
-      elif response.get("error"):
-        log_chat_message(messages, response["error"])
+    # Process resulting message
+    # TODO: handle error messages.
+    if response.get("choices") is not None:
+      assistant_message = response["choices"][0]["message"]
+      log_chat_message(messages, assistant_message)        
+    elif response.get("error"):
+      log_chat_message(messages, response["error"])
       
-      tool_calls = assistant_message.get("tool_calls")
-      status_text = None
+    tool_calls = assistant_message.get("tool_calls")
+    if tool_calls: 
+      # Make requested calls to tools.
+      self.history.addToolRequestMessage(self.enc, assistant_message)      
+      self.tool_call = 0
+    else:
+      self.history.addResponseMessage(self.enc, assistant_message)
+    
+    # TODO: add note of tool call to result
+    result = self.getMessageContent(self.history.current_message_set())
+    result["done"] = tool_calls is None
+    return result
 
-      if tool_calls: 
-        # Make requested calls to tools.
-        self.history.addToolRequestMessage(self.enc, assistant_message)      
+  def chat_continue(self, db):
+    """
+    Perform the next step in a chat exchange
+    May either call an additional chat completion or make a tools call
+    """
+    # Completion or Tool Call
+    if self.tool_call is None:
+      return self.chat_message(db)
+    
+    # Make a tools call
+    status_text = None
+    # Set up tools_calls
+    tool_message = self.history.current_message_set().getToolRequestMessage()
+    tool_calls = tool_message.request_message.get("tool_calls")
+    tool_call = tool_calls[self.tool_call]
+    self.tool_call = self.tool_call + 1
+    if self.tool_call >= len(tool_calls):
+      self.tool_call = None
+
+    function_name = tool_call["function"]["name"]
+    function_args = json.loads(tool_call["function"]["arguments"])
+    print_log(f"function call: {function_name}")
+    function_response = self.execute_function_call(db,
+                                                   function_name,
+                                                   function_args)
+    logging.info("function call result: %s" % str(function_response))
+    # Handle 2 different formats of return values
+    content = None
+    if isinstance(function_response, dict):
+      content = function_response.get("response")
+      status_text = function_response.get("text")
+    if content is None:
+      content = function_response
       
-        for tool_call in tool_calls:
-          function_name = tool_call["function"]["name"]
-          function_args = json.loads(tool_call["function"]["arguments"])
-          print_log(f"function call: {function_name}")
-          function_response = self.execute_function_call(db,
-                                                         function_name,
-                                                         function_args)
-          logging.info("function call result: %s" % str(function_response))
-          # Handle 2 different formats of return values
-          content = None
-          if isinstance(function_response, dict):
-            content = function_response.get("response")
-            status_text = function_response.get("text")
-          if content is None:
-            content = function_response
-      
-          self.history.addToolResponseMessage(
+    self.history.addToolResponseMessage(
             self.enc,
             { "tool_call_id": tool_call["id"],
               "role": "tool",
               "name": function_name,
               "content": json.dumps(content)
              }, status_text)
-      else:
-        # Otherwise, just a response from the assistant, we are done.
-        self.history.addResponseMessage(self.enc, assistant_message)
-        done = True
-        
-    # Return result
-    
+    # TODO: add note of tool call to result
     result = self.getMessageContent(self.history.current_message_set())
+    result["done"]=False
     return result
+
 
 

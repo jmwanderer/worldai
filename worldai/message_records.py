@@ -118,7 +118,11 @@ class MessageSetRecord:
     record = MessageSetRecord.ToolRequestMessage()
     record.request_message = message
     self.tool_messages.append(record)
-    self._updateTokenCount(enc, message)    
+    self._updateTokenCount(enc, message)
+
+  def getToolRequestMessage(self):
+    # Return latest tool request message
+    return self.tool_messages[-1]
 
   def addToolResponseMessage(self, enc, message, text):
     record = self.tool_messages[-1]
