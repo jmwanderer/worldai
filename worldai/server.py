@@ -507,15 +507,13 @@ def design_chat_api():
   
   if request.method == "GET":
       history = chat_session.chat_history()
-      content = { "messages": history }      
-      content['view'] = chat_session.get_view()
+      content = { "messages": history }  
       content['enabled'] =  True
+      view = chat_session.get_view()        
+      content['view'] = view
   else:
     if request.json.get("user") is not None:
       user_msg = request.json.get("user")
-      view = request.json.get("view")
-      logging.info(f"view: {view}")
-      chat_session.set_view(view)
       reply = chat_session.chat_message(get_db(), user_msg)
       content = reply.model_dump()
 
@@ -523,7 +521,6 @@ def design_chat_api():
       content["changes"] = chat_session.madeChanges()
       content["enabled"] = True
       view = chat_session.get_view()        
-      logging.info(f"view2: {view}")
       content['view'] = view
 
       logging.info("design chat updates: %s", content["updates"])
@@ -538,6 +535,29 @@ def design_chat_api():
     chat_session.saveChatSession(get_db())
   else:
     chat_session.deleteChatSession(get_db())    
+  return flask.jsonify(content)
+
+@bp.route('/api/design_chat/view', methods=["GET","POST"])
+@auth_required
+def design_chat_view_api():
+  """
+  Get / set current view for design chat.
+  """
+  session_id = get_session_id()
+  chat_session = design_chat.DesignChatSession.loadChatSession(get_db(),
+                                                               session_id)
+  if request.method == "GET":
+    content = { 'view' : chat_session.get_view() }
+  else:
+    if request.json.get("view") is not None:
+      view = request.json["view"]
+      logging.info(f"view: {view}")
+      chat_session.set_view(view)
+      logging.info("view2: %s", chat_session.get_view())
+      content = { 'view' : chat_session.get_view() }      
+    else:
+      content = { "error": "malformed input" }
+
   return flask.jsonify(content)
 
 
