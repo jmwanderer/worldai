@@ -557,7 +557,7 @@ def design_chat_view_api():
       content = { 'view' : chat_session.get_view() }      
     else:
       content = { "error": "malformed input" }
-
+  chat_session.saveChatSession(get_db())
   return flask.jsonify(content)
 
 

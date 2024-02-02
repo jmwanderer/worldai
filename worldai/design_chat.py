@@ -70,6 +70,8 @@ class DesignChatSession:
       # TODO: handle failure
       next_view = self.chatFunctions.next_view
       current_view = self.chatFunctions.current_view
+      logging.info("current view: %s", current_view.jsonStr())
+      logging.info("next view: %s", next_view.jsonStr())      
             
       # Handle when next view is world list.
       if next_view.getType() == elements.ElementType.NoneType():

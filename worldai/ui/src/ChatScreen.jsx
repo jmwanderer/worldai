@@ -228,6 +228,10 @@ const ChatScreen = forwardRef(({ name, calls,
         // Get response
         const values = await calls.postChat(calls.context, user_msg);
         processChatMessage(values);
+        while (!values.done) {
+          const values = await calls.continueChat(calls.context);
+          processChatMessage(values);
+        }
       } catch (e) {
         console.log(e);
         setCurrentMessage({user: user_msg,
