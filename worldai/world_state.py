@@ -390,6 +390,7 @@ def checkWorldState(db, wstate):
   items = elements.listItems(db, wstate.world_id)
 
   # Initialize sites
+  avail_sites = []
   for entry in sites:
     site = elements.loadSite(db, entry.getID())
     if site is not None and not wstate.isSiteInitialized(site.id):
@@ -397,12 +398,14 @@ def checkWorldState(db, wstate):
                    site.id, site.getDefaultLocked())
       wstate.setSiteLocked(site.id, site.getDefaultLocked())
       changed = True
-
-  if len(sites) > 0:
+    if not wstate.isSiteLocked(entry.getID()):
+      avail_sites.append(entry)
+                               
+  if len(avail_sites) > 0:
     # Assign characters to sites
     for character in characters:
       if wstate.getCharacterLocation(character.getID()) == "":
-        site = random.choice(sites)
+        site = random.choice(avail_sites)
         wstate.setCharacterLocation(character.getID(), site.getID())
         changed = True
         logging.info("assign %s to location %s",
@@ -411,9 +414,7 @@ def checkWorldState(db, wstate):
 
     places = []
     places.extend(characters)
-    for site in sites:
-      if not wstate.isSiteLocked(site.getID()):
-        places.append(site)
+    places.extend(avail_sites)
 
     if len(characters) > 0 and len(sites) > 0:
       # Set item location - character or site
@@ -425,7 +426,7 @@ def checkWorldState(db, wstate):
           if item.getIsMobile():
             place = random.choice(places)
           else:
-            place = random.choice(sites)
+            place = random.choice(avail_sites)
           wstate.setItemLocation(item.getID(), place.getID())
           logging.info("place item %s: %s",
                        item.getName(),
