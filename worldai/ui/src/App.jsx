@@ -943,8 +943,8 @@ function World({ worldId, setWorldId }) {
         // Get the details of the world  and a list of sites.
 
         let calls = Promise.all([ getSiteList(worldId),
-                                  getWorld(worldId),
-                                  getPlayerData(worldId)]);
+          getWorld(worldId),
+          getPlayerData(worldId)]);
         let [newSites, newWorld, newPlayer] = await calls;
 
         if (!ignore) {
@@ -1005,7 +1005,11 @@ function World({ worldId, setWorldId }) {
   async function updateWorldData() {
     // Reload player data and dependent information.
     try {
-      const newPlayerData = await getPlayerData(world.id);
+      let calls = Promise.all([ getSiteList(worldId),
+        getPlayerData(worldId)]);
+      let [newSites, newPlayerData] = await calls;
+
+      setSiteList(newSites)
       setPlayerData(newPlayerData);
       setSiteId(newPlayerData.status.location);      
       loadSelectedItem(world, newPlayerData);
