@@ -285,10 +285,10 @@ class ClientActions:
           chat_message = f"{name} used {item.getName()} to turn invisible"
 
       case elements.ItemEffect.UNLOCK:
-        site_id = item.getAbility().side_id
+        site_id = item.getAbility().site_id
         site = elements.loadSite(site_id)
         if site is not None:
-          self.wstate.setSiteLocked(side_id, False)
+          self.wstate.setSiteLocked(site_id, False)
           response_message = f"Site {site.getName()} is now unlocked."
         
     return (True, response_message, chat_message)
