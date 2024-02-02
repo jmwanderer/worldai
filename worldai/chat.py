@@ -145,9 +145,11 @@ class ChatResponse(pydantic.BaseModel):
     
 
 class ChatSession:
-  def __init__(self, id=None, chatFunctions=None):
-    # TODO: remove id
-    self.id = id
+  def __init__(self,  chatFunctions=None):
+    self.msg_id = ""
+    self.call_count = 0
+    self.tool_call_pending = False
+    self.tool_call_index = 0
     if chatFunctions is None:
       self.chatFunctions = chat_functions.BaseChatFunctions()
     else:
@@ -159,6 +161,10 @@ class ChatSession:
     self.history = message_records.MessageRecords()
 
   def load(self, f):
+    self.msg_id = pickle.load(f)
+    self.tool_call_pending = pickle.load(f)
+    self.tool_call_index = pickle.load(f)
+    self.call_count = pickle.load(f)
     self.prompt_tokens = pickle.load(f)
     self.complete_tokens = pickle.load(f)
     self.total_tokens = pickle.load(f)
@@ -166,6 +172,10 @@ class ChatSession:
     self.chatFunctions = pickle.load(f)
 
   def save(self, f):
+    pickle.dump(self.msg_id, f)
+    pickle.dump(self.tool_call_pending, f)
+    pickle.dump(self.tool_call_index, f)
+    pickle.dump(self.call_count, f)
     pickle.dump(self.prompt_tokens, f)
     pickle.dump(self.complete_tokens, f)    
     pickle.dump(self.total_tokens, f)
@@ -253,9 +263,9 @@ class ChatSession:
     Initiate a new chat
     """
     self.msg_id = os.urandom(8).hex()
-    self.tool_choice = None
     self.call_count = 0
-    self.tool_call = None
+    self.tool_call_pending = False
+    self.tool_call_index = 0
     self.chatFunctions.clearChanges()
 
     if system is not None:
@@ -265,16 +275,13 @@ class ChatSession:
       self.history.addRequestMessage(self.enc,
                                      {"role": "user", "content": user})
 
-    if tool_name is not None:
-      logging.info("ChatEx called with tool: %s", tool_name)
-      self.tool_choice = { "type": "function",
-                           "function": { "name": tool_name }}
-      
     # First run a chat completion, may be the last operation
-    return self.chat_message(db)
+    return self.chat_message(db, tool_name)
   
 
-  def chat_message(self, db):
+  def chat_message(self,
+                   db,
+                   tool_name: typing.Union[str, None] = None) -> ChatResponse:
     """
     Process a chat message completion call.
     - May result in a complete exchange
@@ -283,12 +290,19 @@ class ChatSession:
     instructions = self.chatFunctions.get_instructions(db)      
     messages = self.BuildMessages(self.history, instructions)
     print_log(f"[{self.call_count}]: Chat completion call...")
-      # Limit tools call to 6
+      # Limit tools call to 7
     if self.call_count < 8:
        tools=self.chatFunctions.get_available_tools()
     else:
       tools = None
     self.call_count += 1
+
+    if tool_name is not None:
+      logging.info("ChatEx called with tool: %s", tool_name)
+      tool_choice = { "type": "function",
+                           "function": { "name": tool_name }}
+    else:
+      tool_choice = None
 
     # Make completion request call with the messages we have
     # selected from the message history and potentially
@@ -297,12 +311,12 @@ class ChatSession:
     response = chat_completion_request(
       messages,
       tools=tools,
-      tool_choice=self.tool_choice
+      tool_choice=tool_choice
     )
     logging.info("Response: %s", json.dumps(response))
 
     # Clear tool choice, only force a tool call on the first request.
-    self.tool_choice = None
+    tool_name = None
 
     # Check for an error
     if response.get("usage") is not None:
@@ -327,7 +341,8 @@ class ChatSession:
     if tool_calls: 
       # Make requested calls to tools.
       self.history.addToolRequestMessage(self.enc, assistant_message)      
-      self.tool_call = 0
+      self.tool_call_index = 0
+      self.tool_call_pending = True
     else:
       self.history.addResponseMessage(self.enc, assistant_message)
     
@@ -350,16 +365,16 @@ class ChatSession:
     May either call an additional chat completion or make a tools call
     """
     # Completion or Tool Call
-    if self.tool_call is None:
+    if not self.tool_call_pending:
       return self.chat_message(db)
     
     # Make a tools call
     status_text = None
     # Set up tools_calls
     tool_call = self.get_current_tool_call()
-    self.tool_call = self.tool_call + 1
-    if self.tool_call >= self.get_tool_call_count():
-      self.tool_call = None
+    self.tool_call_index = self.tool_call_index + 1
+    if self.tool_call_index >= self.get_tool_call_count():
+      self.tool_call_pending = False
 
     function_name = tool_call["function"]["name"]
     function_args = json.loads(tool_call["function"]["arguments"])
@@ -399,12 +414,12 @@ class ChatSession:
     return result
 
   def get_current_tool_call(self):
-    if self.tool_call is None:
+    if not self.tool_call_pending:
       return None
     
     tool_message = self.history.current_message_set().getToolRequestMessage()
     tool_calls = tool_message.request_message.get("tool_calls")
-    tool_call = tool_calls[self.tool_call]
+    tool_call = tool_calls[self.tool_call_index]
     return tool_call
 
   def get_tool_call_count(self):

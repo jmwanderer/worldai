@@ -13,34 +13,35 @@ Module for the Design Chat Session
 """
 
 class DesignChatSession:
-  def __init__(self, chat_session=None):
+  def __init__(self, session_id, chat_session=None):
     if chat_session is None:
       self.chatFunctions = design_functions.DesignFunctions()
       self.chat = chat.ChatSession(chatFunctions=self.chatFunctions)
     else:
       self.chatFunctions = chat_session.chatFunctions
       self.chat = chat_session
+    self.session_id = session_id
 
 
   def loadChatSession(db, session_id):
     functions = design_functions.DesignFunctions()
-    chat_session = chat.ChatSession(session_id, functions)    
+    chat_session = chat.ChatSession(functions)    
     thread = threads.get_thread(db, session_id)
     if thread is not None:
       f = io.BytesIO(thread)
       chat_session.load(f)
       f.close()
-    return DesignChatSession(chat_session)
+    return DesignChatSession(session_id, chat_session)
 
   def saveChatSession(self, db):
     f = io.BytesIO()
     self.chat.save(f)
     thread = f.getvalue()
-    threads.save_thread(db, self.chat.id, thread)
+    threads.save_thread(db, self.session_id, thread)
     f.close()
 
   def deleteChatSession(self, db):
-    threads.delete_thread(db, self.chat.id)    
+    threads.delete_thread(db, self.session_id)    
 
   def chat_history(self):
     history = []

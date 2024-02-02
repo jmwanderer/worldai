@@ -20,8 +20,7 @@ class CharacterChat:
 
   def loadChatSession(db, wstate_id, wid, cid):
     functions = character_functions.CharacterFunctions(wstate_id, wid, cid)     
-    chat_session = chat.ChatSession(id=None,
-                                    chatFunctions=functions)
+    chat_session = chat.ChatSession(chatFunctions=functions)
     thread = threads.get_character_thread(db, wstate_id, cid)
     if thread is not None:
       f = io.BytesIO(thread)
