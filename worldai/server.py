@@ -552,7 +552,7 @@ def design_chat_view_api():
     if request.json.get("view") is not None:
       view = request.json["view"]
       logging.info(f"view: {view}")
-      chat_session.set_view(view)
+      chat_session.set_view(get_db(), view)
       logging.info("view2: %s", chat_session.get_view())
       content = { 'view' : chat_session.get_view() }      
     else:

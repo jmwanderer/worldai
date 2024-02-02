@@ -13,12 +13,6 @@ from . import chat_functions
 IMAGE_DIRECTORY="/tmp"
 TESTING=False
 
-class ChatMode(str, enum.Enum):
-  # Normal user chat
-  NORMAL = "normal"
-  # Automated loading of data for next_view
-  LOAD = "load"
-
 STATE_WORLDS = "State_Worlds"
 STATE_WORLD = "State_World"
 STATE_WORLD_EDIT = "State_World_Edit"
@@ -224,7 +218,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
   def __init__(self):
     chat_functions.BaseChatFunctions.__init__(self)
     self.current_state = STATE_WORLDS
-    self.chat_mode = ChatMode.NORMAL
       
     # Tracks current world, current element
     self.current_view = elements.ElemTag()
@@ -257,18 +250,10 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.current_view = elements.ElemTag()
     
   def get_instructions(self, db):
-    if self.chat_mode == ChatMode.NORMAL:
-      global_instructions = GLOBAL_INSTRUCTIONS.format(
-        current_state=self.current_state)
-      return global_instructions + "\n" + self.get_state_instructions(db)
+    global_instructions = GLOBAL_INSTRUCTIONS.format(
+      current_state=self.current_state)
+    return global_instructions + "\n" + self.get_state_instructions(db)
 
-    # Special instructions for loading data
-    if self.current_state == STATE_WORLDS:
-      load_id = self.next_view.getWorldID()
-    else:
-      load_id = self.next_view.getID()
-    return f"Show ID '{load_id}'"
-  
   def get_state_instructions(self, db):
     value = instructions[self.current_state].format(
       current_world_name = self.getCurrentWorldName(db))

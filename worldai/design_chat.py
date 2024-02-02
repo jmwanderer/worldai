@@ -56,15 +56,10 @@ class DesignChatSession:
   def get_view(self):
     return self.chatFunctions.get_view()
 
-  def set_view(self, view):
+  def set_view(self, db, view):
     logging.info("design chat set view")
     self.chatFunctions.set_view(view)
 
-  def madeChanges(self):
-    return self.chatFunctions.madeChanges()
-
-  def chat_message(self, db, user):
-    # Handle changing the view
     if self.chatFunctions.next_view != self.chatFunctions.current_view:
       logging.info("*** Change view")
       # TODO: handle failure
@@ -82,9 +77,10 @@ class DesignChatSession:
       if next_view.getWorldID() != current_view.getWorldID():
         logging.info("Show world '%s'", next_view.getWorldID())
         self.chatFunctions.current_state = design_functions.STATE_WORLDS
-        self.chatFunctions.chat_mode = design_functions.ChatMode.LOAD
-        self.chat.chat_exchange(db, tool_choice="ShowWorld", call_limit=1)
-        self.chatFunctions.chat_mode = design_functions.ChatMode.NORMAL        
+        load_id = next_view.getWorldID()
+        self.chat.chat_exchange(db, system=f"World id is '{load_id}'",
+                                tool_choice="ShowWorld",
+                                call_limit=2)
 
       # Handle when next view is world.
       if next_view.getType() == elements.ElementType.WorldType():
@@ -100,28 +96,38 @@ class DesignChatSession:
       # Handle if the next view is a new item, character, or site
       if next_view.getID() != current_view.getID():
         tool_choice = None
+        load_id = next_view.getID()        
         if next_view.getType() == elements.ElementType.CharacterType():
           character = elements.loadCharacter(db, next_view.getID())
           logging.info("Show character '%s'", character.getName())
           tool_choice = "ShowCharacter"
+          system=f"Character id is '{load_id}'"
 
         elif next_view.getType() == elements.ElementType.ItemType():
           item = elements.loadItem(db, next_view.getID())
           logging.info("Show item '%s'", item.getName())
           tool_choice = "ShowItem"
+          system=f"Item id is '{load_id}'"          
 
         elif next_view.getType() == elements.ElementType.SiteType():
           site = elements.loadSite(db, next_view.getID())
           logging.info("Show site '%s'", site.getName())
           tool_choice = "ShowSite"
+          system=f"Site id is '{load_id}'"                    
 
         self.chatFunctions.current_state = new_state
         if tool_choice is not None:
-          self.chatFunctions.chat_mode = design_functions.ChatMode.LOAD
-          self.chat.chat_exchange(db,
+          self.chat.chat_exchange(db, system=system,
                                   tool_choice=tool_choice,
-                                  call_limit=1)
-          self.chatFunctions.chat_mode = design_functions.ChatMode.NORMAL
+                                  call_limit=2)
+
+    
+
+  def madeChanges(self):
+    return self.chatFunctions.madeChanges()
+
+  def chat_message(self, db, user):
+    # Handle changing the view
 
     return self.chat.chat_exchange(db, user=user)
 

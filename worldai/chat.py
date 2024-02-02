@@ -245,13 +245,13 @@ class ChatSession:
     - start
     - continue with tools calls and following chats
     """
-    call_count = 0
     result = self.chat_start(db, user=user,
                              system=system,
                              tool_name=tool_choice)
-
+    call_count = 1
     while not result.done and call_count < call_limit:
       result = self.chat_continue(db)
+      call_count = call_count + 1
     return result
 
 
