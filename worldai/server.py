@@ -512,9 +512,10 @@ def design_chat_api():
       view = chat_session.get_view()        
       content['view'] = view
   else:
-    if request.json.get("user") is not None:
+    command = request.json.get("command")
+    if command == "start":
       user_msg = request.json.get("user")
-      reply = chat_session.chat_message(get_db(), user_msg)
+      reply = chat_session.chat_start(get_db(), user_msg)
       content = reply.model_dump()
 
       # Add additional entries to the message
@@ -523,9 +524,19 @@ def design_chat_api():
       view = chat_session.get_view()        
       content['view'] = view
 
+    elif command == "continue":
+      msg_id = request.json.get("id")
+      reply = chat_session.chat_continue(get_db(), msg_id)
+      content = reply.model_dump()
       logging.info("design chat updates: %s", content["updates"])
 
-    elif request.json.get("command") is not None:
+      # Add additional entries to the message
+      content["changes"] = chat_session.madeChanges()
+      content["enabled"] = True
+      view = chat_session.get_view()        
+      content['view'] = view
+
+    elif request.json.get("command") == "clear":
       content= { "status": "ok" }
       deleteSession = True
     else:

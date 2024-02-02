@@ -72,6 +72,7 @@ class DesignChatSession:
       if next_view.getType() == elements.ElementType.NoneType():
         self.chatFunctions.current_state = design_functions.STATE_WORLDS
         self.chatFunctions.clearCurrentView()
+        return
 
       # Handle a change in the current world.
       if next_view.getWorldID() != current_view.getWorldID():
@@ -126,9 +127,10 @@ class DesignChatSession:
   def madeChanges(self):
     return self.chatFunctions.madeChanges()
 
-  def chat_message(self, db, user):
-    # Handle changing the view
-
-    return self.chat.chat_exchange(db, user=user)
-
+  def chat_start(self, db, user):
+    return self.chat.chat_start(db, user=user)
+  
+  def chat_continue(self, db, msg_id):
+    return self.chat.chat_continue(db, msg_id)
+  
     

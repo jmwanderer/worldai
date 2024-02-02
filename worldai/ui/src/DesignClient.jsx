@@ -417,7 +417,7 @@ function DesignChat({name, chatView, setChatView}) {
     return values;
   }
 
-  async function postDesignChat(context, user_msg) {
+  async function postChatStart(context, user_msg) {
     // Potentially update current view
     console.log("post view: " + JSON.stringify(context));
     const view_data = { "view": context };
@@ -431,9 +431,31 @@ function DesignChat({name, chatView, setChatView}) {
     console.log("get view: " + JSON.stringify(result.view));   
 
     // Post message
-    const msg_data = { "user": user_msg }
+    const msg_data = {
+      "command": "start",
+      "user": user_msg }
     const url_msg = '/design_chat'    
     // Post the user request
+    console.log("start chat: " + user_msg)
+    const response = await fetch(get_url(url_msg), {
+      method: 'POST',
+      body: JSON.stringify(msg_data),
+      headers: headers_post()
+    });
+    const values = await response.json();
+    setChatView(values.view); 
+    return values;
+  }
+
+  async function postChatContinue(context, msg_id) {
+    // Post message
+    const msg_data = {
+      "command": "continue",
+      "msg_id": msg_id }
+    const url_msg = '/design_chat'    
+
+    // Post the user request
+    console.log("continue chat: " + msg_id)    
     const response = await fetch(get_url(url_msg), {
       method: 'POST',
       body: JSON.stringify(msg_data),
@@ -448,7 +470,7 @@ function DesignChat({name, chatView, setChatView}) {
     const url = '/design_chat'    
     const response = await fetch(get_url(url), {
       method: 'POST',
-      body: '{ "command": "clear_thread" }',       
+      body: '{ "command": "clear" }',       
       headers: headers_post()
     });
   }
@@ -460,7 +482,8 @@ function DesignChat({name, chatView, setChatView}) {
   const calls = {
     context: chatView,
     getChats: getDesignChats,
-    postChat: postDesignChat,                      
+    postChat: postChatStart,
+    continueChat: postChatContinue,
     clearChat: clearDesignChat,
     postChatAction: null
   };

@@ -60,16 +60,25 @@ function MessageExchange({ name, message }) {
   );
 }
 
-const CurrentMessage = forwardRef(({ content, chatState }, msgRef) => {
+const CurrentMessage = forwardRef(({ content, name,
+                                     toolCalls, chatState }, msgRef) => {
   // Use a forwardRef to expose a component div to parents in order to
   // scoll into view.
-  
+  console.log(JSON.stringify(content));
   let user = "";
-  if (content.user.length > 0) {
+  if (content.user && content.user.length > 0) {
     user = <div className="App-message">
              <b>You:</b> <br/> { content.user } <br/>             
            </div>;
   }
+  let tool_calls = "";
+  if (toolCalls.length > 0) {
+    console.log("emil tool calls: " + toolCalls.join());
+    tool_calls = <div className="App-message">
+                   { toolCalls.join() }
+                 </div>;
+  }
+    
   let running = "";
   if (chatState === "waiting") {
     running = <div className="App-running"><i> Running... </i></div>
@@ -80,14 +89,17 @@ const CurrentMessage = forwardRef(({ content, chatState }, msgRef) => {
   }
   return (
     <div className="p-2" ref={msgRef}>
-      { user }
+      <MessageExchange name={name}
+                       message={content}/>
+      { tool_calls }
       { running}
       { error }
     </div>
   );
 });
 
-function MessageScreen({chatHistory, currentMessage, chatState, name}) {
+function MessageScreen({chatHistory, currentMessage,
+                        toolCalls, chatState, name}) {
   const msgRef = useRef(null);
   useEffect(() => {
     const {current} = msgRef;
@@ -107,7 +119,9 @@ function MessageScreen({chatHistory, currentMessage, chatState, name}) {
       { entries }
       
       <CurrentMessage content={currentMessage}
+                      name={name}
                       chatState={chatState}
+                      toolCalls={toolCalls}
                       ref={msgRef}/>
     </Stack>
   );
@@ -132,6 +146,8 @@ const ChatScreen = forwardRef(({ name, calls,
          setCurrentMessage] = useState({ user: "", error: ""});
   const [userInput, setUserInput] = useState("")
   const [chatState, setChatState] = useState("ready")
+  // List of calls made on server side to display in currentMessage
+  const [toolCalls, setToolCalls] = useState([]);
 
   useEffect(() => {
     let ignore = false;    
@@ -177,20 +193,32 @@ const ChatScreen = forwardRef(({ name, calls,
   }
 
   function processChatMessage(values) {
-    // Append to history that is displayed
-    setChatHistory([...chatHistory, values])
-    // Clear the current message
-    setCurrentMessage({user: "", error: "" });
-    console.log("enabled: " + values["enabled"]);
-        
-    if (values["enabled"]) {
-      setChatState("ready");
+    if (!values.done) {
+      setCurrentMessage({ user: values.user,
+                          updates: values.updates,
+                          event: values.event,
+                          reply: values.reply,
+                          tool_call: values.tool_call,
+                          error: "" });
+      // Accumulate list of tool calls
+      setToolCalls([...toolCalls, values.tool_call]);
     } else {
-      setChatState("disabled");            
-    }
-    if (values["updates"].length > 0) {
-      // Server signaled a change in state.
-      onChange();
+      // Append to history that is displayed
+      setChatHistory([...chatHistory, values])
+      // Clear the current message
+      setToolCalls([])
+      setCurrentMessage({user: "", error: "" });
+      console.log("enabled: " + values["enabled"]);
+        
+      if (values["enabled"]) {
+        setChatState("ready");
+      } else {
+        setChatState("disabled");            
+      }
+      if (values["updates"].length > 0) {
+        // Server signaled a change in state.
+        onChange();
+      }
     }
   }
   
@@ -199,7 +227,7 @@ const ChatScreen = forwardRef(({ name, calls,
       return
     }
 
-    // Post a user action for the character        
+    // Post a user action for the character
     setCurrentMessage({user: "", error: ""});
     setChatState("waiting");
 
@@ -226,10 +254,13 @@ const ChatScreen = forwardRef(({ name, calls,
       // Post the user request
       try {
         // Get response
-        const values = await calls.postChat(calls.context, user_msg);
+        let values = await calls.postChat(calls.context, user_msg);
+        let msg_id = values.id;
+        let count = 0;
         processChatMessage(values);
-        while (!values.done) {
-          const values = await calls.continueChat(calls.context);
+        while (!values.done && count < 20) {
+          count += 1;
+          values = await calls.continueChat(calls.context, msg_id);
           processChatMessage(values);
         }
       } catch (e) {
@@ -291,6 +322,7 @@ const ChatScreen = forwardRef(({ name, calls,
       <MessageScreen chatHistory={chatHistory}
                      currentMessage={currentMessage}
                      chatState={chatState}
+                     toolCalls={toolCalls}
                      name={name}/>
       <UserInput value={userInput}
                  onChange={handleInputChange}

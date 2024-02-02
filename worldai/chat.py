@@ -142,7 +142,8 @@ class ChatResponse(pydantic.BaseModel):
   updates: typing.Optional[str] = ""
   event: typing.Optional[str] = ""
   tool_call: typing.Optional[str] = ""
-    
+  status: typing.Optional[str] = "ok"
+  
 
 class ChatSession:
   def __init__(self,  chatFunctions=None):
@@ -248,10 +249,9 @@ class ChatSession:
     result = self.chat_start(db, user=user,
                              system=system,
                              tool_name=tool_choice)
-    call_count = 1
-    while not result.done and call_count < call_limit:
-      result = self.chat_continue(db)
-      call_count = call_count + 1
+    msg_id = result.id
+    while not result.done and self.call_count < call_limit:
+      result = self.chat_continue(db, msg_id)
     return result
 
 
@@ -287,6 +287,13 @@ class ChatSession:
     - May result in a complete exchange
     - May result in tools calls to be done
     """
+    self.call_count += 1          
+    if self.call_count > 8:
+      print(f"too many calls: {self.call_count}")
+      result = ChatResponse(id=self.msg_id, done=True)
+      result.status = "error"
+      return result
+      
     instructions = self.chatFunctions.get_instructions(db)      
     messages = self.BuildMessages(self.history, instructions)
     print_log(f"[{self.call_count}]: Chat completion call...")
@@ -295,7 +302,7 @@ class ChatSession:
        tools=self.chatFunctions.get_available_tools()
     else:
       tools = None
-    self.call_count += 1
+
 
     if tool_name is not None:
       logging.info("ChatEx called with tool: %s", tool_name)
@@ -359,7 +366,7 @@ class ChatSession:
       result.tool_call = tool_call["function"]["name"]
     return result
 
-  def chat_continue(self, db):
+  def chat_continue(self, db, msg_id):
     """
     Perform the next step in a chat exchange
     May either call an additional chat completion or make a tools call

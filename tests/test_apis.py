@@ -117,8 +117,10 @@ def test_chat_get(client, app):
                            "Authorization": bearer_token(app),
                          },
                          json={
+                           "command": "start",
                            "user": "hi there!",
                          })
+  assert response.json['done']
   assert response.status_code == 200
   
   response = client.get(f"/api/design_chat", headers={
@@ -136,6 +138,7 @@ def test_chat_post(client, app):
                            "Authorization": bearer_token(app),
                          },
                          json={
+                           "command": "start",                           
                            "user": "hi there!",
                          })
   assert response.status_code == 200
@@ -151,6 +154,7 @@ def test_chat_cmd_clear(client, app):
                            "Authorization": bearer_token(app),
                          },
                          json={
+                           "command": "start",                           
                            "user": "hi there!",
                          })
   assert response.status_code == 200
@@ -168,7 +172,7 @@ def test_chat_cmd_clear(client, app):
                            "Authorization": bearer_token(app),
                          },
                          json={
-                           "command": "clear_thread",
+                           "command": "clear",
                          })
   assert response.status_code == 200
   assert response.json['status'] == "ok"
