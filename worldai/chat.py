@@ -14,6 +14,9 @@ import requests
 import pickle
 import io
 import markdown
+import pydantic
+import typing
+
 
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
@@ -131,6 +134,16 @@ def log_chat_message(messages, assistant_message):
     f.close()
 
 
+class ChatResponse(pydantic.BaseModel):
+  id: str
+  done: bool
+  user: typing.Optional[str] = ""
+  reply: typing.Optional[str] = ""
+  updates: typing.Optional[str] = ""
+  event: typing.Optional[str] = ""
+  tool_call: typing.Optional[str] = ""
+    
+
 class ChatSession:
   def __init__(self, id=None, chatFunctions=None):
     # TODO: remove id
@@ -212,8 +225,11 @@ class ChatSession:
     return { "messages": messages }
   
   
-  def chat_exchange(self, db, user=None, system=None, tool_choice=None,
-                    call_limit=11):
+  def chat_exchange(self, db,
+                    user: typing.Union[str, None] = None,
+                    system: typing.Union[str, None] = None,
+                    tool_choice: typing.Union[str, None] = None,
+                    call_limit=11)  -> ChatResponse:
     """
     Loop through steps in a chat exchange.
     - start
@@ -223,15 +239,16 @@ class ChatSession:
     result = self.chat_start(db, user=user,
                              system=system,
                              tool_name=tool_choice)
-    done = result["done"]
 
-    while not done and call_count < call_limit:
+    while not result.done and call_count < call_limit:
       result = self.chat_continue(db)
-      done = result["done"]
     return result
 
 
-  def chat_start(self, db, user=None, system=None, tool_name=None):
+  def chat_start(self, db,
+                 user: typing.Union[str, None] = None,
+                 system: typing.Union[str, None] = None,
+                 tool_name: typing.Union[str, None] = None) -> ChatResponse:
     """
     Initiate a new chat
     """
@@ -249,11 +266,9 @@ class ChatSession:
                                      {"role": "user", "content": user})
 
     if tool_name is not None:
-      logging.info("ChatEx called with tool: %s, limit %d",
-                   tool_choice,
-                   call_limit)
+      logging.info("ChatEx called with tool: %s", tool_name)
       self.tool_choice = { "type": "function",
-                           "function": { "name": tool_choice }}
+                           "function": { "name": tool_name }}
       
     # First run a chat completion, may be the last operation
     return self.chat_message(db)
@@ -316,9 +331,17 @@ class ChatSession:
     else:
       self.history.addResponseMessage(self.enc, assistant_message)
     
-    # TODO: add note of tool call to result
-    result = self.getMessageContent(self.history.current_message_set())
-    result["done"] = tool_calls is None
+    # Build result
+    content = self.getMessageContent(self.history.current_message_set())
+    result = ChatResponse(id=self.msg_id, done=tool_calls is None)
+    result.user = content["user"]
+    result.reply = content["assistant"]
+    result.updates = content["updates"]
+    result.event = content["system"]
+
+    tool_call = self.get_current_tool_call()
+    if tool_call is not None:
+      result.tool_call = tool_call["function"]["name"]
     return result
 
   def chat_continue(self, db):
@@ -333,11 +356,9 @@ class ChatSession:
     # Make a tools call
     status_text = None
     # Set up tools_calls
-    tool_message = self.history.current_message_set().getToolRequestMessage()
-    tool_calls = tool_message.request_message.get("tool_calls")
-    tool_call = tool_calls[self.tool_call]
+    tool_call = self.get_current_tool_call()
     self.tool_call = self.tool_call + 1
-    if self.tool_call >= len(tool_calls):
+    if self.tool_call >= self.get_tool_call_count():
       self.tool_call = None
 
     function_name = tool_call["function"]["name"]
@@ -362,10 +383,34 @@ class ChatSession:
               "name": function_name,
               "content": json.dumps(content)
              }, status_text)
-    # TODO: add note of tool call to result
-    result = self.getMessageContent(self.history.current_message_set())
-    result["done"]=False
+
+
+    # Build result
+    content = self.getMessageContent(self.history.current_message_set())
+    result = ChatResponse(id=self.msg_id, done=False)
+    result.user = content["user"]
+    result.reply = content["assistant"]
+    result.updates = content["updates"]
+    result.event = content["system"]
+
+    tool_call = self.get_current_tool_call()
+    if tool_call is not None:
+      result.tool_call = tool_call["function"]["name"]
     return result
 
+  def get_current_tool_call(self):
+    if self.tool_call is None:
+      return None
+    
+    tool_message = self.history.current_message_set().getToolRequestMessage()
+    tool_calls = tool_message.request_message.get("tool_calls")
+    tool_call = tool_calls[self.tool_call]
+    return tool_call
+
+  def get_tool_call_count(self):
+    tool_message = self.history.current_message_set().getToolRequestMessage()
+    return len(tool_message.request_message.get("tool_calls"))
+    
+  
 
 

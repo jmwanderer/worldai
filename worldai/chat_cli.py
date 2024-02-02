@@ -29,13 +29,13 @@ def chat_loop():
     if user.startswith("system:"):
       system = user[user.index(':')+1:].strip()
       print(f"system message {system}")
-      message = chat_session.chat_exchange(db,
+      result = chat_session.chat_exchange(db,
                                            system=system)
     else:
-      message = chat_session.chat_exchange(db, user=user)
+      result = chat_session.chat_exchange(db, user=user)
 
-    assistant_message = message["assistant"]
-    text = message.get("updates")
+    assistant_message = result.reply
+    text = result.updates
     print(assistant_message)
     if len(text) > 0:
       print(text)
