@@ -149,6 +149,7 @@ class ChatSession:
   def __init__(self,  chatFunctions=None):
     self.msg_id = ""
     self.call_count = 0
+    self.call_limit = 0    
     self.tool_call_pending = False
     self.tool_call_index = 0
     if chatFunctions is None:
@@ -166,6 +167,7 @@ class ChatSession:
     self.tool_call_pending = pickle.load(f)
     self.tool_call_index = pickle.load(f)
     self.call_count = pickle.load(f)
+    self.call_limit = pickle.load(f)    
     self.prompt_tokens = pickle.load(f)
     self.complete_tokens = pickle.load(f)
     self.total_tokens = pickle.load(f)
@@ -177,6 +179,7 @@ class ChatSession:
     pickle.dump(self.tool_call_pending, f)
     pickle.dump(self.tool_call_index, f)
     pickle.dump(self.call_count, f)
+    pickle.dump(self.call_limit, f)    
     pickle.dump(self.prompt_tokens, f)
     pickle.dump(self.complete_tokens, f)    
     pickle.dump(self.total_tokens, f)
@@ -249,8 +252,9 @@ class ChatSession:
     result = self.chat_start(db, user=user,
                              system=system,
                              tool_name=tool_choice)
+    self.call_limit = call_limit
     msg_id = result.id
-    while not result.done and self.call_count < call_limit:
+    while not result.done and self.call_count <= call_limit:
       result = self.chat_continue(db, msg_id)
     return result
 
@@ -264,6 +268,7 @@ class ChatSession:
     """
     self.msg_id = os.urandom(8).hex()
     self.call_count = 0
+    self.call_limit = 10
     self.tool_call_pending = False
     self.tool_call_index = 0
     self.chatFunctions.clearChanges()
@@ -408,6 +413,11 @@ class ChatSession:
 
 
     # Build result
+    done = False
+    # Can be done if no more tool alls AND we have met the chat call limt
+    if not self.tool_call_pending and self.call_count < self.call_limit:
+      done = True
+
     content = self.getMessageContent(self.history.current_message_set())
     result = ChatResponse(id=self.msg_id, done=False)
     result.user = content["user"]

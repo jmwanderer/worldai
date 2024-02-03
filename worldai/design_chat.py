@@ -81,7 +81,7 @@ class DesignChatSession:
         load_id = next_view.getWorldID()
         self.chat.chat_exchange(db, system=f"World id is '{load_id}'",
                                 tool_choice="ShowWorld",
-                                call_limit=2)
+                                call_limit=1)
 
       # Handle when next view is world.
       if next_view.getType() == elements.ElementType.WorldType():
@@ -120,7 +120,7 @@ class DesignChatSession:
         if tool_choice is not None:
           self.chat.chat_exchange(db, system=system,
                                   tool_choice=tool_choice,
-                                  call_limit=2)
+                                  call_limit=1)
 
     
 

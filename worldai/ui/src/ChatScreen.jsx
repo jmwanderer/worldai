@@ -64,7 +64,6 @@ const CurrentMessage = forwardRef(({ content, name,
                                      toolCalls, chatState }, msgRef) => {
   // Use a forwardRef to expose a component div to parents in order to
   // scoll into view.
-  console.log(JSON.stringify(content));
   let user = "";
   if (content.user && content.user.length > 0) {
     user = <div className="App-message">
@@ -73,7 +72,6 @@ const CurrentMessage = forwardRef(({ content, name,
   }
   let tool_calls = "";
   if (toolCalls.length > 0) {
-    console.log("emit tool calls: " + toolCalls.join());
     tool_calls = <div className="App-message">
                    Functions: { toolCalls.join() }...
                  </div>;
