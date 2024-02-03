@@ -54,9 +54,6 @@ Plans
 
 Bugs
 ----
-
-- modes too restrictive? AI wants to call CreateWorld, not there
-- ShowWorld - 
 - removing and restoring elements only works if the mode is correct
 - removing an element may not refresh the list of elements in the
   message thread

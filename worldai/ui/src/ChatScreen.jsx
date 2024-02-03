@@ -168,6 +168,10 @@ const ChatScreen = forwardRef(({ name, calls,
           } else {
             setChatState("disabled");
           }
+
+          if (values["messages"].length === 0) {
+            runChatExchange("");
+          }
         }
       } catch (e) {
         console.log(e);
@@ -251,36 +255,37 @@ const ChatScreen = forwardRef(({ name, calls,
     chatDone();
     // TODO - return a result
   }
+
+  async function runChatExchange(user_msg) {
+    // Post the user request
+    try {
+      setChatState("waiting");
+      // Get response
+      let values = await calls.postChat(calls.context, user_msg);
+      let msg_id = values.id;
+      let count = 0;
+      processChatMessage(values);
+      while (!values.done && count < 20) {
+        count += 1;
+        values = await calls.continueChat(calls.context, msg_id);
+        processChatMessage(values);
+      }
+    } catch (e) {
+      console.log(e);
+      setCurrentMessage({user: user_msg,
+                         error: "Something went wrong."});
+      setChatState("ready")
+    }
+    // Signal chat was completed
+    chatDone();
+  }
+  
                                     
   function submitClick() {
     let user_msg = userInput
     setCurrentMessage({user: user_msg, error: ""});
     setUserInput("");
-    setChatState("waiting");
-
-    async function getData() {
-      // Post the user request
-      try {
-        // Get response
-        let values = await calls.postChat(calls.context, user_msg);
-        let msg_id = values.id;
-        let count = 0;
-        processChatMessage(values);
-        while (!values.done && count < 20) {
-          count += 1;
-          values = await calls.continueChat(calls.context, msg_id);
-          processChatMessage(values);
-        }
-      } catch (e) {
-        console.log(e);
-        setCurrentMessage({user: user_msg,
-                           error: "Something went wrong."});
-        setChatState("ready")
-      }
-      // Signal chat was completed
-      chatDone();
-    }
-    getData();
+    runChatExchange(user_msg);
   }
 
   function submitClear() {
