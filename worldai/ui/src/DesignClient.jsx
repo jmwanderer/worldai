@@ -68,7 +68,9 @@ function Site({ tag, setChatView }) {
               </Container>
             </Stack>
             <h2>Details:</h2>
-            { site.details }
+            <Markdown>            
+              { site.details }
+            </Markdown>
           </Stack>);
 }
 

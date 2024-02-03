@@ -73,15 +73,21 @@ const CurrentMessage = forwardRef(({ content, name,
   }
   let tool_calls = "";
   if (toolCalls.length > 0) {
-    console.log("emil tool calls: " + toolCalls.join());
+    console.log("emit tool calls: " + toolCalls.join());
     tool_calls = <div className="App-message">
-                   { toolCalls.join() }
+                   Functions: { toolCalls.join() }...
                  </div>;
   }
     
   let running = "";
   if (chatState === "waiting") {
-    running = <div className="App-running"><i> Running... </i></div>
+    if (content.tool_call && content.tool_call.length > 0) {
+      running = (<div className="App-running">
+                   <i> Running {content.tool_call}... </i>
+                 </div>);
+    } else {
+      running = <div className="App-running"><i> Running Chat... </i></div>      
+    }
   }
   let error = "";
   if (content.error.length > 0) {
@@ -192,6 +198,7 @@ const ChatScreen = forwardRef(({ name, calls,
       }}))
   }
 
+  let call_list = [];
   function processChatMessage(values) {
     if (!values.done) {
       setCurrentMessage({ user: values.user,
@@ -201,7 +208,10 @@ const ChatScreen = forwardRef(({ name, calls,
                           tool_call: values.tool_call,
                           error: "" });
       // Accumulate list of tool calls
-      setToolCalls([...toolCalls, values.tool_call]);
+      if (values.tool_call.length > 0) {
+        call_list.push(values.tool_call);
+        setToolCalls(call_list);
+      }
     } else {
       // Append to history that is displayed
       setChatHistory([...chatHistory, values])
