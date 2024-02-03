@@ -927,14 +927,24 @@ def thread_api(wid, id):
                                                               wstate_id,
                                                               wid,
                                                               id)
+  content = None
   if request.method == "GET":
     history = chat_session.chat_history()    
     content = { "messages": history }
-  elif request.json.get("user") is not None:
-      user_msg = request.json.get("user")
-      result = chat_session.chat_message(get_db(), user_msg)
-      content = result.model_dump()
+
   else:
+    command = request.json.get("command")    
+    if command == "start":
+      user_msg = request.json.get("user")
+      result = chat_session.chat_start(get_db(), user_msg)
+      content = result.model_dump()
+
+    elif command == "continue":
+      msg_id = request.json.get("id")
+      reply = chat_session.chat_continue(get_db(), msg_id)
+      content = reply.model_dump()
+      
+  if content is None:
     content = { "error": "malformed input" }
 
   # Player and character must be in same location to continue to chat.

@@ -64,6 +64,12 @@ class CharacterChat:
   def chat_message(self, db, user):
     return self.chat.chat_exchange(db, user=user)
 
+  def chat_start(self, db, user):
+    return self.chat.chat_start(db, user=user)
+
+  def chat_continue(self, db, msg_id):
+    return self.chat.chat_continue(db, msg_id)
+
   def chat_event(self, db, event):
     return self.chat.chat_exchange(db, system=event)
         

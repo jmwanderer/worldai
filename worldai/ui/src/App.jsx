@@ -162,17 +162,35 @@ async function getCharacterChats(context) {
   const values = await response.json();
 
   if (values["messages"].length === 0) {
-    const response = await postCharacterChat(context, "");
+    // TODO: potential bug here - fix
+    const response = await postChatStart(context, "");
     values["messages"] = [response]
   }
   
   return values;
 }
 
-async function postCharacterChat(context, user_msg) {
+async function postChatStart(context, user_msg) {
   const worldId = context.worldId
   const characterId = context.characterId  
-  const data = { "user": user_msg }
+  const data = { "command": "start",
+                 "user": user_msg }
+  const url = `/worlds/${worldId}/characters/${characterId}/thread`;
+  // Post the user request
+  const response = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()
+  });
+  const values = await response.json();
+  return values;
+}
+
+async function postChatContinue(context, msg_id) {
+  const worldId = context.worldId
+  const characterId = context.characterId  
+  const data = { "command": "continue",
+                 "msg_id": msg_id }
   const url = `/worlds/${worldId}/characters/${characterId}/thread`;
   // Post the user request
   const response = await fetch(get_url(url), {
@@ -310,7 +328,8 @@ function ChatCharacter({ world, characterId,
   const calls = {
     context: context,
     getChats: getCharacterChats,
-    postChat: postCharacterChat,                      
+    postChat: postChatStart,
+    continueChat: postChatContinue,
     clearChat: null,
     postChatAction: runCharacterAction
   };

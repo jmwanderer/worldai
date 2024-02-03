@@ -72,7 +72,7 @@ const CurrentMessage = forwardRef(({ content, name,
   }
   let tool_calls = "";
   if (toolCalls.length > 0) {
-    tool_calls = <div className="App-message">
+    tool_calls = <div>
                    Functions: { toolCalls.join() }...
                  </div>;
   }
@@ -80,7 +80,7 @@ const CurrentMessage = forwardRef(({ content, name,
   let running = "";
   if (chatState === "waiting") {
     if (content.tool_call && content.tool_call.length > 0) {
-      running = (<div className="App-running">
+      running = (<div>
                    <i> Running {content.tool_call}... </i>
                  </div>);
     } else {

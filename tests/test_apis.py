@@ -83,6 +83,7 @@ def test_character_chat(client, app):
                          },
                          json={
                            "user": "hi there!",
+                           "command": "start",
                          })
   assert response.status_code == 200
   assert response.json["id"] is not None

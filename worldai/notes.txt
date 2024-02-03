@@ -1,9 +1,8 @@
 Plans
 -----
 
+- Handle incomplete message events using msg_id
 - Add user approval to some tool functions
-
-- Probably need to reset thread in design client on world changes
 
 - Convert from IDs to names for the AI func calls
 - Add history of conversations and use in RAG calls
@@ -33,6 +32,17 @@ Plans
 - Walk from site to site connected
 - Site with subsites? - areas?
 
+- check goals for win
+  char has X
+  char is at x
+  char is X
+  player has x
+  player is at x
+ - everone knows about specific events
+ - AI design, fill out goals
+ - AI does an analysis of what is needed for design completion
+ 
+- take items from character
 
 
 - Basic world design - DONE
