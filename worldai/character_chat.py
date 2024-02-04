@@ -62,9 +62,13 @@ class CharacterChat:
     return history
 
   def chat_message(self, db, user):
+    if len(user) == 0:
+      user = None
     return self.chat.chat_exchange(db, user=user)
 
   def chat_start(self, db, user):
+    if len(user) == 0:
+      user = None
     return self.chat.chat_start(db, user=user)
 
   def chat_continue(self, db, msg_id):

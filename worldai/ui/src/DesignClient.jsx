@@ -406,16 +406,6 @@ function DesignChat({name, chatView, setChatView}) {
     const values = await response.json();
     console.log("get view: " + JSON.stringify(values.view));
     setChatView(values.view);
-    const assistant_message = "I am a world designer assistant, ready" +
-          " to help design worlds.";
-    if (values["messages"].length === 0) {
-      // Add an initial greeting
-      values["messages"] = [ {
-        "id": "id0000",
-        "user": "",
-        "reply": assistant_message,
-      } ];
-    }
     return values;
   }
 

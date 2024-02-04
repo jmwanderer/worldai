@@ -219,10 +219,15 @@ class MessageRecords:
 
   def isEmpty(self):
     return len(self.message_history) == 0
-    
-  def addRequestMessage(self, enc, message):
+
+  def startNewMessageSet(self):
     self.current_message = MessageSetRecord()
     self.message_history.append(self.current_message)
+    
+  def addRequestMessage(self, enc, message):
+    if self.current_message is None:    
+      self.current_message = MessageSetRecord()
+      self.message_history.append(self.current_message)
     self.current_message.setRequestMessage(enc, message)
 
   def addSystemMessage(self, enc, message):

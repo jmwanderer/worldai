@@ -273,6 +273,8 @@ class ChatSession:
     self.tool_call_index = 0
     self.chatFunctions.clearChanges()
 
+    self.history.startNewMessageSet()
+
     if system is not None:
       self.history.addSystemMessage(self.enc,
                                     {"role": "system", "content": system})

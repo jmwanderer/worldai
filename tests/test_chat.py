@@ -50,6 +50,7 @@ class RecordsTestCase(unittest.TestCase):
     records = message_records.MessageRecords()
     records.setInitSystemMessage(getInitSystemMessage())
 
+    records.startNewMessageSet()
     records.addRequestMessage(enc, getUserMessage())
     records.addResponseMessage(enc, getAssistantMessage())
     
@@ -65,7 +66,8 @@ class RecordsTestCase(unittest.TestCase):
     records.addToolRequestMessage(enc, getToolRequestMessage())
     records.addToolResponseMessage(enc, getToolResponseMessage())
     records.addResponseMessage(enc, getAssistantMessage())
-    
+
+    records.startNewMessageSet()    
     records.addRequestMessage(enc, getUserMessage())
     records.addToolRequestMessage(enc, getToolRequestMessage())
     records.addToolResponseMessage(enc, getToolResponseMessage())
@@ -104,6 +106,7 @@ class ExtendedRecordsTestCase(unittest.TestCase):
     enc = ExtendedRecordsTestCase.Encode()
     records = message_records.MessageRecords()
     records.setInitSystemMessage(getInitSystemMessage())
+    records.startNewMessageSet()        
     records.addRequestMessage(enc, getUserMessage())
 
     # Repeated tool calls
