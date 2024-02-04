@@ -896,6 +896,32 @@ def items_list(wid):
   """
   API to get the items for a world
   """
+  item_list = []
+  session_id = get_session_id()
+  world = elements.loadWorld(get_db(), wid)  
+  if world is None:
+    return { "error", "World not found"}, 400
+  items = elements.listItems(get_db(), wid)
+  
+  for entry in items:
+    id = entry.getID()
+    item = elements.loadItem(get_db(), id)
+    image_prop = getElementThumbProperty(item)
+      
+    item_list.append(
+      {"id": id,
+       "name": item.getName(),
+       "description": item.getDescription(),
+       "image": image_prop })
+
+  return item_list
+
+@bp.route('/api/worlds/<wid>/items/instances', methods=["GET"])
+@auth_required
+def items_intances_list(wid):
+  """
+  API to get the items for a world
+  """
   # Save last opened in session
   session['world_id'] = wid
   

@@ -1,7 +1,7 @@
 import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
 import { getWorldList, getWorld, getPlayerData } from './api.js';
-import { getSiteInstancesList, getItemList, getCharacterInstancesList } from './api.js';
+import { getSiteInstancesList, getItemInstancesList, getCharacterInstancesList } from './api.js';
 import { getSiteInstance, getItem, getCharacter, getCharacterData } from './api.js';
 
 import ChatScreen from './ChatScreen.jsx';
@@ -803,7 +803,7 @@ function Inventory({ worldId, selectItem }) {
 
     async function getItemData() {
       try {
-        const values = await getItemList(worldId);
+        const values = await getItemInstancesList(worldId);
         if (!ignore) {
           setItemList(values);
         }
