@@ -1,7 +1,7 @@
 import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
 import { getWorldList, getWorld, getPlayerData } from './api.js';
-import { getSiteList, getItemList, getCharacterList } from './api.js';
+import { getSiteList, getItemList, getCharacterInstancesList } from './api.js';
 import { getSite, getItem, getCharacter, getCharacterData } from './api.js';
 
 import ChatScreen from './ChatScreen.jsx';
@@ -724,7 +724,7 @@ function CharacterList({ worldId }) {
 
     async function getCharacterData() {
       try {
-        const values = await getCharacterList(worldId);
+        const values = await getCharacterInstancesList(worldId);
         if (!ignore) {
           setCharacterList(values);
         }

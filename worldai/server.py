@@ -665,6 +665,32 @@ def characters_list(wid):
   """
   API to get the list of characters for a world
   """
+  character_list = []
+  session_id = get_session_id()
+  world = elements.loadWorld(get_db(), wid)  
+  if world is None:
+    return { "error", "World not found"}, 400
+  characters = elements.listCharacters(get_db(), wid)
+  
+  for entry in characters:
+    id = entry.getID()
+    character = elements.loadCharacter(get_db(), id)
+    image_prop = getElementThumbProperty(character)
+      
+    character_list.append(
+      {"id": id,
+       "name": character.getName(),
+       "description": character.getDescription(),
+       "image": image_prop })
+
+  return flask.jsonify(character_list)
+
+@bp.route('/api/worlds/<wid>/characters/instances', methods=["GET"])
+@auth_required
+def characters_inst_list(wid):
+  """
+  API to get the list of characters for a world
+  """
   # Save last opened in session
   session['world_id'] = wid
   
@@ -699,8 +725,6 @@ def characters(wid, id):
   API to access a character
   """
   session_id = get_session_id()
-  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
-  wstate = world_state.loadWorldState(get_db(), wstate_id)  
   character = elements.loadCharacter(get_db(), id)
   if character == None or character.parent_id != wid:
     return { "error", "Character not found"}, 400
@@ -710,6 +734,27 @@ def characters(wid, id):
   result["images"] = images
 
   return result
+
+
+@bp.route('/api/worlds/<wid>/characters/<id>/instance', methods=["GET"])
+@auth_required
+def character_stats(wid, id):
+  """
+  API to get character status
+  """
+  session_id = get_session_id()
+  world = elements.loadWorld(get_db(), wid)  
+  if world is None:
+    return { "error", "World not found"}, 400
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)
+
+  character_data = client_commands.LoadCharacterData(get_db(),
+                                                     world, wstate, id)
+  response = character_data.model_dump()
+  response["current_time"] = wstate.getCurrentTime()  
+  return response
+
 
 @bp.route('/api/worlds/<wid>/sites', methods=["GET"])
 @auth_required
@@ -895,24 +940,6 @@ def player(wid):
   response["current_time"] = wstate.getCurrentTime()  
   return response
 
-@bp.route('/api/worlds/<wid>/characters/<id>/instance', methods=["GET"])
-@auth_required
-def character_stats(wid, id):
-  """
-  API to get character status
-  """
-  session_id = get_session_id()
-  world = elements.loadWorld(get_db(), wid)  
-  if world is None:
-    return { "error", "World not found"}, 400
-  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
-  wstate = world_state.loadWorldState(get_db(), wstate_id)
-
-  character_data = client_commands.LoadCharacterData(get_db(),
-                                                     world, wstate, id)
-  response = character_data.model_dump()
-  response["current_time"] = wstate.getCurrentTime()  
-  return response
 
 @bp.route('/api/worlds/<wid>/characters/<id>/thread', methods=["GET","POST"])
 @auth_required

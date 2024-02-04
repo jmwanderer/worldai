@@ -63,7 +63,7 @@ TODO
 ----
 - Make chat interaction use Pydantic - DONE
 - support chat in response to actions - DONE
-- tool choice in character chat 
+- tool choice in character chat  - DONE
 - complete API test coverage - DONE, but missing cases
   - check if mock test env is reusable for all
 - client command test coverage - DONE
