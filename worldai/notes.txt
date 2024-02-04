@@ -16,7 +16,7 @@ Plans
   - slow poison,  capture, brainwash
   - character status in character list
 
-- Refactor design vs instance interfaces.
+- Refactor design vs instance interfaces. - DONE
 - Variable number of items per type
 
 - Important character attributes:
@@ -29,8 +29,8 @@ Plans
 - Use templates to drive design creation?
 
 - Add topology?
-- Walk from site to site connected
-- Site with subsites? - areas?
+  - Walk from site to site connected?
+  - Site with subsites? - areas?
 
 - check goals for win
   char has X
@@ -43,7 +43,6 @@ Plans
  - AI does an analysis of what is needed for design completion
  
 - take items from character
-
 
 - Basic world design - DONE
 - Basic character interaction - DONE
