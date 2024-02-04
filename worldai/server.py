@@ -770,6 +770,34 @@ def site_list(wid):
 
   site_list = []
   session_id = get_session_id()
+  sites = elements.listSites(get_db(), wid)
+
+  for entry in sites:
+    id = entry.getID()
+    site = elements.loadSite(get_db(), id)
+    image_prop = getElementThumbProperty(site)
+      
+    site_list.append(
+      {"id": id,
+       "name": site.getName(),
+       "description": site.getDescription(),
+       "image": image_prop })
+  return site_list
+
+@bp.route('/api/worlds/<wid>/sites/instances', methods=["GET"])
+@auth_required
+def site_instances_list(wid):
+  """
+  Get a list of sites
+  """
+  # Save last opened in session
+  session['world_id'] = wid
+  world = elements.loadWorld(get_db(), wid)
+  if world is None:
+    return { "error", "World not found"}, 400
+
+  site_list = []
+  session_id = get_session_id()
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
   wstate = world_state.loadWorldState(get_db(), wstate_id)  
   sites = elements.listSites(get_db(), wid)

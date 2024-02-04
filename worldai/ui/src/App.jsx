@@ -1,7 +1,7 @@
 import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
 import { getWorldList, getWorld, getPlayerData } from './api.js';
-import { getSiteList, getItemList, getCharacterInstancesList } from './api.js';
+import { getSiteInstancesList, getItemList, getCharacterInstancesList } from './api.js';
 import { getSite, getItem, getCharacter, getCharacterData } from './api.js';
 
 import ChatScreen from './ChatScreen.jsx';
@@ -954,7 +954,7 @@ function World({ worldId, setWorldId }) {
       try {
         // Get the details of the world  and a list of sites.
 
-        let calls = Promise.all([ getSiteList(worldId),
+        let calls = Promise.all([ getSiteInstancesList(worldId),
           getWorld(worldId),
           getPlayerData(worldId)]);
         let [newSites, newWorld, newPlayer] = await calls;
@@ -1017,7 +1017,7 @@ function World({ worldId, setWorldId }) {
   async function updateWorldData() {
     // Reload player data and dependent information.
     try {
-      let calls = Promise.all([ getSiteList(worldId),
+      let calls = Promise.all([ getSiteInstancesList(worldId),
         getPlayerData(worldId)]);
       let [newSites, newPlayerData] = await calls;
 
