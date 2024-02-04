@@ -820,7 +820,7 @@ def site_instances_list(wid):
 @auth_required
 def site(wid, sid):
   """
-  API to load info and state for a site
+  API to load a site
   """
   session_id = get_session_id()
   world = elements.loadWorld(get_db(), wid)  
@@ -920,7 +920,7 @@ def items_list(wid):
 @auth_required
 def items_intances_list(wid):
   """
-  API to get the items for a world
+  API to get the items instances for a world
   """
   # Save last opened in session
   session['world_id'] = wid
@@ -951,7 +951,7 @@ def items_intances_list(wid):
 
 @bp.route('/api/worlds/<wid>/items/<id>', methods=["GET"])
 @auth_required
-def items(wid, id):
+def item(wid, id):
   """
   API to access an item
   """
@@ -965,6 +965,30 @@ def items(wid, id):
   result["images"] = images
   image_prop = getElementThumbProperty(item)  
   result["image"] = image_prop
+  
+  return result
+
+
+@bp.route('/api/worlds/<wid>/items/<id>/instance', methods=["GET"])
+@auth_required
+def item_instance(wid, id):
+  """
+  API to access an item instance
+  """
+  session_id = get_session_id()
+  item = elements.loadItem(get_db(), id)
+  if item == None or item.parent_id != wid:
+    return { "error", "Item not found"}, 400
+
+  wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+  wstate = world_state.loadWorldState(get_db(), wstate_id)
+  
+  images = getElementImageProps(item)
+  result = item.getAllProperties()
+  result["images"] = images
+  image_prop = getElementThumbProperty(item)  
+  result["image"] = image_prop
+  result["location"] = wstate.getItemLocation(id)  
   
   return result
 

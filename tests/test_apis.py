@@ -30,6 +30,7 @@ def test_world_chars(client, app):
   assert response.status_code == 200
   assert len(response.json) > 0
   id = response.json[0]["id"]
+  assert response.json[0].get("givenSupport") is None
 
   response = client.get(f"/api/worlds/{world_id}/characters/instances",
                         headers= {
@@ -37,6 +38,7 @@ def test_world_chars(client, app):
   assert response.status_code == 200
   assert len(response.json) > 0
   id = response.json[0]["id"]
+  assert response.json[0].get("givenSupport") is not None
   
   response = client.get(f"/api/worlds/{world_id}/characters/{id}",
                         headers= {
@@ -50,6 +52,7 @@ def test_world_chars(client, app):
   assert response.status_code == 200
   assert len(response.json) > 0
   id = response.json[0]["id"]
+  assert response.json[0].get("present") is None  
 
   response = client.get(f"/api/worlds/{world_id}/sites/instances",
                         headers= {
@@ -57,18 +60,21 @@ def test_world_chars(client, app):
   assert response.status_code == 200
   assert len(response.json) > 0
   id = response.json[0]["id"]
+  assert response.json[0].get("present") is not None
 
   response = client.get(f"/api/worlds/{world_id}/sites/{id}",
                         headers= {
                           "Authorization": bearer_token(app)})
   assert response.status_code == 200
   assert id == response.json["id"]
+  assert response.json.get("items") is None
 
   response = client.get(f"/api/worlds/{world_id}/sites/{id}/instance",
                         headers= {
                           "Authorization": bearer_token(app)})
   assert response.status_code == 200
   assert id == response.json["id"]
+  assert response.json.get("items") is not None    
 
   response = client.get(f"/api/worlds/{world_id}/items",
                         headers= {
@@ -83,12 +89,20 @@ def test_world_chars(client, app):
   assert response.status_code == 200
   assert len(response.json) > 0
   id = response.json[0]["id"]
+  assert response.json[0].get("have_item") is not None  
   
   response = client.get(f"/api/worlds/{world_id}/items/{id}",
                         headers= {
                           "Authorization": bearer_token(app)})
   assert response.status_code == 200
   assert id == response.json["id"]
+
+  response = client.get(f"/api/worlds/{world_id}/items/{id}/instance",
+                        headers= {
+                          "Authorization": bearer_token(app)})
+  assert response.status_code == 200
+  assert id == response.json["id"]
+  assert response.json["location"] is not None
   
   
 

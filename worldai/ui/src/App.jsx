@@ -2,7 +2,7 @@ import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
 import { getWorldList, getWorld, getPlayerData } from './api.js';
 import { getSiteInstancesList, getItemInstancesList, getCharacterInstancesList } from './api.js';
-import { getSiteInstance, getItem, getCharacter, getCharacterData } from './api.js';
+import { getSiteInstance, getItemInstance, getCharacter, getCharacterData } from './api.js';
 
 import ChatScreen from './ChatScreen.jsx';
 
@@ -1002,10 +1002,10 @@ function World({ worldId, setWorldId }) {
       if (playerData.selected_item === null) {
         setSelectedItem(null);
       } else if (selectedItem === null) {
-        const newItem = await getItem(world.id, playerData.selected_item);
+        const newItem = await getItemInstance(world.id, playerData.selected_item);
         setSelectedItem(newItem);
       } else if (playerData.selected_item !== selectedItem.id) {
-        const newItem = await getItem(world.id, playerData.selected_item);        
+        const newItem = await getItemInstance(world.id, playerData.selected_item);        
         setSelectedItem(newItem);
       }
     } 

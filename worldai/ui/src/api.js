@@ -34,6 +34,15 @@ async function getItem(worldId, itemId) {
   return value;
 }
 
+async function getItemInstance(worldId, itemId) {
+  const url = `/worlds/${worldId}/items/${itemId}/instance`;
+  const response =
+        await fetch(get_url(url),
+                    { headers: headers_get() });
+  const value = await response.json();
+  return value;
+}
+
 async function getWorldList() {
   // Get the list of worlds
   const response =
@@ -124,3 +133,4 @@ export { getWorldList, getWorld, getSiteList, getItemList, getCharacterList };
 export { getCharacterInstancesList, getSiteInstancesList };
 export { getCharacter, getSite, getItem, getPlayerData };
 export { getCharacterData, getSiteInstance, getItemInstancesList };
+export { getIitemInstance };
