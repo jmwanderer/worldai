@@ -64,6 +64,12 @@ def test_world_chars(client, app):
   assert response.status_code == 200
   assert id == response.json["id"]
 
+  response = client.get(f"/api/worlds/{world_id}/sites/{id}/instance",
+                        headers= {
+                          "Authorization": bearer_token(app)})
+  assert response.status_code == 200
+  assert id == response.json["id"]
+
   response = client.get(f"/api/worlds/{world_id}/items",
                         headers= {
                           "Authorization": bearer_token(app)})

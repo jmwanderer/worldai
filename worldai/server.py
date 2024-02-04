@@ -826,6 +826,26 @@ def site(wid, sid):
   world = elements.loadWorld(get_db(), wid)  
   if world is None:
     return { "error", "World not found"}, 400
+  site = elements.loadSite(get_db(), sid)
+  if site == None:
+    return { "error", "Site not found"}, 400
+
+  images = getElementImageProps(site)
+  result = site.getAllProperties()
+  result["images"] = images
+
+  return result
+
+@bp.route('/api/worlds/<wid>/sites/<sid>/instance', methods=["GET"])
+@auth_required
+def site_instance(wid, sid):
+  """
+  API to load info and state for a site
+  """
+  session_id = get_session_id()
+  world = elements.loadWorld(get_db(), wid)  
+  if world is None:
+    return { "error", "World not found"}, 400
   wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
   wstate = world_state.loadWorldState(get_db(), wstate_id)
   site = elements.loadSite(get_db(), sid)

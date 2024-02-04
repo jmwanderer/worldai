@@ -2,7 +2,7 @@ import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
 import { getWorldList, getWorld, getPlayerData } from './api.js';
 import { getSiteInstancesList, getItemList, getCharacterInstancesList } from './api.js';
-import { getSite, getItem, getCharacter, getCharacterData } from './api.js';
+import { getSiteInstance, getItem, getCharacter, getCharacterData } from './api.js';
 
 import ChatScreen from './ChatScreen.jsx';
 
@@ -481,7 +481,7 @@ function Site({ world, siteId,
     async function getData() {
       // Load the site
       try {
-        const value = await getSite(world.id, siteId)
+        const value = await getSiteInstance(world.id, siteId)
         if (!ignore) {
           setSite(value);
           setCurrentTime(value.current_time);
@@ -500,7 +500,7 @@ function Site({ world, siteId,
   async function reloadState() {
     try {
       updateWorldData()
-      const newSite = await getSite(world.id, siteId);
+      const newSite = await getSiteInstance(world.id, siteId);
       setSite(newSite);
       setCurrentTime(newSite.current_time);      
     } catch (e) {
