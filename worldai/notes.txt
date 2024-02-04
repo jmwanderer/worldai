@@ -63,8 +63,10 @@ TODO
 - Make chat interaction use Pydantic - DONE
 - support chat in response to actions - DONE
 - tool choice in character chat  - DONE
-- complete API test coverage - DONE, but missing cases
+- complete API test coverage - DONE
   - check if mock test env is reusable for all
+
+- set up test coverage for client commands - use all abilities
 - client command test coverage - DONE
 - standard character / player data store
 - serialize threads in JSON, not pickle

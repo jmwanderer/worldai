@@ -288,8 +288,11 @@ class ClientActions:
         site_id = item.getAbility().site_id
         site = elements.loadSite(self.db, site_id)
         if site is not None:
-          self.wstate.setSiteLocked(site_id, False)
-          response_message = f"Site {site.getName()} is now unlocked."
+          if self.wstate.isSiteLocked(site_id):
+            self.wstate.setSiteLocked(site_id, False)
+            response_message = f"Site {site.getName()} is now unlocked."
+          else:
+            response_message = f"Site {site.getName()} is already unlocked."
         
     return (True, response_message, chat_message)
   

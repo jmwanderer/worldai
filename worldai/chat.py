@@ -143,7 +143,23 @@ class ChatResponse(pydantic.BaseModel):
   event: typing.Optional[str] = ""
   tool_call: typing.Optional[str] = ""
   status: typing.Optional[str] = "ok"
+
+
   
+class ChatTokens(pydantic.BaseModel):
+  prompt_tokens: typing.Optional[int] = 0
+  complete_tokens: typing.Optional[int] = 0
+  total_tokens: typing.Optional[int] = 0
+
+class ChatState(pydantic.BaseModel):
+  msg_id: typing.Optional[str] = ""
+  call_count: typing.Optional[int] = 0
+  call_limit: typing.Optional[int] = 0
+  tool_call_pending: typing.Optional[bool] = False
+  tool_call_index: typing.Optional[int] = 0
+  history: typing.Optional[dict[str, str | None]] = {}
+  tokens: typing.Optional[ChatTokens] = ChatTokens()
+  functions: typing.Optional[str] = "{}"
 
 class ChatSession:
   def __init__(self,  chatFunctions=None):
@@ -173,6 +189,8 @@ class ChatSession:
     self.total_tokens = pickle.load(f)
     self.history = pickle.load(f)
     self.chatFunctions = pickle.load(f)
+    model = pickle.load(f)
+    state = ChatState(**json.loads(model))
 
   def save(self, f):
     pickle.dump(self.msg_id, f)
@@ -185,6 +203,21 @@ class ChatSession:
     pickle.dump(self.total_tokens, f)
     pickle.dump(self.history, f)
     pickle.dump(self.chatFunctions, f)
+
+    state = ChatState()
+    state.msg_id = self.msg_id
+    state.tool_call_pending = self.tool_call_pending
+    state.tool_call_index = self.tool_call_index
+    state.call_count = self.call_count
+    state.call_limit = self.call_limit
+    state.tool_call_index = self.tool_call_index
+    state.tokens.prompt_tokens = self.prompt_tokens
+    state.tokens.complete_tokens = self.complete_tokens
+    state.tokens.total_tokens = self.total_tokens
+    print(state.model_dump())
+    model = json.dumps(state.model_dump())
+    pickle.dump(model, f)    
+    
 
   def track_tokens(self, db, prompt, complete, total):
     self.prompt_tokens += prompt
