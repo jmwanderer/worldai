@@ -133,4 +133,4 @@ export { getWorldList, getWorld, getSiteList, getItemList, getCharacterList };
 export { getCharacterInstancesList, getSiteInstancesList };
 export { getCharacter, getSite, getItem, getPlayerData };
 export { getCharacterData, getSiteInstance, getItemInstancesList };
-export { getIitemInstance };
+export { getItemInstance };
