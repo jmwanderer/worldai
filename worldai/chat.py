@@ -178,9 +178,8 @@ class ChatSession:
     self.enc = tiktoken.encoding_for_model(GPT_MODEL)
     self.history = message_records.MessageRecords()
 
-  def load(self, f):
-    model = pickle.load(f)
-    state = ChatState(**json.loads(model))
+  def load(self, model_str):
+    state = ChatState(**json.loads(model_str))
     self.history = message_records.MessageRecords()
     self.history.load_history(self.enc, json.loads(state.history))
     self.chatFunctions.setProperties(json.loads(state.functions))
@@ -194,7 +193,7 @@ class ChatSession:
     self.complete_tokens == state.tokens.complete_tokens
     self.total_tokens == state.tokens.total_tokens
 
-  def save(self, f):
+  def save(self):
     state = ChatState()
     state.msg_id = self.msg_id
     state.tool_call_pending = self.tool_call_pending
@@ -209,8 +208,8 @@ class ChatSession:
     state.history = json.dumps(messages)
     state.functions = json.dumps(self.chatFunctions.getProperties())
     print(state.model_dump())
-    model = json.dumps(state.model_dump())
-    pickle.dump(model, f)
+    model_str = json.dumps(state.model_dump())
+    return model_str
 
   def track_tokens(self, db, prompt, complete, total):
     self.prompt_tokens += prompt

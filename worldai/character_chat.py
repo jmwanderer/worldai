@@ -3,7 +3,6 @@ from . import elements
 from . import threads
 from . import character_functions
 
-import io
 import os
 
 """
@@ -23,20 +22,15 @@ class CharacterChat:
     chat_session = chat.ChatSession(chatFunctions=functions)
     thread = threads.get_character_thread(db, wstate_id, cid)
     if thread is not None:
-      f = io.BytesIO(thread)
-      chat_session.load(f)
-      f.close()
+      chat_session.load(thread)
     return CharacterChat(chat_session, wstate_id, cid)
 
   def saveChatSession(self, db):
-    f = io.BytesIO()
-    self.chat.save(f)
-    thread = f.getvalue()
+    thread = self.chat.save()
     threads.save_character_thread(db,
                                   self.wstate_id,
                                   self.character_id,
                                   thread)
-    f.close()
 
   def deleteChatSession(self, db):
     threads.delete_character_thread(db,

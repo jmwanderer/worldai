@@ -1,4 +1,3 @@
-import io
 import os
 import logging
 
@@ -28,17 +27,12 @@ class DesignChatSession:
     chat_session = chat.ChatSession(functions)    
     thread = threads.get_thread(db, session_id)
     if thread is not None:
-      f = io.BytesIO(thread)
-      chat_session.load(f)
-      f.close()
+      chat_session.load(thread)
     return DesignChatSession(session_id, chat_session)
 
   def saveChatSession(self, db):
-    f = io.BytesIO()
-    self.chat.save(f)
-    thread = f.getvalue()
+    thread = self.chat.save()
     threads.save_thread(db, self.session_id, thread)
-    f.close()
 
   def deleteChatSession(self, db):
     threads.delete_thread(db, self.session_id)    
