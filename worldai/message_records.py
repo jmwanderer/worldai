@@ -27,7 +27,6 @@ class MessageSetRecord:
     # Array of ToolRequestMesage
     self.tool_messages = []
     self.response_message = None
-    self.message_token_count = 0
     self.marked_include = False
 
   class ToolRequestMessage:
@@ -59,21 +58,43 @@ class MessageSetRecord:
           count -= 1
     return count
   
-  def _updateTokenCount(self, enc, message):
+  def _getTokenCount(enc, message):
     """
-    Called for each add message.
+    Return token count for message
     """
-    self.message_token_count += 4
-    self.message_token_count += MessageSetRecord._recursiveValueCount(enc,
-                                                                      message)
-        
-  def setRequestMessage(self, enc, message):
-    self.request_message = message
-    self._updateTokenCount(enc, message)
+    token_count = 4
+    token_count += MessageSetRecord._recursiveValueCount(enc, message)
+    return token_count
 
-  def setSystemMessage(self, enc, message):
+  def getTokenCount(self, enc):
+    token_count = 0
+    if self.request_message is not None:
+      token_count += MessageSetRecord._getTokenCount(enc,
+                                                     self.request_message)
+    if self.system_message is not None:
+      token_count += MessageSetRecord._getTokenCount(enc,
+                                                     self.system_message)
+    if self.system_message is not None:
+      token_count += MessageSetRecord._getTokenCount(enc,
+                                                     self.system_message)
+
+    if self.response_message is not None:
+      token_count += MessageSetRecord._getTokenCount(enc,
+                                                     self.response_message)
+    for entry in self.tool_messages:
+      token_count += MessageSetRecord._getTokenCount(enc,
+                                                     entry.request_message)
+      for response_entry in entry.response_messages:
+        message = response_entry[0]
+        token_count += MessageSetRecord._getTokenCount(enc, message)
+        
+    return token_count
+        
+  def setRequestMessage(self, message):
+    self.request_message = message
+
+  def setSystemMessage(self, message):
     self.system_message = message
-    self._updateTokenCount(enc, message)
 
   def getRequestContent(self):
     if self.request_message is None:
@@ -85,9 +106,8 @@ class MessageSetRecord:
       return ""
     return self.system_message["content"]
 
-  def setResponseMessage(self, enc, message):
+  def setResponseMessage(self, message):
     self.response_message = message
-    self._updateTokenCount(enc, message)    
 
   def getResponseContent(self):
     results = []
@@ -117,26 +137,21 @@ class MessageSetRecord:
              "assistant": self.getResponseContent(),
              "updates": self.getStatusText() };
   
-  def addToolRequestMessage(self, enc, message):
+  def addToolRequestMessage(self, message):
     record = MessageSetRecord.ToolRequestMessage()
     record.request_message = message
     self.tool_messages.append(record)
-    self._updateTokenCount(enc, message)
 
   def getToolRequestMessage(self):
     # Return latest tool request message
     return self.tool_messages[-1]
 
-  def addToolResponseMessage(self, enc, message, text):
+  def addToolResponseMessage(self, message, text):
     record = self.tool_messages[-1]
     entry = [ message ]
     if text is not None:    
       entry.append(text)
     record.response_messages.append(entry)
-    self._updateTokenCount(enc, message)        
-
-  def getTokenCount(self):
-    return self.message_token_count
 
   def hasToolCall(self, name, args):
     """
@@ -192,22 +207,22 @@ class MessageSetRecord:
       messages.append(self.response_message)
     return messages
     
-  def load_history(self, enc, messages):
+  def load_history(self, messages):
     for message in messages:
       role = message["role"]
       if role == "user":
-        self.setRequestMessage(enc, message)
+        self.setRequestMessage(message)
       elif role == "system":
-        self.setSystemMessage(enc, message)
+        self.setSystemMessage(message)
       elif message.get("tool_calls") is not None:
-        self.addToolRequestMessage(enc, message)
+        self.addToolRequestMessage(message)
       elif message.get("tool_call_id") is not None:
         text = message.get("text")
         if text is not None:
           del message["text"]
-        self.addToolResponseMessage(enc, message, text)
+        self.addToolResponseMessage(message, text)
       else:
-        self.setResponseMessage(enc, message)
+        self.setResponseMessage(message)
   
 
 class MessageRecords:
@@ -225,10 +240,10 @@ class MessageRecords:
       messages.append(group)
     return messages
 
-  def load_history(self, enc, messages):
+  def load_history(self, messages):
     for group in messages:
       message_set = MessageSetRecord()
-      message_set.load_history(enc, group)
+      message_set.load_history(group)
       self.message_history.append(message_set)
     if len(self.message_history) > 0:
       self.current_message = self.message_history[-1]
@@ -279,34 +294,34 @@ class MessageRecords:
     self.current_message = MessageSetRecord()
     self.message_history.append(self.current_message)
     
-  def addRequestMessage(self, enc, message):
+  def addRequestMessage(self, message):
     if self.current_message is None:    
       self.current_message = MessageSetRecord()
       self.message_history.append(self.current_message)
-    self.current_message.setRequestMessage(enc, message)
+    self.current_message.setRequestMessage(message)
 
-  def addSystemMessage(self, enc, message):
+  def addSystemMessage(self, message):
     self.current_message = MessageSetRecord()
     self.message_history.append(self.current_message)
-    self.current_message.setSystemMessage(enc, message)
+    self.current_message.setSystemMessage(message)
 
-  def addToolRequestMessage(self, enc, message):
+  def addToolRequestMessage(self, message):
     if self.current_message is None:
       self.current_message = MessageSetRecord()
       self.message_history.append(self.current_message)
-    self.current_message.addToolRequestMessage(enc, message)
+    self.current_message.addToolRequestMessage(message)
     
-  def addToolResponseMessage(self, enc, message, text=None):
+  def addToolResponseMessage(self, message, text=None):
     if self.current_message is None:
       self.current_message = MessageSetRecord()
       self.message_history.append(self.current_message)
-    self.current_message.addToolResponseMessage(enc, message, text)
+    self.current_message.addToolResponseMessage(message, text)
 
-  def addResponseMessage(self, enc, message):
+  def addResponseMessage(self, message):
     if self.current_message is None:
       self.current_message = MessageSetRecord()
       self.message_history.append(self.current_message)
-    self.current_message.setResponseMessage(enc, message)
+    self.current_message.setResponseMessage(message)
 
   def message_sets(self):
     return self.message_history
@@ -337,7 +352,7 @@ class MessageRecords:
 
     for message in self.message_history:
       if message.marked_include:
-        count += message.getTokenCount()
+        count += message.getTokenCount(enc)
     return count + 2
 
   def clearIncluded(self):

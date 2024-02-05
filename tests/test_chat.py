@@ -51,13 +51,13 @@ class RecordsTestCase(unittest.TestCase):
     records.setInitSystemMessage(getInitSystemMessage())
 
     records.startNewMessageSet()
-    records.addRequestMessage(enc, getUserMessage())
-    records.addResponseMessage(enc, getAssistantMessage())
+    records.addRequestMessage(getUserMessage())
+    records.addResponseMessage(getAssistantMessage())
 
     messages = records.dump_history()
     v1 = json.dumps(messages)
     records2 = message_records.MessageRecords()
-    records2.load_history(enc, messages)
+    records2.load_history(messages)
     v2 = json.dumps(records2.dump_history())
     assert v1 == v2
     
@@ -69,16 +69,16 @@ class RecordsTestCase(unittest.TestCase):
     records.clearIncluded()
     self.assertEqual(records.getThreadTokenCount(enc), 13)
 
-    records.addSystemMessage(enc, getSystemMessage())
-    records.addToolRequestMessage(enc, getToolRequestMessage())
-    records.addToolResponseMessage(enc, getToolResponseMessage())
-    records.addResponseMessage(enc, getAssistantMessage())
+    records.addSystemMessage(getSystemMessage())
+    records.addToolRequestMessage(getToolRequestMessage())
+    records.addToolResponseMessage(getToolResponseMessage())
+    records.addResponseMessage(getAssistantMessage())
 
     records.startNewMessageSet()    
-    records.addRequestMessage(enc, getUserMessage())
-    records.addToolRequestMessage(enc, getToolRequestMessage())
-    records.addToolResponseMessage(enc, getToolResponseMessage())
-    records.addResponseMessage(enc, getAssistantMessage())
+    records.addRequestMessage(getUserMessage())
+    records.addToolRequestMessage(getToolRequestMessage())
+    records.addToolResponseMessage(getToolResponseMessage())
+    records.addResponseMessage(getAssistantMessage())
 
     message_set = records.message_sets()[1]
     self.assertTrue(message_set.hasToolCall("lookup_route", {}))
@@ -102,7 +102,7 @@ class RecordsTestCase(unittest.TestCase):
     messages = records.dump_history()
     v1 = json.dumps(messages)
     records2 = message_records.MessageRecords()
-    records2.load_history(enc, messages)
+    records2.load_history(messages)
     v2 = json.dumps(records2.dump_history())
     assert v1 == v2
     
@@ -122,26 +122,26 @@ class ExtendedRecordsTestCase(unittest.TestCase):
     records = message_records.MessageRecords()
     records.setInitSystemMessage(getInitSystemMessage())
     records.startNewMessageSet()        
-    records.addRequestMessage(enc, getUserMessage())
+    records.addRequestMessage(getUserMessage())
 
     # Repeated tool calls
     # Call 1
-    records.addToolRequestMessage(enc, getToolRequestMessage())
-    records.addToolResponseMessage(enc, getToolResponseMessage())
-    records.addToolResponseMessage(enc, getToolResponseMessage())
-    records.addToolResponseMessage(enc, getToolResponseMessage())
+    records.addToolRequestMessage(getToolRequestMessage())
+    records.addToolResponseMessage(getToolResponseMessage())
+    records.addToolResponseMessage(getToolResponseMessage())
+    records.addToolResponseMessage(getToolResponseMessage())
 
     # Call 2
-    records.addToolRequestMessage(enc, getToolRequestMessage())
-    records.addToolResponseMessage(enc, getToolResponseMessage())
-    records.addToolResponseMessage(enc, getToolResponseMessage())
+    records.addToolRequestMessage(getToolRequestMessage())
+    records.addToolResponseMessage(getToolResponseMessage())
+    records.addToolResponseMessage(getToolResponseMessage())
 
     # Call 3
-    records.addToolRequestMessage(enc, getToolRequestMessage())
-    records.addToolResponseMessage(enc, getToolResponseMessage())
+    records.addToolRequestMessage(getToolRequestMessage())
+    records.addToolResponseMessage(getToolResponseMessage())
 
     # Final response
-    records.addResponseMessage(enc, getAssistantMessage())
+    records.addResponseMessage(getAssistantMessage())
 
     # Include all
     for message_set in records.message_sets():

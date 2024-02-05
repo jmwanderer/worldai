@@ -181,7 +181,7 @@ class ChatSession:
   def load(self, model_str):
     state = ChatState(**json.loads(model_str))
     self.history = message_records.MessageRecords()
-    self.history.load_history(self.enc, json.loads(state.history))
+    self.history.load_history(json.loads(state.history))
     self.chatFunctions.setProperties(json.loads(state.functions))
     
     self.msg_id = state.msg_id
@@ -240,7 +240,7 @@ class ChatSession:
     thread_size = 0
     for message_set in reversed(history.message_sets()):
       new_size = (history.getThreadTokenCount(self.enc) +
-                  message_set.getTokenCount())
+                  message_set.getTokenCount(self.enc))
       if new_size < MESSAGE_THRESHOLD:
         message_set.setIncluded()
         thread_size = new_size
@@ -300,11 +300,9 @@ class ChatSession:
     self.history.startNewMessageSet()
 
     if system is not None:
-      self.history.addSystemMessage(self.enc,
-                                    {"role": "system", "content": system})
+      self.history.addSystemMessage({"role": "system", "content": system})
     if user is not None:
-      self.history.addRequestMessage(self.enc,
-                                     {"role": "user", "content": user})
+      self.history.addRequestMessage({"role": "user", "content": user})
 
     # First run a chat completion, may be the last operation
     return self.chat_message(db, tool_name)
@@ -378,11 +376,11 @@ class ChatSession:
     tool_calls = assistant_message.get("tool_calls")
     if tool_calls: 
       # Make requested calls to tools.
-      self.history.addToolRequestMessage(self.enc, assistant_message)      
+      self.history.addToolRequestMessage(assistant_message)      
       self.tool_call_index = 0
       self.tool_call_pending = True
     else:
-      self.history.addResponseMessage(self.enc, assistant_message)
+      self.history.addResponseMessage(assistant_message)
     
     # Build result
     content = self.getMessageContent(self.history.current_message_set())
@@ -430,7 +428,6 @@ class ChatSession:
       content = function_response
       
     self.history.addToolResponseMessage(
-            self.enc,
             { "tool_call_id": tool_call["id"],
               "role": "tool",
               "name": function_name,
