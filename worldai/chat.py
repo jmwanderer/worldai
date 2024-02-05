@@ -157,7 +157,7 @@ class ChatState(pydantic.BaseModel):
   call_limit: typing.Optional[int] = 0
   tool_call_pending: typing.Optional[bool] = False
   tool_call_index: typing.Optional[int] = 0
-  history: typing.Optional[dict[str, str | None]] = {}
+  history: typing.Optional[str] = "[]"
   tokens: typing.Optional[ChatTokens] = ChatTokens()
   functions: typing.Optional[str] = "{}"
 
@@ -191,6 +191,16 @@ class ChatSession:
     self.chatFunctions = pickle.load(f)
     model = pickle.load(f)
     state = ChatState(**json.loads(model))
+    self.history = message_records.MessageRecords()
+    self.history.load_history(self.enc, json.loads(state.history))
+    assert state.msg_id == self.msg_id
+    assert state.tool_call_pending == self.tool_call_pending
+    assert state.tool_call_index == self.tool_call_index
+    assert state.call_count == self.call_count
+    assert state.call_limit == self.call_limit
+    assert state.tokens.prompt_tokens == self.prompt_tokens
+    assert state.tokens.complete_tokens == self.complete_tokens
+    assert state.tokens.total_tokens == self.total_tokens
 
   def save(self, f):
     pickle.dump(self.msg_id, f)
@@ -214,6 +224,8 @@ class ChatSession:
     state.tokens.prompt_tokens = self.prompt_tokens
     state.tokens.complete_tokens = self.complete_tokens
     state.tokens.total_tokens = self.total_tokens
+    messages = self.history.dump_history()
+    state.history = json.dumps(messages)
     print(state.model_dump())
     model = json.dumps(state.model_dump())
     pickle.dump(model, f)    

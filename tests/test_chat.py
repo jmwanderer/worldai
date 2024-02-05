@@ -53,6 +53,13 @@ class RecordsTestCase(unittest.TestCase):
     records.startNewMessageSet()
     records.addRequestMessage(enc, getUserMessage())
     records.addResponseMessage(enc, getAssistantMessage())
+
+    messages = records.dump_history()
+    v1 = json.dumps(messages)
+    records2 = message_records.MessageRecords()
+    records2.load_history(enc, messages)
+    v2 = json.dumps(records2.dump_history())
+    assert v1 == v2
     
     # Just system message included
     self.assertEqual(records.getThreadTokenCount(enc), 13)
@@ -90,7 +97,15 @@ class RecordsTestCase(unittest.TestCase):
     content = records.current_message_set().getMessageContent()
     self.assertEqual(content["user"], getUserMessage()["content"]) 
     self.assertEqual(content["assistant"], getAssistantMessage()["content"])
-    self.assertEqual(content["updates"], "")    
+    self.assertEqual(content["updates"], "")
+
+    messages = records.dump_history()
+    v1 = json.dumps(messages)
+    records2 = message_records.MessageRecords()
+    records2.load_history(enc, messages)
+    v2 = json.dumps(records2.dump_history())
+    assert v1 == v2
+    
 
     print(records.jsonString())
 

@@ -33,10 +33,11 @@ class MessageSetRecord:
   class ToolRequestMessage:
     def __init__(self):
       self.request_message = None
-      # json format of response
+
+      # Entries are a list of:
+      # - json format of response
+      # - optional text
       self.response_messages = []
-      # text status - functions can return descriptions
-      self.response_texts = []      
 
   def _recursiveValueCount(enc, elements):
     count = 0
@@ -102,8 +103,10 @@ class MessageSetRecord:
   def getStatusText(self):
     # Return any status text to present to the user.
     results = []
-    for entry in self.tool_messages:
-      results.extend(entry.response_texts)
+    for toolMessage in self.tool_messages:
+      for entry in toolMessage.response_messages:
+        if len(entry) > 1:
+          results.append(entry[1])
     return ", ".join(results)
 
   def getMessageContent(self):
@@ -126,9 +129,10 @@ class MessageSetRecord:
 
   def addToolResponseMessage(self, enc, message, text):
     record = self.tool_messages[-1]
-    record.response_messages.append(message)
-    if text is not None:
-      record.response_texts.append(text)
+    entry = [ message ]
+    if text is not None:    
+      entry.append(text)
+    record.response_messages.append(entry)
     self._updateTokenCount(enc, message)        
 
   def getTokenCount(self):
@@ -164,10 +168,46 @@ class MessageSetRecord:
 
     for record in self.tool_messages:
       messages.append(record.request_message) 
-      for message in record.response_messages:
+      for entry in record.response_messages:
+        messages.append(entry[0])
+    if self.response_message is not None:
+      messages.append(self.response_message)
+
+
+  def dump_history(self):
+    messages = []
+    if self.request_message is not None:
+      messages.append(self.request_message)
+    elif self.system_message is not None:
+      messages.append(self.system_message)
+
+    for tool_message in self.tool_messages:
+      messages.append(tool_message.request_message) 
+      for entry in tool_message.response_messages:
+        message = entry[0]
+        if len(entry) > 1:
+          message["text"] = entry[1]
         messages.append(message)
     if self.response_message is not None:
       messages.append(self.response_message)
+    return messages
+    
+  def load_history(self, enc, messages):
+    for message in messages:
+      role = message["role"]
+      if role == "user":
+        self.setRequestMessage(enc, message)
+      elif role == "system":
+        self.setSystemMessage(enc, message)
+      elif message.get("tool_calls") is not None:
+        self.addToolRequestMessage(enc, message)
+      elif message.get("tool_call_id") is not None:
+        text = message.get("text")
+        if text is not None:
+          del message["text"]
+        self.addToolResponseMessage(enc, message, text)
+      else:
+        self.setResponseMessage(enc, message)
   
 
 class MessageRecords:
@@ -177,6 +217,21 @@ class MessageRecords:
     self.current_message = None
     self.init_system_message = None
     self.function_tokens = 0
+
+  def dump_history(self):
+    messages = []
+    for message_set in self.message_history:
+      group = message_set.dump_history()
+      messages.append(group)
+    return messages
+
+  def load_history(self, enc, messages):
+    for group in messages:
+      message_set = MessageSetRecord()
+      message_set.load_history(enc, group)
+      self.message_history.append(message_set)
+    if len(self.message_history) > 0:
+      self.current_message = self.message_history[-1]
 
   def setInitSystemMessage(self, message):
     self.init_system_message = message
