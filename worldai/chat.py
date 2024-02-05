@@ -207,7 +207,6 @@ class ChatSession:
     messages = self.history.dump_history()
     state.history = json.dumps(messages)
     state.functions = json.dumps(self.chatFunctions.getProperties())
-    print(state.model_dump())
     model_str = json.dumps(state.model_dump())
     return model_str
 

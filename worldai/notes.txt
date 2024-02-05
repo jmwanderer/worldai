@@ -53,6 +53,11 @@ Plans
 
 Bugs
 ----
+- characters will get confused with give item, when trying to take, actually give
+  moving to names should help
+- characters will list my items thinking they are looking at traveler
+- characters are too eager to give items!
+
 - removing and restoring elements only works if the mode is correct
 - removing an element may not refresh the list of elements in the
   message thread
@@ -60,17 +65,16 @@ Bugs
 
 TODO
 ----
+- standard character / player data store
+- set up test coverage for client commands - use all abilities
+- set up test coverage for character chat functions
+
 - Make chat interaction use Pydantic - DONE
 - support chat in response to actions - DONE
 - tool choice in character chat  - DONE
 - complete API test coverage - DONE
-  - check if mock test env is reusable for all
-
-- set up test coverage for client commands - use all abilities
 - client command test coverage - DONE
-- standard character / player data store
-- serialize threads in JSON, not pickle
-
+- serialize threads in JSON, not pickle - DONE
 
 
 Details
