@@ -6,8 +6,6 @@ Supports building a message history for a target size.
 Supports ensuring required tool calls / information gets populated.
 """
 
-
-
 class MessageSetRecord:
   """
   Records a request / response message.
@@ -63,25 +61,10 @@ class MessageSetRecord:
         
     return token_count
 
-  def addMessage(self, message):
-    self.messages.append(message)
-  
-  def setRequestMessage(self, message):
-    self.addMessage(message)
-
-  def setSystemMessage(self, message):
-    self.addMessage(message)    
-
-  def setResponseMessage(self, message):
-    self.addMessage(message)
-
-  def addToolRequestMessage(self, message):
-    self.addMessage(message)    
-
-  def addToolResponseMessage(self, message, text=None):
+  def addMessage(self, message, text=None):
     if text is not None:
       message["text"] = text
-    self.addMessage(message)        
+    self.messages.append(message)
     
   def getRequestContent(self):
     user_message = None
@@ -133,7 +116,6 @@ class MessageSetRecord:
     return tool_message
 
 
-
   def hasToolCall(self, name, args):
     """
     Check if the function name and arguments are in a tool
@@ -165,23 +147,12 @@ class MessageSetRecord:
         del msg_copy["text"]
       messages.append(msg_copy)
 
-
   def dump_history(self):
     return self.messages
     
   def load_history(self, messages):
     for message in messages:
-      role = message["role"]
-      if role == "user":
-        self.setRequestMessage(message)
-      elif role == "system":
-        self.setSystemMessage(message)
-      elif message.get("tool_calls") is not None:
-        self.addToolRequestMessage(message)
-      elif message.get("tool_call_id") is not None:
-        self.addToolResponseMessage(message)
-      else:
-        self.setResponseMessage(message)
+      self.addMessage(message)
   
 
 class MessageRecords:
@@ -253,34 +224,11 @@ class MessageRecords:
     self.current_message = MessageSetRecord()
     self.message_history.append(self.current_message)
     
-  def addRequestMessage(self, message):
-    if self.current_message is None:    
-      self.current_message = MessageSetRecord()
-      self.message_history.append(self.current_message)
-    self.current_message.setRequestMessage(message)
-
-  def addSystemMessage(self, message):
-    self.current_message = MessageSetRecord()
-    self.message_history.append(self.current_message)
-    self.current_message.setSystemMessage(message)
-
-  def addToolRequestMessage(self, message):
+  def addMessage(self, message, text=None):
     if self.current_message is None:
       self.current_message = MessageSetRecord()
       self.message_history.append(self.current_message)
-    self.current_message.addToolRequestMessage(message)
-    
-  def addToolResponseMessage(self, message, text=None):
-    if self.current_message is None:
-      self.current_message = MessageSetRecord()
-      self.message_history.append(self.current_message)
-    self.current_message.addToolResponseMessage(message, text)
-
-  def addResponseMessage(self, message):
-    if self.current_message is None:
-      self.current_message = MessageSetRecord()
-      self.message_history.append(self.current_message)
-    self.current_message.setResponseMessage(message)
+    self.current_message.addMessage(message, text)
 
   def message_sets(self):
     return self.message_history

@@ -300,9 +300,9 @@ class ChatSession:
     self.history.startNewMessageSet()
 
     if system is not None:
-      self.history.addSystemMessage({"role": "system", "content": system})
+      self.history.addMessage({"role": "system", "content": system})
     if user is not None:
-      self.history.addRequestMessage({"role": "user", "content": user})
+      self.history.addMessage({"role": "user", "content": user})
 
     # First run a chat completion, may be the last operation
     return self.chat_message(db, tool_name)
@@ -376,11 +376,11 @@ class ChatSession:
     tool_calls = assistant_message.get("tool_calls")
     if tool_calls: 
       # Make requested calls to tools.
-      self.history.addToolRequestMessage(assistant_message)      
+      self.history.addMessage(assistant_message)      
       self.tool_call_index = 0
       self.tool_call_pending = True
     else:
-      self.history.addResponseMessage(assistant_message)
+      self.history.addMessage(assistant_message)
     
     # Build result
     content = self.getMessageContent(self.history.current_message_set())
@@ -427,7 +427,7 @@ class ChatSession:
     if content is None:
       content = function_response
       
-    self.history.addToolResponseMessage(
+    self.history.addMessage(
             { "tool_call_id": tool_call["id"],
               "role": "tool",
               "name": function_name,

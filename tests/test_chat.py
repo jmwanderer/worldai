@@ -51,8 +51,8 @@ class RecordsTestCase(unittest.TestCase):
     records.setInitSystemMessage(getInitSystemMessage())
 
     records.startNewMessageSet()
-    records.addRequestMessage(getUserMessage())
-    records.addResponseMessage(getAssistantMessage())
+    records.addMessage(getUserMessage())
+    records.addMessage(getAssistantMessage())
 
     messages = records.dump_history()
     v1 = json.dumps(messages)
@@ -69,16 +69,17 @@ class RecordsTestCase(unittest.TestCase):
     records.clearIncluded()
     self.assertEqual(records.getThreadTokenCount(enc), 13)
 
-    records.addSystemMessage(getSystemMessage())
-    records.addToolRequestMessage(getToolRequestMessage())
-    records.addToolResponseMessage(getToolResponseMessage())
-    records.addResponseMessage(getAssistantMessage())
+    records.startNewMessageSet()
+    records.addMessage(getSystemMessage())
+    records.addMessage(getToolRequestMessage())
+    records.addMessage(getToolResponseMessage())
+    records.addMessage(getAssistantMessage())
 
     records.startNewMessageSet()    
-    records.addRequestMessage(getUserMessage())
-    records.addToolRequestMessage(getToolRequestMessage())
-    records.addToolResponseMessage(getToolResponseMessage())
-    records.addResponseMessage(getAssistantMessage())
+    records.addMessage(getUserMessage())
+    records.addMessage(getToolRequestMessage())
+    records.addMessage(getToolResponseMessage())
+    records.addMessage(getAssistantMessage())
 
     message_set = records.message_sets()[1]
     self.assertTrue(message_set.hasToolCall("lookup_route", {}))
@@ -122,26 +123,26 @@ class ExtendedRecordsTestCase(unittest.TestCase):
     records = message_records.MessageRecords()
     records.setInitSystemMessage(getInitSystemMessage())
     records.startNewMessageSet()        
-    records.addRequestMessage(getUserMessage())
+    records.addMessage(getUserMessage())
 
     # Repeated tool calls
     # Call 1
-    records.addToolRequestMessage(getToolRequestMessage())
-    records.addToolResponseMessage(getToolResponseMessage())
-    records.addToolResponseMessage(getToolResponseMessage())
-    records.addToolResponseMessage(getToolResponseMessage())
+    records.addMessage(getToolRequestMessage())
+    records.addMessage(getToolResponseMessage())
+    records.addMessage(getToolResponseMessage())
+    records.addMessage(getToolResponseMessage())
 
     # Call 2
-    records.addToolRequestMessage(getToolRequestMessage())
-    records.addToolResponseMessage(getToolResponseMessage())
-    records.addToolResponseMessage(getToolResponseMessage())
+    records.addMessage(getToolRequestMessage())
+    records.addMessage(getToolResponseMessage())
+    records.addMessage(getToolResponseMessage())
 
     # Call 3
-    records.addToolRequestMessage(getToolRequestMessage())
-    records.addToolResponseMessage(getToolResponseMessage())
+    records.addMessage(getToolRequestMessage())
+    records.addMessage(getToolResponseMessage())
 
     # Final response
-    records.addResponseMessage(getAssistantMessage())
+    records.addMessage(getAssistantMessage())
 
     # Include all
     for message_set in records.message_sets():
