@@ -228,6 +228,19 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     # We need to sync the GPT to the new view
     self.next_view = elements.ElemTag()
 
+  def getProperties(self):
+    properties = super().getProperties()
+    properties["current_state"] = self.current_state
+    properties["current_view"] = self.current_view.json()
+    properties["next_view"] = self.next_view.json()
+    return properties
+
+  def setProperties(self, properties):
+    super().setProperties(properties)
+    self.current_state = properties["current_state"]
+    self.current_view = elements.ElemTag.JsonTag(properties["current_view"])
+    self.next_view = elements.ElemTag.JsonTag(properties["next_view"])
+    
 
   def getCurrentWorldID(self):
     # May return None

@@ -179,41 +179,22 @@ class ChatSession:
     self.history = message_records.MessageRecords()
 
   def load(self, f):
-    self.msg_id = pickle.load(f)
-    self.tool_call_pending = pickle.load(f)
-    self.tool_call_index = pickle.load(f)
-    self.call_count = pickle.load(f)
-    self.call_limit = pickle.load(f)    
-    self.prompt_tokens = pickle.load(f)
-    self.complete_tokens = pickle.load(f)
-    self.total_tokens = pickle.load(f)
-    self.history = pickle.load(f)
-    self.chatFunctions = pickle.load(f)
     model = pickle.load(f)
     state = ChatState(**json.loads(model))
     self.history = message_records.MessageRecords()
     self.history.load_history(self.enc, json.loads(state.history))
-    assert state.msg_id == self.msg_id
-    assert state.tool_call_pending == self.tool_call_pending
-    assert state.tool_call_index == self.tool_call_index
-    assert state.call_count == self.call_count
-    assert state.call_limit == self.call_limit
-    assert state.tokens.prompt_tokens == self.prompt_tokens
-    assert state.tokens.complete_tokens == self.complete_tokens
-    assert state.tokens.total_tokens == self.total_tokens
+    self.chatFunctions.setProperties(json.loads(state.functions))
+    
+    self.msg_id = state.msg_id
+    self.tool_call_pending = state.tool_call_pending
+    self.tool_call_index = state.tool_call_index
+    self.call_count = state.call_count
+    self.call_limit = state.call_limit
+    self.prompt_tokens = state.tokens.prompt_tokens
+    self.complete_tokens == state.tokens.complete_tokens
+    self.total_tokens == state.tokens.total_tokens
 
   def save(self, f):
-    pickle.dump(self.msg_id, f)
-    pickle.dump(self.tool_call_pending, f)
-    pickle.dump(self.tool_call_index, f)
-    pickle.dump(self.call_count, f)
-    pickle.dump(self.call_limit, f)    
-    pickle.dump(self.prompt_tokens, f)
-    pickle.dump(self.complete_tokens, f)    
-    pickle.dump(self.total_tokens, f)
-    pickle.dump(self.history, f)
-    pickle.dump(self.chatFunctions, f)
-
     state = ChatState()
     state.msg_id = self.msg_id
     state.tool_call_pending = self.tool_call_pending
@@ -226,10 +207,10 @@ class ChatSession:
     state.tokens.total_tokens = self.total_tokens
     messages = self.history.dump_history()
     state.history = json.dumps(messages)
+    state.functions = json.dumps(self.chatFunctions.getProperties())
     print(state.model_dump())
     model = json.dumps(state.model_dump())
-    pickle.dump(model, f)    
-    
+    pickle.dump(model, f)
 
   def track_tokens(self, db, prompt, complete, total):
     self.prompt_tokens += prompt

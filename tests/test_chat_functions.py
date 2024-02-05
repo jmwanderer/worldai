@@ -1,6 +1,8 @@
 from worldai import elements
 from worldai import chat_functions
 from worldai import design_functions
+from worldai import character_functions
+from worldai import world_state
 
 import unittest
 import tempfile
@@ -9,7 +11,7 @@ import sqlite3
 import json
 
 
-class BasicTestCase(unittest.TestCase):
+class DesignTestCase(unittest.TestCase):
 
   def setUp(self):
     self.dir_name = os.path.dirname(__file__)
@@ -24,6 +26,15 @@ class BasicTestCase(unittest.TestCase):
     self.db.close()
     self.user_dir.cleanup()
 
+  def testProperties(self):
+    props = self.chatFunctions.getProperties()
+    value_1 = json.dumps(props)
+    print(value_1)
+    self.chatFunctions.setProperties(props)
+    props = self.chatFunctions.getProperties()
+    value_2 = json.dumps(props)
+    assert value_1 == value_2
+    
   def test_token_tracking(self):
     chat_functions.track_tokens(self.db, 1, 100, 100, 100)
     chat_functions.count_image(self.db, 1, 1)
@@ -224,7 +235,49 @@ class BasicTestCase(unittest.TestCase):
     self.assertCallAvailable(name)
     args = json.loads(arguments)
     return self.chatFunctions.execute_function_call(self.db, name, args)
+
+
+class CharacterTestCase(unittest.TestCase):
+
+  def setUp(self):
+    self.dir_name = os.path.dirname(__file__)
+    path = os.path.join(self.dir_name, "../worldai/schema.sql")
+    self.db = sqlite3.connect(":memory:")
+    with open(path) as f:
+      self.db.executescript(f.read())
+    self.user_dir = tempfile.TemporaryDirectory()
+
+    # Load test data
+    path = os.path.join(os.path.dirname(__file__), "test_data.sql")
+    with open(path) as f:
+      self.db.executescript(f.read())
+
+    worlds = elements.listWorlds(self.db)
+    world_id = worlds[0].id
+
+    characters = elements.listCharacters(self.db, world_id)
+    character_id = characters[0].id
+
+    session_id = "1234"
+    wstate_id = world_state.getWorldStateID(self.db, session_id, world_id)
+
+    self.chatFunctions = character_functions.CharacterFunctions(wstate_id,
+                                                                world_id,
+                                                                character_id)
     
+  def tearDown(self):
+    self.db.close()
+    self.user_dir.cleanup()
+
+  def testProperties(self):
+    props = self.chatFunctions.getProperties()
+    value_1 = json.dumps(props)
+    print(value_1)
+    self.chatFunctions.setProperties(props)
+    props = self.chatFunctions.getProperties()
+    value_2 = json.dumps(props)
+    assert value_1 == value_2
+  
 if __name__ ==  '__main__':
   unittest.main()
     

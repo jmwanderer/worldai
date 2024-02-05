@@ -69,6 +69,19 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     self.world_id = world_id
     self.character_id = character_id
 
+  def getProperties(self):
+    properties = super().getProperties()
+    properties["wstate_id"] = self.wstate_id
+    properties["world_id"] = self.world_id
+    properties["character_id"] = self.character_id
+    return properties
+
+  def setProperties(self, properties):
+    super().setProperties(properties)
+    self.wstate_id = properties["wstate_id"]
+    self.world_id = properties["world_id"]
+    self.character_id = properties["character_id"]
+
   def get_instructions(self, db):
     world = elements.loadWorld(db, self.world_id)        
     character = elements.loadCharacter(db, self.character_id)

@@ -9,6 +9,12 @@ class BaseChatFunctions:
   """
   def __init__(self):
     self.modified = False
+
+  def getProperties(self):
+    return { "modified": self.modified }
+
+  def setProperties(self, properties):
+    self.modified = properties["modified"]
   
   def madeChanges(self):
     return self.modified
