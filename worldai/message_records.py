@@ -22,21 +22,8 @@ class MessageSetRecord:
   id eg: call_RYXaDjxpUCfWmpXU7BZEYVqS
   """
   def __init__(self):
-    self.request_message = None
-    self.system_message = None    
-    # Array of ToolRequestMesage
-    self.tool_messages = []
-    self.response_message = None
+    self.messages = []
     self.marked_include = False
-
-  class ToolRequestMessage:
-    def __init__(self):
-      self.request_message = None
-
-      # Entries are a list of:
-      # - json format of response
-      # - optional text
-      self.response_messages = []
 
   def _recursiveValueCount(enc, elements):
     count = 0
@@ -71,65 +58,61 @@ class MessageSetRecord:
 
   def getTokenCount(self, enc):
     token_count = 0
-    if self.request_message is not None:
-      token_count += MessageSetRecord._getTokenCount(enc,
-                                                     self.request_message)
-    if self.system_message is not None:
-      token_count += MessageSetRecord._getTokenCount(enc,
-                                                     self.system_message)
-    if self.system_message is not None:
-      token_count += MessageSetRecord._getTokenCount(enc,
-                                                     self.system_message)
-
-    if self.response_message is not None:
-      token_count += MessageSetRecord._getTokenCount(enc,
-                                                     self.response_message)
-    for entry in self.tool_messages:
-      token_count += MessageSetRecord._getTokenCount(enc,
-                                                     entry.request_message)
-      for response_entry in entry.response_messages:
-        message = response_entry
-        token_count += MessageSetRecord._getTokenCount(enc, message)
+    for message in self.messages:
+      token_count += MessageSetRecord._getTokenCount(enc, message)
         
     return token_count
-        
+
+  def addMessage(self, message):
+    self.messages.append(message)
+  
   def setRequestMessage(self, message):
-    self.request_message = message
+    self.addMessage(message)
 
   def setSystemMessage(self, message):
-    self.system_message = message
-
-  def getRequestContent(self):
-    if self.request_message is None:
-      return ""
-    return self.request_message["content"]
-
-  def getSystemContent(self):
-    if self.system_message is None:
-      return ""
-    return self.system_message["content"]
+    self.addMessage(message)    
 
   def setResponseMessage(self, message):
-    self.response_message = message
+    self.addMessage(message)
+
+  def addToolRequestMessage(self, message):
+    self.addMessage(message)    
+
+  def addToolResponseMessage(self, message, text=None):
+    if text is not None:
+      message["text"] = text
+    self.addMessage(message)        
+    
+  def getRequestContent(self):
+    user_message = None
+    for message in self.messages:
+      if message.get("role") == "user":
+        return message["content"]
+    return ""
+
+  def getSystemContent(self):
+    system_message = None
+    for message in self.messages:
+      if message.get("role") == "system":
+        return message["content"]
+    return ""
 
   def getResponseContent(self):
     results = []
-    for entry in self.tool_messages:
-      content = entry.request_message.get("content")
-      # Note tool messages can also have content
-      if content is not None:
-        results.append(content)
-    if self.response_message is not None:
-      results.append(self.response_message["content"])
+    for message in self.messages:
+      if message.get("role") == "assistant":
+        content = message.get("content")
+        # Note tool messages can also have content
+        if content is not None:
+          results.append(content)
     return "\n\n".join(results)
 
   def getStatusText(self):
     # Return any status text to present to the user.
     results = []
-    for toolMessage in self.tool_messages:
-      for message in toolMessage.response_messages:
-        if message.get("text") is not None:
-          results.append(message["text"])
+    for message in self.messages:
+      if message.get("text") is not None:
+        results.append(message["text"])
     return ", ".join(results)
 
   def getMessageContent(self):
@@ -140,74 +123,51 @@ class MessageSetRecord:
              "assistant": self.getResponseContent(),
              "updates": self.getStatusText() };
   
-  def addToolRequestMessage(self, message):
-    record = MessageSetRecord.ToolRequestMessage()
-    record.request_message = message
-    self.tool_messages.append(record)
-
   def getToolRequestMessage(self):
     # Return latest tool request message
-    return self.tool_messages[-1]
+    tool_message = None
+    
+    for message in self.messages:
+      if message.get("tool_calls") is not None:
+        tool_message = message
+    return tool_message
 
-  def addToolResponseMessage(self, message, text=None):
-    record = self.tool_messages[-1]
-    if text is not None:
-      message["text"] = text
-    record.response_messages.append(message)
+
 
   def hasToolCall(self, name, args):
     """
     Check if the function name and arguments are in a tool
     call message. The args can be a subset.
     """
-    for message in self.tool_messages:
-      for tool_call in message.request_message.get("tool_calls"):
-        function_name = tool_call["function"]["name"]
-        if function_name == name:
-          arg_str = tool_call["function"]["arguments"]
-          function_args = json.loads(arg_str)
-          args_check = True
-          for key, value in args.items():
-            if function_args.get(key) != value:
-              args_check = False
-          if args_check:
-            return True
+    for message in self.messages:
+      if message.get("tool_calls") is not None:
+        for tool_call in message.get("tool_calls"):
+          function_name = tool_call["function"]["name"]
+          if function_name == name:
+            arg_str = tool_call["function"]["arguments"]
+            function_args = json.loads(arg_str)
+            args_check = True
+            for key, value in args.items():
+              if function_args.get(key) != value:
+                args_check = False
+            if args_check:
+              return True
     return False
+  
 
   def setIncluded(self):
     self.marked_include = True
 
   def addMessagesToList(self, messages):
-    if self.request_message is not None:
-      messages.append(self.request_message)
-    elif self.system_message is not None:
-      messages.append(self.system_message)
-
-    for record in self.tool_messages:
-      messages.append(record.request_message) 
-      for entry in record.response_messages:
-        message = {**entry}
-        if message.get("text") is not None:
-          del message["text"]
-        messages.append(message)
-    if self.response_message is not None:
-      messages.append(self.response_message)
+    for message in self.messages:
+      msg_copy = {**message}
+      if msg_copy.get("text") is not None:
+        del msg_copy["text"]
+      messages.append(msg_copy)
 
 
   def dump_history(self):
-    messages = []
-    if self.request_message is not None:
-      messages.append(self.request_message)
-    elif self.system_message is not None:
-      messages.append(self.system_message)
-
-    for tool_message in self.tool_messages:
-      messages.append(tool_message.request_message) 
-      for message in tool_message.response_messages:
-        messages.append(message)
-    if self.response_message is not None:
-      messages.append(self.response_message)
-    return messages
+    return self.messages
     
   def load_history(self, messages):
     for message in messages:

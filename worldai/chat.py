@@ -458,13 +458,13 @@ class ChatSession:
       return None
     
     tool_message = self.history.current_message_set().getToolRequestMessage()
-    tool_calls = tool_message.request_message.get("tool_calls")
+    tool_calls = tool_message.get("tool_calls")
     tool_call = tool_calls[self.tool_call_index]
     return tool_call
 
   def get_tool_call_count(self):
     tool_message = self.history.current_message_set().getToolRequestMessage()
-    return len(tool_message.request_message.get("tool_calls"))
+    return len(tool_message.get("tool_calls"))
     
   
 
