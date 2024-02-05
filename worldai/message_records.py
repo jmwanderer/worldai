@@ -53,6 +53,9 @@ class MessageSetRecord:
           else:
             count += len(enc.encode(entry))
       else:
+        # Skip our use of text values for tool calls
+        if key == "text":
+          continue
         count += len(enc.encode(value))
         if key == "name":
           count -= 1
@@ -85,7 +88,7 @@ class MessageSetRecord:
       token_count += MessageSetRecord._getTokenCount(enc,
                                                      entry.request_message)
       for response_entry in entry.response_messages:
-        message = response_entry[0]
+        message = response_entry
         token_count += MessageSetRecord._getTokenCount(enc, message)
         
     return token_count
@@ -124,9 +127,9 @@ class MessageSetRecord:
     # Return any status text to present to the user.
     results = []
     for toolMessage in self.tool_messages:
-      for entry in toolMessage.response_messages:
-        if len(entry) > 1:
-          results.append(entry[1])
+      for message in toolMessage.response_messages:
+        if message.get("text") is not None:
+          results.append(message["text"])
     return ", ".join(results)
 
   def getMessageContent(self):
@@ -146,12 +149,11 @@ class MessageSetRecord:
     # Return latest tool request message
     return self.tool_messages[-1]
 
-  def addToolResponseMessage(self, message, text):
+  def addToolResponseMessage(self, message, text=None):
     record = self.tool_messages[-1]
-    entry = [ message ]
-    if text is not None:    
-      entry.append(text)
-    record.response_messages.append(entry)
+    if text is not None:
+      message["text"] = text
+    record.response_messages.append(message)
 
   def hasToolCall(self, name, args):
     """
@@ -184,7 +186,10 @@ class MessageSetRecord:
     for record in self.tool_messages:
       messages.append(record.request_message) 
       for entry in record.response_messages:
-        messages.append(entry[0])
+        message = {**entry}
+        if message.get("text") is not None:
+          del message["text"]
+        messages.append(message)
     if self.response_message is not None:
       messages.append(self.response_message)
 
@@ -198,10 +203,7 @@ class MessageSetRecord:
 
     for tool_message in self.tool_messages:
       messages.append(tool_message.request_message) 
-      for entry in tool_message.response_messages:
-        message = entry[0]
-        if len(entry) > 1:
-          message["text"] = entry[1]
+      for message in tool_message.response_messages:
         messages.append(message)
     if self.response_message is not None:
       messages.append(self.response_message)
@@ -217,10 +219,7 @@ class MessageSetRecord:
       elif message.get("tool_calls") is not None:
         self.addToolRequestMessage(message)
       elif message.get("tool_call_id") is not None:
-        text = message.get("text")
-        if text is not None:
-          del message["text"]
-        self.addToolResponseMessage(message, text)
+        self.addToolResponseMessage(message)
       else:
         self.setResponseMessage(message)
   
