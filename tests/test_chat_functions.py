@@ -66,8 +66,8 @@ class DesignTestCase(unittest.TestCase):
     self.assertCallAvailable('CreateWorld')
     result = self.callFunction('CreateWorld',
                                '{ "name": "world 2" }')
-    id2 = result["id"]
-    self.assertIsNotNone(id2)
+    name2 = result["name"]
+    self.assertIsNotNone(name2)
 
     # Check illegal state
     result = self.callFunction('ChangeState', '{ "state": "non existent" }')
@@ -77,8 +77,8 @@ class DesignTestCase(unittest.TestCase):
     
     self.assertCallAvailable('CreateWorld')
     result = self.callFunction('CreateWorld', '{ "name": "world 1" }')
-    id1 = result["id"]
-    self.assertIsNotNone(id1)
+    name1 = result["name"]
+    self.assertIsNotNone(name1)
 
     self.callFunction('ChangeState', '{ "state": "State_Worlds" }')    
 
@@ -89,15 +89,15 @@ class DesignTestCase(unittest.TestCase):
     self.assertCallAvailable('ListWorlds')
     values = self.callFunction('ListWorlds', '{}')
     self.assertEqual(len(values), 2)
-    self.assertEqual(values[0]["id"], id2)
-    self.assertEqual(values[1]["id"], id1)
+    self.assertEqual(values[0]["name"], name2)
+    self.assertEqual(values[1]["name"], name1)
 
     # Read not existent world
-    values = self.callFunction('ShowWorld', '{ "id": "not_exist" }')
+    values = self.callFunction('ShowWorld', '{ "name": "not_exist" }')
     self.assertIsNotNone(values.get("error"))
                   
     self.assertCallAvailable('ShowWorld')
-    values = self.callFunction('ShowWorld', '{ "id": "%s" }' % id1)
+    values = self.callFunction('ShowWorld', '{ "name": "%s" }' % name1)
     self.assertEqual(len(values.get("details")), 0)
 
     self.callFunction('ChangeState', '{ "state": "State_World" }')    
@@ -112,45 +112,45 @@ class DesignTestCase(unittest.TestCase):
                       ' "details": "details" }')
     
     self.assertCallAvailable('ShowWorld')
-    values = self.callFunction('ShowWorld', '{ "id": "%s" }' % id1)
+    values = self.callFunction('ShowWorld', '{ "name": "%s" }' % name1)
     self.assertEqual(values["details"], "details")
 
     # Test setting and getting plans
-    values = self.callFunction('ReadPlanningNotes','{ "id": "%s" }' % id1)
+    values = self.callFunction('ReadPlanningNotes','{ "name": "%s" }' % name1)
     self.assertEqual(values["plans"], "")
     self.callFunction('EditWorld', '{}')    
     self.callFunction('UpdatePlanningNotes','{ "plans": "my plans" }')
-    values = self.callFunction('ReadPlanningNotes','{ "id": "%s" }' % id1)    
+    values = self.callFunction('ReadPlanningNotes','{ "name": "%s" }' % name1)
     self.assertEqual(values["plans"], "my plans")
     
     
   def test_exec_calls_characters(self):
     # Create a world for the characters
     result = self.callFunction('CreateWorld', '{ "name": "world 1" }')
-    self.assertIsNotNone(result["id"])
+    self.assertIsNotNone(result["name"])
 
     self.callFunction('ChangeState', '{ "state": "State_Characters" }')    
 
     # Read not existent character
-    values = self.callFunction('ShowCharacter', '{ "id": "not_exist" }')
+    values = self.callFunction('ShowCharacter', '{ "name": "not_exist" }')
     self.assertIsNotNone(values.get("error"))
     
     # Create a character
     result = self.callFunction('CreateCharacter', '{ "name": "Bob" }')
-    id = result["id"]
-    self.assertIsNotNone(id)
+    name = result["name"]
+    self.assertIsNotNone(name)
 
     # Create a duplicate character
     result = self.callFunction('CreateCharacter', '{ "name": "Bob" }')
     self.assertIsNotNone(result.get("error"))
 
     # Read not existent character again
-    values = self.callFunction('ShowCharacter', '{ "id": "not_exist" }')
+    values = self.callFunction('ShowCharacter', '{ "name": "not_exist" }')
     self.assertIsNotNone(values.get("error"))
 
     # Update a character
     result = self.callFunction('UpdateCharacter',
-                               '{ "id": "' + id + '", "name": "Robert" }')
+                               '{ "name": "Bob", "new_name": "Robert" }')
     self.assertIsNone(result.get("error"))
     
     
@@ -189,7 +189,7 @@ class DesignTestCase(unittest.TestCase):
     self.assertCallAvailable('ShowCharacter')
 
     result = self.callFunction('CreateCharacter','{ "name": "char 1" }')
-    id = result["id"]
+    name = result["name"]
 
     # STATE CHARACTERS
     self.assertEqual(self.chatFunctions.current_state,
@@ -197,12 +197,13 @@ class DesignTestCase(unittest.TestCase):
     self.assertCallAvailable('UpdateCharacter')
 
     self.callFunction('UpdateCharacter',
-                      '{ "id": "' + id + '", "name": "my char 1", ' +
+                      '{ "name": "char 1", ' +
+                      ' "new_name": "my char 1", ' +                      
                       ' "description": "a description", ' +
                       ' "details": "my details" }')
 
     values = self.callFunction('ShowCharacter',
-                                '{ "id": "' + id + '" }')
+                                '{ "name": "' + name + '" }')
     print(str(values))
     self.assertEqual(values["details"], "my details")
     self.assertEqual(values["name"], "my char 1")

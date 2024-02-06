@@ -465,9 +465,11 @@ class ElementStore:
 
     return result
 
-  def hideElement(db, element_type, id):
-    db.execute("UPDATE elements SET is_hidden = TRUE WHERE id = ? AND " +
-               "type = ?", (id, element_type))
+  def hideElement(db, element, wid, name):
+    instance = ElementStore.findElement(db, wid, name, element)
+    if instance is not None:
+      db.execute("UPDATE elements SET is_hidden = TRUE WHERE id = ? AND " +
+                 "type = ?", (instance.id, element.type))
     db.commit()
 
   def recoverElements(db, element_type, parent_id):
@@ -648,7 +650,7 @@ def createWorld(db, world):
 
 def updateWorld(db, world):
   ElementStore.updateElement(db, world)
-    
+
 def listCharacters(db, world_id):
   """
   Return a list of characters.
@@ -676,8 +678,8 @@ def createCharacter(db, character):
 def updateCharacter(db, character):
   ElementStore.updateElement(db, character)
 
-def hideCharacter(db, id):
-  ElementStore.hideElement(db, ElementType.CHARACTER, id)
+def hideCharacter(db, wid, name):
+  ElementStore.hideElement(db, Character(), wid, name)
 
 def recoverCharacters(db, world_id):
   return ElementStore.recoverElements(db, ElementType.CHARACTER, world_id)
@@ -709,8 +711,8 @@ def createSite(db, site):
 def updateSite(db, site):
   ElementStore.updateElement(db, site)
 
-def hideSite(db, id):
-  ElementStore.hideElement(db, ElementType.SITE, id)
+def hideSite(db, wid, name):
+  ElementStore.hideElement(db, Site(), wid, name)
 
 def recoverSites(db, world_id):
   return ElementStore.recoverElements(db, ElementType.SITE, world_id)
@@ -743,8 +745,8 @@ def createItem(db, item):
 def updateItem(db, item):
   ElementStore.updateElement(db, item)
 
-def hideItem(db, id):
-  ElementStore.hideElement(db, ElementType.ITEM, id)
+def hideItem(db, wid, name):
+  ElementStore.hideElement(db, Item(), wid, name)
 
 def recoverItems(db, world_id):
   return ElementStore.recoverElements(db, ElementType.ITEM, world_id)

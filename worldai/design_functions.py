@@ -333,7 +333,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncCreateWorld(db, arguments)
 
     elif function_name == "ListWorlds":
-      result = [ { "id": entry.getID(), "name": entry.getName() }
+      result = [ { "name": entry.getName() }
                    for entry in elements.listWorlds(db) ]
       
     elif function_name == "UpdateWorld":
@@ -349,7 +349,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncUpdatePlanningNotes(db, arguments)
 
     elif function_name == "ListCharacters":
-      result = [{ "id": entry.getID(), "name": entry.getName() }            
+      result = [{ "name": entry.getName() }            
            for entry in elements.listCharacters(db, self.getCurrentWorldID())]
 
     elif function_name == "ShowCharacter":
@@ -362,7 +362,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncUpdateCharacter(db, arguments)
 
     elif function_name == "ListItems":
-      result = [ { "id": entry.getID(), "name": entry.getName() } 
+      result = [ { "name": entry.getName() } 
              for entry in elements.listItems(db, self.getCurrentWorldID()) ]
 
     elif function_name == "ShowItem":
@@ -375,7 +375,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncUpdateItem(db, arguments)
       
     elif function_name == "ListSites":
-      result = [ { "id": entry.getID(), "name": entry.getName() } 
+      result = [ { "name": entry.getName() } 
               for entry in elements.listSites(db, self.getCurrentWorldID()) ]
 
     elif function_name == "ShowSite":
@@ -395,7 +395,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
     elif (function_name == "RemoveImage" or
           function_name == "RemoveWorldImage"):
-      result = self.FuncRemoveImage(db, arguments)    
+      result = self.FuncRemoveImage(db, arguments) 
 
     elif (function_name == "RecoverImages" or
           function_name == "RecoverWorldImages"):
@@ -447,7 +447,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.current_view = world.getElemTag()
     self.modified = True      
     status = self.funcStatus("created world")
-    status["id"] = world.id
+    status["name"] = world.getName()
     return status
 
   def FuncUpdateWorld(self, db, arguments):
@@ -459,12 +459,12 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     elements.updateWorld(db, world)
     self.modified = True
     status = self.funcStatus("updated world")    
-    status["id"] = world.id
+    status["name"] = world.getName()
     return status
 
   def FuncReadWorld(self, db, arguments):
-    id = arguments["id"]
-    world = elements.loadWorld(db, id)
+    name = arguments["name"]
+    world = elements.findWorld(db, name)
     if world is None:
       return self.funcError(f"no world '{id}', perahps call ListWorlds")      
     content = { **world.getAllProperties(),
@@ -480,17 +480,17 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     population = []
     population.append("Existing Characters:\n")
     for character in elements.listCharacters(db, world.id):
-      population.append(f"- {character.getID()}: {character.getName()}")
+      population.append(f"- {character.getName()}")
     population.append("")
 
     population.append("Existing Items:\n")        
     for item in elements.listItems(db, world.id):
-      population.append(f"- {item.getID()}: {item.getName()}")
+      population.append(f"- {item.getName()}")
     population.append("")
     
     population.append("Existing Sites:\n")        
     for site in elements.listSites(db, world.id):
-      population.append(f"- {site.getID()}: {site.getName()}")
+      population.append(f"- {site.getName()}")
 
     content["elements"] = "\n".join(population)
 
@@ -503,8 +503,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     world = elements.loadWorld(db, self.getCurrentWorldID())
     if world is None:
       return self.funcError(f"World not found {self.getCurrentWorldID()}")
-    content = { "id": world.id,
-                "plans" : world.getPlans() }
+    content = { "plans" : world.getPlans() }
     return content
 
   def FuncUpdatePlanningNotes(self, db, arguments):
@@ -515,24 +514,23 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     elements.updateWorld(db, world)
     self.modified = True
     status = self.funcStatus("updated world plans")    
-    status["id"] = world.id
+    status["name"] = world.getName()
     return status
   
   def FuncReadCharacter(self, db, arguments):
-    id = arguments.get("id")
-    if id is None:
-      return self.funcError("request missing id parameter")
+    name = arguments.get("name")
+    if name is None:
+      return self.funcError("request missing name")
     
-    character = elements.loadCharacter(db, id)
+    character = elements.findCharacter(db, self.getCurrentWorldID(), name)
     if character is not None:
-      content = { "id": character.id,
-                  **character.getAllProperties(),
+      content = { **character.getAllProperties(),
                   "has_image": character.hasImage(),                   
                  }
       self.current_state = STATE_CHARACTERS
       self.current_view  = character.getElemTag()
     else:
-      return self.funcError(f"no character '{id}'")
+      return self.funcError(f"no character '{name}'")
     return content
   
   def FuncCreateCharacter(self, db, arguments):
@@ -549,39 +547,40 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.current_view  = character.getElemTag()
     self.current_state = STATE_CHARACTERS   
     status = self.funcStatus("Created character")
-    status["id"] = character.id
+    status["name"] = character.getName()
     return status
     
   def FuncUpdateCharacter(self, db, arguments):
-    id = arguments["id"]
-    character = elements.loadCharacter(db, id)
+    name = arguments["name"]
+    character = elements.findCharacter(db, self.getCurrentWorldID(), name)
     if character is None:
-      return self.funcError(f"Character not found {id}")
+      return self.funcError(f"Character not found {name}")
+    if arguments.get("new_name") is not None:
+      arguments["name"] = arguments["new_name"]
     character.updateProperties(arguments)
     # TODO: check name collision
     elements.updateCharacter(db, character)
     self.modified = True
     self.current_view  = character.getElemTag()
     status = self.funcStatus("Updated character")
-    status["id"] = id
+    status["name"] = character.getName()
     return status
 
   def FuncReadItem(self, db, arguments):
-    id = arguments.get("id")
-    if id is None:
-      return self.funcError("request missing id parameter")
+    name = arguments.get("name")
+    if name is None:
+      return self.funcError("request missing name parameter")
     
-    item = elements.loadItem(db, id)
+    item = elements.findItem(db, self.getCurrentWorldID(), name)
     if item is not None:
-      content = { "id": item.id,
-                  **item.getAllProperties(),
+      content = { **item.getAllProperties(),
                   "has_image": item.hasImage(),                  
                  }
       print("item: " +json.dumps(content))
       self.current_state = STATE_ITEMS
       self.current_view = item.getElemTag()
     else:
-      return self.funcError(f"no item '{id}'")
+      return self.funcError(f"no item '{name}'")
     return content
   
   def FuncCreateItem(self, db, arguments):
@@ -598,38 +597,39 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.current_view  = item.getElemTag()
     self.current_state = STATE_ITEMS   
     status = self.funcStatus("Created item")
-    status["id"] = item.id
+    status["name"] = item.name
     return status
     
   def FuncUpdateItem(self, db, arguments):
-    id = arguments["id"]
-    item = elements.loadItem(db, id)
+    name = arguments["name"]
+    item = elements.findItem(db, self.getCurrentWorldID(), name)
     if item is None:
-      return self.funcError(f"Item not found {id}")
+      return self.funcError(f"Item not found {name}")
+    if arguments.get("new_name") is not None:
+      arguments["name"] = arguments["new_name"]    
     item.updateProperties(arguments)
     # TODO: check name collision
     elements.updateItem(db, item)
     self.modified = True
     self.current_view  = item.getElemTag()
     status = self.funcStatus("Updated item")
-    status["id"] = id
+    status["name"] = item.getName()
     return status
 
   def FuncReadSite(self, db, arguments):
-    id = arguments.get("id")
-    if id is None:
-      return self.funcError("request missing id parameter")
+    name = arguments.get("name")
+    if name is None:
+      return self.funcError("request missing name parameter")
     
-    site = elements.loadSite(db, id)
+    site = elements.findSite(db, self.getCurrentWorldID(), name)
     if site is not None:
-      content = { "id": site.id,
-                  **site.getAllProperties(),
+      content = { **site.getAllProperties(),
                   "has_image": site.hasImage(),
                  }
       self.current_state = STATE_SITES
       self.current_view  = site.getElemTag()
     else:
-      return self.funcError(f"no site '{id}'")
+      return self.funcError(f"no site '{name}'")
     return content
   
   def FuncCreateSite(self, db, arguments):
@@ -646,21 +646,23 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.current_view  = site.getElemTag()
     self.current_state = STATE_SITES   
     status = self.funcStatus("Created site")
-    status["id"] = site.id
+    status["name"] = site.getName()
     return status
     
   def FuncUpdateSite(self, db, arguments):
-    id = arguments["id"]
-    site = elements.loadSite(db, id)
+    name = arguments["name"]
+    site = elements.findSite(db, self.getCurrentWorldID(), name)
     if site is None:
-      return self.funcError(f"Site not found {id}")
+      return self.funcError(f"Site not found {name}")
+    if arguments.get("new_name") is not None:
+      arguments["name"] = arguments["new_name"]    
     site.updateProperties(arguments)
     # TODO: check name collision
     elements.updateSite(db, site)
     self.current_view  = site.getElemTag()
     self.modified = True      
     status = self.funcStatus("Updated site")
-    status["id"] = id
+    status["name"] = site.getName()
     return status
 
   def FuncCreateImage(self, db, arguments):
@@ -672,29 +674,29 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     image.setPrompt(arguments["prompt"])
     logging.info("Create image: prompt %s", image.prompt)
     if self.current_state == STATE_CHARACTERS:
-      id = arguments["id"]
-      character = elements.loadCharacter(db, id)
+      name = arguments["name"]
+      character = elements.findCharacter(db, self.getCurrentWorldID(), name)
       if character is None:
-        return self.funcError(f"no character '{id}'")
+        return self.funcError(f"no character '{name}'")
         
-      image.setParentId(id)
+      image.setParentId(character.id)
       self.current_view = character.getElemTag()
     elif self.current_state == STATE_ITEMS:
-      id = arguments["id"]
-      item = elements.loadItem(db, id)
+      name = arguments["name"]
+      item = elements.findItem(db, self.getCurrentWorldID(), name)
       if item is None:
-        return self.funcError(f"no item '{id}'")
+        return self.funcError(f"no item '{name}'")
         
-      image.setParentId(id)
+      image.setParentId(item.id)
       self.current_view = item.getElemTag()
       
     elif self.current_state == STATE_SITES:
-      id = arguments["id"]
-      site = elements.loadSite(db, id)
+      name = arguments["name"]
+      site = elements.findSite(db, self.getCurrentWorldID(), name)
       if site is None:
-        return self.funcError(f"no site '{id}'")
+        return self.funcError(f"no site '{name}'")
         
-      image.setParentId(id)
+      image.setParentId(site.id)
       self.current_view = site.getElemTag()
 
     else:
@@ -718,23 +720,22 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       create_image_thumbnail(image)
       self.modified = True
       status = self.funcStatus("created image")
-      status["id"] = image.id
       return status
     return self.funcError("problem generating image")
 
   def FuncRemoveElement(self, db, arguments):
-    id = arguments["id"]
-    logging.info("Remove element: %s", id)
+    name = arguments["name"]
+    logging.info("Remove element: %s", name)
     # Change view
     self.current_view  = self.getCurrentWorld(db).getElemTag()    
     if self.current_state == STATE_CHARACTERS:
-      elements.hideCharacter(db, id)
+      elements.hideCharacter(db, self.getCurrentWorldID(), name)
       return self.funcStatus("removed character")      
     elif self.current_state == STATE_ITEMS:
-      elements.hideItem(db, id)
+      elements.hideItem(db, self.getCurrentWorldID(), name)
       return self.funcStatus("removed item")      
     elif self.current_state == STATE_SITES:
-      elements.hideSite(db, id)
+      elements.hideSite(db, self.getCurrentWorldID(), name)
       return self.funcStatus("removed site")      
     return self.funcError("internal error")
 
@@ -755,11 +756,20 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     
   def FuncRemoveImage(self, db, arguments):
     index = arguments["index"]
-
+    name = arguments.get("name")
+    
     if self.current_state == STATE_WORLD_EDIT:
-      element_id = self.getCurrentWorldID()
-    else:
-      element_id = arguments["id"]
+      element = self.getCurrentWorld()
+    elif self.current_state == STATE_CHARACTERS:
+      element = elements.findCharacter(db, self.getCurrentWorldID(), name)
+    elif self.current_state == STATE_ITEMS:
+      element = elements.findItem(db, self.getCurrentWorldID(), name)
+    elif self.current_state == STATE_SITES:
+      element = elements.findSite(db, self.getCurrentWorldID(), name)
+
+    if element is None:
+      return self.funcError("Unknown '%s'" % name)
+    element_id = element.id
       
     logging.info(f"remove image element_id {element_id}")
     logging.info(f"remove image index {index}")
@@ -773,11 +783,22 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     print(f"hid image id {id}")        
     return self.funcStatus("image removed")    
 
+  
   def FuncRecoverImages(self, db, arguments):
+    name = arguments.get("name")
+    
     if self.current_state == STATE_WORLD_EDIT:
-      element_id = self.getCurrentWorldID()
-    else:
-      element_id = arguments["id"]
+      element = self.getCurrentWorld()
+    elif self.current_state == STATE_CHARACTERS:
+      element = elements.findCharacter(db, self.getCurrentWorldID(), name)
+    elif self.current_state == STATE_ITEMS:
+      element = elements.findItem(db, self.getCurrentWorldID(), name)
+    elif self.current_state == STATE_SITES:
+      element = elements.findSite(db, self.getCurrentWorldID(), name)
+      
+    if element is None:
+      return self.funcError("Unknown '%s'" % name)
+    element_id = element.id
 
     count = elements.recoverImages(db, element_id)
     return self.funcStatus("Recovered %d images" % count)    
@@ -908,12 +929,12 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for world intance.",
+          "description": "Name of world intance.",
         },
       },
-      "required": ["id"]      
+      "required": ["name"]
     },
   },
   
@@ -1018,12 +1039,12 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the character.",
+          "description": "Name of the character.",
         },
       },
-      "required": [ "id"]
+      "required": [ "name"]
     },
   },
 
@@ -1033,13 +1054,13 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the character.",
-        },
         "name": {
           "type": "string",
           "description": "Name of the character.",
+        },
+        "new_name": {
+          "type": "string",
+          "description": "New name of the character.",
         },
         "description": {
           "type": "string",
@@ -1054,7 +1075,7 @@ all_functions = [
           "description": "Describes the personality of the character.",
         },
       },
-      "required": [ "id"]      
+      "required": [ "name"]
     }
   },
 
@@ -1064,12 +1085,12 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the character.",
+          "description": "Name of the character.",
         },
       },
-      "required": [ "id"]
+      "required": [ "name"]
     },
   },
 
@@ -1089,16 +1110,16 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the character.",
+          "description": "Name of the character.",
         },
         "prompt": {
           "type": "string",
           "description": "A prompt from which to create the image.",
         },
       },
-      "required": [ "id", "prompt" ],
+      "required": [ "name", "prompt" ],
     },
   },
 
@@ -1137,12 +1158,12 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the item.",
+          "description": "Name of the item.",
         },
       },
-      "required": [ "id"]
+      "required": [ "name"]
     },
   },
 
@@ -1152,13 +1173,13 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the item.",
-        },
         "name": {
           "type": "string",
           "description": "Name of the item.",
+        },
+        "new_name": {
+          "type": "string",
+          "description": "New name of the item.",
         },
         "description": {
           "type": "string",
@@ -1188,7 +1209,7 @@ all_functions = [
           }
         }
       },
-      "required": [ "id"]      
+      "required": [ "name"]      
     }
   },
 
@@ -1198,12 +1219,12 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the item.",
+          "description": "Name of the item.",
         },
       },
-      "required": [ "id"]
+      "required": [ "name"]
     },
   },
 
@@ -1223,16 +1244,16 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the item.",
+          "description": "Name of the item.",
         },
         "prompt": {
           "type": "string",
           "description": "A prompt from which to create the image.",
         },
       },
-      "required": [ "id", "prompt" ],
+      "required": [ "name", "prompt" ],
     },
   },
 
@@ -1272,12 +1293,12 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the site.",
+          "description": "Name of the site.",
         },
       },
-      "required": [ "id"]
+      "required": [ "name"]
     },
   },
 
@@ -1287,12 +1308,12 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the site.",
+          "description": "Name of the site.",
         },
       },
-      "required": [ "id"]
+      "required": [ "name"]
     },
   },
 
@@ -1312,13 +1333,13 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the site.",
-        },
         "name": {
           "type": "string",
           "description": "Name of the site.",
+        },
+        "new_name": {
+          "type": "string",
+          "description": "New name of the site.",
         },
         "description": {
           "type": "string",
@@ -1333,7 +1354,7 @@ all_functions = [
           "description": "True if locked agained user access.",
         },
       },
-      "required": [ "id"]      
+      "required": [ "name" ]
     }
   },
   
@@ -1343,16 +1364,16 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the site.",
+          "description": "Name of the site.",
         },
         "prompt": {
           "type": "string",
           "description": "A prompt from which to create the image.",
         },
       },
-      "required": [ "id", "prompt" ],
+      "required": [ "name", "prompt" ],
     },
   },
 
@@ -1362,16 +1383,16 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for them character, site, item.",
+          "description": "Name of the character, site, or item",
         },
         "index": {
           "type": "integer",
           "description": "Zero based index of image to remove",
         },
       },
-      "required": [ "id", "index" ],
+      "required": [ "name", "index" ],
     },
   },
 
@@ -1381,12 +1402,12 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for them character, site, item.",
+          "description": "Name of the character, site, item.",
         },
       },
-      "required": [ "id" ],
+      "required": [ "name" ],
     },
   },
 

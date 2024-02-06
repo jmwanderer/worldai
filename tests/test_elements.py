@@ -121,7 +121,7 @@ class BasicTestCase(unittest.TestCase):
     characters = elements.listCharacters(self.db, world1.id)
     self.assertEqual(len(characters), 1)
     
-    elements.hideCharacter(self.db, character.id)
+    elements.hideCharacter(self.db, world1.id, character.getName())
     characters = elements.listCharacters(self.db, world1.id)
     self.assertEqual(len(characters), 0)
     
@@ -183,7 +183,7 @@ class BasicTestCase(unittest.TestCase):
     sites = elements.listSites(self.db, world1.id)
     self.assertEqual(len(sites), 2)
 
-    elements.hideSite(self.db, site.id)
+    elements.hideSite(self.db, world1.id, site.getName())
     sites = elements.listSites(self.db, world1.id)
     self.assertEqual(len(sites), 1)
 
@@ -208,7 +208,7 @@ class BasicTestCase(unittest.TestCase):
     items = elements.listItems(self.db, world1.id)
     self.assertEqual(len(items), 2)
 
-    elements.hideItem(self.db, item.id)
+    elements.hideItem(self.db, world1.id, item.getName())
     items = elements.listItems(self.db, world1.id)
     self.assertEqual(len(items), 1)
 
