@@ -466,7 +466,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     name = arguments["name"]
     world = elements.findWorld(db, name)
     if world is None:
-      return self.funcError(f"no world '{id}', perahps call ListWorlds")      
+      return self.funcError(f"no world '{name}', perahps call ListWorlds")      
     content = { **world.getAllProperties(),
                 "has_image": world.hasImage(), 
                }
@@ -729,14 +729,20 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     # Change view
     self.current_view  = self.getCurrentWorld(db).getElemTag()    
     if self.current_state == STATE_CHARACTERS:
-      elements.hideCharacter(db, self.getCurrentWorldID(), name)
-      return self.funcStatus("removed character")      
+      if elements.hideCharacter(db, self.getCurrentWorldID(), name):
+        return self.funcStatus("removed character")
+      else:
+        return self.funcError("character not found")
     elif self.current_state == STATE_ITEMS:
-      elements.hideItem(db, self.getCurrentWorldID(), name)
-      return self.funcStatus("removed item")      
+      if elements.hideItem(db, self.getCurrentWorldID(), name):
+        return self.funcStatus("removed item")
+      else:
+        return self.funcError("item not found")
     elif self.current_state == STATE_SITES:
-      elements.hideSite(db, self.getCurrentWorldID(), name)
-      return self.funcStatus("removed site")      
+      if elements.hideSite(db, self.getCurrentWorldID(), name):
+        return self.funcStatus("removed site")
+      else:
+        return self.funcError("site not found")        
     return self.funcError("internal error")
 
   def FuncRecoverElements(self, db, arguments):
@@ -775,12 +781,12 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     logging.info(f"remove image index {index}")
     
     id = elements.getImageFromIndex(db, element_id, int(index))
-    logging.info(f"remove image id {id}")    
+    logging.info(f"remove image")    
     
     if id is None:
       return self.funcError(f"unknown image index: {index}")
     elements.hideImage(db, id)
-    print(f"hid image id {id}")        
+    print(f"hide image id {id}")        
     return self.funcStatus("image removed")    
 
   

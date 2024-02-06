@@ -105,12 +105,13 @@ class DesignTestCase(unittest.TestCase):
     self.assertCallAvailable('EditWorld')
     self.callFunction('EditWorld', '{}')
 
+    
     self.assertCallAvailable('UpdateWorld')                  
     self.callFunction('UpdateWorld',
                       '{ "name": "world 1", ' +
                       ' "description": "a description", ' +
                       ' "details": "details" }')
-    
+
     self.assertCallAvailable('ShowWorld')
     values = self.callFunction('ShowWorld', '{ "name": "%s" }' % name1)
     self.assertEqual(values["details"], "details")
@@ -202,11 +203,107 @@ class DesignTestCase(unittest.TestCase):
                       ' "description": "a description", ' +
                       ' "details": "my details" }')
 
+    # Non-existant character
+    result = self.callFunction('UpdateCharacter',
+                      '{ "name": "char 1", ' +
+                      ' "description": "a description", ' +
+                      ' "details": "my details" }')
+    self.assertIsNotNone(result.get("error"))                
+
+    name = "my char 1"
     values = self.callFunction('ShowCharacter',
                                 '{ "name": "' + name + '" }')
     print(str(values))
     self.assertEqual(values["details"], "my details")
-    self.assertEqual(values["name"], "my char 1")
+    self.assertEqual(values["name"], name)
+
+    values = self.callFunction('ShowCharacter',
+                                '{ "name": "does not exist" }')
+    self.assertIsNotNone(values.get("error"))                    
+    
+    values = self.callFunction('RemoveCharacter',
+                                '{ "name": "' + name + '" }')
+    self.assertIsNone(values.get("error"))
+
+    values = self.callFunction('RemoveCharacter',
+                                '{ "name": "does not exist" }')
+    self.assertIsNotNone(values.get("error"))
+    
+    values = self.callFunction('RecoverCharacters', '{}')
+
+    # STATE ITEMS
+    self.callFunction('ChangeState', '{ "state": "State_Items" }')    
+    self.assertEqual(self.chatFunctions.current_state,
+                     design_functions.STATE_ITEMS)
+
+    result = self.callFunction('CreateItem','{ "name": "item 1" }')
+    name = result["name"]
+
+    self.callFunction('UpdateItem',
+                      '{ "name": "item 1", ' +
+                      ' "new_name": "my item 1", ' +                      
+                      ' "description": "a description", ' +
+                      ' "details": "my details" }')
+
+    # Not existant item
+    result = self.callFunction('UpdateItem',
+                      '{ "name": "item 1", ' +
+                      ' "description": "a description", ' +
+                      ' "details": "my details" }')
+    self.assertIsNotNone(result.get("error"))            
+
+    name = "my item 1"
+    values = self.callFunction('ShowItem',
+                                '{ "name": "' + name + '" }')
+    self.assertEqual(values["details"], "my details")
+    self.assertEqual(values["name"], name)
+
+    values = self.callFunction('ShowItem',
+                                '{ "name": "does not exist" }')
+    self.assertIsNotNone(result.get("error"))            
+
+    values = self.callFunction('RemoveItem',
+                                '{ "name": "' + name + '" }')
+    
+    values = self.callFunction('RecoverItems', '{}')
+    
+
+    # STATE SITES
+    self.callFunction('ChangeState', '{ "state": "State_Sites" }')    
+    self.assertEqual(self.chatFunctions.current_state,
+                     design_functions.STATE_SITES)
+
+    result = self.callFunction('CreateSite','{ "name": "site 1" }')
+    name = result["name"]
+
+    self.callFunction('UpdateSite',
+                      '{ "name": "site 1", ' +
+                      ' "new_name": "my site 1", ' +                      
+                      ' "description": "a description", ' +
+                      ' "details": "my details" }')
+
+    # Non-existant site
+    result = self.callFunction('UpdateSite',
+                               '{ "name": "site 1", ' +
+                               ' "description": "a description", ' +
+                               ' "details": "my details" }')
+    self.assertIsNotNone(result.get("error"))    
+    
+    name = "my site 1"
+    values = self.callFunction('ShowSite',
+                                '{ "name": "' + name + '" }')
+    self.assertEqual(values["details"], "my details")
+    self.assertEqual(values["name"], name)
+
+    values = self.callFunction('ShowSite',
+                                '{ "name": "does not exist" }')
+    self.assertIsNotNone(result.get("error"))    
+
+    values = self.callFunction('RemoveSite',
+                                '{ "name": "' + name + '" }')
+    
+    values = self.callFunction('RecoverSites', '{}')
+    
 
     self.callFunction('ChangeState', '{ "state": "State_World" }')    
     self.assertEqual(self.chatFunctions.current_state,

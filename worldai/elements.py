@@ -425,7 +425,7 @@ class ElementStore:
     q = db.execute("SELECT id FROM elements WHERE " +
                    "name LIKE ? " +
                    "AND parent_id = ? AND type = ?",
-                   ('%' + name + '%', pid, element.type))
+                   (name, pid, element.type))
     r = q.fetchone()
     if r is None:
       return None
@@ -468,9 +468,12 @@ class ElementStore:
   def hideElement(db, element, wid, name):
     instance = ElementStore.findElement(db, wid, name, element)
     if instance is not None:
-      db.execute("UPDATE elements SET is_hidden = TRUE WHERE id = ? AND " +
+      c = db.cursor()            
+      c.execute("UPDATE elements SET is_hidden = TRUE WHERE id = ? AND " +
                  "type = ?", (instance.id, element.type))
-    db.commit()
+      db.commit()
+      return c.rowcount
+    return 0
 
   def recoverElements(db, element_type, parent_id):
     c = db.cursor()      
@@ -634,7 +637,7 @@ def findWorld(db, name):
   element = World()
   q = db.execute("SELECT id FROM elements WHERE " +
                  "name LIKE ? AND type = ?",
-                 ('%' + name + '%', element.type))
+                 (name, element.type))
   r = q.fetchone()
   if r is None:
     return None
@@ -679,7 +682,8 @@ def updateCharacter(db, character):
   ElementStore.updateElement(db, character)
 
 def hideCharacter(db, wid, name):
-  ElementStore.hideElement(db, Character(), wid, name)
+  count = ElementStore.hideElement(db, Character(), wid, name)
+  return count == 1
 
 def recoverCharacters(db, world_id):
   return ElementStore.recoverElements(db, ElementType.CHARACTER, world_id)
@@ -712,7 +716,8 @@ def updateSite(db, site):
   ElementStore.updateElement(db, site)
 
 def hideSite(db, wid, name):
-  ElementStore.hideElement(db, Site(), wid, name)
+  count = ElementStore.hideElement(db, Site(), wid, name)
+  return count == 1
 
 def recoverSites(db, world_id):
   return ElementStore.recoverElements(db, ElementType.SITE, world_id)
@@ -746,7 +751,8 @@ def updateItem(db, item):
   ElementStore.updateElement(db, item)
 
 def hideItem(db, wid, name):
-  ElementStore.hideElement(db, Item(), wid, name)
+  count = ElementStore.hideElement(db, Item(), wid, name)
+  return count == 1
 
 def recoverItems(db, world_id):
   return ElementStore.recoverElements(db, ElementType.ITEM, world_id)
