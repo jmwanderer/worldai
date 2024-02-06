@@ -418,6 +418,21 @@ class ElementStore:
       element.images.append(entry[0])
     return element
 
+  def findElement(db, pid, name, element):
+    """
+    Return an element id
+    """
+    q = db.execute("SELECT id FROM elements WHERE " +
+                   "name LIKE ? " +
+                   "AND parent_id = ? AND type = ?",
+                   ('%' + name + '%', pid, element.type))
+    r = q.fetchone()
+    if r is None:
+      return None
+
+    return ElementStore.loadElement(db, r[0], element)
+  
+  
   def updateElement(db, element):
     q = db.execute("UPDATE elements SET  name = ?, properties = ? " +
                    "WHERE id = ? and type = ?",
@@ -610,6 +625,21 @@ def loadWorld(db, id):
   """
   return ElementStore.loadElement(db, id, World())
 
+def findWorld(db, name):
+  """
+  Return a world instance by name
+  """
+  element = World()
+  q = db.execute("SELECT id FROM elements WHERE " +
+                 "name LIKE ? AND type = ?",
+                 ('%' + name + '%', element.type))
+  r = q.fetchone()
+  if r is None:
+    return None
+
+  return loadWorld(db, r[0])
+
+
 def createWorld(db, world):
   """
   Return a world instance
@@ -630,6 +660,12 @@ def loadCharacter(db, id):
   Return a character instance
   """
   return ElementStore.loadElement(db, id, Character())
+
+def findCharacter(db, wid, name):
+  """
+  Return a character instance by name
+  """
+  return ElementStore.findElement(db, wid, name, Character())
 
 def createCharacter(db, character):
   """
@@ -658,6 +694,12 @@ def loadSite(db, id):
   """
   return ElementStore.loadElement(db, id, Site())
 
+def findSite(db, pid, name):
+  """
+  Return a site instance by name
+  """
+  return ElementStore.findElement(db, pid, name, Site())
+
 def createSite(db, site):
   """
   Return a site instance
@@ -684,6 +726,13 @@ def loadItem(db, id):
   Return an item instance
   """
   return ElementStore.loadElement(db, id, Item())
+
+def findItem(db, pid, name):
+  """
+  Return an item instance by name
+  """
+  return ElementStore.findElement(db, pid, name, Item())
+
 
 def createItem(db, item):
   """

@@ -2,6 +2,7 @@ Plans
 -----
 
 - Handle incomplete message events using msg_id
+  - may need to detect if previous message isnt complete
 - Add user approval to some tool functions
 
 - Convert from IDs to names for the AI func calls

@@ -250,10 +250,10 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     Give or receive an item
     """
     # TODO: this is where we need lock for updating
-    item_id = args["item_id"]
-    print(f"give item {item_id}")
+    item_name = args["name"]
+    print(f"give item {name}")
     wstate = world_state.loadWorldState(db, self.wstate_id)
-    item = elements.loadItem(db, item_id)
+    item = elements.findFind(db, self.world_id, item_name)
     if item is None:
       return self.funcError(f"Not a valid item id. Perhaps call ListItems")
 
@@ -284,14 +284,14 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     Change the location of the character
     """
     # TODO: this is where we need lock for updating
-    site_id = args["site_id"]
+    site_name = args["name"]
     wstate = world_state.loadWorldState(db, self.wstate_id)
-    site = elements.loadSite(db, site_id)
+    site = elements.findSite(db, self.world_id, site_name)
     if site is None:
-      return self.funcError("Site does not exist")
+      return self.funcError("Site does not exist Perhaps call ListSites?")
     old_site_id = wstate.getCharacterLocation(self.character_id)
     old_site = elements.loadSite(db, old_site_id)
-    wstate.setCharacterLocation(self.character_id, site_id)
+    wstate.setCharacterLocation(self.character_id, site.id)
     world_state.saveWorldState(db, wstate)
     character = elements.loadCharacter(db, self.character_id)
 
@@ -327,12 +327,12 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "item_id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier of the item.",
+          "description": "Name of the item.",
         },
       },
-      "required": [ "item_id" ],
+      "required": [ "name" ],
     },
   },
   {
@@ -341,18 +341,18 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "site_id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the destination site.",
+          "description": "Name of the destination site.",
         },
       },
-      "required": [ "site_id" ],
+      "required": [ "name" ],
     },
   },
 
   {
     "name": "ListSites",
-    "description": "Get the list of existing sites and IDs",
+    "description": "Get the list of existing sites",
     "parameters": {
       "type": "object",
       "properties": {
@@ -361,7 +361,7 @@ all_functions = [
   },
   {
     "name": "ListItems",
-    "description": "Get the list of all existing items and IDs",    
+    "description": "Get the list of all existing items",    
     "parameters": {
       "type": "object",
       "properties": {
@@ -370,7 +370,7 @@ all_functions = [
   },
   {
     "name": "ListMyItems",
-    "description": "Get the list of items I possess",    
+    "description": "Get the list of items the character possesses",
     "parameters": {
       "type": "object",
       "properties": {
@@ -379,7 +379,7 @@ all_functions = [
   },
   {
     "name": "ListCharacters",
-    "description": "Get the list of all existing characters and IDs",        
+    "description": "Get the list of all existing characters",        
     "parameters": {
       "type": "object",
       "properties": {

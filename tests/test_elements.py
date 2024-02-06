@@ -103,6 +103,10 @@ class BasicTestCase(unittest.TestCase):
 
     characters = elements.listCharacters(self.db, world1.id)
     self.assertEqual(len(characters), 0)
+
+    world = elements.findWorld(self.db, world2.getName())
+    self.assertIsNotNone(world)
+    self.assertEqual(world.id, world2.id)
     
     # Create character
     character = elements.Character(world1.id)
@@ -266,6 +270,11 @@ class BasicTestCase(unittest.TestCase):
     self.assertIsNotNone(character)
     self.assertEqual(len(character.getImages()), 1)
 
+    character2 = elements.findCharacter(self.db, world1.id,
+                                        character.getName())
+    self.assertIsNotNone(character2)
+    self.assertEqual(character2.id, char_id)
+
     # List sites
     sites = elements.listSites(self.db, world1.id)
     self.assertEqual(len(sites), 2)
@@ -274,6 +283,10 @@ class BasicTestCase(unittest.TestCase):
     site = elements.loadSite(self.db, sites[0].getID())
     self.assertIsNotNone(site)
 
+    site2 = elements.findSite(self.db, world1.id, site.getName())
+    self.assertIsNotNone(site2)
+    self.assertEqual(site2.id, site.id)
+
     # List items
     items = elements.listItems(self.db, world1.id)
     self.assertEqual(len(items), 2)    
@@ -281,6 +294,10 @@ class BasicTestCase(unittest.TestCase):
     # Load item
     item = elements.loadItem(self.db, items[0].getID())
     self.assertIsNotNone(item)
+
+    item2 = elements.findItem(self.db, world1.id, item.getName())
+    self.assertIsNotNone(item2)
+    self.assertEqual(item2.id, item.id)
 
     # Update item
     item.setDescription("a new description")
