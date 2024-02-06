@@ -72,10 +72,12 @@ class DesignChatSession:
       if next_view.getWorldID() != current_view.getWorldID():
         logging.info("Show world '%s'", next_view.getWorldID())
         self.chatFunctions.current_state = design_functions.STATE_WORLDS
-        load_id = next_view.getWorldID()
-        self.chat.chat_exchange(db, system=f"World id is '{load_id}'",
-                                tool_choice="ShowWorld",
-                                call_limit=1)
+        world = elements.loadWorld(db, next_view.getWorldID())
+        if world is not None:
+          self.chat.chat_exchange(db,
+                                  system=f"World id is '{world.getName()}'",
+                                  tool_choice="ShowWorld",
+                                  call_limit=1)
 
       # Handle when next view is world.
       if next_view.getType() == elements.ElementType.WorldType():
@@ -96,19 +98,19 @@ class DesignChatSession:
           character = elements.loadCharacter(db, next_view.getID())
           logging.info("Show character '%s'", character.getName())
           tool_choice = "ShowCharacter"
-          system=f"Character id is '{load_id}'"
+          system=f"Character is '{character.getName()}'"
 
         elif next_view.getType() == elements.ElementType.ItemType():
           item = elements.loadItem(db, next_view.getID())
           logging.info("Show item '%s'", item.getName())
           tool_choice = "ShowItem"
-          system=f"Item id is '{load_id}'"          
+          system=f"Item is '{item.getName()}'"
 
         elif next_view.getType() == elements.ElementType.SiteType():
           site = elements.loadSite(db, next_view.getID())
           logging.info("Show site '%s'", site.getName())
           tool_choice = "ShowSite"
-          system=f"Site id is '{load_id}'"                    
+          system=f"Site is '{site.getName()}'"                    
 
         self.chatFunctions.current_state = new_state
         if tool_choice is not None:
