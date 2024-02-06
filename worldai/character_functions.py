@@ -185,22 +185,20 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     if function_name == "ChangeLocation":
       result = self.FuncChangeLocation(db, arguments)
     elif function_name == "ListCharacters":
-      result = [{ "id": entry.getID(), "name": entry.getName() }            
+      result = [{ "name": entry.getName() }            
                 for entry in elements.listCharacters(db, self.world_id) ]
     elif function_name == "ListSites":
       result = []
       for entry in elements.listSites(db, self.world_id):   
         site = elements.loadSite(db, entry.getID())
-        result.append({"id": entry.getID(),
-                       "name": site.getName(),
-                       "description": site.getDescription() })
+        result.append({ "name": site.getName(),
+                        "description": site.getDescription() })
 
     elif function_name == "ListItems":
       result = []
       for entry in elements.listItems(db, self.world_id):
         item = elements.loadItem(db, entry.getID())
-        result.append({ "id": entry.getID(),
-                        "name": item.getName(),
+        result.append({ "name": item.getName(),
                         "description": item.getDescription() })
     elif function_name == "ListMyItems":
       wstate = world_state.loadWorldState(db, self.wstate_id)      
@@ -209,8 +207,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       for entry in elements.listItems(db, self.world_id):
         if entry.getID() in char_items:
           item = elements.loadItem(db, entry.getID())
-          result.append({ "id": entry.getID(),
-                          "name": item.getName(),
+          result.append({ "name": item.getName(),
                           "description": item.getDescription() })
       
     return result
