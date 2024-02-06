@@ -222,7 +222,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     print("Increase friendship")
     # TODO: this is where we need lock for updating
     wstate = world_state.loadWorldState(db, self.wstate_id)
-    character = elements.loadCharacter(db, self.character_id)    
+    character = elements.loadCharacter(db, self.character_id)
     wstate.increaseFriendship(self.character_id)
     world_state.saveWorldState(db, wstate)
 
@@ -292,7 +292,6 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     old_site_id = wstate.getCharacterLocation(self.character_id)
     if old_site_id == site.id:
       return self.funcError("You are already at %s." % site.getName())
-    
     old_site = elements.loadSite(db, old_site_id)
     wstate.setCharacterLocation(self.character_id, site.id)
     world_state.saveWorldState(db, wstate)

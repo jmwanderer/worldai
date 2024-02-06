@@ -140,6 +140,18 @@ class MessageSetRecord:
   def setIncluded(self):
     self.marked_include = True
 
+  def wasCompleted(self):
+    """
+    Verify the message was successfully completed.
+    """
+    # We consider a message that ends with an assistant role that
+    # is not a tools call.
+    if len(self.messages) < 1:
+      return False
+    message = self.messages[-1]
+    return (message.get("role") == "assistant" and
+            message.get("tool_calls") is None)
+
   def addMessagesToList(self, messages):
     for message in self.messages:
       msg_copy = {**message}
@@ -221,6 +233,11 @@ class MessageRecords:
     return len(self.message_history) == 0
 
   def startNewMessageSet(self):
+    # Check if previous message is complete
+    if (self.current_message is not None and
+        not self.current_message.wasCompleted()):
+      # Remove the last message
+      del self.message_history[-1]
     self.current_message = MessageSetRecord()
     self.message_history.append(self.current_message)
     
