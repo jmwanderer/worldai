@@ -290,6 +290,9 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     if site is None:
       return self.funcError("Site does not exist Perhaps call ListSites?")
     old_site_id = wstate.getCharacterLocation(self.character_id)
+    if old_site_id == site.id:
+      return self.funcError("You are already at %s." % site.getName())
+    
     old_site = elements.loadSite(db, old_site_id)
     wstate.setCharacterLocation(self.character_id, site.id)
     world_state.saveWorldState(db, wstate)
