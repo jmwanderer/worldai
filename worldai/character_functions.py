@@ -348,6 +348,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       fulltext = text + impact
     else:
       impact = "None"
+      fulltext = text
     world_state.saveWorldState(db, wstate)    
     result = { "action": text,
                "result": impact,
