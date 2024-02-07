@@ -317,7 +317,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
     # Character can use the item
     # Apply an effect
-    imact = None
+    impact = None
     
     match item.getAbility().effect:
       case elements.ItemEffect.HEAL:
