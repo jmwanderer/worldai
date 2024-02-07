@@ -182,6 +182,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncDecreaseFriendship(db)
     elif function_name == "GiveItem":
       result = self.FuncGiveItem(db, arguments)
+    elif function_name == "UseItem":
+      result = self.FuncUseItem(db, arguments)
     if function_name == "ChangeLocation":
       result = self.FuncChangeLocation(db, arguments)
     elif function_name == "ListCharacters":
@@ -189,17 +191,20 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                 for entry in elements.listCharacters(db, self.world_id) ]
     elif function_name == "ListSites":
       result = []
+      wstate = world_state.loadWorldState(db, self.wstate_id)
       for entry in elements.listSites(db, self.world_id):   
         site = elements.loadSite(db, entry.getID())
         result.append({ "name": site.getName(),
-                        "description": site.getDescription() })
-
+                        "description": site.getDescription(),
+                        "locked": wstate.isSiteLocked(id) })
     elif function_name == "ListItems":
       result = []
       for entry in elements.listItems(db, self.world_id):
         item = elements.loadItem(db, entry.getID())
         result.append({ "name": item.getName(),
-                        "description": item.getDescription() })
+                        "description": item.getDescription(),
+                        "mobile": item.getIsMobile(),
+                        "function": item.getAbility().effect })
     elif function_name == "ListMyItems":
       wstate = world_state.loadWorldState(db, self.wstate_id)      
       result = []
@@ -208,8 +213,9 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         if entry.getID() in char_items:
           item = elements.loadItem(db, entry.getID())
           result.append({ "name": item.getName(),
-                          "description": item.getDescription() })
-      
+                          "description": item.getDescription(),
+                          "mobile": item.getIsMobile(),
+                          "function": item.getAbility().effect })
     return result
 
   def FuncIncreaseFriendship(self, db):
@@ -248,11 +254,11 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     """
     # TODO: this is where we need lock for updating
     item_name = args["name"]
-    print(f"give item {name}")
+    print(f"give item {item_name}")
     wstate = world_state.loadWorldState(db, self.wstate_id)
-    item = elements.findFind(db, self.world_id, item_name)
+    item = elements.findItem(db, self.world_id, item_name)
     if item is None:
-      return self.funcError(f"Not a valid item id. Perhaps call ListItems")
+      return self.funcError(f"Not an existing item. Perhaps call ListMyItems?")
 
     character = elements.loadCharacter(db, self.character_id)
     text = ""
@@ -275,6 +281,100 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
     return result
 
+  def FuncUseItem(self, db, args):
+    """
+    Character invoking the function of an item
+    """
+    item_name = args["name"]
+    print(f"use item {item_name}")
+    wstate = world_state.loadWorldState(db, self.wstate_id)
+    item = elements.findItem(db, self.world_id, item_name)
+    if item is None:
+      return self.funcError(f"Not a valid item. Perhaps call ListMyItems")
+
+    character = elements.loadCharacter(db, self.character_id)
+    text = ""
+
+    # Check if character has the item
+    if item.getIsMobile():
+      if not wstate.hasCharacterItem(self.character_id, item.id):
+        return self.funcError(f"You do not have this item. " +
+                              "Perhaps call ListMyItems")
+    else:
+      if (wstate.getItemLocation(item.id) !=
+          wstate.getCharacterLocation(self.character_id)):
+        return self.funcError(f"This item is not here")
+
+    # Character can use the item
+    # Apply an effect
+    message = None
+    
+    match item.getAbility().effect:
+      case elements.ItemEffect.HEAL:
+        impact = self.healPlayer(wstate)
+      case elements.ItemEffect.HURT:
+        impact = self.hurtPlayer(wstate)
+      case elements.ItemEffect.PARALIZE:
+        impact = self.paralizePlayer(wstate)
+        pass                
+      case elements.ItemEffect.POISON:
+        impact = self.poisonPlayer(wstate)
+        pass                
+      case elements.ItemEffect.SLEEP:
+        pass                
+      case elements.ItemEffect.BRAINWASH:
+        pass                
+      case elements.ItemEffect.CAPTURE:
+        pass
+      case elements.ItemEffect.INVISIBILITY:
+        pass
+      case elements.ItemEffect.UNLOCK:
+        impact = self.unlockSite(wstate, item)
+        pass
+        
+    
+    text = character.getName() + " used " + item.getName() + "."
+    if impact is not None:
+      fulltext = text + impact
+    else:
+      impact = "None"
+    world_state.saveWorldState(db, wstate)    
+    result = { "action": text,
+               "result": impact,
+               "text": fulltext }
+
+    return result
+
+  
+
+  def healPlayer(self, wstate):
+    if not wstate.isPlayerHealthy():
+      message = " Travler is healed"
+      wstate.healPlayer()
+    else:
+      message = "Travler is already healthy"
+    return message
+
+  def hurtPlayer(self, wstate):
+    health = wstate.getPlayerHealth() - 4
+    if health < 0:
+      health = 0
+    wstate.setPlayerHealth(health)
+    if wstate.isPlayerDead():
+      message = "Travler is killed"
+    else:
+      message = "Travler is harmed"
+    return message
+
+  def poisonPlayer(self, wstate):
+    wstate.addPlayerStatus(world_state.CharStatus.POISONED)
+    message = "Travler is poisoned"
+    return message
+
+  def paralizePlayer(self, wstate):
+    wstate.addPlayerStatus(world_state.CharStatus.PARALIZED)
+    message = "Travler is paralized"
+    return message
 
   def FuncChangeLocation(self, db, args):
     """
@@ -286,6 +386,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     site = elements.findSite(db, self.world_id, site_name)
     if site is None:
       return self.funcError("Site does not exist Perhaps call ListSites?")
+    if wstate.isSiteLocked(site.id):
+      return self.funcError("The site is locked and can not be accessed")
     old_site_id = wstate.getCharacterLocation(self.character_id)
     if old_site_id == site.id:
       return self.funcError("You are already at %s." % site.getName())
@@ -323,6 +425,20 @@ all_functions = [
   {
     "name": "GiveItem",
     "description": "Give or recieve an item.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the item.",
+        },
+      },
+      "required": [ "name" ],
+    },
+  },
+  {
+    "name": "UseItem",
+    "description": "Invoke the function of an item.",
     "parameters": {
       "type": "object",
       "properties": {

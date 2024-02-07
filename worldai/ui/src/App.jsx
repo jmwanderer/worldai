@@ -46,25 +46,25 @@ function getFriendship(level) {
 function getCharStates(charStats) {
   let state = [];
   if (charStats.health < 1) {
-    state.push(<i key="dead" className="bi bi-person-x"/>);    
+    state.push(<i key="dead" className="bi bi-person-x" title="Dead"/>);    
   }
   if (charStats.health < 100) {  
-    state.push(<i key="health" className="bi bi-bandaid"/>);
+    state.push(<i key="health" className="bi bi-bandaid" title="Injured"/>);
   }
   if (charStats.invisible) {
-    state.push(<i key="invisible" className="bi bi-eye-slash"/>);
+    state.push(<i key="invisible" className="bi bi-eye-slash" title="Invisible"/>);
   }
   if (charStats.poisoned) {
-    poisoned = <i key="poisoned" className="bi bi-exclamation-circle"/>    
+    state.push(<i key="poisoned" className="bi bi-exclamation-circle" title="Poisoned"/>);
   } 
   if (charStats.sleeping) {
-    state.push(<i key="sleeping" className="bi bi-lightbulb-off"/>);
+    state.push(<i key="sleeping" className="bi bi-lightbulb-off" title="Sleeping"/>);
   }
   if (charStats.paralized) {
-    state.push(<i key="paralized" className="bi bi-emoji-dizzy"/>);
+    state.push(<i key="paralized" className="bi bi-emoji-dizzy" title="Paralized"/>);
   }
   if (charStats.brainwashed) {
-    state.push(<i key="brainwashed" className="bi bi-emoji-sunglasses"/>);
+    state.push(<i key="brainwashed" className="bi bi-emoji-sunglasses" title="Brainwashed"/>);
   }
   return state;
 }
@@ -386,7 +386,7 @@ function CharacterItem({ character, onClick }) {
 function getSitePeople(site, setCharacterId) {
 
     return site.characters.map(entry =>
-    <Col key={entry.id} md={2}>
+    <Col key={entry.id} xs={4} sm={3} lg={2}>
       <CharacterItem key={entry.id}
                      character={entry}
                      onClick={setCharacterId}/>
@@ -890,7 +890,7 @@ function SiteItem({ site, onClick }) {
 function WorldSites({ siteList, onClick }) {
 
   const sites = siteList.map(entry =>
-    <Col key={entry.id} xs={4} sm={3} md={2}>
+    <Col key={entry.id} xs={4} sm={3} lg={2}>
       <SiteItem key={entry.id}
                 site={entry}
                 onClick={onClick}/>

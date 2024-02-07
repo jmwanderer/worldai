@@ -251,6 +251,9 @@ class WorldState:
   def isPlayerHealthy(self):
     return self.isCharacterHealthy(PLAYER_ID)
 
+  def isPlayerDead(self):
+    return self.isCharacterDead(PLAYER_ID)
+
   def getPlayerCredits(self):
     return self.getCharacterCredits(PLAYER_ID)
 
