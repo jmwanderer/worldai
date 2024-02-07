@@ -286,6 +286,7 @@ class ClientActions:
 
       case elements.ItemEffect.UNLOCK:
         site_id = item.getAbility().site_id
+        
         site = elements.loadSite(self.db, site_id)
         if site is not None:
           if self.wstate.isSiteLocked(site_id):

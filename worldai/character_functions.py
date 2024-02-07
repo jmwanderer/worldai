@@ -232,7 +232,6 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     """
     Record that the player completed the challenge for the current character.
     """
-    print("Increase friendship")
     # TODO: this is where we need lock for updating
     wstate = world_state.loadWorldState(db, self.wstate_id)
     character = elements.loadCharacter(db, self.character_id)
@@ -247,7 +246,6 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     """
     Record that the player completed the challenge for the current character.
     """
-    print("Decrease friendship")    
     # TODO: this is where we need lock for updating
     wstate = world_state.loadWorldState(db, self.wstate_id)
     character = elements.loadCharacter(db, self.character_id)    
@@ -296,7 +294,6 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     Character invoking the function of an item
     """
     item_name = args["name"]
-    print(f"use item {item_name}")
     wstate = world_state.loadWorldState(db, self.wstate_id)
     item = elements.findItem(db, self.world_id, item_name)
     if item is None:
@@ -339,7 +336,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       case elements.ItemEffect.INVISIBILITY:
         pass
       case elements.ItemEffect.UNLOCK:
-        impact = self.unlockSite(wstate, item)
+        impact = self.unlockSite(db, wstate, item)
         pass
         
     
@@ -386,6 +383,19 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     wstate.addPlayerStatus(world_state.CharStatus.PARALIZED)
     message = "Travler is paralized"
     return message
+
+  def unlockSite(self, db, wstate, item):
+    site_id = item.getAbility().site_id
+    site = elements.loadSite(db, site_id)
+    message = ""
+    if site is not None:
+      if wstate.isSiteLocked(site_id):
+        wstate.setSiteLocked(site_id, False)
+        message = f"Site {site.getName()} is now unlocked."
+      else:
+        message = f"Site {site.getName()} is already unlocked."
+    return message
+  
 
   def FuncChangeLocation(self, db, args):
     """

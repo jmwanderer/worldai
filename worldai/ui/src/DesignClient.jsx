@@ -121,6 +121,8 @@ function Item({ tag, setChatView }) {
                 Mobile: {item.mobile ? "Yes" : "No" }
                 <br></br>
                 Ability: {item.ability.effect}
+                {item.ability.effect == "unlock" ? " : "
+                                         + item.ability.site : "" }
               </Container>
             </Stack>
             <h2>Details:</h2>

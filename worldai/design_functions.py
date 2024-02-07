@@ -576,6 +576,16 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       content = { **item.getAllProperties(),
                   "has_image": item.hasImage(),                  
                  }
+      # Remove site_id from view of GPT
+      del content["ability"]["site_id"]
+
+      # Translate site_id to site_name if necessary
+      ability = item.getAbility()
+      if ability.effect is not None and len(ability.site_id) > 0:
+        site = elements.loadSite(db, ability.site_id)
+        if site is not None:
+          content["ability"]["site"] = site.getName()
+
       print("item: " +json.dumps(content))
       self.current_state = STATE_ITEMS
       self.current_view = item.getElemTag()
@@ -592,6 +602,17 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     if name is not None:
       return self.funcError(f"Similar name already exists: {name}")
 
+    # Translate site name if necessary
+    ability = arguments.get("ability")
+    if ability is not None and ability.get("site") is not None:
+      site_name = ability.get("site")
+      site = elements.findSite(db,
+                               self.getCurrentWorldID(),
+                               site_name)
+      if site is None:
+        return self.funcError(f"Unknown site {site_name}")
+      ability["site_id"] = site.getID()
+    
     item.updateProperties(arguments)    
     item = elements.createItem(db, item)
     self.current_view  = item.getElemTag()
@@ -607,8 +628,21 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       return self.funcError(f"Item not found {name}")
     if arguments.get("new_name") is not None:
       arguments["name"] = arguments["new_name"]    
-    item.updateProperties(arguments)
     # TODO: check name collision
+
+    # If present, translate site name to site id
+    ability = arguments.get("ability")
+    if ability is not None and ability.get("site") is not None:
+      site_name = ability.get("site")
+      site = elements.findSite(db,
+                               self.getCurrentWorldID(),
+                               site_name)
+      if site is None:
+        return self.funcError(f"Unknown site {site_name}")
+      ability["site_id"] = site.getID()
+
+    # Update item proprties
+    item.updateProperties(arguments)
     elements.updateItem(db, item)
     self.modified = True
     self.current_view  = item.getElemTag()
@@ -1153,6 +1187,29 @@ all_functions = [
           "type": "string",
           "description": "Short description of the item",
         },
+        "details": {
+          "type": "string",
+          "description": "Detailed information about the item.",
+        },
+        "mobile": {
+          "type": "boolean",
+          "description": "True if item can be carried.",
+        },
+        "ability": {
+          "type": "object",
+          "description": "Abilities that the object enables.",          
+          "properties": {
+            "effect": {
+              "type": "string",
+              "enum": [ "heal", "hurt", "paralize", "poison", "sleep",
+                        "brainwash", "capture", "invisibility", "unlock" ],
+            },
+            "site": {
+              "type": "string",
+              "description": "Name of the site to unlock.",
+            }
+          }
+        }
       },
       "required": [ "name", "description" ]
     },
@@ -1203,15 +1260,15 @@ all_functions = [
           "type": "object",
           "description": "Abilities that the object enables.",          
           "properties": {
-            "action": {
-              "type": "string",
-              "enum": [ "apply", "clear", "toggle" ],
-              },
             "effect": {
               "type": "string",
               "enum": [ "heal", "hurt", "paralize", "poison", "sleep",
                         "brainwash", "capture", "invisibility", "unlock" ],
             },
+            "site": {
+              "type": "string",
+              "description": "Name of the site to unlock.",
+            }
           }
         }
       },

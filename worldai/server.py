@@ -965,6 +965,12 @@ def item(wid, id):
   result["images"] = images
   image_prop = getElementThumbProperty(item)  
   result["image"] = image_prop
+
+  # Include site name if needed
+  if len(item.getAbility().site_id) > 0:
+    site = elements.loadSite(get_db(), item.getAbility().site_id)
+    if site is not None:
+      result["ability"]["site"] = site.getName()
   
   return result
 
@@ -988,7 +994,13 @@ def item_instance(wid, id):
   result["images"] = images
   image_prop = getElementThumbProperty(item)  
   result["image"] = image_prop
-  result["location"] = wstate.getItemLocation(id)  
+  result["location"] = wstate.getItemLocation(id)
+
+  # Include site name if needed
+  if len(item.getAbility().site_id) > 0:
+    site = elements.loadSite(get_db(), item.getAbility().site_id)
+    if site is not None:
+      result["ability"]["site"] = site.getName()
   
   return result
 

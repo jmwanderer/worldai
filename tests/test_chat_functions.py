@@ -266,6 +266,16 @@ class DesignTestCase(unittest.TestCase):
                                 '{ "name": "' + name + '" }')
     
     values = self.callFunction('RecoverItems', '{}')
+
+    # Update item with ability
+    result = self.callFunction('UpdateItem',
+                               '{ "name": "my item 1", ' +
+                               ' "ability": { "effect": "sleep" }}')
+    self.assertIsNone(result.get("error"))     
+    values = self.callFunction('ShowItem',
+                                '{ "name": "' + name + '" }')
+    self.assertEqual(values["ability"]["effect"], "sleep")
+    
     
 
     # STATE SITES
@@ -303,8 +313,46 @@ class DesignTestCase(unittest.TestCase):
                                 '{ "name": "' + name + '" }')
     
     values = self.callFunction('RecoverSites', '{}')
-    
 
+
+    # Update item with unlock site ability
+    self.callFunction('ChangeState', '{ "state": "State_Items" }')        
+    result = self.callFunction('UpdateItem',
+                               '{ "name": "my item 1", ' +
+                               ' "ability": ' +
+                               '{ "effect": "unlock", "site": "my site 1" }}')
+    self.assertIsNone(result.get("error"))     
+    values = self.callFunction('ShowItem',
+                                '{ "name": "my item 1" }')
+    self.assertEqual(values["ability"]["site"], "my site 1")
+
+    # Use a non-existant site
+    result = self.callFunction('UpdateItem',
+                               '{ "name": "my item 1", ' +
+                               ' "ability": ' +
+                               '{ "effect": "unlock", "site": "no site" }}')
+    self.assertIsNotNone(result.get("error"))
+    
+    # Create an item with ability
+    result = self.callFunction('CreateItem',
+                               '{ "name": "item 99",' +
+                               '"mobile": "false",'+
+                               '"ability": { "effect": "unlock",'+
+                               '"site": "my site 1" }}')
+    self.assertIsNone(result.get("error"))
+    values = self.callFunction('ShowItem',
+                                '{ "name": "item 99" }')
+    self.assertEqual(values["ability"]["site"], "my site 1")
+    self.assertEqual(values["ability"]["effect"], "unlock")
+
+    # Create with non-existant site
+    result = self.callFunction('CreateItem',
+                               '{ "name": "item 99",' +
+                               '"mobile": "false",'+
+                               '"ability": { "effect": "unlock",'+
+                               '"site": "no site" }}')
+    self.assertIsNotNone(result.get("error"))
+    
     self.callFunction('ChangeState', '{ "state": "State_World" }')    
     self.assertEqual(self.chatFunctions.current_state,
                      design_functions.STATE_WORLD)
