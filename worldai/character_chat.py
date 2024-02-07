@@ -47,12 +47,6 @@ class CharacterChat:
                        "event": message["system"],
                        "updates": message.get("updates", "")
                       })
-
-      print("user: " + message["user"])
-      print("reply: " + message["assistant"])
-      print("event: " +  message["system"])
-      print("updates: " + message.get("updates", ""))
-      
     return history
 
   def chat_message(self, db, user):

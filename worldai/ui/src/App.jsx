@@ -878,7 +878,7 @@ function SiteItem({ site, onClick }) {
         <Card.Img src={site.image.url}/>
         <Card.Title>
           { site.name }
-          { site.locked ? <i className="bi bi-lock" style={{ position: "absolute"}}/> : "" }
+          { site.locked ? <i className="bi bi-lock-fill"/> : "" }
         </Card.Title>
         <Button onClick={handleClick} className="mt-auto">Go</Button>        
       </Card>
@@ -890,7 +890,7 @@ function SiteItem({ site, onClick }) {
 function WorldSites({ siteList, onClick }) {
 
   const sites = siteList.map(entry =>
-    <Col key={entry.id} md={2}>
+    <Col key={entry.id} xs={4} sm={3} md={2}>
       <SiteItem key={entry.id}
                 site={entry}
                 onClick={onClick}/>

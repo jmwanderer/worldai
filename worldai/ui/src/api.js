@@ -89,7 +89,7 @@ async function getSiteList(worldId) {
 }
 
 async function getSiteInstancesList(worldId) {
-  const url = `/worlds/${worldId}/sites`;
+  const url = `/worlds/${worldId}/sites/instances`;
   const response = await fetch(get_url(url),
                                { headers: headers_get() });
   const values = await response.json();

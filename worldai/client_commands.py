@@ -70,7 +70,7 @@ class ClientActions:
         if not self.wstate.isSiteLocked(site_id):
           self.wstate.setLocation(site_id)
           logging.info("GO: set location %s",  site_id)
-          response.message = f"Go {site.getName()}"
+          response.message = f"Arrival: {site.getName()}"
           self.wstate.advanceTime(30)
         else:
           response.message = f"{site.getName()} is locked"
