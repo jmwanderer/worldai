@@ -1,7 +1,9 @@
 Plans
 -----
 
-- Fix setting the proper id / name for the unlock ability in the design tool
+- add player stats to character chat screen
+- locked is not a good prop name for the site access
+- address confusion around giveitem....
 - Handle incomplete message events using msg_id
   - may need to detect if previous message isnt complete
 - Add user approval to some tool functions

@@ -32,10 +32,9 @@ from . import chat_functions
 #  1. Add a message id
 #  2. change assistant to reply
 #
-# Serialize threads in json, not pickle
-#
 
-GPT_MODEL = "gpt-3.5-turbo-1106"
+GPT_MODEL = "gpt-3.5-turbo-0125"
+#GPT_MODEL = "gpt-3.5-turbo-1106"
 #GPT_MODEL = "gpt-4-1106-preview"
 # Can be higher, but save $$$ with some potential loss in perf
 MESSAGE_THRESHOLD=3_000
@@ -259,7 +258,10 @@ class ChatSession:
   def chat_history(self):
     messages = []
     for message_set in self.history.message_sets():
-      messages.append(self.getMessageContent(message_set))
+      # Don't include messages that didn't finish
+      # (Should only happen on the most recent message)
+      if message_set.wasCompleted():
+        messages.append(self.getMessageContent(message_set))
     return { "messages": messages }
   
   
@@ -372,15 +374,16 @@ class ChatSession:
       log_chat_message(messages, assistant_message)        
     elif response.get("error"):
       log_chat_message(messages, response["error"])
+      result = ChatResponse(id=self.msg_id, done=True)      
+      result.status = "error"      
+      return result
       
-    tool_calls = assistant_message.get("tool_calls")
+    self.history.addMessage(assistant_message)
+    tool_calls = assistant_message.get("tool_calls")    
     if tool_calls: 
       # Make requested calls to tools.
-      self.history.addMessage(assistant_message)      
       self.tool_call_index = 0
       self.tool_call_pending = True
-    else:
-      self.history.addMessage(assistant_message)
     
     # Build result
     content = self.getMessageContent(self.history.current_message_set())

@@ -22,7 +22,7 @@ function MessageExchange({ name, message }) {
   let event_message = "";
   let reply_message = "";        
 
-  if (message.user.length > 0) {
+  if (message.user && message.user.length > 0) {
     user_message = (
       <div className="App-message">            
         <b>You:</b> <br/> { message.user } <br/>
@@ -215,12 +215,16 @@ const ChatScreen = forwardRef(({ name, calls,
         setToolCalls(call_list);
       }
     } else {
-      // Append to history that is displayed
-      setChatHistory([...chatHistory, values])
-      // Clear the current message
-      setToolCalls([])
-      setCurrentMessage({user: "", error: "" });
-      console.log("enabled: " + values["enabled"]);
+      if (values.status !== "ok") {
+        setCurrentMessage({error: "Something went wrong."});        
+      } else {
+        // Append to history that is displayed
+        setChatHistory([...chatHistory, values])
+        // Clear the current message
+        setToolCalls([])
+        setCurrentMessage({user: "", error: "" });
+        console.log("enabled: " + values["enabled"]);
+      }
         
       if (values["enabled"]) {
         setChatState("ready");

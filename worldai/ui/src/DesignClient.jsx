@@ -407,7 +407,10 @@ function DesignChat({name, chatView, setChatView}) {
                       { headers: headers_get() });
     const values = await response.json();
     console.log("get view: " + JSON.stringify(values.view));
-    setChatView(values.view);
+    // Ignore going to the top view. No need to do that.
+    if (values.view.element_type !== "None") {
+      setChatView(values.view);
+    }
     return values;
   }
 
