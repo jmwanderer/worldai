@@ -31,12 +31,17 @@ class BasicTestCase(unittest.TestCase):
     self.db.close()
 
   def testBasics(self):
-    doc_id = info_set.InfoStore.addInfoDoc(self.db, "This is my content")
-    info_set.InfoStore.updateInfoDoc(self.db, doc_id, "This is more content")
+    doc_id = info_set.InfoStore.addInfoDoc(self.db,
+                                           self.world.getID(),
+                                           "This is my content")
+    info_set.InfoStore.updateInfoDoc(self.db, doc_id,
+                                     "This is more content")
     info_set.InfoStore.deleteInfoDoc(self.db, doc_id)
 
   def testOwner(self):
-    doc_id = info_set.InfoStore.addInfoDoc(self.db, "This is my content",
+    doc_id = info_set.InfoStore.addInfoDoc(self.db,
+                                           self.world.getID(),
+                                           "This is my content",
                                            owner_id = self.character.getID())
     info_set.InfoStore.updateInfoDoc(self.db, doc_id, "This is more content")
     info_set.InfoStore.deleteInfoDoc(self.db, doc_id)
@@ -44,19 +49,23 @@ class BasicTestCase(unittest.TestCase):
 
   def testWorldState(self):
     doc_id = info_set.InfoStore.addInfoDoc(self.db, "This is my content",
+                                           self.world.getID(),
                                            wstate_id = self.wstate_id)
     info_set.InfoStore.updateInfoDoc(self.db, doc_id, "This is more content")
     info_set.InfoStore.deleteInfoDoc(self.db, doc_id)
 
   def testOwnerWorldState(self):
     doc_id = info_set.InfoStore.addInfoDoc(self.db, "This is my content",
+                                           self.world.getID(),
                                            owner_id = self.character.getID(),
                                            wstate_id = self.wstate_id)
     info_set.InfoStore.updateInfoDoc(self.db, doc_id, "This is more content")
     info_set.InfoStore.deleteInfoDoc(self.db, doc_id)
     
   def testBasicChunk(self):
-    doc_id = info_set.InfoStore.addInfoDoc(self.db, "This is my content")
+    doc_id = info_set.InfoStore.addInfoDoc(self.db,
+                                           self.world.getID(),
+                                           "This is my content")
     chunk_id = info_set.InfoStore.addInfoChunk(self.db, doc_id, "chunk content")
     content = info_set.InfoStore.getChunkContent(self.db, chunk_id)
     self.assertEqual(content, "chunk content")
@@ -82,19 +91,23 @@ class BasicTestCase(unittest.TestCase):
     wstate_id = "2"
     # Create 4 docs with different levels of visbility
     doc_id1 = info_set.InfoStore.addInfoDoc(self.db,
+                                            self.world.getID(),
                                             "This is my content")
 
     
     doc_id2 = info_set.InfoStore.addInfoDoc(self.db,
+                                            self.world.getID(),
                                             "This is my content",
                                             owner_id = owner_id)
 
     
     doc_id3 = info_set.InfoStore.addInfoDoc(self.db,
+                                            self.world.getID(),
                                             "This is my content",
                                             wstate_id = wstate_id)
 
     doc_id4 = info_set.InfoStore.addInfoDoc(self.db,
+                                            self.world.getID(),
                                             "This is my content",
                                             wstate_id = wstate_id,
                                             owner_id = owner_id)
@@ -107,7 +120,9 @@ class BasicTestCase(unittest.TestCase):
     # Vectorize
     chunk_id = info_set.InfoStore.getOneNewChunk(self.db)    
     while chunk_id is not None:
-      info_set.InfoStore.updateChunkEmbed(self.db, chunk_id, "embedding")
+      content = info_set.InfoStore.getChunkContent(self.db, chunk_id)
+      embedding = info_set.generateEmbedding(content)
+      info_set.InfoStore.updateChunkEmbed(self.db, chunk_id, embedding)
       chunk_id = info_set.InfoStore.getOneNewChunk(self.db)
 
     # Add more chunks w/o vectors
@@ -116,19 +131,45 @@ class BasicTestCase(unittest.TestCase):
     self.addChunks(doc_id3)
     self.addChunks(doc_id4)
 
-    chunk_list = info_set.InfoStore.getAvailableChunks(self.db)
+    chunk_list = info_set.InfoStore.getAvailableChunks(self.db,
+                                                       self.world.getID())
     self.assertEqual(len(chunk_list), 3)
 
     chunk_list = info_set.InfoStore.getAvailableChunks(self.db,
+                                                       self.world.getID(),
                                                        owner_id = owner_id)
     self.assertEqual(len(chunk_list), 6)
 
     chunk_list = info_set.InfoStore.getAvailableChunks(self.db,
+                                                       self.world.getID(),
                                                        wstate_id = wstate_id)
     self.assertEqual(len(chunk_list), 6)
 
     chunk_list = info_set.InfoStore.getAvailableChunks(self.db,
+                                                       self.world.getID(),
                                                        wstate_id = wstate_id,
                                                        owner_id = owner_id)
     self.assertEqual(len(chunk_list), 12)
+
+  def testAddDoc(self):
+    embed = info_set.generateEmbedding("Aria Blackwood")
+    path = os.path.join(self.dir_name, "sample.txt")    
+    with open(path) as f:
+      text = f.read()
+    info_set.addInfoDoc(self.db, self.world.getID(), text)
+
+    chunks = info_set.getOrderedChunks(self.db,
+                                       self.world.getID(), embed)
+    self.assertEqual(len(chunks), 0)
+    
+    while info_set.addEmbeddings(self.db):
+      pass
+
+    chunks = info_set.getOrderedChunks(self.db,
+                                       self.world.getID(), embed)
+    self.assertNotEqual(len(chunks), 0)
+
+    for i in range(0, len(chunks) - 2):
+      self.assertLess(chunks[i][1], chunks[i+1][1])
+    
     

@@ -11,19 +11,21 @@ Tables:
 - info_docs
 - info_chunks
 """
+from . import chunk
 
 import os
-
+import random
+import json
 
 class InfoStore:
-  def addInfoDoc(db, content, owner_id = None, wstate_id = None):
+  def addInfoDoc(db, world_id, content, owner_id = None, wstate_id = None):
     """
     Create a new infoDocEntry
     """
     doc_id = "id%s" % os.urandom(8).hex()
-    q = db.execute("INSERT INTO info_docs (id, owner_id, wstate_id, " +
-                   " content) VALUES (?, ?, ?, ?)",
-                   (doc_id, owner_id, wstate_id, content))
+    q = db.execute("INSERT INTO info_docs (id, world_id, owner_id, " +
+                   "wstate_id, content) VALUES (?, ?, ?, ?, ?)",
+                   (doc_id, world_id, owner_id, wstate_id, content))
     db.commit()
     return doc_id
 
@@ -69,57 +71,98 @@ class InfoStore:
       return None
     return r[0]
 
-  def getAvailableChunks(db, owner_id = None, wstate_id = None):
+  def getAvailableChunks(db, world_id, owner_id = None, wstate_id = None):
     if owner_id is not None and wstate_id is not None:
       q = db.execute("SELECT c.id, c.embedding FROM info_chunks as c JOIN " +
                      "info_docs as d ON c.doc_id = d.id " +
                      "WHERE embedding IS NOT NULL AND " +
+                     "world_id = ? AND " +
                      "(d.owner_id IS NULL or d.owner_id = ?) AND " +
                      "(d.wstate_id IS NULL or d.wstate_id = ?)",
-                     (owner_id, wstate_id))
+                     (world_id, owner_id, wstate_id))
 
     elif owner_id is not None:
       q = db.execute("SELECT c.id, c.embedding FROM info_chunks as c JOIN " +
                      "info_docs as d ON c.doc_id = d.id " +
                      "WHERE embedding IS NOT NULL AND " +
+                     "world_id = ? AND " +                     
                      "(d.owner_id IS NULL or d.owner_id = ?) AND " +
                      "d.wstate_id IS NULL",
-                     (owner_id, ))
+                     (world_id, owner_id, ))
 
     elif wstate_id is not None:
       q = db.execute("SELECT c.id, c.embedding FROM info_chunks as c JOIN " +
                      "info_docs as d ON c.doc_id = d.id " +
                      "WHERE embedding IS NOT NULL AND " +
+                     "world_id = ? AND " +
                      "d.owner_id IS NULL AND " +
                      "(d.wstate_id IS NULL or d.wstate_id = ?)",
-                     (wstate_id))
+                     (world_id, wstate_id))
     else:
       q = db.execute("SELECT c.id, c.embedding FROM info_chunks AS c JOIN " +
                      "info_docs AS d ON c.doc_id = d.id " +
                      "WHERE embedding IS NOT NULL AND " +
+                     "world_id = ? AND " +
                      "d.owner_id IS NULL AND " +
-                     "d.wstate_id IS NULL")
+                     "d.wstate_id IS NULL",
+                     (world_id,))
 
-    return q.fetchall()
+    result = []
+    for (chunk_id, str_val) in q.fetchall():
+      embed = json.loads(str_val)
+      result.append((chunk_id, embed))
+    return result
 
   def updateChunkEmbed(db, chunk_id, embedding):
+    str_val = json.dumps(embedding)
     q = db.execute("UPDATE info_chunks SET embedding = ? WHERE id = ?",
-                   (embedding, chunk_id))
+                   (str_val, chunk_id))
     db.commit()
+
+
+def _compute_distance(v1, v2):
+  """
+  Return the square of distance between the vectors
+  To get consistent distance, take the sqrt.
+  """
+  total = 0
+  index = 0
+  while (index < len(v1) and index < len(v2)):
+    v = (v1[index] - v2[index])
+    index += 1
+    total += v*v
+  return total
     
+def generateEmbedding(content):
+  result = []
+  for c in range(1, 100):
+    result.append(round(random.uniform(0, 1), 8))
+  return result
 
+def addInfoDoc(db, world_id, content, owner_id = None, wstate_id = None):
+  doc_id = InfoStore.addInfoDoc(db, world_id, content, owner_id, wstate_id)
+  result = chunk.chunk_text(content, 10, .3)
+  for entry in result:
+    InfoStore.addInfoChunk(db, doc_id, entry)
 
+def addEmbeddings(db):
+    chunk_id = InfoStore.getOneNewChunk(db)    
+    if chunk_id is not None:
+      content = InfoStore.getChunkContent(db, chunk_id)
+      embed = generateEmbedding(content)
+      InfoStore.updateChunkEmbed(db, chunk_id, embed)
+      return True
+    return False
+
+def getOrderedChunks(db, world_id, embed, owner_id = None, wstate_id = None):
+
+  chunks = InfoStore.getAvailableChunks(db, world_id,
+                                        owner_id = owner_id,
+                                        wstate_id = wstate_id)
+  result = []
+  for entry in chunks:
+    result.append((entry[0], _compute_distance(embed, entry[1])))
+  result.sort(key = lambda a : a[1])
     
-
-    
-    
-
-    
-
-
-  
- 
-
-  
-
+  return result
 

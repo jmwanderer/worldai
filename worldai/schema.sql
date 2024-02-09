@@ -59,10 +59,12 @@ CREATE TABLE character_threads (
 
 CREATE TABLE info_docs (
   id TEXT NOT NULL,
+  world_id TEXT NOT NULL,  
   owner_id TEXT NULL,
   wstate_id TEXT NULL,
   content TEXT NOT NULL,
   PRIMARY KEY (id),
+  FOREIGN KEY (world_id) REFERENCES elements(id),
   FOREIGN KEY (wstate_id) REFERENCES world_state(id),
   FOREIGN KEY (owner_id) REFERENCES elements(id)
 );
