@@ -9,6 +9,7 @@ import sqlite3
 class BasicTestCase(unittest.TestCase):
 
   def setUp(self):
+    info_set.TEST=True
     self.dir_name = os.path.dirname(__file__)
     path = os.path.join(self.dir_name, "../worldai/schema.sql")
     self.db = sqlite3.connect("file::memory:")
@@ -171,5 +172,6 @@ class BasicTestCase(unittest.TestCase):
 
     for i in range(0, len(chunks) - 2):
       self.assertLess(chunks[i][1], chunks[i+1][1])
+
     
     

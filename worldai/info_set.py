@@ -16,6 +16,11 @@ from . import chunk
 import os
 import random
 import json
+import openai
+
+client = openai.OpenAI()
+
+TEST=False
 
 class InfoStore:
   def addInfoDoc(db, world_id, content, owner_id = None, wstate_id = None):
@@ -134,14 +139,20 @@ def _compute_distance(v1, v2):
   return total
     
 def generateEmbedding(content):
-  result = []
-  for c in range(1, 100):
-    result.append(round(random.uniform(0, 1), 8))
-  return result
+  if TEST:
+    result = []
+    for c in range(1, 100):
+      result.append(round(random.uniform(0, 1), 8))
+      return result
+
+  response = client.embeddings.create(input = content,
+                                      model = "text-embedding-ada-002")
+  return response.data[0].embedding
+
 
 def addInfoDoc(db, world_id, content, owner_id = None, wstate_id = None):
   doc_id = InfoStore.addInfoDoc(db, world_id, content, owner_id, wstate_id)
-  result = chunk.chunk_text(content, 10, .3)
+  result = chunk.chunk_text(content, 100, .3)
   for entry in result:
     InfoStore.addInfoChunk(db, doc_id, entry)
 
@@ -154,6 +165,9 @@ def addEmbeddings(db):
       return True
     return False
 
+def getChunkContent(db, chunk_id):
+  return InfoStore.getChunkContent(db, chunk_id)
+
 def getOrderedChunks(db, world_id, embed, owner_id = None, wstate_id = None):
 
   chunks = InfoStore.getAvailableChunks(db, world_id,
@@ -163,6 +177,6 @@ def getOrderedChunks(db, world_id, embed, owner_id = None, wstate_id = None):
   for entry in chunks:
     result.append((entry[0], _compute_distance(embed, entry[1])))
   result.sort(key = lambda a : a[1])
-    
+
   return result
 
