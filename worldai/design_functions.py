@@ -8,6 +8,7 @@ import enum
 
 from . import elements
 from . import chat_functions
+from . import element_info
 
 
 IMAGE_DIRECTORY="/tmp"
@@ -448,6 +449,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.modified = True      
     status = self.funcStatus("created world")
     status["name"] = world.getName()
+    element_info.UpdateElementInfo(db, world)
     return status
 
   def FuncUpdateWorld(self, db, arguments):
@@ -460,6 +462,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.modified = True
     status = self.funcStatus("updated world")    
     status["name"] = world.getName()
+    element_info.UpdateElementInfo(db, world)
     return status
 
   def FuncReadWorld(self, db, arguments):
@@ -548,6 +551,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.current_state = STATE_CHARACTERS   
     status = self.funcStatus("Created character")
     status["name"] = character.getName()
+    element_info.UpdateElementInfo(db, character)
     return status
     
   def FuncUpdateCharacter(self, db, arguments):
@@ -564,6 +568,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     self.current_view  = character.getElemTag()
     status = self.funcStatus("Updated character")
     status["name"] = character.getName()
+    element_info.UpdateElementInfo(db, character)
     return status
 
   def FuncReadItem(self, db, arguments):
@@ -615,8 +620,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     
     item.updateProperties(arguments)    
     item = elements.createItem(db, item)
+    element_info.UpdateElementInfo(db, item)
     self.current_view  = item.getElemTag()
-    self.current_state = STATE_ITEMS   
+    self.current_state = STATE_ITEMS
     status = self.funcStatus("Created item")
     status["name"] = item.name
     return status
@@ -644,6 +650,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     # Update item proprties
     item.updateProperties(arguments)
     elements.updateItem(db, item)
+    element_info.UpdateElementInfo(db, item)
     self.modified = True
     self.current_view  = item.getElemTag()
     status = self.funcStatus("Updated item")
@@ -677,6 +684,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
     site.updateProperties(arguments)    
     site = elements.createSite(db, site)
+    element_info.UpdateElementInfo(db, site)
     self.current_view  = site.getElemTag()
     self.current_state = STATE_SITES   
     status = self.funcStatus("Created site")
@@ -693,6 +701,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     site.updateProperties(arguments)
     # TODO: check name collision
     elements.updateSite(db, site)
+    element_info.UpdateElementInfo(db, site)
     self.current_view  = site.getElemTag()
     self.modified = True      
     status = self.funcStatus("Updated site")

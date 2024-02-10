@@ -152,7 +152,19 @@ class BasicTestCase(unittest.TestCase):
                                                        owner_id = owner_id)
     self.assertEqual(len(chunk_list), 12)
 
-  def testAddDoc(self):
+  def testDocument(self):
+    path = os.path.join(self.dir_name, "sample.txt")
+    with open(path) as f:
+      text = f.read()
+
+    doc_id = info_set.addInfoDoc(self.db, self.world.getID(), text)
+
+    info_set.updateInfoDoc(self.db, doc_id, text)
+
+    info_set.deleteInfoDoc(self.db, doc_id)
+
+                       
+  def testLookup(self):
     embed = info_set.generateEmbedding("Aria Blackwood")
     path = os.path.join(self.dir_name, "sample.txt")    
     with open(path) as f:
@@ -172,6 +184,9 @@ class BasicTestCase(unittest.TestCase):
 
     for i in range(0, len(chunks) - 2):
       self.assertLess(chunks[i][1], chunks[i+1][1])
+
+    content = info_set.getInformation(self.db, self.world.getID(), embed, 2)
+    self.assertTrue(len(content) > 0)
 
     
     

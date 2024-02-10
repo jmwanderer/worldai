@@ -156,6 +156,19 @@ def addInfoDoc(db, world_id, content, owner_id = None, wstate_id = None):
   result = chunk.chunk_text(content, 100, .3)
   for entry in result:
     InfoStore.addInfoChunk(db, doc_id, entry)
+  return doc_id
+
+def updateInfoDoc(db, doc_id, content):
+  InfoStore.updateInfoDoc(db, doc_id, content)
+  InfoStore.deleteDocChunks(db, doc_id)
+  result = chunk.chunk_text(content, 100, .3)
+  for entry in result:
+    InfoStore.addInfoChunk(db, doc_id, entry)
+
+def deleteInfoDoc(db, doc_id):
+  InfoStore.deleteDocChunks(db, doc_id)
+  InfoStore.deleteInfoDoc(db, doc_id)
+
 
 def addEmbeddings(db):
     chunk_id = InfoStore.getOneNewChunk(db)    
@@ -180,4 +193,15 @@ def getOrderedChunks(db, world_id, embed, owner_id = None, wstate_id = None):
   result.sort(key = lambda a : a[1])
 
   return result
+
+def getInformation(db, world_id, embed, count):
+  results = ""
+  entries = getOrderedChunks(db, world_id, embed)
+  for i in range(0, min(count, len(entries))):
+    content = InfoStore.getChunkContent(db, entries[i][0])
+    results = results + content
+  return content
+                 
+    
+    
 

@@ -78,3 +78,9 @@ CREATE TABLE info_chunks(
   FOREIGN KEY (doc_id) REFERENCES info_docs(id)
 );
   
+CREATE TABLE element_info(
+  element_id TEXT NOT NULL,
+  doc_id TEXT NOT NULL,
+  FOREIGN KEY (element_id) REFERENCES elements(id),
+  FOREIGN KEY (doc_id) REFERENCES info_docs(id)
+);

@@ -26,6 +26,7 @@ from . import world_state
 from . import chat_cli
 from . import client_commands
 from . import info_set
+from . import element_info
 
 
 def create_app(instance_path=None, test_config=None):
@@ -83,7 +84,7 @@ def create_app(instance_path=None, test_config=None):
 
   
   bg_thread = Thread(target=BgEmbedTask)
-  bg_thread.setDaemon(True)
+  bg_thread.daemon = True
   bg_thread.start()
 
   @app.errorhandler(Exception)
@@ -160,6 +161,7 @@ def delete_character(id):
   """Delete a character and associated images."""
   character = elements.loadCharacter(get_db(), id)
   if character is not None:
+    element_info.DeleteElementInfo(get_db(), id)
     elements.deleteCharacter(get_db(), current_app.instance_path, id)
     click.echo('Deleted character [%s] %s.' % (character.id,
                                                character.getName()))

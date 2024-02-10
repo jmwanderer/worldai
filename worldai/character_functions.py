@@ -6,6 +6,7 @@ import logging
 from . import elements
 from . import chat_functions
 from . import world_state
+from . import info_set
 
 INSTRUCTIONS="""
 
@@ -188,8 +189,10 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
     if function_name == "IncreaseFriendship":
       result = self.FuncIncreaseFriendship(db)
-    if function_name == "DecreaseFriendship":
+    elif function_name == "DecreaseFriendship":
       result = self.FuncDecreaseFriendship(db)
+    elif  function_name == "LookupInformation":
+      result = self.FuncLookupInformation(db, arguments)
     elif function_name == "GiveItem":
       result = self.FuncGiveItem(db, arguments)
     elif function_name == "UseItem":
@@ -256,6 +259,17 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                "text": character.getName() + " increases enimity" }
     return result
 
+  def FuncLookupInformation(self, db, args):
+    """
+    Consult knowledge base for information.
+    """
+    subject = args["subject"]
+    print("Lookup info: %s" % subject)
+    embed = info_set.generateEmbedding(subject)
+    content = info_set.getInformation(db, self.world_id, embed, 2)
+    return { "subject": subject,
+            "information": content }
+  
   def FuncGiveItem(self, db, args):
     """
     Give or receive an item
@@ -522,7 +536,19 @@ all_functions = [
       },
     },
   },
-
+  {
+    "name": "LookupInformation",
+    "description": "Check knowledge base for information",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "descripton": "Subject of information query"
+        }
+      }
+    }
+  }
   
 ]
   
