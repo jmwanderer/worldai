@@ -130,6 +130,7 @@ def _compute_distance(v1, v2):
   Return the square of distance between the vectors
   To get consistent distance, take the sqrt.
   """
+  #TODO: look at https://platform.openai.com/docs/guides/embeddings/use-cases
   total = 0
   index = 0
   while (index < len(v1) and index < len(v2)):

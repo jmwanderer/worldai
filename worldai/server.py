@@ -15,7 +15,7 @@ import werkzeug.utils
 import logging
 import click
 import openai
-
+from threading import Thread
 from . import db_access
 from . import elements
 from . import chat
@@ -25,6 +25,7 @@ from . import character_chat
 from . import world_state
 from . import chat_cli
 from . import client_commands
+from . import info_set
 
 
 def create_app(instance_path=None, test_config=None):
@@ -80,12 +81,29 @@ def create_app(instance_path=None, test_config=None):
   app.register_blueprint(bp)
   app.teardown_appcontext(close_db)  
 
+  
+  bg_thread = Thread(target=BgEmbedTask)
+  bg_thread.setDaemon(True)
+  bg_thread.start()
+
   @app.errorhandler(Exception)
   def handle_exception(e):
     logging.exception("Internal error")
     return e
   return app
 
+def BgEmbedTask():
+  db = db_access.open_db()
+  while True:
+    time.sleep(30)
+    count = 0
+    while info_set.addEmbeddings(db) and count < 10:
+      count = count + 1
+    if count > 0:
+      logging.info("Updated %d embeddings.", count)
+  db.close()
+
+  
 
 def get_db():
   if 'db' not in g:
