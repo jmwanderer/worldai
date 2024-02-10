@@ -180,6 +180,35 @@ def delete_world(id):
   else:
     click.echo(f'Error, no such world id:{id}')
 
+@bp.cli.command('update-embeddings')
+@click.argument('world_name')
+def update_embeddings(world_name):
+  world = elements.findWorld(get_db(), world_name)
+  if world is None:
+    click.echo("No such world %s" % world_name)
+    return
+  click.echo(f"Update character {world.getName()}")  
+  element_info.UpdateElementInfo(get_db(), world)
+
+  characters = elements.listCharacters(get_db(), world.getID())
+  sites = elements.listSites(get_db(), world.getID())
+  items = elements.listItems(get_db(), world.getID())
+
+  for cid in characters:
+    character = elements.loadCharacter(get_db(), cid.getID())
+    click.echo(f"Update character {character.getName()}")
+    element_info.UpdateElementInfo(get_db(), character)
+  for iid in items:
+    item = elements.loadItem(get_db(), iid.getID())
+    click.echo(f"Update item {item.getName()}")
+    element_info.UpdateElementInfo(get_db(), item)
+  for sid in sites:
+    site = elements.loadSite(get_db(), sid.getID())
+    click.echo(f"Update iste {site.getName()}")
+    element_info.UpdateElementInfo(get_db(), site)
+  click.echo("done")
+
+
 
 
 def list_images(parent_id):

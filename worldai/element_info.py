@@ -17,16 +17,22 @@ def UpdateElementInfo(db, element: elements.Element):
     Create or update info store for element
     """
     logging.info("update element info %s", element.getName())
+    world_id = element.parent_id
+    if element.type == elements.ElementType.WORLD:
+        world_id = element.id
 
-    content = (element.getName() + ": " + 
-                element.getDescription() + ", " +
-                element.getDetails())
+    content = element.getName()
+    if element.getDescription() is not None:
+        content = content + ": " + element.getDescription()
+    if element.getDetails() is not None:
+        content = content + ", " + element.getDetails()
+             
     c = db.cursor()
     c.execute("SELECT doc_id FROM element_info WHERE element_id = ?",
               (element.getID(),))
     r = c.fetchone()
     if r is None:
-        doc_id = info_set.addInfoDoc(db, element.parent_id, content)
+        doc_id = info_set.addInfoDoc(db, world_id, content)
         c.execute("INSERT INTO element_info (element_id, doc_id) VALUES (?,?)",
                   (element.getID(), doc_id))
         db.commit()

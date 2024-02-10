@@ -28,6 +28,7 @@ class InfoStore:
     Create a new infoDocEntry
     """
     doc_id = "id%s" % os.urandom(8).hex()
+    print(f"Add info doc world id = {world_id}")
     q = db.execute("INSERT INTO info_docs (id, world_id, owner_id, " +
                    "wstate_id, content) VALUES (?, ?, ?, ?, ?)",
                    (doc_id, world_id, owner_id, wstate_id, content))
