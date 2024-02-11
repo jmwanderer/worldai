@@ -202,12 +202,12 @@ def getOrderedChunks(db, world_id, embed, owner_id = None, wstate_id = None):
   return result
 
 def getInformation(db, world_id, embed, count):
-  results = ""
+  results = []
   entries = getOrderedChunks(db, world_id, embed)
   for i in range(0, min(count, len(entries))):
     content = InfoStore.getChunkContent(db, entries[i][0])
-    results = results + content
-  return content
+    results.append(content)
+  return "\n".join(results)
                  
     
     

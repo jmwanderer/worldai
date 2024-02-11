@@ -927,6 +927,8 @@ def site_instance(wid, sid):
   cid_list = wstate.getCharactersAtLocation(sid)
   for cid in cid_list:
     character = elements.loadCharacter(get_db(), cid)
+    if character is None:
+      continue
     # TODO: make more DRY
     image_prop = getElementThumbProperty(character)
     record = {"id": cid,

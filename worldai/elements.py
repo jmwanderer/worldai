@@ -65,6 +65,7 @@ class WorldProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""
   details: typing.Optional[str] = ""
   plans: typing.Optional[str] = ""
+  #background: typing.List[ str ] = [] - add docid, etc? No, somewhere else
 
 class CharacterProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""

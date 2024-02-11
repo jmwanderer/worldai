@@ -263,11 +263,11 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     """
     Consult knowledge base for information.
     """
-    subject = args["subject"]
-    print("Lookup info: %s" % subject)
-    embed = info_set.generateEmbedding(subject)
+    context = args["context"]
+    logging.info("Lookup info: %s" % context)
+    embed = info_set.generateEmbedding(context)
     content = info_set.getInformation(db, self.world_id, embed, 2)
-    return { "subject": subject,
+    return { "context": context,
             "information": content }
   
   def FuncGiveItem(self, db, args):
@@ -542,9 +542,9 @@ all_functions = [
     "parameters": {
       "type": "object",
       "properties": {
-        "subject": {
+        "context": {
           "type": "string",
-          "descripton": "Subject of information query"
+          "descripton": "Context of the information query"
         }
       }
     }
