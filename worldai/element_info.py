@@ -12,7 +12,7 @@ from . import elements
 from . import info_set
 import logging
 
-def UpdateElementInfo(db, element: elements.Element, index: int = 0):
+def UpdateElementInfo(db, element: elements.Element):
     """
     Create or update info store for element
     """
@@ -21,20 +21,19 @@ def UpdateElementInfo(db, element: elements.Element, index: int = 0):
     if element.type == elements.ElementType.WORLD:
         world_id = element.id
 
-    content = element.getInfoText(index)
-             
-    c = db.cursor()
-    c.execute("SELECT doc_id FROM element_info WHERE element_id = ? and info_index = ?",
-              (element.getID(), index))
-    r = c.fetchone()
-    if r is None:
-        doc_id = info_set.addInfoDoc(db, world_id, content)
-        c.execute("INSERT INTO element_info (element_id, info_index, doc_id) VALUES (?,?,?)",
-                  (element.getID(), index, doc_id))
-        db.commit()
-    else:
-        doc_id = r[0]
-        info_set.updateInfoDoc(db, doc_id, content)
+    for (index, content) in element.getInfoText():
+        c = db.cursor()
+        c.execute("SELECT doc_id FROM element_info WHERE element_id = ? and info_index = ?",
+                  (element.getID(), index))
+        r = c.fetchone()
+        if r is None:
+            doc_id = info_set.addInfoDoc(db, world_id, content)
+            c.execute("INSERT INTO element_info (element_id, info_index, doc_id) VALUES (?,?,?)",
+                      (element.getID(), index, doc_id))
+            db.commit()
+        else:
+            doc_id = r[0]
+            info_set.updateInfoDoc(db, doc_id, content)
 
 
 def DeleteElementInfo(db, element_id):

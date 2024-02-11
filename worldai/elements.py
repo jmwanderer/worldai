@@ -62,14 +62,13 @@ class CommonProps(pydantic.BaseModel):
   details: typing.Optional[str] = ""
   
 class WorldNotes(pydantic.BaseModel):
-  note_id: int = 0
+  title: str = ""
   value: str = ""
 
 class WorldProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""
   details: typing.Optional[str] = ""
   plans: typing.Optional[str] = ""
-  next_note_id: int = 1
   notes: typing.List[WorldNotes] = []
 
 class CharacterProps(pydantic.BaseModel):
@@ -278,15 +277,13 @@ class Element:
   def setDetails(self, value):
     self.prop_model.details = value
 
-  def getInfoText(self, index: int):
-    if index == 0:
-      content = self.getName()
-      if self.getDescription() is not None:
-        content = content + ": " + self.getDescription()
-      if self.getDetails() is not None:
-        content = content + "\n" + self.getDetails()
-      return content
-    return None
+  def getInfoText(self):
+    content = self.getName()
+    if self.getDescription() is not None:
+      content = content + ": " + self.getDescription()
+    if self.getDetails() is not None:
+      content = content + "\n" + self.getDetails()
+    return [ (0, content) ]
   
 
 
@@ -342,16 +339,24 @@ class World(Element):
   def getBackgroundNoteCount(self):
     return len(self.prop_model.notes)
   
-  def addBackgroundNote(self, value:str):
-    note_id = self.prop_model.next_note_id
-    self.prop_model.next_note_id += 1
-    self.prop_model.notes.append(WorldNotes(note_id=note_id, value=value))
+  def addBackgroundNote(self, title: str, value:str):
+    self.prop_model.notes.append(WorldNotes(title=title, value=value))
 
   def getBackgroundNote(self, index: int):
-    return self.prop_model.notes[index].value
+    return self.prop_model.notes[index].title, self.prop_model.notes[index].value
 
-  def setBackgoundNote(self, index: int, value: str):
-    self.prop_model.notes[index] = value
+  def setBackgoundNote(self, index: int, title: str, value: str):
+    self.prop_model.notes[index].title = title
+    self.prop_model.notes[index].value = value
+
+  def getInfoText(self):
+    """
+    Return entries of (index, text)
+    """
+    yield super().getInfoText()[0]
+    for i in range(0, self.getBackgroundNoteCount()):
+      print(f"get bg node {i}")
+      yield ( (i + 1, self.getBackgroundNote(i)))
 
     
 class Character(Element):

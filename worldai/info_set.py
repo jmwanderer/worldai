@@ -168,6 +168,7 @@ def addInfoDoc(db, world_id, content, owner_id = None, wstate_id = None):
 
 def updateInfoDoc(db, doc_id, content):
   logging.info("Update info doc id:%s ", doc_id)
+  # TODO: consider checking if the document changed.
   InfoStore.updateInfoDoc(db, doc_id, content)
   InfoStore.deleteDocChunks(db, doc_id)
   result = chunk.chunk_text(content, 200, .2)

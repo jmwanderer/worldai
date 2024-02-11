@@ -83,15 +83,23 @@ class BasicTestCase(unittest.TestCase):
     world1 = elements.createWorld(self.db, world)
     self.assertIsNotNone(world)
 
-    self.assertIsNotNone(world.getInfoText(0))
-    self.assertIsNone(world.getInfoText(1))
-
-    world.addBackgroundNote("This is some background information")
-    world.addBackgroundNote("This is more background information")
+    count = 0
+    for entry in world.getInfoText():
+      count += 1
+    self.assertEqual(count, 1)
+    
+    world.addBackgroundNote("Section 1", "This is some background information")
+    world.addBackgroundNote("Section 2", "This is more background information")
     self.assertEqual(world.getBackgroundNoteCount(), 2)
-    self.assertIsNotNone(world.getBackgroundNote(0))
-    self.assertIsNotNone(world.getBackgroundNote(1))
-    world.setBackgoundNote(0, "New info")
+    title, content = world.getBackgroundNote(0)
+    self.assertIsNotNone(content)
+    title, content = world.getBackgroundNote(1)
+    self.assertIsNotNone(content)
+    world.setBackgoundNote(0, "Outline", "New info")
+    count = 0
+    for entry in world.getInfoText():
+      count += 1
+    self.assertEqual(count, 3)
 
     tag = elements.getElemTag(self.db, world.id)
     self.assertEqual(tag.getID(), world.id)
