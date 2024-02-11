@@ -17,6 +17,7 @@ import os
 import random
 import json
 import openai
+import logging
 
 TEST=False
 
@@ -26,7 +27,6 @@ class InfoStore:
     Create a new infoDocEntry
     """
     doc_id = "id%s" % os.urandom(8).hex()
-    print(f"Add info doc world id = {world_id}")
     q = db.execute("INSERT INTO info_docs (id, world_id, owner_id, " +
                    "wstate_id, content) VALUES (?, ?, ?, ?, ?)",
                    (doc_id, world_id, owner_id, wstate_id, content))
@@ -160,12 +160,14 @@ def generateEmbedding(content):
 
 def addInfoDoc(db, world_id, content, owner_id = None, wstate_id = None):
   doc_id = InfoStore.addInfoDoc(db, world_id, content, owner_id, wstate_id)
+  logging.info("Add info doc id:%s, world id: %s", doc_id, world_id)
   result = chunk.chunk_text(content, 200, .2)
   for entry in result:
     InfoStore.addInfoChunk(db, doc_id, entry)
   return doc_id
 
 def updateInfoDoc(db, doc_id, content):
+  logging.info("Update info doc id:%s ", doc_id)
   InfoStore.updateInfoDoc(db, doc_id, content)
   InfoStore.deleteDocChunks(db, doc_id)
   result = chunk.chunk_text(content, 200, .2)

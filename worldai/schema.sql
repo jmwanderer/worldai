@@ -80,7 +80,9 @@ CREATE TABLE info_chunks(
   
 CREATE TABLE element_info(
   element_id TEXT NOT NULL,
+  info_index INTEGER DEFAULT 0,
   doc_id TEXT NOT NULL,
+  PRIMARY KEY (element_id, info_index),
   FOREIGN KEY (element_id) REFERENCES elements(id),
   FOREIGN KEY (doc_id) REFERENCES info_docs(id)
 );

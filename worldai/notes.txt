@@ -1,5 +1,7 @@
 Plans
 -----
+- check if proper arguments are in the character function calls
+- add utility to reset a specific instance of a world
 
 - add player stats to character chat screen
 - locked is not a good prop name for the site access

@@ -83,6 +83,9 @@ class BasicTestCase(unittest.TestCase):
     world1 = elements.createWorld(self.db, world)
     self.assertIsNotNone(world)
 
+    self.assertIsNotNone(world.getInfoText(0))
+    self.assertIsNone(world.getInfoText(1))
+
     tag = elements.getElemTag(self.db, world.id)
     self.assertEqual(tag.getID(), world.id)
     self.assertEqual(tag.getWorldID(), world.id)

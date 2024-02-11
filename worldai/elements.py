@@ -273,6 +273,18 @@ class Element:
   def setDetails(self, value):
     self.prop_model.details = value
 
+  def getInfoText(self, index: int):
+    if index == 0:
+      content = self.getName()
+      if self.getDescription() is not None:
+        content = content + ": " + self.getDescription()
+      if self.getDetails() is not None:
+        content = content + "\n" + self.getDetails()
+      return content
+    return None
+  
+
+
   def getImages(self):
     # Return a list of image ids
     return self.images
