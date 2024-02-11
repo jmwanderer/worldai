@@ -86,6 +86,13 @@ class BasicTestCase(unittest.TestCase):
     self.assertIsNotNone(world.getInfoText(0))
     self.assertIsNone(world.getInfoText(1))
 
+    world.addBackgroundNote("This is some background information")
+    world.addBackgroundNote("This is more background information")
+    self.assertEqual(world.getBackgroundNoteCount(), 2)
+    self.assertIsNotNone(world.getBackgroundNote(0))
+    self.assertIsNotNone(world.getBackgroundNote(1))
+    world.setBackgoundNote(0, "New info")
+
     tag = elements.getElemTag(self.db, world.id)
     self.assertEqual(tag.getID(), world.id)
     self.assertEqual(tag.getWorldID(), world.id)

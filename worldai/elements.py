@@ -61,11 +61,16 @@ class CommonProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""
   details: typing.Optional[str] = ""
   
+class WorldNotes(pydantic.BaseModel):
+  note_id: int = 0
+  value: str = ""
+
 class WorldProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""
   details: typing.Optional[str] = ""
   plans: typing.Optional[str] = ""
-  #background: typing.List[ str ] = [] - add docid, etc? No, somewhere else
+  next_note_id: int = 1
+  notes: typing.List[WorldNotes] = []
 
 class CharacterProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""
@@ -333,6 +338,20 @@ class World(Element):
   
   def setPlans(self, value):
     self.prop_model.plans = value
+
+  def getBackgroundNoteCount(self):
+    return len(self.prop_model.notes)
+  
+  def addBackgroundNote(self, value:str):
+    note_id = self.prop_model.next_note_id
+    self.prop_model.next_note_id += 1
+    self.prop_model.notes.append(WorldNotes(note_id=note_id, value=value))
+
+  def getBackgroundNote(self, index: int):
+    return self.prop_model.notes[index].value
+
+  def setBackgoundNote(self, index: int, value: str):
+    self.prop_model.notes[index] = value
 
     
 class Character(Element):
