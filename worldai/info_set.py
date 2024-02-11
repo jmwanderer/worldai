@@ -143,7 +143,7 @@ client = None
 def _get_aiclient():
   global client
   if client is None:
-    client = openai.OpenAI()
+    client = openai.OpenAI(api_key=openai.api_key)
   return client
 
 def generateEmbedding(content):
