@@ -180,6 +180,15 @@ def delete_world(id):
   else:
     click.echo(f'Error, no such world id:{id}')
 
+@bp.cli.command('list-worlds')
+def list_worlds():
+  worlds = elements.listWorlds(get_db())
+  print("%d worlds listed" % len(worlds))
+
+  for (entry) in worlds:
+    click.echo("[%s}: %s" % (entry.getID(), entry.getName()))
+    
+
 @bp.cli.command('update-embeddings')
 @click.argument('world_name')
 def update_embeddings(world_name):

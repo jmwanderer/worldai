@@ -18,8 +18,6 @@ import random
 import json
 import openai
 
-client = openai.OpenAI()
-
 TEST=False
 
 class InfoStore:
@@ -139,7 +137,15 @@ def _compute_distance(v1, v2):
     index += 1
     total += v*v
   return total
-    
+
+
+client = None
+def _get_aiclient():
+  global client
+  if client is None:
+    client = openai.OpenAI()
+  return client
+
 def generateEmbedding(content):
   if TEST:
     result = []
@@ -147,8 +153,8 @@ def generateEmbedding(content):
       result.append(round(random.uniform(0, 1), 8))
       return result
 
-  response = client.embeddings.create(input = content,
-                                      model = "text-embedding-ada-002")
+  response = _get_aiclient().embeddings.create(input = content,
+                                               model = "text-embedding-ada-002")
   return response.data[0].embedding
 
 
