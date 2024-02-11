@@ -25,7 +25,7 @@ def UpdateElementInfo(db, element: elements.Element):
     if element.getDescription() is not None:
         content = content + ": " + element.getDescription()
     if element.getDetails() is not None:
-        content = content + ", " + element.getDetails()
+        content = content + "\n" + element.getDetails()
              
     c = db.cursor()
     c.execute("SELECT doc_id FROM element_info WHERE element_id = ?",

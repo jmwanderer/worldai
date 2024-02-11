@@ -196,7 +196,11 @@ def update_embeddings(world_name):
   if world is None:
     click.echo("No such world %s" % world_name)
     return
-  click.echo(f"Update character {world.getName()}")  
+  update_world_embeddings(world)
+  
+def update_world_embeddings(world):
+
+  click.echo(f"Update world {world.getName()}")
   element_info.UpdateElementInfo(get_db(), world)
 
   characters = elements.listCharacters(get_db(), world.getID())
@@ -213,12 +217,16 @@ def update_embeddings(world_name):
     element_info.UpdateElementInfo(get_db(), item)
   for sid in sites:
     site = elements.loadSite(get_db(), sid.getID())
-    click.echo(f"Update iste {site.getName()}")
+    click.echo(f"Update site {site.getName()}")
     element_info.UpdateElementInfo(get_db(), site)
   click.echo("done")
 
-
-
+@bp.cli.command('update-all-embeddings')
+def update_all_embeddings():
+  worlds = elements.listWorlds(get_db())
+  for entry in worlds:
+    world = elements.loadWorld(get_db(), entry.getID())
+    update_world_embeddings(world)
 
 def list_images(parent_id):
   print("Listing images...")

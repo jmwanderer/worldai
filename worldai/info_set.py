@@ -160,7 +160,7 @@ def generateEmbedding(content):
 
 def addInfoDoc(db, world_id, content, owner_id = None, wstate_id = None):
   doc_id = InfoStore.addInfoDoc(db, world_id, content, owner_id, wstate_id)
-  result = chunk.chunk_text(content, 100, .3)
+  result = chunk.chunk_text(content, 200, .2)
   for entry in result:
     InfoStore.addInfoChunk(db, doc_id, entry)
   return doc_id
@@ -168,7 +168,7 @@ def addInfoDoc(db, world_id, content, owner_id = None, wstate_id = None):
 def updateInfoDoc(db, doc_id, content):
   InfoStore.updateInfoDoc(db, doc_id, content)
   InfoStore.deleteDocChunks(db, doc_id)
-  result = chunk.chunk_text(content, 100, .3)
+  result = chunk.chunk_text(content, 200, .2)
   for entry in result:
     InfoStore.addInfoChunk(db, doc_id, entry)
 

@@ -1,4 +1,5 @@
 from worldai import info_set
+from worldai import chunk
 from worldai import elements
 from worldai import world_state
 import unittest
@@ -188,5 +189,17 @@ class BasicTestCase(unittest.TestCase):
     content = info_set.getInformation(self.db, self.world.getID(), embed, 2)
     self.assertTrue(len(content) > 0)
 
+
+  def testChunk(self):
+    result = chunk.chunk_text(TEXT, 200, .2)
+    self.assertEqual(len(result), 1)
+
+    result = chunk.chunk_text("\n".join([ TEXT, TEXT, TEXT ]), 200, .2)
+    self.assertEqual(len(result), 3)
+
+
     
+TEXT="""Jakumbi: A character with a quick wit and great intelligence. He is skilled at hitting a bullseye at 100 yards, demonstrating incredible marksmanship. In addition to his sharpshooting abilities, Jakumbi is also a strong weight lifter and enjoys playing computer games.
+Jakumbi is a cunning and intelligent individual, known for his quick wit and sharp mind. His impressive marksmanship, with the ability to hit a bullseye at 100 yards, sets him apart as a skilled sharpshooter. Additionally, his strength as a weight lifter and his passion for computer games add depth to his character."""
+
     
