@@ -1,5 +1,7 @@
 Plans
 -----
+- commumnicate none ability to GPT
+- feature to ensure show world is included in design thread
 - check if proper arguments are in the character function calls
 - add utility to reset a specific instance of a world
 

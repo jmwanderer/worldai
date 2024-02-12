@@ -229,6 +229,12 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     # We need to sync the GPT to the new view
     self.next_view = elements.ElemTag()
 
+  # Class variables for puplic properties for each type
+  WORLD_PROPS = ["name", "description", "details" ]
+  CHAR_PROPS = ["name", "description", "details", "personality" ]
+  ITEM_PROPS = ["name", "description", "details", "mobile", "ability" ]
+  SITE_PROPS = ["name", "description", "details", "locked" ]
+
   def getProperties(self):
     properties = super().getProperties()
     properties["current_state"] = self.current_state
@@ -470,12 +476,10 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     world = elements.findWorld(db, name)
     if world is None:
       return self.funcError(f"no world '{name}', perahps call ListWorlds")      
-    content = { **world.getAllProperties(),
-                "has_image": world.hasImage(), 
-               }
-    # Don't include plans in the world description
-    if "plans" in content.keys():
-      del content["plans"]
+
+    content = {key: world.getAllProperties()[key] 
+               for key in DesignFunctions.WORLD_PROPS}
+    content["has_image"] = world.hasImage()
 
     # Add information on the existing elements of the world.
     content["has_plans"] = len(world.getPlans()) > 0
@@ -527,9 +531,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     
     character = elements.findCharacter(db, self.getCurrentWorldID(), name)
     if character is not None:
-      content = { **character.getAllProperties(),
-                  "has_image": character.hasImage(),                   
-                 }
+      content = {key: character.getAllProperties()[key] 
+                 for key in DesignFunctions.CHAR_PROPS}
+      content["has_image"] = character.hasImage()
       self.current_state = STATE_CHARACTERS
       self.current_view  = character.getElemTag()
     else:
@@ -578,9 +582,10 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     
     item = elements.findItem(db, self.getCurrentWorldID(), name)
     if item is not None:
-      content = { **item.getAllProperties(),
-                  "has_image": item.hasImage(),                  
-                 }
+      content = {key: item.getAllProperties()[key] 
+                 for key in DesignFunctions.ITEM_PROPS}
+      content["has_image"] = item.hasImage()
+      # TODO: change to name?
       # Remove site_id from view of GPT
       del content["ability"]["site_id"]
 
@@ -664,9 +669,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     
     site = elements.findSite(db, self.getCurrentWorldID(), name)
     if site is not None:
-      content = { **site.getAllProperties(),
-                  "has_image": site.hasImage(),
-                 }
+      content = {key: site.getAllProperties()[key] 
+                 for key in DesignFunctions.SITE_PROPS}
       self.current_state = STATE_SITES
       self.current_view  = site.getElemTag()
     else:
