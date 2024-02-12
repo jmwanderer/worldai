@@ -78,6 +78,7 @@ class CharacterProps(pydantic.BaseModel):
 
 class ItemEffect(str, enum.Enum):
   # Possible effects of the item
+  OTHER = ""
   NONE = "none"
   HEAL = "heal"  
   HURT = "hurt"
@@ -210,7 +211,14 @@ class Element:
     wid = self.parent_id if self.type != ElementType.WORLD else self.id
     return ElemTag(wid, self.id,
                    ElementType.typeToName(self.type))
-  
+
+  def fixProperties(self, properties):
+    """
+    Update any properties that need to change for backwards compatibility
+    and migration
+    """  
+    return properties
+
   def setProperties(self, properties):
     """
     Set the set of encode properties.
@@ -226,7 +234,7 @@ class Element:
     if properties.get(CoreProps.PROP_NAME) is not None:
       self.name = properties[CoreProps.PROP_NAME]
       del properties[CoreProps.PROP_NAME]
-    new_props = self.prop_model.model_dump()
+    new_props = self.getProperties()
     for key in properties.keys():
       new_props[key] = properties[key]
     self.setProperties(new_props)
@@ -235,7 +243,7 @@ class Element:
     """
     Return dictonary of encoded properties
     """
-    return self.prop_model.model_dump()
+    return self.fixProperties(self.prop_model.model_dump())
 
   def setPropertiesStr(self, properties):
     """
@@ -394,6 +402,15 @@ class Site(Element):
   def __init__(self, parent_id=''):
     super().__init__(ElementType.SITE, parent_id)
 
+  def fixProperties(self, properties):
+    print("fix props site")
+    if properties.get("locked") is not None:
+      print("has prop locked")
+      properties["default_open"] = not properties["locked"]
+      del properties["locked"]
+    print(json.dumps(properties))
+    return properties
+      
   def setProperties(self, properties):
     """
     Set the set of encode properties.
@@ -414,6 +431,15 @@ class Item(Element):
   def __init__(self, parent_id=''):
     super().__init__(ElementType.ITEM, parent_id)
   
+  def fixProperties(self, properties):
+    if properties.get("ability") is not None:
+      if properties["ability"].get("effect") is not None:
+        if properties["ability"]["effect"] == "unlock":
+          properties["ability"]["effect"] = "open"
+        if properties["ability"]["effect"] == "":
+          properties["ability"]["effect"] = "none"
+    return properties
+      
   def setProperties(self, properties):
     """
     Set the set of encode properties.
@@ -473,6 +499,7 @@ class ElementStore:
   
   
   def updateElement(db, element):
+    print("update element")
     q = db.execute("UPDATE elements SET  name = ?, properties = ? " +
                    "WHERE id = ? and type = ?",
                    (element.name, element.getPropertiesStr(),
@@ -787,6 +814,7 @@ def createItem(db, item):
   return ElementStore.createElement(db, item)
   
 def updateItem(db, item):
+  
   ElementStore.updateElement(db, item)
 
 def hideItem(db, wid, name):

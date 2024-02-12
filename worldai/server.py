@@ -189,6 +189,33 @@ def list_worlds_cli():
     click.echo("[%s}: %s" % (entry.getID(), entry.getName()))
     
 
+@bp.cli.command("write-elements")
+def write_elements_cli():
+  worlds = elements.listWorlds(get_db())
+  for entry in worlds:
+    click.echo(f"World: {entry.getName()}")
+    world = elements.loadWorld(get_db(), entry.getID())
+    elements.updateWorld(get_db(), world)
+
+    characters = elements.listCharacters(get_db(), world.id)
+    for centry in characters:
+      click.echo(f"Character: {centry.getName()}")
+      character = elements.loadCharacter(get_db(), centry.getID())
+      elements.updateCharacter(get_db(), character)
+
+    items = elements.listItems(get_db(), world.id)
+    for ientry in items:
+      click.echo(f"Item: {ientry.getName()}")
+      item = elements.loadItem(get_db(), ientry.getID())
+      elements.updateItem(get_db(), item)
+
+    sites = elements.listSites(get_db(), world.id)
+    for sentry in sites:
+      click.echo(f"Site: {sentry.getName()}")
+      site = elements.loadSite(get_db(), sentry.getID())
+      elements.updateSite(get_db(), site)
+
+
 @bp.cli.command('update-embeddings')
 @click.argument('world_name')
 def update_embeddings(world_name):
