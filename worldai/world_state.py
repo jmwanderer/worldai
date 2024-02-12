@@ -57,7 +57,8 @@ class ItemState(pydantic.BaseModel):
   location: str = ""
 
 class SiteState(pydantic.BaseModel):
-  locked: bool = False
+  locked: bool = False # Obsolete
+  is_open: bool = True
     
 class WorldStateModel(pydantic.BaseModel):
   """
@@ -337,17 +338,17 @@ class WorldState:
     """
     return self.model.player_state.chat_who
 
-  def isSiteLocked(self, site_id):
+  def isSiteOpen(self, site_id):
     """
-    Returns True if the site is locked.
+    Returns True if the site is open.
     """
-    return self.get_site(site_id).locked
+    return self.get_site(site_id).is_open
 
-  def setSiteLocked(self, site_id, value):
+  def setSiteOpen(self, site_id, value):
     """
-    Record if site is locked
+    Record if site is open
     """
-    self.get_site(site_id).locked = value
+    self.get_site(site_id).is_open = value
       
 
 def getWorldStateID(db, session_id, world_id):
@@ -397,11 +398,11 @@ def checkWorldState(db, wstate):
   for entry in sites:
     site = elements.loadSite(db, entry.getID())
     if site is not None and not wstate.isSiteInitialized(site.id):
-      logging.info("init site %s: locked %s",
-                   site.id, site.getDefaultLocked())
-      wstate.setSiteLocked(site.id, site.getDefaultLocked())
+      logging.info("init site %s: open %s",
+                   site.id, site.getDefaultOpen())
+      wstate.setSiteOpen(site.id, site.getDefaultOpen())
       changed = True
-    if not wstate.isSiteLocked(entry.getID()):
+    if wstate.isSiteOpen(entry.getID()):
       avail_sites.append(entry)
                                
   if len(avail_sites) > 0:

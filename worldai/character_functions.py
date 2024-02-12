@@ -209,7 +209,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         site = elements.loadSite(db, entry.getID())
         result.append({ "name": site.getName(),
                         "description": site.getDescription(),
-                        "locked": wstate.isSiteLocked(id) })
+                        "open": wstate.isSiteOpen(id) })
     elif function_name == "ListItems":
       result = []
       for entry in elements.listItems(db, self.world_id):
@@ -349,8 +349,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         pass
       case elements.ItemEffect.INVISIBILITY:
         pass
-      case elements.ItemEffect.UNLOCK:
-        impact = self.unlockSite(db, wstate, item)
+      case elements.ItemEffect.OPEN:
+        impact = self.openSite(db, wstate, item)
         pass
         
     
@@ -398,16 +398,16 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     message = "Travler is paralized"
     return message
 
-  def unlockSite(self, db, wstate, item):
+  def openSite(self, db, wstate, item):
     site_id = item.getAbility().site_id
     site = elements.loadSite(db, site_id)
     message = ""
     if site is not None:
-      if wstate.isSiteLocked(site_id):
-        wstate.setSiteLocked(site_id, False)
-        message = f"Site {site.getName()} is now unlocked."
+      if not wstate.isSiteOpen(site_id):
+        wstate.setSiteOpen(site_id, True)
+        message = f"Site {site.getName()} is now open."
       else:
-        message = f"Site {site.getName()} is already unlocked."
+        message = f"Site {site.getName()} is already open."
     return message
   
 
@@ -421,8 +421,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     site = elements.findSite(db, self.world_id, site_name)
     if site is None:
       return self.funcError("Site does not exist Perhaps call ListSites?")
-    if wstate.isSiteLocked(site.id):
-      return self.funcError("The site is locked and can not be accessed")
+    if not wstate.isSiteOpen(site.id):
+      return self.funcError("The site is not open and can not be accessed")
     old_site_id = wstate.getCharacterLocation(self.character_id)
     if old_site_id == site.id:
       return self.funcError("You are already at %s." % site.getName())

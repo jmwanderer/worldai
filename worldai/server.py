@@ -877,7 +877,7 @@ def site_instances_list(wid):
        "name": site.getName(),
        "description": site.getDescription(),
        "present": wstate.getLocation() == id,
-       "locked": wstate.isSiteLocked(id),
+       "open": wstate.isSiteOpen(id),
        "image": image_prop })
   return site_list
 

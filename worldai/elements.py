@@ -78,7 +78,7 @@ class CharacterProps(pydantic.BaseModel):
 
 class ItemEffect(str, enum.Enum):
   # Possible effects of the item
-  NONE = ""
+  NONE = "none"
   HEAL = "heal"  
   HURT = "hurt"
   PARALIZE = "paralize"
@@ -88,6 +88,7 @@ class ItemEffect(str, enum.Enum):
   CAPTURE = "capture"
   INVISIBILITY = "invisibility"
   UNLOCK = "unlock"  
+  OPEN = "open"  
 
 class ItemAbility(pydantic.BaseModel):
   effect: typing.Optional[ItemEffect] = ItemEffect.NONE
@@ -102,7 +103,8 @@ class ItemProps(pydantic.BaseModel):
 class SiteProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""
   details: typing.Optional[str] = ""
-  locked: typing.Optional[bool] = False
+  locked: typing.Optional[bool] = False # Obsolete
+  default_open: typing.Optional[bool] = True
 
   
 class IdName:
@@ -399,11 +401,11 @@ class Site(Element):
     """
     self.prop_model = SiteProps(**properties)
 
-  def getDefaultLocked(self):
-    return self.prop_model.locked
+  def getDefaultOpen(self):
+    return self.prop_model.default_open
 
-  def setDefaultLocked(self, value):
-    self.prop_model.locked =  value
+  def setDefaultOpen(self, value):
+    self.prop_model.default_open =  value
     
 class Item(Element):
   """

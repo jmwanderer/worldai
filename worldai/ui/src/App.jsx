@@ -878,7 +878,7 @@ function SiteItem({ site, onClick }) {
         <Card.Img src={site.image.url}/>
         <Card.Title>
           { site.name }
-          { site.locked ? <i className="bi bi-lock-fill"/> : "" }
+          { site.open ? "" : <i className="bi bi-lock-fill"/> }
         </Card.Title>
         <Button onClick={handleClick} className="mt-auto">Go</Button>        
       </Card>

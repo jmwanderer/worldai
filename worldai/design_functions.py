@@ -233,7 +233,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
   WORLD_PROPS = ["name", "description", "details" ]
   CHAR_PROPS = ["name", "description", "details", "personality" ]
   ITEM_PROPS = ["name", "description", "details", "mobile", "ability" ]
-  SITE_PROPS = ["name", "description", "details", "locked" ]
+  SITE_PROPS = ["name", "description", "details", "default_open" ]
 
   def getProperties(self):
     properties = super().getProperties()
@@ -1215,7 +1215,7 @@ all_functions = [
             "effect": {
               "type": "string",
               "enum": [ "heal", "hurt", "paralize", "poison", "sleep",
-                        "brainwash", "capture", "invisibility", "unlock" ],
+                        "brainwash", "capture", "invisibility", "open" ],
             },
             "site": {
               "type": "string",
@@ -1425,9 +1425,9 @@ all_functions = [
           "type": "string",
           "description": "Detailed information about the site.",
         },
-        "locked": {
+        "default_open": {
           "type": "boolean",
-          "description": "True if locked agained user access.",
+          "description": "True if user can access the site.",
         },
       },
       "required": [ "name" ]

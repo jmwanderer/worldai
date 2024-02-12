@@ -104,7 +104,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(1, len(state.getItemsAtLocation(site_id)))    
 
     state.addItem(item_id)
-    state.setSiteLocked(site_id, True)
+    state.setSiteOpen(site_id, False)
     world_state.saveWorldState(self.db, state)
 
     state = world_state.loadWorldState(self.db, wstate_id)
@@ -112,7 +112,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(len(state.getItems()), 1)
     self.assertNotEqual(len(state.getLocation()), 0)
     self.assertIsNotNone(state.getChatCharacter())
-    self.assertTrue(state.isSiteLocked(site_id))
+    self.assertFalse(state.isSiteOpen(site_id))
     self.assertTrue(state.hasPlayerStatus(sleeping))
     self.assertFalse(state.hasPlayerStatus(poisoned))
 

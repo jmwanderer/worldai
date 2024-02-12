@@ -315,12 +315,12 @@ class DesignTestCase(unittest.TestCase):
     values = self.callFunction('RecoverSites', '{}')
 
 
-    # Update item with unlock site ability
+    # Update item with open site ability
     self.callFunction('ChangeState', '{ "state": "State_Items" }')        
     result = self.callFunction('UpdateItem',
                                '{ "name": "my item 1", ' +
                                ' "ability": ' +
-                               '{ "effect": "unlock", "site": "my site 1" }}')
+                               '{ "effect": "open", "site": "my site 1" }}')
     self.assertIsNone(result.get("error"))     
     values = self.callFunction('ShowItem',
                                 '{ "name": "my item 1" }')
@@ -330,26 +330,26 @@ class DesignTestCase(unittest.TestCase):
     result = self.callFunction('UpdateItem',
                                '{ "name": "my item 1", ' +
                                ' "ability": ' +
-                               '{ "effect": "unlock", "site": "no site" }}')
+                               '{ "effect": "open", "site": "no site" }}')
     self.assertIsNotNone(result.get("error"))
     
     # Create an item with ability
     result = self.callFunction('CreateItem',
                                '{ "name": "item 99",' +
                                '"mobile": "false",'+
-                               '"ability": { "effect": "unlock",'+
+                               '"ability": { "effect": "open",'+
                                '"site": "my site 1" }}')
     self.assertIsNone(result.get("error"))
     values = self.callFunction('ShowItem',
                                 '{ "name": "item 99" }')
     self.assertEqual(values["ability"]["site"], "my site 1")
-    self.assertEqual(values["ability"]["effect"], "unlock")
+    self.assertEqual(values["ability"]["effect"], "open")
 
     # Create with non-existant site
     result = self.callFunction('CreateItem',
                                '{ "name": "item 99",' +
                                '"mobile": "false",'+
-                               '"ability": { "effect": "unlock",'+
+                               '"ability": { "effect": "open",'+
                                '"site": "no site" }}')
     self.assertIsNotNone(result.get("error"))
     

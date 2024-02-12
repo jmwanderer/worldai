@@ -64,7 +64,7 @@ function Site({ tag, setChatView }) {
                 <h2>{site.name}</h2>
                 <h5>{site.description}</h5>
                 <br></br>
-                Default Locked: {site.locked ? "Yes" : "No" }
+                Default Open: {site.default_open? "Yes" : "No" }
               </Container>
             </Stack>
             <h2>Details:</h2>
@@ -121,7 +121,7 @@ function Item({ tag, setChatView }) {
                 Mobile: {item.mobile ? "Yes" : "No" }
                 <br></br>
                 Ability: {item.ability.effect}
-                {item.ability.effect == "unlock" ? " : "
+                {item.ability.effect == "open" ? " : "
                                          + item.ability.site : "" }
               </Container>
             </Stack>

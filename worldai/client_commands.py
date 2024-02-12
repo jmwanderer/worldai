@@ -63,17 +63,17 @@ class ClientActions:
       # Verify location
       site = elements.loadSite(self.db, site_id)
       if site is not None:
-        logging.info("go site %s, locked = %s",
+        logging.info("go site %s, open = %s",
                      site_id,
-                     self.wstate.isSiteLocked(site_id))
+                     self.wstate.isSiteOpen(site_id))
         
-        if not self.wstate.isSiteLocked(site_id):
+        if self.wstate.isSiteOpen(site_id):
           self.wstate.setLocation(site_id)
           logging.info("GO: set location %s",  site_id)
           response.message = f"Arrival: {site.getName()}"
           self.wstate.advanceTime(30)
         else:
-          response.message = f"{site.getName()} is locked"
+          response.message = f"{site.getName()} is not open"
       else:
         self.wstate.setLocation("")
         logging.info("GO: clear location")        
@@ -284,16 +284,16 @@ class ClientActions:
           response_message = "You are invisible"
           chat_message = f"{name} used {item.getName()} to turn invisible"
 
-      case elements.ItemEffect.UNLOCK:
+      case elements.ItemEffect.OPEN:
         site_id = item.getAbility().site_id
         
         site = elements.loadSite(self.db, site_id)
         if site is not None:
-          if self.wstate.isSiteLocked(site_id):
-            self.wstate.setSiteLocked(site_id, False)
-            response_message = f"Site {site.getName()} is now unlocked."
+          if not self.wstate.isSiteOpen(site_id):
+            self.wstate.setSiteOpen(site_id, True)
+            response_message = f"Site {site.getName()} is now open."
           else:
-            response_message = f"Site {site.getName()} is already unlocked."
+            response_message = f"Site {site.getName()} is already open."
         
     return (True, response_message, chat_message)
   

@@ -192,11 +192,11 @@ class BasicTestCase(unittest.TestCase):
     site = elements.createSite(self.db, site)
     self.assertIsNotNone(site)
 
-    self.assertFalse(site.getDefaultLocked())
-    site.setDefaultLocked(True)
+    self.assertTrue(site.getDefaultOpen())
+    site.setDefaultOpen(False)
     elements.updateSite(self.db, site)
     site = elements.loadSite(self.db, site.id)
-    self.assertTrue(site.getDefaultLocked())
+    self.assertFalse(site.getDefaultOpen())
 
     sites = elements.listSites(self.db, world1.id)
     self.assertEqual(len(sites), 2)
