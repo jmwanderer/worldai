@@ -102,7 +102,7 @@ Get a list of worlds before showing a world or creating a new one
 
   STATE_WORLD:
   """
-We are working on the world "{current_world_name}"
+We are working on the world "{current_world_name}": {current_world_description}
 
 A world has plans that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadPlanningNotes  
 
@@ -116,7 +116,7 @@ To view, create, or update sites, change state to State_Sites.
 
   STATE_WORLD_EDIT:
   """
-We are working on the world "{current_world_name}"
+We are working on the world "{current_world_name}": {current_world_description}
   
 A world needs a short high level description refelcting the nature of the world.
 
@@ -133,7 +133,8 @@ To view information about characters, items, or sites, change the state to State
   
   STATE_CHARACTERS:
 """
-We are working on world "{current_world_name}"
+We are working on world "{current_world_name}": {current_world_description}
+{element}
 
 Worlds have charaters which are actors in the world with a backstory, abilities, and motivations.  You can create characters and change information about the characters.
 
@@ -152,7 +153,8 @@ To work on items or sites, call ChangeState
 
   STATE_ITEMS:
 """
-We are working on world "{current_world_name}"
+We are working on world "{current_world_name}": {current_world_description}
+{element}
 
 Worlds have items which exist in the world and have special significance.  You can create items and change information about the items.
 
@@ -171,7 +173,8 @@ To view or work characters or sites, call ChangeState
 
   STATE_SITES:
 """
-We are working on world "{current_world_name}"
+We are working on world "{current_world_name}": {current_world_description}
+{element}
 
 Worlds have sites which are significant locations. Cities, buildings, and special areas may all be sites. You can create sites and change information about the sites.
 
@@ -260,11 +263,35 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       return world.getName()
     return None
 
+  def getCurrentWorldDescription(self, db):
+    # May return None
+    world = self.getCurrentWorld(db)
+    if world is not None:
+      return world.getDescription()
+    return None
+
   def getCurrentWorld(self, db):
     # May return None
     if self.current_view.getWorldID() is None:
       return None
     return elements.loadWorld(db, self.getCurrentWorldID())
+  
+  def getCurrentViewType(self):
+    return self.current_view.getType()
+  
+  def getCurrentElementName(self, db):
+    if self.getCurrentViewType() == elements.ElementType.CharacterType():
+      character = elements.loadCharacter(db, self.current_view.getID())
+      return character.getName()
+      
+    elif self.getCurrentViewType() == elements.ElementType.SiteType():
+      site = elements.loadSite(db, self.current_view.getID())
+      return site.getName()
+      
+    elif self.getCurrentViewType() == elements.ElementType.ItemType():
+      item = elements.loadItem(db, self.current_view.getID())
+      return item.getName()
+    return ""
 
   def clearCurrentView(self):
     self.current_view = elements.ElemTag()
@@ -275,9 +302,41 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     return global_instructions + "\n" + self.get_state_instructions(db)
 
   def get_state_instructions(self, db):
+    element = ""
+    if self.getCurrentViewType() == elements.ElementType.CharacterType():
+      element = f"We are looking at the character '{self.getCurrentElementName(db)}'"
+    elif self.getCurrentViewType() == elements.ElementType.ItemType():
+      element = f"We are looking at the item '{self.getCurrentElementName(db)}'"
+    elif self.getCurrentViewType() == elements.ElementType.SiteType():
+      element = f"We are looking at the site '{self.getCurrentElementName(db)}'"
+
     value = instructions[self.current_state].format(
-      current_world_name = self.getCurrentWorldName(db))
+      current_world_name = self.getCurrentWorldName(db),
+      current_world_description = self.getCurrentWorldDescription(db),
+      element=element)
+    
+    if self.current_state != STATE_WORLDS:
+      value = value + "\n" + self.getWorldPop(db, self.getCurrentWorldID())
     return value
+
+  def getWorldPop(self, db, world_id):
+    population = []
+    population.append("Existing Characters:\n")
+    for character in elements.listCharacters(db, world_id):
+      population.append(f"- {character.getName()}")
+    population.append("")
+
+    population.append("Existing Items:\n")        
+    for item in elements.listItems(db, world_id):
+      population.append(f"- {item.getName()}")
+    population.append("")
+    
+    population.append("Existing Sites:\n")        
+    for site in elements.listSites(db, world_id):
+      population.append(f"- {site.getName()}")
+
+    return "\n".join(population)
+
 
   def get_available_tools(self):
     return self.get_available_tools_for_state(self.current_state)
@@ -484,23 +543,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     # Add information on the existing elements of the world.
     content["has_plans"] = len(world.getPlans()) > 0
     
-    population = []
-    population.append("Existing Characters:\n")
-    for character in elements.listCharacters(db, world.id):
-      population.append(f"- {character.getName()}")
-    population.append("")
-
-    population.append("Existing Items:\n")        
-    for item in elements.listItems(db, world.id):
-      population.append(f"- {item.getName()}")
-    population.append("")
-    
-    population.append("Existing Sites:\n")        
-    for site in elements.listSites(db, world.id):
-      population.append(f"- {site.getName()}")
-
-    content["elements"] = "\n".join(population)
-
     # Side affect, change state
     self.current_state = STATE_WORLD
     self.current_view = world.getElemTag()
@@ -1503,7 +1545,7 @@ all_functions = [
   },
   {
     "name": "RecoverWorldImages",
-    "description": "Restore images for the wrold",
+    "description": "Restore images for the world",
     "parameters": {
       "type": "object",
       "properties": {
