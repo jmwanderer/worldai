@@ -88,7 +88,6 @@ class ItemEffect(str, enum.Enum):
   BRAINWASH = "brainwash"
   CAPTURE = "capture"
   INVISIBILITY = "invisibility"
-  UNLOCK = "unlock"  
   OPEN = "open"  
 
 class ItemAbility(pydantic.BaseModel):
@@ -104,7 +103,6 @@ class ItemProps(pydantic.BaseModel):
 class SiteProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""
   details: typing.Optional[str] = ""
-  locked: typing.Optional[bool] = False # Obsolete
   default_open: typing.Optional[bool] = True
 
   
@@ -243,13 +241,14 @@ class Element:
     """
     Return dictonary of encoded properties
     """
-    return self.fixProperties(self.prop_model.model_dump())
+    return self.prop_model.model_dump()
 
   def setPropertiesStr(self, properties):
     """
     Take an encoded json string of property values.
     """
-    self.setProperties(json.loads(properties))
+    properties = self.fixProperties(json.loads(properties))
+    self.setProperties(properties)
 
   def getPropertiesStr(self):
     """
@@ -365,7 +364,6 @@ class World(Element):
     """
     yield super().getInfoText()[0]
     for i in range(0, self.getBackgroundNoteCount()):
-      print(f"get bg node {i}")
       yield ( (i + 1, self.getBackgroundNote(i)))
 
     
@@ -403,12 +401,9 @@ class Site(Element):
     super().__init__(ElementType.SITE, parent_id)
 
   def fixProperties(self, properties):
-    print("fix props site")
     if properties.get("locked") is not None:
-      print("has prop locked")
       properties["default_open"] = not properties["locked"]
       del properties["locked"]
-    print(json.dumps(properties))
     return properties
       
   def setProperties(self, properties):
@@ -499,7 +494,6 @@ class ElementStore:
   
   
   def updateElement(db, element):
-    print("update element")
     q = db.execute("UPDATE elements SET  name = ?, properties = ? " +
                    "WHERE id = ? and type = ?",
                    (element.name, element.getPropertiesStr(),

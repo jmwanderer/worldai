@@ -57,7 +57,6 @@ class ItemState(pydantic.BaseModel):
   location: str = ""
 
 class SiteState(pydantic.BaseModel):
-  locked: bool = False # Obsolete
   is_open: bool = True
     
 class WorldStateModel(pydantic.BaseModel):
@@ -78,7 +77,14 @@ class WorldState:
     self.model = WorldStateModel()
 
   def set_model_str(self, str):
-    self.model = WorldStateModel(**json.loads(str))
+    props = json.loads(str)
+    # Fix up from old formats
+    for site in props["site_state"]:
+      if props["site_state"][site].get("locked") is not None:
+        locked = props["site_state"][site]["locked"]
+        del props["site_state"][site]["locked"]
+        props["site_state"][site]["is_open"] = not locked
+    self.model = WorldStateModel(**props)
 
   def get_model_str(self):
     return self.model.model_dump_json()
