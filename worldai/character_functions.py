@@ -9,8 +9,8 @@ from . import world_state
 from . import info_set
 
 INSTRUCTIONS="""
-
 You are an actor playing '{name}', a fictional character our story. Given the following character description, personality, goals, emotional state, adopt the personality described and respond as the character in a physical world.
+When answering questions, use GetInformation to find knowledge, facts, and history about yourself, others, and the world.
 
 [Personality]
 {character_notes}
@@ -30,7 +30,6 @@ You are talking to the user, who you know by the name 'Traveler'. We greet with 
 {char_state}
 {user_state}
 
-Note the state of friendship with IncreaseFriendship and DecreaseFriendship.
 """
 
 CHAR_ITEMS="""
@@ -191,7 +190,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
       result = self.FuncIncreaseFriendship(db)
     elif function_name == "DecreaseFriendship":
       result = self.FuncDecreaseFriendship(db)
-    elif  function_name == "LookupInformation":
+    elif  function_name == "GetInformation":
       result = self.FuncLookupInformation(db, arguments)
     elif function_name == "GiveItem":
       result = self.FuncGiveItem(db, arguments)
@@ -266,7 +265,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     context = args["context"]
     logging.info("Lookup info: %s" % context)
     embed = info_set.generateEmbedding(context)
-    content = info_set.getInformation(db, self.world_id, embed, 1)
+    content = info_set.getInformation(db, self.world_id, embed, 3)
     return { "context": context,
             "information": content }
   
@@ -440,6 +439,19 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
 all_functions = [
   {
+    "name": "GetInformation",
+    "description": "Lookup details and facts to answer questions",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "context": {
+          "type": "string",
+          "descripton": "Context of the information query"
+        }
+      }
+    }
+  },
+  {
     "name": "IncreaseFriendship",
     "description": "Note developing a friendship.",
     "parameters": {
@@ -536,19 +548,6 @@ all_functions = [
       },
     },
   },
-  {
-    "name": "LookupInformation",
-    "description": "Check knowledge base for information",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "context": {
-          "type": "string",
-          "descripton": "Context of the information query"
-        }
-      }
-    }
-  }
   
 ]
   

@@ -35,29 +35,30 @@ def elemTypeToState(element_type):
 
 states = {
   STATE_WORLDS: [ "ListWorlds", "ShowWorld", "CreateWorld" ],
-  STATE_WORLD: [ "ReadPlanningNotes", "ShowWorld",
+  STATE_WORLD: [ "ReadPlans", "ShowWorld",
                  "ShowCharacter", "ShowItem", "ShowSite",
                  "ChangeState", "EditWorld" ],
 
   STATE_WORLD_EDIT: [ "UpdateWorld", "ShowWorld",
-                      "ReadPlanningNotes", "UpdatePlanningNotes",
+                      "ReadPlans", "UpdatePlans",
+                      "ListNotes", "AddNote", "UpdateNote", "ReadNote",
                       "CreateWorldImage", "ChangeState",
                       "RemoveWorldImage", "RecoverWorldImages" ],                      
   STATE_CHARACTERS: [ "ListCharacters", "ShowCharacter",
                       "CreateCharacter", "UpdateCharacter",
-                      "ReadPlanningNotes", 
+                      "ReadPlans", 
                       "CreateCharacterImage", "ChangeState",
                       "RemoveCharacter", "RecoverCharacters",
                       "RemoveImage", "RecoverImages" ],
   STATE_ITEMS: [ "ListItems", "ShowItem",
                  "CreateItem", "UpdateItem",
-                 "ReadPlanningNotes",                  
+                 "ReadPlans",                  
                  "CreateItemImage", "ChangeState",
                  "RemoveItem", "RecoverItems",
                  "RemoveImage", "RecoverImages" ],
   STATE_SITES: [ "ListSites",  "ShowSite",
                  "CreateSite", "UpdateSite",
-                 "ReadPlanningNotes",                  
+                 "ReadPlans",                  
                  "CreateSiteImage", "ChangeState",
                  "RemoveSite", "RecoverSites",
                  "RemoveImage", "RecoverImages" ],  
@@ -73,12 +74,12 @@ new unique fictional characters. Create new characters, don't use existing chara
 
 We design the world with a name and a high level description and create background details
 
-We use Planning Notes for plans on characters, items, and sites.
+We use Plans for plans on characters, items, and sites.
 
 We can be in one of the following states:
 - State_Worlds: We can list and show existing worlds and create new worlds
-- State_World: We view a world description, details, and PlanningNotes.
-- State_World_Edit: We change a world description, details, and PlanningNotes.
+- State_World: We view a world description, details, and Plans.
+- State_World_Edit: We change a world description, details, and Plans.
 - State_Characters: We can view characters and create new characters and change the description and details of a character.
 - State_Items: We can view items and create new items and change the description and details of an item.
 - State_Sites: We can view sites and create new sites and change the description and details of a site.
@@ -104,7 +105,7 @@ Get a list of worlds before showing a world or creating a new one
   """
 We are working on the world "{current_world_name}": {current_world_description}
 
-A world has plans that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadPlanningNotes  
+A world has plans that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadPlans  
 
 Modify world attributes by calling EditWorld
 
@@ -122,7 +123,7 @@ A world needs a short high level description refelcting the nature of the world.
 
 A world has details, that give more information about the world such as the backstory.
 
-A world has plans that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadPlanningNotes, update the plans with UpdatePlanningNotes.
+A world has plans that list the planned main characters, key sites, and special items. Read plans for the world by calling ReadPlans, update the plans with UpdatePlans.
 
 Build prompts to create images using information from the description and details in the prompt.
 
@@ -408,11 +409,23 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     elif function_name == "ShowWorld":
       result = self.FuncReadWorld(db, arguments)
 
-    elif function_name == "ReadPlanningNotes":
+    elif function_name == "ReadPlans":
       result = self.FuncReadPlanningNotes(db, arguments)
 
-    elif function_name == "UpdatePlanningNotes":
+    elif function_name == "UpdatePlans":
       result = self.FuncUpdatePlanningNotes(db, arguments)
+
+    elif function_name == "ListNotes":
+      result = self.FuncListWorldNotes(db)
+
+    elif function_name == "AddNote":
+      result = self.FuncAddWorldNote(db, arguments)
+
+    elif function_name == "UpdateNote":
+      result = self.FuncUpdateWorldNote(db, arguments)
+
+    elif function_name == "ReadNote":
+      result = self.FuncReadWorldNote(db, arguments)
 
     elif function_name == "ListCharacters":
       result = [{ "name": entry.getName() }            
@@ -572,6 +585,67 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     status["name"] = world.getName()
     return status
   
+  def FuncListWorldNotes(self, db):
+    result = []
+    world = elements.loadWorld(db, self.getCurrentWorldID())
+    if world is not None:
+      count = 0
+      for subject in world.getBackgroundNotesList():
+        result.append({"index": count,
+                       "subject": subject })
+    return result
+  
+  def FuncAddWorldNote(self, db, arguments):
+    if (arguments.get("subject") is None or 
+        arguments.get("text") is None):
+      return self.funcError("missing arguement")
+    
+    subject = arguments["subject"]
+    text = arguments["text"]
+
+    world = elements.loadWorld(db, self.getCurrentWorldID())
+    if world is None:
+      return self.funcError("No current world")
+    
+    world.addBackgroundNote(subject, text)
+    elements.updateWorld(db, world)
+    element_info.UpdateElementInfo(db, world)    
+    self.modified = True
+    return self.funcStatus("Note added")
+
+  def FuncReadWorldNote(self, db, arguments):
+    if arguments.get("index") is None:
+      return self.funcError("missing argument")
+    
+    index = int(arguments["index"])
+    
+    world = elements.loadWorld(db, self.getCurrentWorldID())
+    if world is None:
+      return self.funcError("No current world")
+    
+    subject, text = world.getBackgroundNote(index)
+
+    return { "subject": subject,
+             "text": text }
+
+  def FuncUpdateWorldNote(self, db, arguments):
+    if arguments.get("index") is None:
+      return self.funcError("missing argument")
+    
+    index = int(arguments["index"])
+    subject = arguments.get("subject")
+    text = arguments.get("text")
+
+    world = elements.loadWorld(db, self.getCurrentWorldID())
+    if world is None:
+      return self.funcError("No current world")
+    
+    world.setBackgroundNote(index, subject, text)
+    elements.updateWorld(db, world)
+    element_info.UpdateElementInfo(db, world)    
+    self.modified = True
+    return self.funcStatus("Note update")
+
   def FuncReadCharacter(self, db, arguments):
     if arguments.get("name") is None:
       return self.funcError("Missing argument 'name'")    
@@ -1133,7 +1207,7 @@ all_functions = [
   },
 
   {
-    "name": "ReadPlanningNotes",
+    "name": "ReadPlans",
     "description": "Read in the plans specific virtual world.",
     "parameters": {
       "type": "object",
@@ -1143,7 +1217,7 @@ all_functions = [
   },
 
   {
-    "name": "UpdatePlanningNotes",
+    "name": "UpdatePlans",
     "description": "Update the plans of the virtual world.",
     "parameters": {
       "type": "object",
@@ -1153,6 +1227,73 @@ all_functions = [
           "description": "Plans for the virtual world.",
         },
       },
+    },
+  },
+
+  {
+    "name": "ListNotes",
+    "description": "Get list of background notes for the current world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+      },
+    },
+  },
+  
+  {
+    "name": "AddNote",
+    "description": "Add a new background note for the current world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "description": "Subject for the background note"
+        },
+        "text": {
+          "type": "string",
+          "description": "Contents of the background note"
+        }
+      },
+      "required": [ "subject", "text" ]
+    },
+  },
+
+  {
+    "name": "ReadNote",
+    "description": "Read background note for the current world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "index": {
+          "type": "integer",
+          "description": "Zero based index of notes"
+        }
+      },
+      "required": [ "index" ]
+    },
+  },
+
+  {
+    "name": "UpdateNote",
+    "description": "Change a background note for the current world.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "index": {
+          "type": "integer",
+          "description": "Zero based index of notes"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject for the background note"
+        },
+        "text": {
+          "type": "string",
+          "description": "Contents of the background note"
+        }
+      },
+      "required": [ "index" ]
     },
   },
   

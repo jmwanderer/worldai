@@ -18,6 +18,7 @@ import random
 import json
 import openai
 import logging
+import scipy
 
 TEST=False
 
@@ -129,7 +130,7 @@ def _compute_distance(v1, v2):
   Return the square of distance between the vectors
   To get consistent distance, take the sqrt.
   """
-  #TODO: look at https://platform.openai.com/docs/guides/embeddings/use-cases
+  #TODO: look at https://platform.scipy.com/docs/guides/embeddings/use-cases
   total = 0
   index = 0
   while (index < len(v1) and index < len(v2)):
@@ -154,7 +155,7 @@ def generateEmbedding(content):
       return result
 
   response = _get_aiclient().embeddings.create(input = content,
-                                               model = "text-embedding-ada-002")
+                                               model = "text-embedding-3-small")
   return response.data[0].embedding
 
 
@@ -199,16 +200,18 @@ def getOrderedChunks(db, world_id, embed, owner_id = None, wstate_id = None):
                                         wstate_id = wstate_id)
   result = []
   for entry in chunks:
-    result.append((entry[0], _compute_distance(embed, entry[1])))
+    result.append((entry[0], scipy.spatial.distance.cosine(embed, entry[1])))
   result.sort(key = lambda a : a[1])
 
   return result
 
 def getInformation(db, world_id, embed, count):
+  print("info - %d" % count)
   results = []
   entries = getOrderedChunks(db, world_id, embed)
   for i in range(0, min(count, len(entries))):
     content = InfoStore.getChunkContent(db, entries[i][0])
+    print("***%d: info lookup: %s" % (i, content))
     results.append(content)
   return "\n".join(results)
                  

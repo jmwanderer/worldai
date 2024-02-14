@@ -117,12 +117,26 @@ class DesignTestCase(unittest.TestCase):
     self.assertEqual(values["details"], "details")
 
     # Test setting and getting plans
-    values = self.callFunction('ReadPlanningNotes','{ "name": "%s" }' % name1)
+    values = self.callFunction('ReadPlans','{ "name": "%s" }' % name1)
     self.assertEqual(values["plans"], "")
     self.callFunction('EditWorld', '{}')    
-    self.callFunction('UpdatePlanningNotes','{ "plans": "my plans" }')
-    values = self.callFunction('ReadPlanningNotes','{ "name": "%s" }' % name1)
+    self.callFunction('UpdatePlans','{ "plans": "my plans" }')
+    values = self.callFunction('ReadPlans','{ "name": "%s" }' % name1)
     self.assertEqual(values["plans"], "my plans")
+
+    values = self.callFunction("ListNotes", '{}')
+    self.assertEqual(len(values), 0)
+
+    self.callFunction("AddNote", '{ "subject": "History",'+
+                                    '"text": "This is history"}')
+    values = self.callFunction("ListNotes", '{}')
+    self.assertEqual(len(values), 1)
+    
+    self.callFunction("AddNote", '{ "subject": "People",'+
+                                    '"text": "People background"}')
+    values = self.callFunction("ListNotes", '{}')
+    self.assertEqual(len(values), 2)
+
     
     
   def test_exec_calls_characters(self):

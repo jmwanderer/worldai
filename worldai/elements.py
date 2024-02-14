@@ -348,15 +348,25 @@ class World(Element):
   def getBackgroundNoteCount(self):
     return len(self.prop_model.notes)
   
+  def getBackgroundNotesList(self):
+    """
+    Return the list of titles
+    """
+    return [ item.title for item in self.prop_model.notes ]
+  
   def addBackgroundNote(self, title: str, value:str):
     self.prop_model.notes.append(WorldNotes(title=title, value=value))
 
   def getBackgroundNote(self, index: int):
     return self.prop_model.notes[index].title, self.prop_model.notes[index].value
 
-  def setBackgoundNote(self, index: int, title: str, value: str):
-    self.prop_model.notes[index].title = title
-    self.prop_model.notes[index].value = value
+  def setBackgroundNote(self, index: int, title: str, value: str):
+    if index < 0 or index >= len(self.prop_model.notes):
+      return
+    if title is not None:
+      self.prop_model.notes[index].title = title
+    if value is not None:
+      self.prop_model.notes[index].value = value
 
   def getInfoText(self):
     """
@@ -364,7 +374,8 @@ class World(Element):
     """
     yield super().getInfoText()[0]
     for i in range(0, self.getBackgroundNoteCount()):
-      yield ( (i + 1, self.getBackgroundNote(i)))
+      title, value = self.getBackgroundNote(i)
+      yield ( (i + 1, title + " : " + value))
 
     
 class Character(Element):
