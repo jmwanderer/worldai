@@ -484,6 +484,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     return result
 
   def FuncChangeState(self, db, arguments):
+    if arguments.get("state") is None:
+      return self.funcError("Missing argument 'name'")
     state = arguments["state"]
     if states.get(state) is None:
       return self.funcError(f"unknown state: {state}")
@@ -499,6 +501,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
   def FuncCreateWorld(self, db, arguments):
     world = elements.World()
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'")    
     world.setName(arguments["name"])
     world.updateProperties(arguments)
 
@@ -531,6 +535,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     return status
 
   def FuncReadWorld(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'")    
     name = arguments["name"]
     world = elements.findWorld(db, name)
     if world is None:
@@ -567,6 +573,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     return status
   
   def FuncReadCharacter(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'")    
     name = arguments.get("name")
     if name is None:
       return self.funcError("request missing name")
@@ -584,6 +592,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
   
   def FuncCreateCharacter(self, db, arguments):
     character = elements.Character(self.getCurrentWorldID())
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'")    
     character.setName(arguments["name"])
 
     characters = elements.listCharacters(db, self.getCurrentWorldID())    
@@ -601,6 +611,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     return status
     
   def FuncUpdateCharacter(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'")    
+
     name = arguments["name"]
     character = elements.findCharacter(db, self.getCurrentWorldID(), name)
     if character is None:
@@ -618,6 +631,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     return status
 
   def FuncReadItem(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'")    
+
     name = arguments.get("name")
     if name is None:
       return self.funcError("request missing name parameter")
@@ -675,6 +691,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     return status
     
   def FuncUpdateItem(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'")
     name = arguments["name"]
     item = elements.findItem(db, self.getCurrentWorldID(), name)
     if item is None:
@@ -683,16 +701,23 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       arguments["name"] = arguments["new_name"]    
     # TODO: check name collision
 
-    # If present, translate site name to site id
     ability = arguments.get("ability")
-    if ability is not None and ability.get("site") is not None:
-      site_name = ability.get("site")
-      site = elements.findSite(db,
-                               self.getCurrentWorldID(),
-                               site_name)
-      if site is None:
-        return self.funcError(f"Unknown site {site_name}")
-      ability["site_id"] = site.getID()
+    if ability is not None:
+      # Validate ability settings
+
+      if ability.get("effect") is not None:
+        if not ability["effect"] in [item.value for item in elements.ItemEffect]:
+          return self.funcError("Unknown effect: %s" % ability["effect"])
+
+      if ability.get("site") is not None:
+        # If present, translate site name to site id
+        site_name = ability.get("site")
+        site = elements.findSite(db,
+                                 self.getCurrentWorldID(),
+                                 site_name)
+        if site is None:
+          return self.funcError(f"Unknown site {site_name}")
+        ability["site_id"] = site.getID()
 
     # Update item proprties
     item.updateProperties(arguments)
@@ -705,6 +730,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     return status
 
   def FuncReadSite(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'")    
+
     name = arguments.get("name")
     if name is None:
       return self.funcError("request missing name parameter")
@@ -721,6 +749,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
   
   def FuncCreateSite(self, db, arguments):
     site = elements.Site(self.getCurrentWorldID())
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'")    
+
     site.setName(arguments["name"])
 
     sites = elements.listSites(db, self.getCurrentWorldID())    
@@ -738,6 +769,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     return status
     
   def FuncUpdateSite(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'")    
+
     name = arguments["name"]
     site = elements.findSite(db, self.getCurrentWorldID(), name)
     if site is None:
@@ -758,11 +792,18 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     # Check if the budget allows
     if not chat_functions.check_image_budget(db):
       return self.funcError("No budget available for image creation")
+
+    if arguments.get("prompt") is None:
+      return self.funcError("Missing argument 'prompt'")    
     
     image = elements.Image()
     image.setPrompt(arguments["prompt"])
     logging.info("Create image: prompt %s", image.prompt)
+
     if self.current_state == STATE_CHARACTERS:
+      if arguments.get("name") is None:
+        return self.funcError("Missing argument 'name'")    
+
       name = arguments["name"]
       character = elements.findCharacter(db, self.getCurrentWorldID(), name)
       if character is None:
@@ -770,7 +811,11 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         
       image.setParentId(character.id)
       self.current_view = character.getElemTag()
+
     elif self.current_state == STATE_ITEMS:
+      if arguments.get("name") is None:
+        return self.funcError("Missing argument 'name'")    
+
       name = arguments["name"]
       item = elements.findItem(db, self.getCurrentWorldID(), name)
       if item is None:
@@ -780,6 +825,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       self.current_view = item.getElemTag()
       
     elif self.current_state == STATE_SITES:
+      if arguments.get("name") is None:
+        return self.funcError("Missing argument 'name'")    
+
       name = arguments["name"]
       site = elements.findSite(db, self.getCurrentWorldID(), name)
       if site is None:
@@ -813,6 +861,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     return self.funcError("problem generating image")
 
   def FuncRemoveElement(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'")    
+
     name = arguments["name"]
     logging.info("Remove element: %s", name)
     # Change view
@@ -850,6 +901,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     return self.funcError("internal error")
     
   def FuncRemoveImage(self, db, arguments):
+    if arguments.get("index") is None:
+      return self.funcError("Missing argument 'index'") 
+
     index = arguments["index"]
     name = arguments.get("name")
     
@@ -880,6 +934,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
   
   def FuncRecoverImages(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("Missing argument 'name'") 
+
     name = arguments.get("name")
     
     if self.current_state == STATE_WORLD_EDIT:
@@ -1317,7 +1374,7 @@ all_functions = [
           "properties": {
             "effect": {
               "type": "string",
-              "enum": [ "heal", "hurt", "paralize", "poison", "sleep",
+              "enum": [ "none", "heal", "hurt", "paralize", "poison", "sleep",
                         "brainwash", "capture", "invisibility", "unlock" ],
             },
             "site": {

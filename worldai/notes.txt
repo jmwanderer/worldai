@@ -1,18 +1,14 @@
 Plans
 -----
-- commumnicate none ability to GPT
-- feature to ensure show world is included in design thread
-- check if proper arguments are in the character function calls
 - add utility to reset a specific instance of a world
 
 - add player stats to character chat screen
-- locked is not a good prop name for the site access
+
 - address confusion around giveitem....
 - Handle incomplete message events using msg_id
   - may need to detect if previous message isnt complete
 - Add user approval to some tool functions
 
-- Convert from IDs to names for the AI func calls
 - Add history of conversations and use in RAG calls
 - Add world knowledege and facts - use RAG
 - Add per character knowledge, use RAG
@@ -57,6 +53,11 @@ Plans
 - Add character tags - DONE
 - Add item properties and use item - DONE
 - Time keeping - DONE
+- commumnicate none ability to GPT - DONE
+- feature to ensure show world is included in design thread - DONE
+- check if proper arguments are in the character function calls - DONE
+- locked is not a good prop name for the site access - DONE
+- Convert from IDs to names for the AI func calls - DONE
 
 
 Bugs
