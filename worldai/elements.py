@@ -10,6 +10,7 @@ import logging
 import enum
 import pydantic
 import typing
+from typing import Optional
 
 class ElementType:
   """
@@ -42,6 +43,10 @@ class ElementType:
     return ElementType.typeToName(ElementType.WORLD)
 
   @staticmethod  
+  def DocumentType():
+    return ElementType.typeToName(ElementType.DOCUMENT)
+
+  @staticmethod  
   def CharacterType():
     return ElementType.typeToName(ElementType.CHARACTER)
 
@@ -68,6 +73,15 @@ class WorldProps(pydantic.BaseModel):
   details: typing.Optional[str] = ""
   plans: typing.Optional[str] = ""
   notes: typing.List[WorldNotes] = []
+
+class DocSection(pydantic.BaseModel):
+  heading: typing.Optional[str] = ""
+  text: typing.Optional[str] = ""
+
+class DocProps(pydantic.BaseModel):
+  abstract: typing.Optional[str] = ""
+  outline: typing.Optional[str] = ""  
+  sections: typing.List[DocSection] = []
 
 class CharacterProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""
@@ -270,19 +284,24 @@ class Element:
     self.name = name
 
   def getDescription(self):
-    return self.prop_model.description
+    if hasattr(self.prop_model, "description"):
+      return self.prop_model.description
+    return ""
 
   def setDescription(self, value):
-    self.prop_model.description = value
+    if hasattr(self.prop_model, "description"):
+      self.prop_model.description = value
                        
   def getDetails(self):
-    return self.prop_model.details
+    if hasattr(self.prop_model, "details"):
+      return self.prop_model.details
 
   def getDetailsHTML(self):
     return textToHTML(self.getDetails())
 
   def setDetails(self, value):
-    self.prop_model.details = value
+    if hasattr(self.prop_model, "details"):
+      self.prop_model.details = value
 
   def getInfoText(self):
     content = self.getName()
@@ -292,8 +311,6 @@ class Element:
       content = content + "\n" + self.getDetails()
     return [ (0, content) ]
   
-
-
   def getImages(self):
     # Return a list of image ids
     return self.images
@@ -374,6 +391,67 @@ class World(Element):
     for i in range(0, self.getBackgroundNoteCount()):
       title, value = self.getBackgroundNote(i)
       yield ( (i + 1, title + " : " + value))
+
+
+class Document(Element):
+  """
+  Represents a document associated with a world
+  """
+  def __init__(self, parent_id=''):
+    super().__init__(ElementType.DOCUMENT, parent_id)
+
+  def setProperties(self, properties):
+    """
+    Set the set of encode properties.
+    Override base class
+    """
+    self.prop_model = DocProps(**properties)
+
+  def setOutline(self, value: str):
+    self.prop_model.abstract = value
+
+  def getOutline(self) -> str:
+    return self.prop_model.abstract
+  
+  def setAbstract(self, value: str):
+    self.prop_model.abstract = value
+
+  def getAbstract(self) -> str:
+    return self.prop_model.abstract
+  
+  def addSection(self, heading: str, text: str):
+    section = DocSection(heading=heading, text=text)
+    self.prop_model.sections.append(section)
+
+  def getSectionList(self):
+    return [ x.heading for x in self.prop_model.sections]
+  
+  def getSectionText(self, index: int):
+    if index >= 0 and index < len(self.prop_model.sections):
+      return self.prop_model.sections[index].text
+    return None
+  
+  def getSectionHeading(self, index: int):
+    if index >= 0 and index < len(self.prop_model.sections):
+      return self.prop_model.sections[index].heading
+    return None
+  
+  def updateSection(self, index: int, heading: str, text: str):
+    if index >= 0 and index < len(self.prop_model.sections):
+      self.prop_model.sections[index].heading = heading
+      self.prop_model.sections[index].text = text
+  
+  def getInfoText(self):
+    """
+    Return entries of (index, text)
+    """
+    yield ((0, self.prop_model.abstract))
+    count = 0
+    for section in self.prop_model.sections:
+      count += 1
+      yield ( (count, 
+               section.heading + " : " +
+               section.text))
 
     
 class Character(Element):
@@ -693,13 +771,13 @@ def listWorlds(db):
   return ElementStore.getElements(db, ElementType.WORLD, '')
 
 
-def loadWorld(db, id):
+def loadWorld(db, id: str) -> Optional[World]:
   """
   Return a world instance
   """
   return ElementStore.loadElement(db, id, World())
 
-def findWorld(db, name):
+def findWorld(db, name: str) -> Optional[World]:
   """
   Return a world instance by name
   """
@@ -714,14 +792,32 @@ def findWorld(db, name):
   return loadWorld(db, r[0])
 
 
-def createWorld(db, world):
+def createWorld(db, world: World) -> World:
   """
   Return a world instance
   """
   return ElementStore.createElement(db, world)
 
-def updateWorld(db, world):
+def updateWorld(db, world: World):
   ElementStore.updateElement(db, world)
+
+def createDocument(db, document: Document) -> Document:
+  """
+  Return a document instance
+  """
+  return ElementStore.createElement(db, document)
+
+def listDocument(db, world_id: str):
+  return ElementStore.getElements(db, ElementType.DOCUMENT, world_id)
+
+def loadDocument(db, id) -> Optional[Document]:
+    return ElementStore.loadElement(db, id, Document())
+
+def findDocument(db, wid: str, name: str):
+  return ElementStore.findElement(db, wid, name, Document())
+
+def updateDocument(db, document: Document):
+  ElementStore.updateElement(db, document)
 
 def listCharacters(db, world_id):
   """
@@ -729,32 +825,32 @@ def listCharacters(db, world_id):
   """
   return ElementStore.getElements(db, ElementType.CHARACTER, world_id)
 
-def loadCharacter(db, id):
+def loadCharacter(db, id: str) -> Optional[Character]:
   """
   Return a character instance
   """
   return ElementStore.loadElement(db, id, Character())
 
-def findCharacter(db, wid, name):
+def findCharacter(db, wid: str, name: str) -> Optional[Character]:
   """
   Return a character instance by name
   """
   return ElementStore.findElement(db, wid, name, Character())
 
-def createCharacter(db, character):
+def createCharacter(db, character: Character) -> Character:
   """
   Return a character instance
   """
   return ElementStore.createElement(db, character)
 
-def updateCharacter(db, character):
+def updateCharacter(db, character: Character):
   ElementStore.updateElement(db, character)
 
-def hideCharacter(db, wid, name):
+def hideCharacter(db, wid: str, name: str) -> int:
   count = ElementStore.hideElement(db, Character(), wid, name)
   return count == 1
 
-def recoverCharacters(db, world_id):
+def recoverCharacters(db, world_id: str) -> int:
   return ElementStore.recoverElements(db, ElementType.CHARACTER, world_id)
 
 def listSites(db, world_id):
@@ -763,32 +859,32 @@ def listSites(db, world_id):
   """
   return ElementStore.getElements(db, ElementType.SITE, world_id)
 
-def loadSite(db, id):
+def loadSite(db, id: str) -> Optional[Site]:
   """
   Return a site instance
   """
   return ElementStore.loadElement(db, id, Site())
 
-def findSite(db, pid, name):
+def findSite(db, pid: str, name: str) -> Optional[Site]:
   """
   Return a site instance by name
   """
   return ElementStore.findElement(db, pid, name, Site())
 
-def createSite(db, site):
+def createSite(db, site: Site) -> Site:
   """
   Return a site instance
   """
   return ElementStore.createElement(db, site)
 
-def updateSite(db, site):
+def updateSite(db, site: Site):
   ElementStore.updateElement(db, site)
 
-def hideSite(db, wid, name):
+def hideSite(db, wid: str, name: str) -> int:
   count = ElementStore.hideElement(db, Site(), wid, name)
   return count == 1
 
-def recoverSites(db, world_id):
+def recoverSites(db, world_id: str) -> int:
   return ElementStore.recoverElements(db, ElementType.SITE, world_id)
     
 def listItems(db, world_id):
@@ -797,34 +893,34 @@ def listItems(db, world_id):
   """
   return ElementStore.getElements(db, ElementType.ITEM, world_id)
 
-def loadItem(db, id):
+def loadItem(db, id: str) -> Optional[Item]:
   """
   Return an item instance
   """
   return ElementStore.loadElement(db, id, Item())
 
-def findItem(db, pid, name):
+def findItem(db, pid: str, name: str) -> Optional[Item]:
   """
   Return an item instance by name
   """
   return ElementStore.findElement(db, pid, name, Item())
 
 
-def createItem(db, item):
+def createItem(db, item: Item) -> Item:
   """
   Return an Item instance
   """
   return ElementStore.createElement(db, item)
   
-def updateItem(db, item):
+def updateItem(db, item: Item):
   
   ElementStore.updateElement(db, item)
 
-def hideItem(db, wid, name):
+def hideItem(db, wid: str, name: str) -> int:
   count = ElementStore.hideElement(db, Item(), wid, name)
   return count == 1
 
-def recoverItems(db, world_id):
+def recoverItems(db, world_id: str) -> int:
   return ElementStore.recoverElements(db, ElementType.ITEM, world_id)
     
 def deleteImage(db, data_dir, image_id):

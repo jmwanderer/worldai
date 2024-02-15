@@ -72,7 +72,8 @@ class BasicTestCase(unittest.TestCase):
     self.assertEqual(elements.ElementType.WorldType(), "World")
     self.assertEqual(elements.ElementType.CharacterType(), "Character")
     self.assertEqual(elements.ElementType.ItemType(), "Item")
-    self.assertEqual(elements.ElementType.SiteType(), "Site")    
+    self.assertEqual(elements.ElementType.SiteType(), "Site")
+    self.assertEqual(elements.ElementType.DocumentType(), "Document")    
       
   def testCRU(self):
     # Create world
@@ -106,6 +107,7 @@ class BasicTestCase(unittest.TestCase):
       count += 1
     self.assertEqual(count, 3)
 
+    
     tag = elements.getElemTag(self.db, world.id)
     self.assertEqual(tag.getID(), world.id)
     self.assertEqual(tag.getWorldID(), world.id)
@@ -130,7 +132,24 @@ class BasicTestCase(unittest.TestCase):
     world = elements.findWorld(self.db, world2.getName())
     self.assertIsNotNone(world)
     self.assertEqual(world.id, world2.id)
-    
+
+    # Create document
+    doc = elements.Document(world1.id)
+    doc.setName("World History")
+    doc.setAbstract("The world changed over time")
+    doc.setOutline("- 1. The begging. -2. The end")
+    doc.addSection("Intro", "things")
+    doc.addSection("Conclusion", "things")
+    elements.createDocument(self.db, doc)
+    doc = elements.findDocument(self.db, world1.id, "World History")
+    self.assertIsNotNone(doc)
+    doc = elements.loadDocument(self.db, doc.getID())
+    self.assertIsNotNone(doc)
+    doc.addSection("Final Thoughts", "Thoughts")
+    elements.updateDocument(self.db, doc)
+    doc = elements.loadDocument(self.db, doc.getID())
+    self.assertEqual(len(doc.getSectionList()), 3)
+
     # Create character
     character = elements.Character(world1.id)
     character.updateProperties({ elements.CoreProps.PROP_NAME: "char1",
