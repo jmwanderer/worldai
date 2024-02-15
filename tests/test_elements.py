@@ -100,7 +100,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertIsNotNone(content)
     title, content = world.getBackgroundNote(1)
     self.assertIsNotNone(content)
-    world.setBackgoundNote(0, "Outline", "New info")
+    world.setBackgroundNote(0, "Outline", "New info")
     count = 0
     for entry in world.getInfoText():
       count += 1

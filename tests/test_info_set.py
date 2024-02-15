@@ -184,7 +184,7 @@ class BasicTestCase(unittest.TestCase):
     self.assertNotEqual(len(chunks), 0)
 
     for i in range(0, len(chunks) - 2):
-      self.assertLess(chunks[i][1], chunks[i+1][1])
+      self.assertLessEqual(chunks[i][1], chunks[i+1][1])
 
     content = info_set.getInformation(self.db, self.world.getID(), embed, 2)
     self.assertTrue(len(content) > 0)

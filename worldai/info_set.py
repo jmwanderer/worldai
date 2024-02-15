@@ -18,7 +18,7 @@ import random
 import json
 import openai
 import logging
-import scipy
+import numpy as np
 
 TEST=False
 
@@ -193,6 +193,9 @@ def addEmbeddings(db):
 def getChunkContent(db, chunk_id):
   return InfoStore.getChunkContent(db, chunk_id)
 
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
 def getOrderedChunks(db, world_id, embed, owner_id = None, wstate_id = None):
 
   chunks = InfoStore.getAvailableChunks(db, world_id,
@@ -200,8 +203,8 @@ def getOrderedChunks(db, world_id, embed, owner_id = None, wstate_id = None):
                                         wstate_id = wstate_id)
   result = []
   for entry in chunks:
-    result.append((entry[0], scipy.spatial.distance.cosine(embed, entry[1])))
-  result.sort(key = lambda a : a[1])
+    result.append((entry[0], cosine_similarity(embed, entry[1])))
+  result.sort(key = lambda a : a[1], reverse=True)
 
   return result
 

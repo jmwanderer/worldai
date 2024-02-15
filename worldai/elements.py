@@ -20,12 +20,14 @@ class ElementType:
   CHARACTER = 2
   SITE = 3
   ITEM = 4
+  DOCUMENT = 5
 
   typeNames = [ "None",
                 "World",
                 "Character",                
                 "Site",
-                "Item" ]
+                "Item",
+                 "Document" ]
 
   @staticmethod
   def typeToName(element_type):
@@ -57,10 +59,6 @@ class CoreProps(str, enum.Enum):
   PROP_ID = "id"  
   PROP_NAME = "name"
 
-class CommonProps(pydantic.BaseModel):
-  description: typing.Optional[str] = ""
-  details: typing.Optional[str] = ""
-  
 class WorldNotes(pydantic.BaseModel):
   title: str = ""
   value: str = ""
@@ -222,7 +220,7 @@ class Element:
     Set the set of encode properties.
     Override in derived classes
     """
-    self.prop_model = CommonProps(**properties)
+    self.prop_model = {}
 
   def updateProperties(self, properties):
     """
