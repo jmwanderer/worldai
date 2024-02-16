@@ -75,8 +75,6 @@ class DocSection(pydantic.BaseModel):
   text: typing.Optional[str] = ""
 
 class DocProps(pydantic.BaseModel):
-  abstract: typing.Optional[str] = ""
-  outline: typing.Optional[str] = ""  
   sections: typing.List[DocSection] = []
 
 class CharacterProps(pydantic.BaseModel):
@@ -377,45 +375,43 @@ class Document(Element):
     """
     self.prop_model = DocProps(**properties)
 
-  def setOutline(self, value: str):
-    self.prop_model.abstract = value
-
-  def getOutline(self) -> str:
-    return self.prop_model.abstract
-  
-  def setAbstract(self, value: str):
-    self.prop_model.abstract = value
-
-  def getAbstract(self) -> str:
-    return self.prop_model.abstract
-  
-  def addSection(self, heading: str, text: str):
-    section = DocSection(heading=heading, text=text)
-    self.prop_model.sections.append(section)
+  def fixProperties(self, properties):
+    if properties.get("abstact") is not None:
+      del properties["abstract"]
+    if properties.get("outline") is not None:
+      del properties["outline"]
+    return properties
 
   def getSectionList(self):
     return [ x.heading for x in self.prop_model.sections]
+
+  def addSection(self, heading: str, text: str):
+    if not heading in self.getSectionList():
+      section = DocSection(heading=heading, text=text)
+      self.prop_model.sections.append(section)
   
-  def getSectionText(self, index: int):
-    if index >= 0 and index < len(self.prop_model.sections):
-      return self.prop_model.sections[index].text
+  def getSectionText(self, heading: str) -> Optional[str]:
+    for section in self.prop_model.sections:
+      if section.heading == heading:
+        return section.text
     return None
   
-  def getSectionHeading(self, index: int):
-    if index >= 0 and index < len(self.prop_model.sections):
-      return self.prop_model.sections[index].heading
-    return None
-  
-  def updateSection(self, index: int, heading: str, text: str):
-    if index >= 0 and index < len(self.prop_model.sections):
-      self.prop_model.sections[index].heading = heading
-      self.prop_model.sections[index].text = text
-  
+  def updateSection(self, heading: str, text: str):
+    for section in self.prop_model.sections:
+      if section.heading == heading:
+        section.text = text
+        break
+
+  def updateHeading(self, heading: str, new_heading: str):
+    for section in self.prop_model.sections:
+      if section.heading == heading:
+        section.heading = new_heading
+        break
+    
   def getInfoText(self):
     """
     Return entries of (index, text)
     """
-    yield ((0, self.prop_model.abstract))
     count = 0
     for section in self.prop_model.sections:
       count += 1

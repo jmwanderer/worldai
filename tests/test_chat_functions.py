@@ -124,6 +124,7 @@ class DesignTestCase(unittest.TestCase):
     values = self.callFunction('ReadPlans','{ "name": "%s" }' % name1)
     self.assertEqual(values["plans"], "my plans")
 
+    self.callFunction('ChangeState', '{ "state": "State_Documents" }')
     values = self.callFunction("ListDocuments", '{}')
     self.assertEqual(len(values), 0)
 
@@ -137,18 +138,33 @@ class DesignTestCase(unittest.TestCase):
     self.assertEqual(len(values), 2)
 
     args="""{ "name": "World History",
-              "content": "This is the history" }"""
-    self.callFunction("SetDocumentAbstract", args)
+              "heading": "Abstract",
+               "content": "This is the abstract" }"""
+    self.callFunction("AddDocumentSection", args)
 
     args="""{ "name": "World History",
-              "content": "This is the outline" }"""
-    self.callFunction("SetDocumentOutline", args)
+              "heading": "Outline",
+               "content": "This is the outline" }"""
+    self.callFunction("AddDocumentSection", args)
     
     args="""{ "name": "World History",
               "heading": "Introduction",
               "content": "This is the intro" }"""
     self.callFunction("AddDocumentSection", args)
-    
+
+    args="""{ "name": "World History" }"""
+    results = self.callFunction("ListDocumentSections", args)
+    self.assertEqual(len(results), 3)
+
+    args="""{ "name": "World History",
+              "heading": "Introduction",
+              "content": "This is a new" }"""
+    self.callFunction("UpdateDocumentSection", args)
+
+    args="""{ "name": "World History",
+              "heading": "Introduction" }"""
+    result = self.callFunction("ReadDocumentSection", args)
+    self.assertEqual(result["content"], "This is a new")
     
   def test_exec_calls_characters(self):
     # Create a world for the characters

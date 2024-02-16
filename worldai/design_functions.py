@@ -17,6 +17,7 @@ TESTING=False
 STATE_WORLDS = "State_Worlds"
 STATE_WORLD = "State_World"
 STATE_WORLD_EDIT = "State_World_Edit"
+STATE_DOCUMENTS = "State_Documents"
 STATE_CHARACTERS = "State_Characters"
 STATE_ITEMS = "State_Items"
 STATE_SITES = "State_Sites"
@@ -24,6 +25,8 @@ STATE_SITES = "State_Sites"
 def elemTypeToState(element_type):
   if element_type == elements.ElementType.WorldType():
     return STATE_WORLD
+  elif element_type == elements.ElementType.DocumentType():
+    return STATE_DOCUMENTS
   elif element_type == elements.ElementType.CharacterType():
     return STATE_CHARACTERS    
   elif element_type == elements.ElementType.ItemType():
@@ -41,10 +44,13 @@ states = {
 
   STATE_WORLD_EDIT: [ "UpdateWorld", "ShowWorld",
                       "ReadPlans", "UpdatePlans",
-                      "ListDocuments", "CreateDocument", "SetDocumentAbstract",
-                      "SetDocumentOutline", "AddDocumentSection",
                       "CreateWorldImage", "ChangeState",
-                      "RemoveWorldImage", "RecoverWorldImages" ],                      
+                      "RemoveWorldImage", "RecoverWorldImages" ],
+  STATE_DOCUMENTS: [
+                      "ListDocuments", "CreateDocument", "UpdateDocument",
+                      "AddDocumentSection", "UpdateDocumentSection", "ReadDocumentSection",
+                      "ListDocumentSections", "ChangeState"],
+
   STATE_CHARACTERS: [ "ListCharacters", "ShowCharacter",
                       "CreateCharacter", "UpdateCharacter",
                       "ReadPlans", 
@@ -81,6 +87,7 @@ We can be in one of the following states:
 - State_Worlds: We can list and show existing worlds and create new worlds
 - State_World: We view a world description, details, and Plans.
 - State_World_Edit: We change a world description, details, and Plans.
+- State_Documents: We view and edit background documents for the world.
 - State_Characters: We can view characters and create new characters and change the description and details of a character.
 - State_Items: We can view items and create new items and change the description and details of an item.
 - State_Sites: We can view sites and create new sites and change the description and details of a site.
@@ -133,12 +140,24 @@ Save information about the world by calling UpdateWorld
 To view information about characters, items, or sites, change the state to State_World
   """,
   
+  STATE_DOCUMENTS:
+"""
+We are working on world "{current_world_name}": {current_world_description}
+{element}
+
+We create and edit background documents for the world, creating an abstract, outline and
+document contents by calling AddDocumentSection. Change the abstract, outline, and contents
+by calling UpdateDocumentSection.
+
+To work on something other than documents, call ChangeState
+""",
+
   STATE_CHARACTERS:
 """
 We are working on world "{current_world_name}": {current_world_description}
 {element}
 
-Worlds have charaters which are actors in the world with a backstory, abilities, and motivations.  You can create characters and change information about the characters.
+Worlds have characters which are actors in the world with a backstory, abilities, and motivations.  You can create characters and change information about the characters.
 
 You can update the name, description, and details of the character.
 You save changes to a character by calling UpdateCharacter.  
@@ -311,6 +330,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
       element = f"We are looking at the item '{self.getCurrentElementName(db)}'"
     elif self.getCurrentViewType() == elements.ElementType.SiteType():
       element = f"We are looking at the site '{self.getCurrentElementName(db)}'"
+    elif self.getCurrentViewType() == elements.ElementType.DocumentType():
+      element = f"We are looking at the document '{self.getCurrentElementName(db)}'"
 
     value = instructions[self.current_state].format(
       current_world_name = self.getCurrentWorldName(db),
@@ -422,15 +443,20 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     elif function_name == "CreateDocument":
       result = self.FuncCreateDocument(db, arguments)
 
-    elif function_name == "SetDocumentAbstract":
-      result = self.FuncSetDocumentAbstract(db, arguments)
+    elif function_name == "UpdateDocument":
+      result = self.FuncUpdateDocument(db, arguments)
 
-    elif function_name == "SetDocumentOutline":
-      result = self.FuncSetDocumentOutline(db, arguments)
-      
+    elif function_name == "ListDocumentSections":
+      result = self.FuncListDocumentSections(db, arguments)
+
+    elif function_name == "ReadDocumentSection":
+      result = self.FuncReadDocumentSection(db, arguments)
+    
     elif function_name == "AddDocumentSection":
-      result = self.FuncAppendDocumentSection(db, arguments)
-      pass
+      result = self.FuncAddDocumentSection(db, arguments)
+
+    elif function_name == "UpdateDocumentSection":
+      result = self.FuncUpdateDocumentSection(db, arguments)
 
     elif function_name == "ListCharacters":
       result = [{ "name": entry.getName() }            
@@ -508,13 +534,12 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     if states.get(state) is None:
       return self.funcError(f"unknown state: {state}")
 
-    # Check is state is legal
+    # Check is state is legal - TODO: more states here?
     if ((state == STATE_WORLD or
          state == STATE_CHARACTERS) and self.current_view.noElement()):
       return self.funcError(f"Must read or create a world for {state}")
     self.current_state = state
 
-          
     return self.funcStatus(f"state changed: {state}")
 
   def FuncCreateWorld(self, db, arguments):
@@ -607,41 +632,35 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     
     return self.funcStatus("Document created")
 
-  def FuncSetDocumentAbstract(self, db, arguments):
+  def FuncUpdateDocument(self, db, arguments):
     if arguments.get("name") is None:
       return self.funcError("missing argument")
-    if arguments.get("content") is None:
-      return self.funcError("missing argument")
-
+    
     document = elements.findDocument(db, 
                                      self.getCurrentWorldID(),
                                      arguments["name"])
     if document is None:
       return self.funcError("Document not found")
-    
-    document.setAbstract(arguments["content"])
+
+    if arguments.get("new_name"):
+      document.setName(arguments["new_name"])
     elements.updateDocument(db, document)
     
     return self.funcStatus("Document updated")
 
-  def FuncSetDocumentOutline(self, db, arguments):
+  def FuncListDocumentSections(self, db, arguments):
     if arguments.get("name") is None:
       return self.funcError("missing argument")
-    if arguments.get("content") is None:
-      return self.funcError("missing argument")
-
+    
     document = elements.findDocument(db, 
                                      self.getCurrentWorldID(),
                                      arguments["name"])
     if document is None:
       return self.funcError("Document not found")
-    
-    document.setOutline(arguments["content"])
-    elements.updateDocument(db, document)
-    
-    return self.funcStatus("Document updated")
+    result = document.getSectionList()
+    return result
 
-  def FuncAppendDocumentSection(self, db, arguments):
+  def FuncAddDocumentSection(self, db, arguments):
     if (arguments.get("name") is None or
         arguments.get("heading") is None or
         arguments.get("content") is None):
@@ -655,8 +674,47 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     
     document.addSection(arguments["heading"], arguments["content"])
     elements.updateDocument(db, document)
+    element_info.UpdateElementInfo(db, document)        
     
     return self.funcStatus("Document updated")
+  
+  def FuncReadDocumentSection(self, db, arguments):
+    if (arguments.get("name") is None or
+        arguments.get("heading") is None):
+      return self.funcError("missing argument")
+    
+    document = elements.findDocument(db, 
+                                     self.getCurrentWorldID(),
+                                     arguments["name"])
+    if document is None:
+      return self.funcError("Document not found")
+    
+    result = document.getSectionText(arguments["heading"])
+    if result is None:
+      return self.funcError("unknown heading")
+    return {"heading" : arguments["heading"],
+            "content" : result }
+
+  def FuncUpdateDocumentSection(self, db, arguments):
+    if (arguments.get("name") is None or
+        arguments.get("heading") is None or
+        arguments.get("content") is None):
+      return self.funcError("missing argument")
+
+    document = elements.findDocument(db, 
+                                     self.getCurrentWorldID(),
+                                     arguments["name"])
+    if document is None:
+      return self.funcError("Document not found")
+
+    document.updateSection(arguments["heading"], arguments["content"])
+    if arguments.get("new_heading") is not None:
+      document.updateHeading(arguments["heading"], 
+                             arguments["new_heading"])
+    elements.updateDocument(db, document)
+    element_info.UpdateElementInfo(db, document)        
+    return self.funcStatus("Document updated")
+    
   
   def FuncReadCharacter(self, db, arguments):
     if arguments.get("name") is None:
@@ -1268,8 +1326,8 @@ all_functions = [
   },
 
   {
-    "name": "SetDocumentAbstract",
-    "description": "Update the abstract of the document.",
+    "name": "ListDocumentSections",
+    "description": "List the sections of the document.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -1277,13 +1335,8 @@ all_functions = [
           "type": "string",
           "description": "Name of the document"
         },
-        "content": {
-          "type": "string",
-          "description": "Abstract of the document"
-        },
-
       },
-      "required": [ "name", "content" ]
+      "required": [ "name" ]
     },
   },
 
@@ -1311,8 +1364,8 @@ all_functions = [
   },
 
   {
-    "name": "SetDocumentOutline",
-    "description": "Update the outline of the document.",
+    "name": "UpdateDocumentSection",
+    "description": "Change a section in the document.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -1320,13 +1373,54 @@ all_functions = [
           "type": "string",
           "description": "Name of the document"
         },
+        "heading": {
+          "type": "string",
+          "description": "Section heading"
+        },
         "content": {
           "type": "string",
-          "description": "Outline of the document"
+          "description": "Section content"
         },
-
       },
-      "required": [ "name", "content" ]
+      "required": [ "name", "heading", "content" ]
+    },
+  },
+
+  {
+    "name": "ReadDocumentSection",
+    "description": "Get the contents of a section in the document.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the document"
+        },
+        "heading": {
+          "type": "string",
+          "description": "Section heading"
+        },
+      },
+      "required": [ "name", "heading" ]
+    },
+  },
+
+  {
+    "name": "UpdateDocument",
+    "description": "Make changes to the document document.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the document"
+        },
+        "new_name": {
+          "type": "string",
+          "description": "New name of the document.",
+        },        
+      },
+      "required": [ "name", "new_name" ]
     },
   },
 

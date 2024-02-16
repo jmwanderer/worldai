@@ -118,8 +118,8 @@ class BasicTestCase(unittest.TestCase):
     # Create document
     doc = elements.Document(world1.id)
     doc.setName("World History")
-    doc.setAbstract("The world changed over time")
-    doc.setOutline("- 1. The begging. -2. The end")
+    doc.addSection("Abstract", "The world changed over time")
+    doc.addSection("Outline", "- 1. The begging. -2. The end")
     doc.addSection("Intro", "things")
     doc.addSection("Conclusion", "things")
     elements.createDocument(self.db, doc)
@@ -130,7 +130,9 @@ class BasicTestCase(unittest.TestCase):
     doc.addSection("Final Thoughts", "Thoughts")
     elements.updateDocument(self.db, doc)
     doc = elements.loadDocument(self.db, doc.getID())
-    self.assertEqual(len(doc.getSectionList()), 3)
+    self.assertEqual(len(doc.getSectionList()), 5)
+    doc.updateSection("Abstract", "New abstract")
+    self.assertEqual(doc.getSectionText("Abstract"), "New abstract")
 
     # Create character
     character = elements.Character(world1.id)
