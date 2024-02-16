@@ -3,7 +3,6 @@ Function to take a file, covert the file to text, and return
 content divided into chunks
 """
 
-import io
 import tiktoken
 import logging
 
@@ -24,9 +23,9 @@ def chunk_text(text: str, chunk_size, overlap):
 
     for chunk in chunks(text, chunk_size, tokenizer, overlap):
 
-        chunk_text = tokenizer.decode(chunk).strip()
-        if len(chunk_text) > 0:
-            result.append(chunk_text)
+        segment = tokenizer.decode(chunk).strip()
+        if len(segment) > 0:
+            result.append(segment)
     return result
 
 
@@ -49,11 +48,11 @@ def token_count(text: str):
 
 
 def chunks(text, n, tokenizer, overlap):
+    """Yield successive n-sized chunks from text."""
     # Split a text into smaller chunks of size n,
     # preferably ending at the end of a sentence.
 
     tokens = tokenizer.encode(text)
-    """Yield successive n-sized chunks from text."""
     i = 0
     while i < len(tokens):
         # Find the nearest end of sentence within a range of 0.5 * n and n tokens
