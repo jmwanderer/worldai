@@ -18,7 +18,7 @@
         {% for entry in world_list %}
         <li>
           <h2>
-            <a href="{{ url_for('worldai.view_world', id=entry[0]) }}">
+            <a href="{{ url_for('worldai.view_world', wid=entry[0]) }}">
               {{ entry[1] }}
             </a>
           </h2>

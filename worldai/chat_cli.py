@@ -1,6 +1,4 @@
-import os
 import logging
-import openai
 
 from . import chat
 from . import chat_functions
@@ -27,7 +25,6 @@ def chat_loop():
         if len(user) == 0:
             continue
 
-        message = None
         if user.startswith("system:"):
             system = user[user.index(":") + 1 :].strip()
             print(f"system message {system}")

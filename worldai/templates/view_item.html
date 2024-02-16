@@ -13,7 +13,7 @@
                href="{{ url_for('worldai.list_worlds') }}">All Worlds</a>
           <li class="navitem">
             <a class = "nava"
-               href="{{ url_for('worldai.view_world', id=world.id) }}">
+               href="{{ url_for('worldai.view_world', wid=world.getID()) }}">
               {{ world.getName() }}
             </a> 
         </ul>

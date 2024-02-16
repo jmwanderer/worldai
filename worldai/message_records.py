@@ -1,11 +1,10 @@
 import json
 
-"""
-Manages and curates the chat history.
-Supports building a message history for a target size.
-Supports ensuring required tool calls / information gets populated.
-"""
-
+#
+# Manages and curates the chat history.
+# Supports building a message history for a target size.
+# Supports ensuring required tool calls / information gets populated.
+#
 
 class MessageSetRecord:
     """
@@ -25,6 +24,7 @@ class MessageSetRecord:
         self.messages = []
         self.marked_include = False
 
+    @staticmethod
     def _recursiveValueCount(enc, elements):
         count = 0
         for key, value in elements.items():
@@ -48,6 +48,7 @@ class MessageSetRecord:
                     count -= 1
         return count
 
+    @staticmethod
     def _getTokenCount(enc, message):
         """
         Return token count for message
@@ -69,14 +70,12 @@ class MessageSetRecord:
         self.messages.append(message)
 
     def getRequestContent(self):
-        user_message = None
         for message in self.messages:
             if message.get("role") == "user":
                 return message["content"]
         return ""
 
     def getSystemContent(self):
-        system_message = None
         for message in self.messages:
             if message.get("role") == "system":
                 return message["content"]

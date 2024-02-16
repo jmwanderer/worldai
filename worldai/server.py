@@ -1,17 +1,12 @@
 import os
-import random
-import json
 import os.path
-import pathlib
 import time
 import functools
-import io
 import flask
 from flask import Flask
 from flask import request
 from flask import Blueprint, g, current_app, session
 from werkzeug.middleware.proxy_fix import ProxyFix
-import werkzeug.utils
 import logging
 import click
 import openai
@@ -76,7 +71,7 @@ def create_app(instance_path=None, test_config=None):
     try:
         logging.info("instance path = %s", app.instance_path)
         os.makedirs(app.instance_path)
-    except OSError as err:
+    except OSError:
         pass
     design_functions.IMAGE_DIRECTORY = app.instance_path
     chat.MESSAGE_DIRECTORY = app.instance_path
@@ -131,14 +126,14 @@ def run_chat_loop():
 
 @bp.cli.command("create-image-thumb")
 @click.argument("id")
-def create_image_thumb(id):
+def create_image_thumb(eid):
     """Create a thumbnail for an image."""
-    image = elements.getImage(get_db(), id)
+    image = elements.getImage(get_db(), eid)
     if image is not None:
         design_functions.create_image_thumbnail(image)
         click.echo("Created thumbnail [%s] %s." % (image.getID(), image.getThumbName()))
     else:
-        click.echo(f"Error, no such image id:{id}")
+        click.echo(f"Error, no such image id:{eid}")
 
 
 @bp.cli.command("create-thumbs")
@@ -152,39 +147,39 @@ def create_image_thumbs():
 
 @bp.cli.command("delete-image")
 @click.argument("id")
-def delete_image(id):
+def delete_image(eid):
     """Delete an image."""
-    image = elements.getImage(get_db(), id)
+    image = elements.getImage(get_db(), eid)
     if image is not None:
-        elements.deleteImage(get_db(), current_app.instance_path, id)
+        elements.deleteImage(get_db(), current_app.instance_path, eid)
         click.echo("Deleted image [%s]." % image.getID())
     else:
-        click.echo(f"Error, no such image id:{id}")
+        click.echo(f"Error, no such image id:{eid}")
 
 
 @bp.cli.command("delete-character")
 @click.argument("id")
-def delete_character(id):
+def delete_character(eid):
     """Delete a character and associated images."""
-    character = elements.loadCharacter(get_db(), id)
+    character = elements.loadCharacter(get_db(), eid)
     if character is not None:
-        element_info.DeleteElementInfo(get_db(), id)
-        elements.deleteCharacter(get_db(), current_app.instance_path, id)
+        element_info.DeleteElementInfo(get_db(), eid)
+        elements.deleteCharacter(get_db(), current_app.instance_path, eid)
         click.echo("Deleted character [%s] %s." % (character.getID(), character.getName()))
     else:
-        click.echo(f"Error, no such character id:{id}")
+        click.echo(f"Error, no such character id:{eid}")
 
 
 @bp.cli.command("delete-world")
 @click.argument("id")
-def delete_world(id):
+def delete_world(wid):
     """Delete a world and associated characters and images."""
-    world = elements.loadWorld(get_db(), id)
+    world = elements.loadWorld(get_db(), wid)
     if world is not None:
-        elements.deleteWorld(get_db(), current_app.instance_path, id)
+        elements.deleteWorld(get_db(), current_app.instance_path, wid)
         click.echo("Deleted world [%s] %s." % (world.getID(), world.getName()))
     else:
-        click.echo(f"Error, no such world id:{id}")
+        click.echo(f"Error, no such world id:{wid}")
 
 
 @bp.cli.command("list-worlds")
@@ -293,44 +288,44 @@ def dump_worlds():
     print("%d worlds listed" % len(worlds))
 
     for entry in worlds:
-        id = entry.getID()
+        eid = entry.getID()
         name = entry.getName()
-        print(f"World({id}): {name}")
+        print(f"World({eid}): {name}")
 
-        world = elements.loadWorld(get_db(), id)
+        world = elements.loadWorld(get_db(), eid)
         print(world.getAllProperties())
         list_images(world.getID())
 
         print("Loading characters...")
         characters = elements.listCharacters(get_db(), world.getID())
         for char_entry in characters:
-            id = char_entry.getID()
+            eid = char_entry.getID()
             name = char_entry.getName()
-            print(f"Character({id}): {name}")
+            print(f"Character({eid}): {name}")
 
-            character = elements.loadCharacter(get_db(), id)
+            character = elements.loadCharacter(get_db(), eid)
             print(character.getAllProperties())
             list_images(character.getID())
 
         print("Loading sites...")
         sites = elements.listSites(get_db(), world.getID())
         for site_entry in sites:
-            id = site_entry.getID()
+            sid = site_entry.getID()
             name = site_entry.getName()
-            print(f"Site({id}): {name}")
+            print(f"Site({sid}): {name}")
 
-            site = elements.loadSite(get_db(), id)
+            site = elements.loadSite(get_db(), sid)
             print(site.getAllProperties())
             list_images(site.getID())
 
         print("Loading items...")
         items = elements.listItems(get_db(), world.getID())
         for item_entry in items:
-            id = item_entry.getID()
+            iid = item_entry.getID()
             name = item_entry.getName()
-            print(f"Item({id}): {name}")
+            print(f"Item({iid}): {name}")
 
-            item = elements.loadItem(get_db(), id)
+            item = elements.loadItem(get_db(), iid)
             print(item.getAllProperties())
             list_images(item.getID())
 
@@ -338,7 +333,7 @@ def dump_worlds():
 
 
 def extract_auth_key(headers):
-    auth = request.headers.get("Authorization")
+    auth = headers.get("Authorization")
     if auth is not None:
         index = auth.find(" ")
         if index > 0:
@@ -448,20 +443,20 @@ def list_worlds():
     world_list = []
     worlds = elements.listWorlds(get_db())
     for entry in worlds:
-        id = entry.getID()
-        world = elements.loadWorld(get_db(), id)
-        world_list.append((id, world.getName(), world.getDescription()))
+        wid = entry.getID()
+        world = elements.loadWorld(get_db(), wid)
+        world_list.append((wid, world.getName(), world.getDescription()))
 
     return flask.render_template("list_worlds.html", world_list=world_list)
 
 
-@bp.route("/view/worlds/<id>", methods=["GET"])
+@bp.route("/view/worlds/<wid>", methods=["GET"])
 @login_required
-def view_world(id):
+def view_world(wid):
     """
     View a world
     """
-    world = elements.loadWorld(get_db(), id)
+    world = elements.loadWorld(get_db(), wid)
     if world == None:
         return "World not found", 400
 
@@ -503,16 +498,16 @@ def view_world(id):
     )
 
 
-@bp.route("/view/worlds/<wid>/characters/<id>", methods=["GET"])
+@bp.route("/view/worlds/<wid>/characters/<eid>", methods=["GET"])
 @login_required
-def view_character(wid, id):
+def view_character(wid, eid):
     """
     View a character
     """
     world = elements.loadWorld(get_db(), wid)
     if world == None:
         return "World not found", 400
-    character = elements.loadCharacter(get_db(), id)
+    character = elements.loadCharacter(get_db(), eid)
     if character == None:
         return "Character not found", 400
     characters = elements.listCharacters(get_db(), wid)
@@ -527,16 +522,16 @@ def view_character(wid, id):
     )
 
 
-@bp.route("/view/worlds/<wid>/items/<id>", methods=["GET"])
+@bp.route("/view/worlds/<wid>/items/<eid>", methods=["GET"])
 @login_required
-def view_item(wid, id):
+def view_item(wid, eid):
     """
     View a character
     """
     world = elements.loadWorld(get_db(), wid)
     if world == None:
         return "World not found", 400
-    item = elements.loadItem(get_db(), id)
+    item = elements.loadItem(get_db(), eid)
     if item == None:
         return "Item not found", 400
     items = elements.listItems(get_db(), wid)
@@ -547,16 +542,16 @@ def view_item(wid, id):
     )
 
 
-@bp.route("/view/worlds/<wid>/sites/<id>", methods=["GET"])
+@bp.route("/view/worlds/<wid>/sites/<eid>", methods=["GET"])
 @login_required
-def view_site(wid, id):
+def view_site(wid, eid):
     """
     View a site
     """
     world = elements.loadWorld(get_db(), wid)
     if world == None:
         return "World not found", 400
-    site = elements.loadSite(get_db(), id)
+    site = elements.loadSite(get_db(), eid)
     if site == None:
         return "Site not found", 400
     sites = elements.listSites(get_db(), wid)
@@ -567,13 +562,13 @@ def view_site(wid, id):
     )
 
 
-@bp.route("/images/<id>", methods=["GET"])
+@bp.route("/images/<iid>", methods=["GET"])
 @login_required
-def get_image(id):
+def get_image(iid):
     """
     Return an image
     """
-    image = elements.getImage(get_db(), id)
+    image = elements.getImage(get_db(), iid)
     if image is None:
         return "Image not found", 400
 
@@ -583,13 +578,13 @@ def get_image(id):
     return flask.send_file(image_file, mimetype="image/webp")
 
 
-@bp.route("/images/<id>/thumb", methods=["GET"])
+@bp.route("/images/<iid>/thumb", methods=["GET"])
 @login_required
-def get_image_thumb(id):
+def get_image_thumb(iid):
     """
     Return an image
     """
-    image = elements.getImage(get_db(), id)
+    image = elements.getImage(get_db(), iid)
     if image is None:
         return "Image not found", 400
 
@@ -679,7 +674,7 @@ def design_chat_view_api():
     else:
         if request.json.get("view") is not None:
             view = request.json["view"]
-            logging.info(f"view: {view}")
+            logging.info("view: %s", view)
             chat_session.set_view(get_db(), view)
             logging.info("view2: %s", chat_session.get_view())
             content = {"view": chat_session.get_view()}
@@ -731,7 +726,7 @@ def worlds_list():
 
 @bp.route("/api/worlds/<wid>", methods=["GET"])
 @auth_required
-def worlds(wid):
+def worlds_api(wid):
     """
     API to access a world
     """
@@ -760,7 +755,7 @@ def getElementThumbProperty(element):
     else:
         image_prop = {
             "id": image_id,
-            "url": flask.url_for("worldai.get_image_thumb", id=image_id),
+            "url": flask.url_for("worldai.get_image_thumb", iid=image_id),
         }
     return image_prop
 
@@ -768,7 +763,7 @@ def getElementThumbProperty(element):
 def getElementImageProps(element):
     images = []
     for image in element.getImages():
-        url = flask.url_for("worldai.get_image", id=image)
+        url = flask.url_for("worldai.get_image", iid=image)
         images.append({"id": image, "url": url})
 
     if len(images) == 0:
@@ -784,20 +779,19 @@ def characters_list(wid):
     API to get the list of characters for a world
     """
     character_list = []
-    session_id = get_session_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 400
     characters = elements.listCharacters(get_db(), wid)
 
     for entry in characters:
-        id = entry.getID()
-        character = elements.loadCharacter(get_db(), id)
+        cid = entry.getID()
+        character = elements.loadCharacter(get_db(), cid)
         image_prop = getElementThumbProperty(character)
 
         character_list.append(
             {
-                "id": id,
+                "id": cid,
                 "name": character.getName(),
                 "description": character.getDescription(),
                 "image": image_prop,
@@ -826,13 +820,13 @@ def characters_inst_list(wid):
     characters = elements.listCharacters(get_db(), wid)
 
     for entry in characters:
-        id = entry.getID()
-        character = elements.loadCharacter(get_db(), id)
+        cid = entry.getID()
+        character = elements.loadCharacter(get_db(), cid)
         image_prop = getElementThumbProperty(character)
 
         character_list.append(
             {
-                "id": id,
+                "id": cid,
                 "name": character.getName(),
                 "description": character.getDescription(),
                 "givenSupport": wstate.getFriendship(id) > 0,
@@ -843,14 +837,13 @@ def characters_inst_list(wid):
     return flask.jsonify(character_list)
 
 
-@bp.route("/api/worlds/<wid>/characters/<id>", methods=["GET"])
+@bp.route("/api/worlds/<wid>/characters/<cid>", methods=["GET"])
 @auth_required
-def characters(wid, id):
+def characters_api(wid, cid):
     """
     API to access a character
     """
-    session_id = get_session_id()
-    character = elements.loadCharacter(get_db(), id)
+    character = elements.loadCharacter(get_db(), cid)
     if character == None or character.parent_id != wid:
         return {"error", "Character not found"}, 400
 
@@ -861,9 +854,9 @@ def characters(wid, id):
     return result
 
 
-@bp.route("/api/worlds/<wid>/characters/<id>/instance", methods=["GET"])
+@bp.route("/api/worlds/<wid>/characters/<cid>/instance", methods=["GET"])
 @auth_required
-def character_stats(wid, id):
+def character_stats(wid, cid):
     """
     API to get character status
     """
@@ -874,7 +867,7 @@ def character_stats(wid, id):
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
 
-    character_data = client_commands.LoadCharacterData(get_db(), world, wstate, id)
+    character_data = client_commands.LoadCharacterData(get_db(), wstate, cid)
     response = character_data.model_dump()
     response["current_time"] = wstate.getCurrentTime()
     return response
@@ -882,7 +875,7 @@ def character_stats(wid, id):
 
 @bp.route("/api/worlds/<wid>/sites", methods=["GET"])
 @auth_required
-def site_list(wid):
+def site_list_api(wid):
     """
     Get a list of sites
     """
@@ -893,17 +886,16 @@ def site_list(wid):
         return {"error", "World not found"}, 400
 
     site_list = []
-    session_id = get_session_id()
     sites = elements.listSites(get_db(), wid)
 
     for entry in sites:
-        id = entry.getID()
-        site = elements.loadSite(get_db(), id)
+        sid = entry.getID()
+        site = elements.loadSite(get_db(), sid)
         image_prop = getElementThumbProperty(site)
 
         site_list.append(
             {
-                "id": id,
+                "id": sid,
                 "name": site.getName(),
                 "description": site.getDescription(),
                 "image": image_prop,
@@ -931,13 +923,13 @@ def site_instances_list(wid):
     sites = elements.listSites(get_db(), wid)
 
     for entry in sites:
-        id = entry.getID()
-        site = elements.loadSite(get_db(), id)
+        sid = entry.getID()
+        site = elements.loadSite(get_db(), sid)
         image_prop = getElementThumbProperty(site)
 
         site_list.append(
             {
-                "id": id,
+                "id": sid,
                 "name": site.getName(),
                 "description": site.getDescription(),
                 "present": wstate.getLocation() == id,
@@ -950,11 +942,10 @@ def site_instances_list(wid):
 
 @bp.route("/api/worlds/<wid>/sites/<sid>", methods=["GET"])
 @auth_required
-def site(wid, sid):
+def site_api(wid, sid):
     """
     API to load a site
     """
-    session_id = get_session_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 400
@@ -1038,20 +1029,19 @@ def items_list(wid):
     API to get the items for a world
     """
     item_list = []
-    session_id = get_session_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 400
     items = elements.listItems(get_db(), wid)
 
     for entry in items:
-        id = entry.getID()
-        item = elements.loadItem(get_db(), id)
+        iid = entry.getID()
+        item = elements.loadItem(get_db(), iid)
         image_prop = getElementThumbProperty(item)
 
         item_list.append(
             {
-                "id": id,
+                "id": iid,
                 "name": item.getName(),
                 "description": item.getDescription(),
                 "image": image_prop,
@@ -1080,13 +1070,13 @@ def items_intances_list(wid):
     items = elements.listItems(get_db(), wid)
 
     for entry in items:
-        id = entry.getID()
-        item = elements.loadItem(get_db(), id)
+        iid = entry.getID()
+        item = elements.loadItem(get_db(), iid)
         image_prop = getElementThumbProperty(item)
 
         item_list.append(
             {
-                "id": id,
+                "id": iid,
                 "name": item.getName(),
                 "description": item.getDescription(),
                 "have_item": wstate.hasItem(id),
@@ -1097,14 +1087,13 @@ def items_intances_list(wid):
     return item_list
 
 
-@bp.route("/api/worlds/<wid>/items/<id>", methods=["GET"])
+@bp.route("/api/worlds/<wid>/items/<iid>", methods=["GET"])
 @auth_required
-def item(wid, id):
+def item_api(wid, iid):
     """
     API to access an item
     """
-    session_id = get_session_id()
-    item = elements.loadItem(get_db(), id)
+    item = elements.loadItem(get_db(), iid)
     if item == None or item.parent_id != wid:
         return {"error", "Item not found"}, 400
 
@@ -1123,14 +1112,14 @@ def item(wid, id):
     return result
 
 
-@bp.route("/api/worlds/<wid>/items/<id>/instance", methods=["GET"])
+@bp.route("/api/worlds/<wid>/items/<iid>/instance", methods=["GET"])
 @auth_required
-def item_instance(wid, id):
+def item_instance(wid, iid):
     """
     API to access an item instance
     """
     session_id = get_session_id()
-    item = elements.loadItem(get_db(), id)
+    item = elements.loadItem(get_db(), iid)
     if item == None or item.parent_id != wid:
         return {"error", "Item not found"}, 400
 
@@ -1142,7 +1131,7 @@ def item_instance(wid, id):
     result["images"] = images
     image_prop = getElementThumbProperty(item)
     result["image"] = image_prop
-    result["location"] = wstate.getItemLocation(id)
+    result["location"] = wstate.getItemLocation(iid)
 
     # Include site name if needed
     if len(item.getAbility().site_id) > 0:
@@ -1155,7 +1144,7 @@ def item_instance(wid, id):
 
 @bp.route("/api/worlds/<wid>/command", methods=["POST"])
 @auth_required
-def command(wid):
+def command_api(wid):
     """
     API to make player changes
     """
@@ -1192,15 +1181,15 @@ def player(wid):
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
 
-    player_data = client_commands.LoadPlayerData(get_db(), world, wstate)
+    player_data = client_commands.LoadPlayerData(get_db(), wstate)
     response = player_data.model_dump()
     response["current_time"] = wstate.getCurrentTime()
     return response
 
 
-@bp.route("/api/worlds/<wid>/characters/<id>/thread", methods=["GET", "POST"])
+@bp.route("/api/worlds/<wid>/characters/<cid>/thread", methods=["GET", "POST"])
 @auth_required
-def thread_api(wid, id):
+def thread_api(wid, cid):
     """
     Character chat interface
     """
@@ -1208,7 +1197,7 @@ def thread_api(wid, id):
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     # TODO: this is where we need lock for updating
     chat_session = character_chat.CharacterChat.loadChatSession(
-        get_db(), wstate_id, wid, id
+        get_db(), wstate_id, wid, cid
     )
     content = None
     if request.method == "GET":
@@ -1233,10 +1222,10 @@ def thread_api(wid, id):
     # Player and character must be in same location to continue to chat.
     logging.info("threads API: load world state")
     wstate = world_state.loadWorldState(get_db(), wstate_id)
-    enabled = wstate.getCharacterLocation(id) == wstate.getLocation()
+    enabled = wstate.getCharacterLocation(cid) == wstate.getLocation()
     logging.info("location: %s", wstate.getLocation())
-    logging.info("char location: %s", wstate.getCharacterLocation(id))
-    engaged = wstate.getChatCharacter() == id
+    logging.info("char location: %s", wstate.getCharacterLocation(cid))
+    engaged = wstate.getChatCharacter() == cid
     logging.info("enabled: %s", enabled)
     logging.info("engaged: %s", engaged)
     content["enabled"] = enabled and engaged
@@ -1267,7 +1256,6 @@ def action_api(wid, cid):
     print("use item %s on character %s" % (item_id, cid))
     (changed, message, event) = client_actions.UseItemCharacter(item_id, cid)
     print("result - changed: %s, message: %s, event: %s" % (changed, message, event))
-    character = client_commands.LoadCharacterData(get_db(), world, wstate, cid)
     if changed:
         # Save state since chat functions may load it again
         world_state.saveWorldState(get_db(), wstate)

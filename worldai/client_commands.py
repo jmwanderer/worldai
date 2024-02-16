@@ -174,7 +174,7 @@ class ClientActions:
         """
         Returns (changed: bool, response: str, chat: str)
         """
-        logging.info("Use item %s" % (item.getName(),))
+        logging.info("Use item %s", item.getName())
         cid = None
         if character is not None:
             cid = character.getID()
@@ -207,7 +207,7 @@ class ClientActions:
         logging.info("use item - %s", item.getAbility().effect)
 
         # Apply an effect
-        response_message = f"Nothing happened"
+        response_message = "Nothing happened"
         match item.getAbility().effect:
             case elements.ItemEffect.HEAL:
                 # Self or other
@@ -232,8 +232,7 @@ class ClientActions:
                 # Only other TODO: extend so characters can use
                 if cid is not None:
                     health = self.wstate.getCharacterHealth(cid) - 4
-                    if health < 0:
-                        health = 0
+                    health = max(health, 0)
                     self.wstate.setCharacterHealth(cid, health)
                     if self.wstate.isCharacterDead(cid):
                         response_message = f"{character.getName()} is dead"
@@ -335,7 +334,7 @@ class CharacterData(pydantic.BaseModel):
     inventory: typing.List[ElemInfo] = []
 
 
-def LoadCharacterData(db, world, wstate, cid):
+def LoadCharacterData(db, wstate, cid):
     data = CharacterData()
     character = elements.loadCharacter(db, cid)
     if character is None:
@@ -394,7 +393,7 @@ class PlayerData(pydantic.BaseModel):
     # Time in minutes
 
 
-def LoadPlayerData(db, world, wstate):
+def LoadPlayerData(db, wstate):
     data = PlayerData()
     data.selected_item = wstate.getSelectedItem()
     data.chat_who = wstate.getChatCharacter()

@@ -1,15 +1,14 @@
 from . import chat
-from . import elements
 from . import threads
 from . import character_functions
 
 import os
 
-"""
-Module for the Character Chat Session
-TODO: figure out how to format chat text in React UI
-      right now, just surpressing html. 
-"""
+#
+# Module for the Character Chat Session
+# TODO: figure out how to format chat text in React UI
+#      right now, just surpressing html. 
+#
 
 
 class CharacterChat:
@@ -18,6 +17,7 @@ class CharacterChat:
         self.wstate_id = wstate_id
         self.character_id = character_id
 
+    @staticmethod
     def loadChatSession(db, wstate_id, wid, cid):
         functions = character_functions.CharacterFunctions(wstate_id, wid, cid)
         chat_session = chat.ChatSession(chatFunctions=functions)

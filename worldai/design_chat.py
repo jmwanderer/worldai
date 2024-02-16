@@ -6,10 +6,10 @@ from . import elements
 from . import design_functions
 from . import threads
 
-"""
-Module for the Design Chat Session
-- uses ChatSession and DesignFunctions
-"""
+#
+# Module for the Design Chat Session
+# uses ChatSession and DesignFunctions
+#
 
 
 class DesignChatSession:
@@ -22,6 +22,7 @@ class DesignChatSession:
             self.chat = chat_session
         self.session_id = session_id
 
+    @staticmethod
     def loadChatSession(db, session_id):
         functions = design_functions.DesignFunctions()
         chat_session = chat.ChatSession(functions)
@@ -98,7 +99,6 @@ class DesignChatSession:
             # Handle if the next view is a new item, character, or site
             if next_view.getID() != current_view.getID():
                 tool_choice = None
-                load_id = next_view.getID()
                 if next_view.getType() == elements.ElementType.CharacterType():
                     character = elements.loadCharacter(db, next_view.getID())
                     logging.info("Show character '%s'", character.getName())

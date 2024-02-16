@@ -4,7 +4,6 @@ import openai
 import requests
 import logging
 from PIL import Image
-import enum
 
 from . import elements
 from . import chat_functions
@@ -26,13 +25,13 @@ STATE_SITES = "State_Sites"
 def elemTypeToState(element_type):
     if element_type == elements.ElementType.WorldType():
         return STATE_WORLD
-    elif element_type == elements.ElementType.DocumentType():
+    if element_type == elements.ElementType.DocumentType():
         return STATE_DOCUMENTS
-    elif element_type == elements.ElementType.CharacterType():
+    if element_type == elements.ElementType.CharacterType():
         return STATE_CHARACTERS
-    elif element_type == elements.ElementType.ItemType():
+    if element_type == elements.ElementType.ItemType():
         return STATE_ITEMS
-    elif element_type == elements.ElementType.SiteType():
+    if element_type == elements.ElementType.SiteType():
         return STATE_SITES
     return STATE_WORLDS
 
@@ -326,11 +325,11 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             character = elements.loadCharacter(db, self.current_view.getID())
             return character.getName()
 
-        elif self.getCurrentViewType() == elements.ElementType.SiteType():
+        if self.getCurrentViewType() == elements.ElementType.SiteType():
             site = elements.loadSite(db, self.current_view.getID())
             return site.getName()
 
-        elif self.getCurrentViewType() == elements.ElementType.ItemType():
+        if self.getCurrentViewType() == elements.ElementType.ItemType():
             item = elements.loadItem(db, self.current_view.getID())
             return item.getName()
         return ""
@@ -528,32 +527,28 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         elif function_name == "UpdateSite":
             result = self.FuncUpdateSite(db, arguments)
 
-        elif (
-            function_name == "CreateWorldImage"
-            or function_name == "CreateCharacterImage"
-            or function_name == "CreateItemImage"
-            or function_name == "CreateSiteImage"
-        ):
+        elif function_name in [ "CreateWorldImage",
+                                "CreateCharacterImage",
+                                "CreateItemImage",
+                                "CreateSiteImage" ]:
             result = self.FuncCreateImage(db, arguments)
 
-        elif function_name == "RemoveImage" or function_name == "RemoveWorldImage":
+        elif function_name in [ "RemoveImage",
+                                "RemoveWorldImage" ]:
             result = self.FuncRemoveImage(db, arguments)
 
-        elif function_name == "RecoverImages" or function_name == "RecoverWorldImages":
+        elif function_name in [ "RecoverImages",
+                               "RecoverWorldImages"]:
             result = self.FuncRecoverImages(db, arguments)
 
-        elif (
-            function_name == "RemoveSite"
-            or function_name == "RemoveCharacter"
-            or function_name == "RemoveItem"
-        ):
+        elif function_name in [ "RemoveSite",
+                                "RemoveCharacter",
+                                "RemoveItem" ]:
             result = self.FuncRemoveElement(db, arguments)
 
-        elif (
-            function_name == "RecoverSites"
-            or function_name == "RecoverItems"
-            or function_name == "RecoverCharacters"
-        ):
+        elif function_name in [ "RecoverSites",
+                                "RecoverItems",
+                                "RecoverCharacters" ]:
             result = self.FuncRecoverElements(db, arguments)
 
         if self.current_state == STATE_WORLDS:
@@ -570,9 +565,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             return self.funcError(f"unknown state: {state}")
 
         # Check is state is legal - TODO: more states here?
-        if (
-            state == STATE_WORLD or state == STATE_CHARACTERS
-        ) and self.current_view.noElement():
+        if (state in [ STATE_WORLD, STATE_CHARACTERS] and 
+            self.current_view.noElement()):
             return self.funcError(f"Must read or create a world for {state}")
         self.current_state = state
 
@@ -1054,18 +1048,17 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         if self.current_state == STATE_CHARACTERS:
             if elements.hideCharacter(db, self.getCurrentWorldID(), name):
                 return self.funcStatus("removed character")
-            else:
-                return self.funcError("character not found")
-        elif self.current_state == STATE_ITEMS:
+            return self.funcError("character not found")
+        
+        if self.current_state == STATE_ITEMS:
             if elements.hideItem(db, self.getCurrentWorldID(), name):
                 return self.funcStatus("removed item")
-            else:
-                return self.funcError("item not found")
-        elif self.current_state == STATE_SITES:
+            return self.funcError("item not found")
+        
+        if self.current_state == STATE_SITES:
             if elements.hideSite(db, self.getCurrentWorldID(), name):
                 return self.funcStatus("removed site")
-            else:
-                return self.funcError("site not found")
+            return self.funcError("site not found")
         return self.funcError("internal error")
 
     def FuncRecoverElements(self, db, arguments):
@@ -1075,10 +1068,10 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         if self.current_state == STATE_CHARACTERS:
             count = elements.recoverCharacters(db, world_id)
             return self.funcStatus("Recovered %d characters" % count)
-        elif self.current_state == STATE_ITEMS:
+        if self.current_state == STATE_ITEMS:
             count = elements.recoverItems(db, world_id)
             return self.funcStatus("Recovered %d items" % count)
-        elif self.current_state == STATE_SITES:
+        if self.current_state == STATE_SITES:
             count = elements.recoverSites(db, world_id)
             return self.funcStatus("Recovered %d sites" % count)
         return self.funcError("internal error")
@@ -1091,7 +1084,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         name = arguments.get("name")
 
         if self.current_state == STATE_WORLD_EDIT:
-            element = self.getCurrentWorld()
+            element = self.getCurrentWorld(db)
         elif self.current_state == STATE_CHARACTERS:
             element = elements.findCharacter(db, self.getCurrentWorldID(), name)
         elif self.current_state == STATE_ITEMS:
@@ -1103,16 +1096,16 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             return self.funcError("Unknown '%s'" % name)
         element_id = element.getID()
 
-        logging.info(f"remove image element_id {element_id}")
-        logging.info(f"remove image index {index}")
+        logging.info("remove image element_id %s", element_id)
+        logging.info("remove image index %s", index)
 
-        id = elements.getImageFromIndex(db, element_id, int(index))
-        logging.info(f"remove image")
+        iid = elements.getImageFromIndex(db, element_id, int(index))
+        logging.info("remove image")
 
-        if id is None:
+        if iid is None:
             return self.funcError(f"unknown image index: {index}")
-        elements.hideImage(db, id)
-        print(f"hide image id {id}")
+        elements.hideImage(db, iid)
+        print(f"hide image id {iid}")
         return self.funcStatus("image removed")
 
     def FuncRecoverImages(self, db, arguments):
@@ -1122,7 +1115,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         name = arguments.get("name")
 
         if self.current_state == STATE_WORLD_EDIT:
-            element = self.getCurrentWorld()
+            element = self.getCurrentWorld(db)
         elif self.current_state == STATE_CHARACTERS:
             element = elements.findCharacter(db, self.getCurrentWorldID(), name)
         elif self.current_state == STATE_ITEMS:
@@ -1181,7 +1174,9 @@ def image_get_request(prompt, dest_file):
         if result.get("data") is None:
             return False
 
-        response = requests.get(result["data"][0]["url"], stream=True)
+        response = requests.get(result["data"][0]["url"],
+                                stream=True,
+                                timeout=20)
         if response.status_code != 200:
             return False
 
@@ -1194,7 +1189,7 @@ def image_get_request(prompt, dest_file):
 
     except Exception as e:
         logging.info("Unable to generate ChatCompletion response")
-        logging.info("Exception: ", str(e))
+        logging.info("Exception: %s", str(e))
         raise e
 
 

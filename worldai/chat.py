@@ -11,9 +11,6 @@ import json
 import logging
 import openai
 import requests
-import pickle
-import io
-import markdown
 import pydantic
 import typing
 
@@ -22,8 +19,6 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
 import tiktoken
 
-from . import db_access
-from . import elements
 from . import message_records
 from . import chat_functions
 
@@ -76,7 +71,7 @@ def chat_completion_request(messages, tools=None, tool_choice=None, model=GPT_MO
     except Exception as e:
         print(f"Exception: {e}")
         logging.error("Unable to generate ChatCompletion response")
-        logging.error(f"Exception: {e}")
+        logging.error("Exception: %s", e)
         raise e
 
 
@@ -131,17 +126,17 @@ def log_chat_message(messages, assistant_message):
     If enabled, write a timestamped file with messages
     """
     if MESSAGE_DIRECTORY is not None:
-        dir = os.path.join(MESSAGE_DIRECTORY, "messages")
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+        path = os.path.join(MESSAGE_DIRECTORY, "messages")
+        if not os.path.exists(path):
+            os.makedirs(path)
 
         out = {"message": messages, "assistant": assistant_message}
         ts = time.time()
         filename = f"message.{ts}.txt"
-        path = os.path.join(dir, filename)
-        f = open(path, "w")
-        f.write(json.dumps(out, indent=4))
-        f.close()
+        path = os.path.join(path, filename)
+        with open(path, "w") as f:
+            f.write(json.dumps(out, indent=4))
+            f.close()
 
 
 class ChatResponse(pydantic.BaseModel):
@@ -226,7 +221,8 @@ class ChatSession:
         self.complete_tokens += complete
         self.total_tokens += total
         self.chatFunctions.track_tokens(db, prompt, complete, total)
-        logging.info(f"prompt: {prompt}, complete: {complete}, total: {total}")
+        logging.info("prompt: %s, complete: %s, total: %s",
+                     prompt, complete, total)
 
     def execute_function_call(self, db, function_name, function_args):
         return self.chatFunctions.execute_function_call(
@@ -263,7 +259,7 @@ class ChatSession:
                 break
 
         history.addIncludedMessagesToList(messages)
-        logging.info(f"calc thread size {thread_size}")
+        logging.info("calc thread size %s",  thread_size)
         return messages
 
     def getMessageContent(self, message_set):

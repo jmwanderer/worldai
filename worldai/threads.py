@@ -1,9 +1,9 @@
 import os
 import time
 
-"""
-Module to manage thread information in the database
-"""
+#
+# Module to manage thread information in the database
+#
 
 
 def get_thread(db, session_id):
@@ -35,7 +35,7 @@ def save_thread(db, session_id, thread):
 
 
 def delete_thread(db, session_id):
-    q = db.execute("DELETE FROM threads WHERE id = ?", (session_id,))
+    db.execute("DELETE FROM threads WHERE id = ?", (session_id,))
     db.commit()
 
 

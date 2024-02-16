@@ -1,6 +1,3 @@
-import json
-import os
-import logging
 
 
 class BaseChatFunctions:
@@ -56,16 +53,15 @@ class BaseChatFunctions:
 
 def get_budgets(db):
     c = db.execute(
-        "SELECT prompt_tokens, complete_tokens, total_tokens, "
+        "SELECT prompt_tokens, complete_tokens, "
         + " images FROM token_usage WHERE world_id = ?",
         ("limits",),
     )
     r = c.fetchone()
     if r is None:
         return {"prompt_tokens": 5_000_000, "complete_tokens": 2_000_000, "images": 100}
-    else:
-        (prompt, complete, total, images) = r
-        return {"prompt_tokens": prompt, "complete_tokens": complete, "images": images}
+    (prompt, complete, images) = r
+    return {"prompt_tokens": prompt, "complete_tokens": complete, "images": images}
 
 
 def check_token_budgets(db):

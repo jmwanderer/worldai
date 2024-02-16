@@ -1,5 +1,3 @@
-import json
-import os
 import logging
 
 
@@ -137,7 +135,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
         character_details = ""
         if len(character.getDetails()) > 0:
-            character_details = details = character.getDetails()
+            character_details = character.getDetails()
 
         personality = ""
         if len(character.getPersonality()) > 0:
@@ -277,7 +275,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         Consult knowledge base for information.
         """
         context = args["context"]
-        logging.info("Lookup info: %s" % context)
+        logging.info("Lookup info: %s", context)
         embed = info_set.generateEmbedding(context)
         content = info_set.getInformation(db, self.world_id, embed, 3)
         return {"context": context, "information": content}
@@ -292,7 +290,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         wstate = world_state.loadWorldState(db, self.wstate_id)
         item = elements.findItem(db, self.world_id, item_name)
         if item is None:
-            return self.funcError(f"Not an existing item. Perhaps call ListMyItems?")
+            return self.funcError("Not an existing item. Perhaps call ListMyItems?")
 
         character = elements.loadCharacter(db, self.character_id)
         text = ""
@@ -322,7 +320,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         wstate = world_state.loadWorldState(db, self.wstate_id)
         item = elements.findItem(db, self.world_id, item_name)
         if item is None:
-            return self.funcError(f"Not a valid item. Perhaps call ListMyItems")
+            return self.funcError("Not a valid item. Perhaps call ListMyItems")
 
         character = elements.loadCharacter(db, self.character_id)
         text = ""
@@ -331,13 +329,13 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         if item.getIsMobile():
             if not wstate.hasCharacterItem(self.character_id, item.getID()):
                 return self.funcError(
-                    f"You do not have this item. " + "Perhaps call ListMyItems"
+                    "You do not have this item. Perhaps call ListMyItems"
                 )
         else:
             if wstate.getItemLocation(item.getID()) != wstate.getCharacterLocation(
                 self.character_id
             ):
-                return self.funcError(f"This item is not here")
+                return self.funcError("This item is not here")
 
         # Character can use the item
         # Apply an effect
@@ -350,10 +348,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                 impact = self.hurtPlayer(wstate)
             case elements.ItemEffect.PARALIZE:
                 impact = self.paralizePlayer(wstate)
-                pass
             case elements.ItemEffect.POISON:
                 impact = self.poisonPlayer(wstate)
-                pass
             case elements.ItemEffect.SLEEP:
                 pass
             case elements.ItemEffect.BRAINWASH:
@@ -364,7 +360,6 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                 pass
             case elements.ItemEffect.OPEN:
                 impact = self.openSite(db, wstate, item)
-                pass
 
         text = character.getName() + " used " + item.getName() + "."
         if impact is not None:
@@ -387,8 +382,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
     def hurtPlayer(self, wstate):
         health = wstate.getPlayerHealth() - 4
-        if health < 0:
-            health = 0
+        health = max(health, 0)
         wstate.setPlayerHealth(health)
         if wstate.isPlayerDead():
             message = "Travler is killed"
