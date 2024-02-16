@@ -41,7 +41,8 @@ states = {
 
   STATE_WORLD_EDIT: [ "UpdateWorld", "ShowWorld",
                       "ReadPlans", "UpdatePlans",
-                      "ListNotes", "AddNote", "UpdateNote", "ReadNote",
+                      "ListDocuments", "CreateDocument", "SetDocumentAbstract",
+                      "SetDocumentOutline", "AddDocumentSection",
                       "CreateWorldImage", "ChangeState",
                       "RemoveWorldImage", "RecoverWorldImages" ],                      
   STATE_CHARACTERS: [ "ListCharacters", "ShowCharacter",
@@ -415,17 +416,21 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     elif function_name == "UpdatePlans":
       result = self.FuncUpdatePlanningNotes(db, arguments)
 
-    elif function_name == "ListNotes":
-      result = self.FuncListWorldNotes(db)
+    elif function_name == "ListDocuments":
+      result = self.FuncListDocuments(db)
 
-    elif function_name == "AddNote":
-      result = self.FuncAddWorldNote(db, arguments)
+    elif function_name == "CreateDocument":
+      result = self.FuncCreateDocument(db, arguments)
 
-    elif function_name == "UpdateNote":
-      result = self.FuncUpdateWorldNote(db, arguments)
+    elif function_name == "SetDocumentAbstract":
+      result = self.FuncSetDocumentAbstract(db, arguments)
 
-    elif function_name == "ReadNote":
-      result = self.FuncReadWorldNote(db, arguments)
+    elif function_name == "SetDocumentOutline":
+      result = self.FuncSetDocumentOutline(db, arguments)
+      
+    elif function_name == "AddDocumentSection":
+      result = self.FuncAppendDocumentSection(db, arguments)
+      pass
 
     elif function_name == "ListCharacters":
       result = [{ "name": entry.getName() }            
@@ -585,67 +590,74 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     status["name"] = world.getName()
     return status
   
-  def FuncListWorldNotes(self, db):
+  def FuncListDocuments(self, db):
     result = []
-    world = elements.loadWorld(db, self.getCurrentWorldID())
-    if world is not None:
-      count = 0
-      for subject in world.getBackgroundNotesList():
-        result.append({"index": count,
-                       "subject": subject })
+    entries = elements.listDocuments(db, self.getCurrentWorldID())
+    for entry in entries:
+      result.append(entry.getName())
     return result
+
+  def FuncCreateDocument(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("missing argument")
+
+    document = elements.Document(self.getCurrentWorldID())
+    document.setName(arguments["name"])
+    document = elements.createDocument(db, document)
+    
+    return self.funcStatus("Document created")
+
+  def FuncSetDocumentAbstract(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("missing argument")
+    if arguments.get("content") is None:
+      return self.funcError("missing argument")
+
+    document = elements.findDocument(db, 
+                                     self.getCurrentWorldID(),
+                                     arguments["name"])
+    if document is None:
+      return self.funcError("Document not found")
+    
+    document.setAbstract(arguments["content"])
+    elements.updateDocument(db, document)
+    
+    return self.funcStatus("Document updated")
+
+  def FuncSetDocumentOutline(self, db, arguments):
+    if arguments.get("name") is None:
+      return self.funcError("missing argument")
+    if arguments.get("content") is None:
+      return self.funcError("missing argument")
+
+    document = elements.findDocument(db, 
+                                     self.getCurrentWorldID(),
+                                     arguments["name"])
+    if document is None:
+      return self.funcError("Document not found")
+    
+    document.setOutline(arguments["content"])
+    elements.updateDocument(db, document)
+    
+    return self.funcStatus("Document updated")
+
+  def FuncAppendDocumentSection(self, db, arguments):
+    if (arguments.get("name") is None or
+        arguments.get("heading") is None or
+        arguments.get("content") is None):
+      return self.funcError("missing argument")
+
+    document = elements.findDocument(db, 
+                                     self.getCurrentWorldID(),
+                                     arguments["name"])
+    if document is None:
+      return self.funcError("Document not found")
+    
+    document.addSection(arguments["heading"], arguments["content"])
+    elements.updateDocument(db, document)
+    
+    return self.funcStatus("Document updated")
   
-  def FuncAddWorldNote(self, db, arguments):
-    if (arguments.get("subject") is None or 
-        arguments.get("text") is None):
-      return self.funcError("missing arguement")
-    
-    subject = arguments["subject"]
-    text = arguments["text"]
-
-    world = elements.loadWorld(db, self.getCurrentWorldID())
-    if world is None:
-      return self.funcError("No current world")
-    
-    world.addBackgroundNote(subject, text)
-    elements.updateWorld(db, world)
-    element_info.UpdateElementInfo(db, world)    
-    self.modified = True
-    return self.funcStatus("Note added")
-
-  def FuncReadWorldNote(self, db, arguments):
-    if arguments.get("index") is None:
-      return self.funcError("missing argument")
-    
-    index = int(arguments["index"])
-    
-    world = elements.loadWorld(db, self.getCurrentWorldID())
-    if world is None:
-      return self.funcError("No current world")
-    
-    subject, text = world.getBackgroundNote(index)
-
-    return { "subject": subject,
-             "text": text }
-
-  def FuncUpdateWorldNote(self, db, arguments):
-    if arguments.get("index") is None:
-      return self.funcError("missing argument")
-    
-    index = int(arguments["index"])
-    subject = arguments.get("subject")
-    text = arguments.get("text")
-
-    world = elements.loadWorld(db, self.getCurrentWorldID())
-    if world is None:
-      return self.funcError("No current world")
-    
-    world.setBackgroundNote(index, subject, text)
-    elements.updateWorld(db, world)
-    element_info.UpdateElementInfo(db, world)    
-    self.modified = True
-    return self.funcStatus("Note update")
-
   def FuncReadCharacter(self, db, arguments):
     if arguments.get("name") is None:
       return self.funcError("Missing argument 'name'")    
@@ -1231,8 +1243,8 @@ all_functions = [
   },
 
   {
-    "name": "ListNotes",
-    "description": "Get list of background notes for the current world.",
+    "name": "ListDocuments",
+    "description": "Get list of background documents for the current world.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -1241,62 +1253,83 @@ all_functions = [
   },
   
   {
-    "name": "AddNote",
-    "description": "Add a new background note for the current world.",
+    "name": "CreateDocument",
+    "description": "Create a new background document for the current world.",
     "parameters": {
       "type": "object",
       "properties": {
-        "subject": {
+        "name": {
           "type": "string",
-          "description": "Subject for the background note"
+          "description": "Name for the document"
         },
-        "text": {
-          "type": "string",
-          "description": "Contents of the background note"
-        }
       },
-      "required": [ "subject", "text" ]
+      "required": [ "name" ]
     },
   },
 
   {
-    "name": "ReadNote",
-    "description": "Read background note for the current world.",
+    "name": "SetDocumentAbstract",
+    "description": "Update the abstract of the document.",
     "parameters": {
       "type": "object",
       "properties": {
-        "index": {
-          "type": "integer",
-          "description": "Zero based index of notes"
-        }
+        "name": {
+          "type": "string",
+          "description": "Name of the document"
+        },
+        "content": {
+          "type": "string",
+          "description": "Abstract of the document"
+        },
+
       },
-      "required": [ "index" ]
+      "required": [ "name", "content" ]
     },
   },
 
   {
-    "name": "UpdateNote",
-    "description": "Change a background note for the current world.",
+    "name": "AddDocumentSection",
+    "description": "Add a section to the document.",
     "parameters": {
       "type": "object",
       "properties": {
-        "index": {
-          "type": "integer",
-          "description": "Zero based index of notes"
-        },
-        "subject": {
+        "name": {
           "type": "string",
-          "description": "Subject for the background note"
+          "description": "Name of the document"
         },
-        "text": {
+        "heading": {
           "type": "string",
-          "description": "Contents of the background note"
-        }
+          "description": "Section heading"
+        },
+        "content": {
+          "type": "string",
+          "description": "Section content"
+        },
       },
-      "required": [ "index" ]
+      "required": [ "name", "heading", "content" ]
     },
   },
-  
+
+  {
+    "name": "SetDocumentOutline",
+    "description": "Update the outline of the document.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the document"
+        },
+        "content": {
+          "type": "string",
+          "description": "Outline of the document"
+        },
+
+      },
+      "required": [ "name", "content" ]
+    },
+  },
+
   {
     "name": "ListCharacters",
     "description": "Get a characters in the current world.",

@@ -64,15 +64,11 @@ class CoreProps(str, enum.Enum):
   PROP_ID = "id"  
   PROP_NAME = "name"
 
-class WorldNotes(pydantic.BaseModel):
-  title: str = ""
-  value: str = ""
 
 class WorldProps(pydantic.BaseModel):
   description: typing.Optional[str] = ""
   details: typing.Optional[str] = ""
   plans: typing.Optional[str] = ""
-  notes: typing.List[WorldNotes] = []
 
 class DocSection(pydantic.BaseModel):
   heading: typing.Optional[str] = ""
@@ -348,6 +344,12 @@ class World(Element):
     Override base class
     """
     self.prop_model = WorldProps(**properties)
+
+  def fixProperties(self, properties):
+    if properties.get("notes") is not None:
+      del properties["notes"]
+    return properties
+      
                        
   def getPlans(self):
     if self.prop_model.plans is None:
@@ -359,38 +361,6 @@ class World(Element):
   
   def setPlans(self, value):
     self.prop_model.plans = value
-
-  def getBackgroundNoteCount(self):
-    return len(self.prop_model.notes)
-  
-  def getBackgroundNotesList(self):
-    """
-    Return the list of titles
-    """
-    return [ item.title for item in self.prop_model.notes ]
-  
-  def addBackgroundNote(self, title: str, value:str):
-    self.prop_model.notes.append(WorldNotes(title=title, value=value))
-
-  def getBackgroundNote(self, index: int):
-    return self.prop_model.notes[index].title, self.prop_model.notes[index].value
-
-  def setBackgroundNote(self, index: int, title: str, value: str):
-    if index < 0 or index >= len(self.prop_model.notes):
-      return
-    if title is not None:
-      self.prop_model.notes[index].title = title
-    if value is not None:
-      self.prop_model.notes[index].value = value
-
-  def getInfoText(self):
-    """
-    Return entries of (index, text)
-    """
-    yield super().getInfoText()[0]
-    for i in range(0, self.getBackgroundNoteCount()):
-      title, value = self.getBackgroundNote(i)
-      yield ( (i + 1, title + " : " + value))
 
 
 class Document(Element):
@@ -807,13 +777,13 @@ def createDocument(db, document: Document) -> Document:
   """
   return ElementStore.createElement(db, document)
 
-def listDocument(db, world_id: str):
+def listDocuments(db, world_id: str):
   return ElementStore.getElements(db, ElementType.DOCUMENT, world_id)
 
 def loadDocument(db, id) -> Optional[Document]:
     return ElementStore.loadElement(db, id, Document())
 
-def findDocument(db, wid: str, name: str):
+def findDocument(db, wid: str, name: str) -> Optional[Document]:
   return ElementStore.findElement(db, wid, name, Document())
 
 def updateDocument(db, document: Document):

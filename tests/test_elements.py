@@ -88,25 +88,7 @@ class BasicTestCase(unittest.TestCase):
     for entry in world.getInfoText():
       count += 1
     self.assertEqual(count, 1)
-    notes = world.getBackgroundNotesList()
-    self.assertEqual(len(notes), 0)
     
-    world.addBackgroundNote("Section 1", "This is some background information")
-    world.addBackgroundNote("Section 2", "This is more background information")
-    notes = world.getBackgroundNotesList()
-    self.assertEqual(len(notes), 2)
-
-    self.assertEqual(world.getBackgroundNoteCount(), 2)
-    title, content = world.getBackgroundNote(0)
-    self.assertIsNotNone(content)
-    title, content = world.getBackgroundNote(1)
-    self.assertIsNotNone(content)
-    world.setBackgroundNote(0, "Outline", "New info")
-    count = 0
-    for entry in world.getInfoText():
-      count += 1
-    self.assertEqual(count, 3)
-
     
     tag = elements.getElemTag(self.db, world.id)
     self.assertEqual(tag.getID(), world.id)

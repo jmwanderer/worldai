@@ -124,19 +124,30 @@ class DesignTestCase(unittest.TestCase):
     values = self.callFunction('ReadPlans','{ "name": "%s" }' % name1)
     self.assertEqual(values["plans"], "my plans")
 
-    values = self.callFunction("ListNotes", '{}')
+    values = self.callFunction("ListDocuments", '{}')
     self.assertEqual(len(values), 0)
 
-    self.callFunction("AddNote", '{ "subject": "History",'+
-                                    '"text": "This is history"}')
-    values = self.callFunction("ListNotes", '{}')
+    self.callFunction("CreateDocument", '{ "name": "World History"}')
+
+    values = self.callFunction("ListDocuments", '{}')
     self.assertEqual(len(values), 1)
     
-    self.callFunction("AddNote", '{ "subject": "People",'+
-                                    '"text": "People background"}')
-    values = self.callFunction("ListNotes", '{}')
+    self.callFunction("CreateDocument", '{ "name": "People" }')
+    values = self.callFunction("ListDocuments", '{}')
     self.assertEqual(len(values), 2)
 
+    args="""{ "name": "World History",
+              "content": "This is the history" }"""
+    self.callFunction("SetDocumentAbstract", args)
+
+    args="""{ "name": "World History",
+              "content": "This is the outline" }"""
+    self.callFunction("SetDocumentOutline", args)
+    
+    args="""{ "name": "World History",
+              "heading": "Introduction",
+              "content": "This is the intro" }"""
+    self.callFunction("AddDocumentSection", args)
     
     
   def test_exec_calls_characters(self):
