@@ -5,3 +5,23 @@ change something that we don't like
 
 2. Prompt for permission - good idea on modify
 
+3. Making a set of interfaces that work with with the GPT
+E.G.
+SetDocumentOutline
+SetDocumentAbstract
+AddDocumentSection(header, content)
+didn't work well. Instead of SetDocumentOutline, it would
+AddDocumentSection("outline")
+
+Changed to accessing sections by namne
+
+4. The GPT can handle IDs, but it makes the effort more complex
+Need to ensure the GPT can get the right ids.
+Better to use names and lookup DB entries based on the name
+
+5. Different states allow
+- a subset of functions to be included
+- specific goals and instructions to be included (even more important)
+
+
+
