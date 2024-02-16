@@ -84,8 +84,8 @@ class WorldState:
         self.world_id = None
         self.model = WorldStateModel()
 
-    def set_model_str(self, str):
-        props = json.loads(str)
+    def set_model_str(self, value):
+        props = json.loads(value)
         # Fix up from old formats
         for site in props["site_state"]:
             if props["site_state"][site].get("locked") is not None:
@@ -154,7 +154,7 @@ class WorldState:
     def setCharacterStrength(self, char_id, value):
         self.get_char(char_id).strength = value
 
-    def setCharacterMaxStrength(self, char_id):
+    def setCharacterToMaxStrength(self, char_id):
         self.get_char(char_id).strength = self.get_char(char_id).max_strength
 
     def getCharacterHealth(self, char_id):
@@ -170,7 +170,7 @@ class WorldState:
     def setCharacterHealth(self, char_id, value):
         self.get_char(char_id).health = value
 
-    def setCharacterMaxHealth(self, char_id):
+    def setCharacterToMaxHealth(self, char_id):
         self.get_char(char_id).health = self.get_char(char_id).max_health
 
     def getCharacterMaxHealth(self, char_id):
@@ -218,8 +218,8 @@ class WorldState:
         self.removeCharacterStatus(char_id, CharStatus.POISONED)
         self.removeCharacterStatus(char_id, CharStatus.PARALIZED)
         self.removeCharacterStatus(char_id, CharStatus.BRAINWASHED)
-        self.setCharacterMaxHealth(char_id)
-        self.setCharacterMaxStrength(char_id)
+        self.setCharacterToMaxHealth(char_id)
+        self.setCharacterToMaxStrength(char_id)
 
     def isCharacterHealthy(self, cid):
         return (
@@ -246,8 +246,8 @@ class WorldState:
     def setPlayerStrength(self, value):
         self.setCharacterStrength(PLAYER_ID, value)
 
-    def setPlayerMaxStrength(self, value):
-        self.setCharacterMaxStrength(PLAYER_ID, value)
+    def setPlayerToMaxStrength(self):
+        self.setCharacterToMaxStrength(PLAYER_ID)
 
     def getPlayerHealth(self):
         return self.getCharacterHealth(PLAYER_ID)
@@ -258,8 +258,8 @@ class WorldState:
     def setPlayerHealth(self, value):
         self.setCharacterHealth(PLAYER_ID, value)
 
-    def setPlayerMaxHealth(self, value):
-        self.setCharacterMaxHealth(PLAYER_ID, value)
+    def setPlayerToMaxHealth(self):
+        self.setCharacterToMaxHealth(PLAYER_ID)
 
     def getPlayerMaxHealth(self):
         return self.getCharacterMaxHealth(PLAYER_ID)
@@ -370,8 +370,7 @@ def getWorldStateID(db, session_id, world_id):
     """
     Get an ID for a World State record - create if needed.
     """
-    id = None
-    initialize = False
+    wstate_id = None
     now = time.time()
     c = db.cursor()
     c.execute("BEGIN EXCLUSIVE")
@@ -382,20 +381,19 @@ def getWorldStateID(db, session_id, world_id):
     r = c.fetchone()
     if r is None:
         # Insert a record and then populate
-        initialize = True
-        id = "id%s" % os.urandom(4).hex()
-        state = WorldState(id)
-        logging.info(f"world id {world_id}")
+        wstate_id = "id%s" % os.urandom(4).hex()
+        state = WorldState(wstate_id)
+        logging.info("world id %s", world_id)
         c.execute(
             "INSERT INTO world_state (id, session_id, world_id, created, "
             + "updated, state) VALUES (?, ?, ?, ?, ?, ?)",
-            (id, session_id, world_id, now, now, state.get_model_str()),
+            (wstate_id, session_id, world_id, now, now, state.get_model_str()),
         )
     else:
-        id = r[0]
+        wstate_id = r[0]
     db.commit()
 
-    return id
+    return wstate_id
 
 
 def checkWorldState(db, wstate):
@@ -456,7 +454,6 @@ def loadWorldState(db, wstate_id):
     """
     Get or create a world state.
     """
-    now = time.time()
     wstate = None
     c = db.cursor()
     c.execute(

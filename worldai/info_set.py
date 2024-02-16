@@ -24,12 +24,13 @@ TEST = False
 
 
 class InfoStore:
+    @staticmethod
     def addInfoDoc(db, world_id, content, owner_id=None, wstate_id=None):
         """
         Create a new infoDocEntry
         """
         doc_id = "id%s" % os.urandom(8).hex()
-        q = db.execute(
+        db.execute(
             "INSERT INTO info_docs (id, world_id, owner_id, "
             + "wstate_id, content) VALUES (?, ?, ?, ?, ?)",
             (doc_id, world_id, owner_id, wstate_id, content),
@@ -37,28 +38,32 @@ class InfoStore:
         db.commit()
         return doc_id
 
+    @staticmethod
     def updateInfoDoc(db, doc_id, content):
-        q = db.execute(
+        db.execute(
             "UPDATE info_docs SET content = ? WHERE id = ?", (content, doc_id)
         )
         db.commit()
 
+    @staticmethod        
     def deleteInfoDoc(db, doc_id):
-        q = db.execute("DELETE FROM info_docs WHERE id = ?", (doc_id,))
+        db.execute("DELETE FROM info_docs WHERE id = ?", (doc_id,))
         db.commit()
 
+    @staticmethod        
     def addInfoChunk(db, doc_id, content):
         """
         Create a new chunk entry
         """
         chunk_id = "id%s" % os.urandom(8).hex()
-        q = db.execute(
+        db.execute(
             "INSERT INTO info_chunks (id, doc_id, content) " + "VALUES (?, ?, ?)",
             (chunk_id, doc_id, content),
         )
         db.commit()
         return chunk_id
 
+    @staticmethod    
     def getChunkContent(db, chunk_id):
         q = db.execute("SELECT content FROM info_chunks WHERE id = ?", (chunk_id,))
         r = q.fetchone()
@@ -66,10 +71,12 @@ class InfoStore:
             return None
         return r[0]
 
+    @staticmethod    
     def deleteDocChunks(db, doc_id):
-        q = db.execute("DELETE FROM info_chunks WHERE doc_id = ?", (doc_id,))
+        db.execute("DELETE FROM info_chunks WHERE doc_id = ?", (doc_id,))
         db.commit()
 
+    @staticmethod        
     def getOneNewChunk(db):
         q = db.execute("SELECT id FROM info_chunks WHERE embedding IS NULL")
         r = q.fetchone()
@@ -77,6 +84,7 @@ class InfoStore:
             return None
         return r[0]
 
+    @staticmethod    
     def getAvailableChunks(db, world_id, owner_id=None, wstate_id=None):
         if owner_id is not None and wstate_id is not None:
             q = db.execute(
@@ -130,31 +138,17 @@ class InfoStore:
             result.append((chunk_id, embed))
         return result
 
+    @staticmethod    
     def updateChunkEmbed(db, chunk_id, embedding):
         str_val = json.dumps(embedding)
-        q = db.execute(
+        db.execute(
             "UPDATE info_chunks SET embedding = ? WHERE id = ?", (str_val, chunk_id)
         )
         db.commit()
 
 
-def _compute_distance(v1, v2):
-    """
-    Return the square of distance between the vectors
-    To get consistent distance, take the sqrt.
-    """
-    # TODO: look at https://platform.scipy.com/docs/guides/embeddings/use-cases
-    total = 0
-    index = 0
-    while index < len(v1) and index < len(v2):
-        v = v1[index] - v2[index]
-        index += 1
-        total += v * v
-    return total
-
 
 client = None
-
 
 def _get_aiclient():
     global client
