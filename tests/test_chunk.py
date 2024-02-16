@@ -4,29 +4,27 @@ import unittest
 
 
 class BasicTestCase(unittest.TestCase):
-  def testChunksBasic(self):
-    result = chunk.chunk_text(TEXT, 50, 0)
-    self.assertEqual(len(result), 28)
+    def testChunksBasic(self):
+        result = chunk.chunk_text(TEXT, 50, 0)
+        self.assertEqual(len(result), 28)
 
-    result = chunk.chunk_text(TEXT, 100, 0)
-    self.assertEqual(len(result), 15)
+        result = chunk.chunk_text(TEXT, 100, 0)
+        self.assertEqual(len(result), 15)
 
-    result = chunk.chunk_text(TEXT, 500, 0)
-    self.assertEqual(len(result), 3)
+        result = chunk.chunk_text(TEXT, 500, 0)
+        self.assertEqual(len(result), 3)
 
-    result = chunk.chunk_text(TEXT, 50, .2)
-    self.assertEqual(len(result), 31)
+        result = chunk.chunk_text(TEXT, 50, 0.2)
+        self.assertEqual(len(result), 31)
 
-    result = chunk.chunk_text(TEXT, 100, .2)
-    self.assertEqual(len(result), 15)
+        result = chunk.chunk_text(TEXT, 100, 0.2)
+        self.assertEqual(len(result), 15)
 
-    
-    result = chunk.chunk_text(TEXT, 500, .2)
-    self.assertEqual(len(result), 3)
-    
+        result = chunk.chunk_text(TEXT, 500, 0.2)
+        self.assertEqual(len(result), 3)
 
 
-TEXT="""
+TEXT = """
 Starkwards is a futuristic realm where technology reigns supreme. It is a world where cutting-edge advancements have revolutionized every aspect of life. From soaring skyscrapers to sleek hovercrafts, the metropolis of Starkwards is a marvel of architectural achievement. In this high-tech society, the boundaries between reality and virtuality blur, thanks to augmented reality overlays that seamlessly merge digital and physical realms. AI-powered robots and sentient beings coexist, contributing to the dynamic and ever-evolving nature of Starkwards. As the forefront of innovation and scientific exploration, this world continues to push the boundaries of possibility, making it a hub for inventors, visionaries, and adventurers seeking new frontiers.", "details": "In the world of Starkwards, advanced technology plays a crucial role in the lives of its inhabitants. The technological capabilities of this world are constantly progressing and pushing the boundaries of what is possible.\n\n1. Nanotechnology\n2. Augmented Reality (AR)\n3. Artificial Intelligence (AI)\n4. Quantum Computing\n5. Energy Generation\n\nWith these enhanced technological capabilities, the world of Starkwards continues to push the boundaries of what is possible, opening up endless opportunities for innovation, exploration, and advancement.
 
 Jane is a skilled hacker and a master of cyber espionage. With her expert knowledge of technology and computer systems, she is able to penetrate even the most secure networks and gather valuable information for her clients. Jane operates in the shadows, navigating the virtual realm with finesse and precision. She is known for her stealth and intellect, always staying one step ahead of her adversaries.", "details": "Backstory:\nJane was once a brilliant programmer working for a prestigious tech corporation in Starkwards. However, she grew disillusioned with the company''s unethical practices and their involvement in illegal activities. Determined to expose the truth, she turned her skills towards hacking and becoming a whistleblower. But her actions did not go unnoticed, and she soon found herself on the run from powerful individuals who sought to silence her.\n\nIn order to survive, Jane adopted a new identity and honed her hacking skills to perfection. She now operates as a freelance hacker, taking on covert missions to expose corruption, uncover secrets, and protect the innocent. Her ultimate goal is to bring down the corrupt corporate empire that she once worked for, and she will stop at nothing to achieve justice.
@@ -35,4 +33,3 @@ Elijah is a genius inventor and engineer with a passion for pushing the boundari
 
 Aria Blackwood is a brilliant scientist and inventor in Starkwards. With her expertise in nanotechnology, she has developed groundbreaking advancements that have revolutionized various industries. Aria is known for her sharp intellect and innovative thinking, always pushing the boundaries of what is possible. She is driven by her passion for discovery and is constantly seeking new ways to harness the power of technology for the betterment of society.", "details": "Janie Blackwood is a skilled herbalist with an innate connection to plant life. She stumbled upon a rare, enchanted flower in the depths of the Starkwoods, which granted her the ability to communicate with plants and understand their needs. This remarkable encounter awakened her natural talent for creating powerful potions and remedies, turning her into a valuable healer and resource within the Starkwards community.
 """
-
