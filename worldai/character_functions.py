@@ -296,15 +296,15 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
         character = elements.loadCharacter(db, self.character_id)
         text = ""
-        if wstate.hasCharacterItem(self.character_id, item.id):
+        if wstate.hasCharacterItem(self.character_id, item.getID()):
             # Charracter has item to give to the user
-            wstate.addItem(item.id)
+            wstate.addItem(item.getID())
             text = character.getName() + " gave the " + item.getName()
-        elif wstate.hasItem(item.id):
+        elif wstate.hasItem(item.getID()):
             # User has item to give to the character
-            wstate.addCharacterItem(self.character_id, item.id)
+            wstate.addCharacterItem(self.character_id, item.getID())
             text = character.getName() + " accepted the " + item.getName()
-            if wstate.getSelectedItem() == item.id:
+            if wstate.getSelectedItem() == item.getID():
                 wstate.selectItem(None)
         else:
             return self.funcError("Niether you or the user have this item")
@@ -329,12 +329,12 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
         # Check if character has the item
         if item.getIsMobile():
-            if not wstate.hasCharacterItem(self.character_id, item.id):
+            if not wstate.hasCharacterItem(self.character_id, item.getID()):
                 return self.funcError(
                     f"You do not have this item. " + "Perhaps call ListMyItems"
                 )
         else:
-            if wstate.getItemLocation(item.id) != wstate.getCharacterLocation(
+            if wstate.getItemLocation(item.getID()) != wstate.getCharacterLocation(
                 self.character_id
             ):
                 return self.funcError(f"This item is not here")
@@ -428,13 +428,13 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         site = elements.findSite(db, self.world_id, site_name)
         if site is None:
             return self.funcError("Site does not exist Perhaps call ListSites?")
-        if not wstate.isSiteOpen(site.id):
+        if not wstate.isSiteOpen(site.getID()):
             return self.funcError("The site is not open and can not be accessed")
         old_site_id = wstate.getCharacterLocation(self.character_id)
-        if old_site_id == site.id:
+        if old_site_id == site.getID():
             return self.funcError("You are already at %s." % site.getName())
         old_site = elements.loadSite(db, old_site_id)
-        wstate.setCharacterLocation(self.character_id, site.id)
+        wstate.setCharacterLocation(self.character_id, site.getID())
         world_state.saveWorldState(db, wstate)
         character = elements.loadCharacter(db, self.character_id)
 

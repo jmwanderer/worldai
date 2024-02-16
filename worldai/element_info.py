@@ -20,7 +20,7 @@ def UpdateElementInfo(db, element: elements.Element):
     logging.info("update element info %s", element.getName())
     world_id = element.parent_id
     if element.type == elements.ElementType.WORLD:
-        world_id = element.id
+        world_id = element.getID()
 
     for index, content in element.getInfoText():
         c = db.cursor()

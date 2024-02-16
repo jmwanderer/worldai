@@ -136,7 +136,7 @@ def create_image_thumb(id):
     image = elements.getImage(get_db(), id)
     if image is not None:
         design_functions.create_image_thumbnail(image)
-        click.echo("Created thumbnail [%s] %s." % (image.id, image.getThumbName()))
+        click.echo("Created thumbnail [%s] %s." % (image.getID(), image.getThumbName()))
     else:
         click.echo(f"Error, no such image id:{id}")
 
@@ -147,7 +147,7 @@ def create_image_thumbs():
     images = elements.getImages(get_db())
     for image in images:
         design_functions.create_image_thumbnail(image)
-        click.echo("Created thumbnail [%s] %s." % (image.id, image.getThumbName()))
+        click.echo("Created thumbnail [%s] %s." % (image.getID(), image.getThumbName()))
 
 
 @bp.cli.command("delete-image")
@@ -157,7 +157,7 @@ def delete_image(id):
     image = elements.getImage(get_db(), id)
     if image is not None:
         elements.deleteImage(get_db(), current_app.instance_path, id)
-        click.echo("Deleted image [%s]." % image.id)
+        click.echo("Deleted image [%s]." % image.getID())
     else:
         click.echo(f"Error, no such image id:{id}")
 
@@ -170,7 +170,7 @@ def delete_character(id):
     if character is not None:
         element_info.DeleteElementInfo(get_db(), id)
         elements.deleteCharacter(get_db(), current_app.instance_path, id)
-        click.echo("Deleted character [%s] %s." % (character.id, character.getName()))
+        click.echo("Deleted character [%s] %s." % (character.getID(), character.getName()))
     else:
         click.echo(f"Error, no such character id:{id}")
 
@@ -182,7 +182,7 @@ def delete_world(id):
     world = elements.loadWorld(get_db(), id)
     if world is not None:
         elements.deleteWorld(get_db(), current_app.instance_path, id)
-        click.echo("Deleted world [%s] %s." % (world.id, world.getName()))
+        click.echo("Deleted world [%s] %s." % (world.getID(), world.getName()))
     else:
         click.echo(f"Error, no such world id:{id}")
 
@@ -204,19 +204,19 @@ def write_elements_cli():
         world = elements.loadWorld(get_db(), entry.getID())
         elements.updateWorld(get_db(), world)
 
-        characters = elements.listCharacters(get_db(), world.id)
+        characters = elements.listCharacters(get_db(), world.getID())
         for centry in characters:
             click.echo(f"Character: {centry.getName()}")
             character = elements.loadCharacter(get_db(), centry.getID())
             elements.updateCharacter(get_db(), character)
 
-        items = elements.listItems(get_db(), world.id)
+        items = elements.listItems(get_db(), world.getID())
         for ientry in items:
             click.echo(f"Item: {ientry.getName()}")
             item = elements.loadItem(get_db(), ientry.getID())
             elements.updateItem(get_db(), item)
 
-        sites = elements.listSites(get_db(), world.id)
+        sites = elements.listSites(get_db(), world.getID())
         for sentry in sites:
             click.echo(f"Site: {sentry.getName()}")
             site = elements.loadSite(get_db(), sentry.getID())
@@ -299,10 +299,10 @@ def dump_worlds():
 
         world = elements.loadWorld(get_db(), id)
         print(world.getAllProperties())
-        list_images(world.id)
+        list_images(world.getID())
 
         print("Loading characters...")
-        characters = elements.listCharacters(get_db(), world.id)
+        characters = elements.listCharacters(get_db(), world.getID())
         for char_entry in characters:
             id = char_entry.getID()
             name = char_entry.getName()
@@ -310,10 +310,10 @@ def dump_worlds():
 
             character = elements.loadCharacter(get_db(), id)
             print(character.getAllProperties())
-            list_images(character.id)
+            list_images(character.getID())
 
         print("Loading sites...")
-        sites = elements.listSites(get_db(), world.id)
+        sites = elements.listSites(get_db(), world.getID())
         for site_entry in sites:
             id = site_entry.getID()
             name = site_entry.getName()
@@ -321,10 +321,10 @@ def dump_worlds():
 
             site = elements.loadSite(get_db(), id)
             print(site.getAllProperties())
-            list_images(site.id)
+            list_images(site.getID())
 
         print("Loading items...")
-        items = elements.listItems(get_db(), world.id)
+        items = elements.listItems(get_db(), world.getID())
         for item_entry in items:
             id = item_entry.getID()
             name = item_entry.getName()
@@ -332,7 +332,7 @@ def dump_worlds():
 
             item = elements.loadItem(get_db(), id)
             print(item.getAllProperties())
-            list_images(item.id)
+            list_images(item.getID())
 
     print("\n\n")
 
@@ -468,7 +468,7 @@ def view_world(id):
     worlds = elements.listWorlds(get_db())
     (pworld, nworld) = elements.getAdjacentElements(world.getIdName(), worlds)
 
-    characters = elements.listCharacters(get_db(), world.id)
+    characters = elements.listCharacters(get_db(), world.getID())
     char_list = []
     for entry in characters:
         char_id = entry.getID()
@@ -476,7 +476,7 @@ def view_world(id):
         character = elements.loadCharacter(get_db(), char_id)
         char_list.append((char_id, char_name, character.getDescription()))
 
-    items = elements.listItems(get_db(), world.id)
+    items = elements.listItems(get_db(), world.getID())
     item_list = []
     for entry in items:
         item_id = entry.getID()
@@ -484,7 +484,7 @@ def view_world(id):
         item = elements.loadItem(get_db(), item_id)
         item_list.append((item_id, item_name, item.getDescription()))
 
-    sites = elements.listSites(get_db(), world.id)
+    sites = elements.listSites(get_db(), world.getID())
     site_list = []
     for entry in sites:
         site_id = entry.getID()

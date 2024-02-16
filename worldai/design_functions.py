@@ -992,7 +992,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             if character is None:
                 return self.funcError(f"no character '{name}'")
 
-            image.setParentId(character.id)
+            image.setParentId(character.getID())
             self.current_view = character.getElemTag()
 
         elif self.current_state == STATE_ITEMS:
@@ -1004,7 +1004,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             if item is None:
                 return self.funcError(f"no item '{name}'")
 
-            image.setParentId(item.id)
+            image.setParentId(item.getID())
             self.current_view = item.getElemTag()
 
         elif self.current_state == STATE_SITES:
@@ -1016,7 +1016,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             if site is None:
                 return self.funcError(f"no site '{name}'")
 
-            image.setParentId(site.id)
+            image.setParentId(site.getID())
             self.current_view = site.getElemTag()
 
         else:
@@ -1101,7 +1101,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
         if element is None:
             return self.funcError("Unknown '%s'" % name)
-        element_id = element.id
+        element_id = element.getID()
 
         logging.info(f"remove image element_id {element_id}")
         logging.info(f"remove image index {index}")
@@ -1132,7 +1132,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
         if element is None:
             return self.funcError("Unknown '%s'" % name)
-        element_id = element.id
+        element_id = element.getID()
 
         count = elements.recoverImages(db, element_id)
         return self.funcStatus("Recovered %d images" % count)

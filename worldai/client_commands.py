@@ -177,18 +177,18 @@ class ClientActions:
         logging.info("Use item %s" % (item.getName(),))
         cid = None
         if character is not None:
-            cid = character.id
+            cid = character.getID()
 
         if item.getIsMobile():
             # Verify user has the item
-            if not self.wstate.hasItem(item.id):
+            if not self.wstate.hasItem(item.getID()):
                 logging.info(
                     "item %s is mobile, but user does not possess", item.getName()
                 )
                 return (False, f"You don't have {item.getName()}", "")
         else:
             # Verify same location
-            if self.wstate.getItemLocation(item.id) != self.wstate.getLocation():
+            if self.wstate.getItemLocation(item.getID()) != self.wstate.getLocation():
                 logging.info(
                     "item %s is not mobile and not in same location", item.getName()
                 )

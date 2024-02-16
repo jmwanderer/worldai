@@ -23,7 +23,7 @@ class BasicTestCase(unittest.TestCase):
         character.setName("character")
         session_id = "id1234"
         self.character = elements.createCharacter(self.db, character)
-        self.wstate_id = world_state.getWorldStateID(self.db, session_id, self.world.id)
+        self.wstate_id = world_state.getWorldStateID(self.db, session_id, self.world.getID())
         self.wstate = world_state.loadWorldState(self.db, self.wstate_id)
 
     def tearDown(self):

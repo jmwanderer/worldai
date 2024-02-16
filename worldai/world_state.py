@@ -79,7 +79,7 @@ class WorldStateModel(pydantic.BaseModel):
 
 class WorldState:
     def __init__(self, wstate_id):
-        self.id = wstate_id
+        self.wstate_id = wstate_id
         self.session_id = None
         self.world_id = None
         self.model = WorldStateModel()
@@ -413,9 +413,9 @@ def checkWorldState(db, wstate):
     avail_sites = []
     for entry in sites:
         site = elements.loadSite(db, entry.getID())
-        if site is not None and not wstate.isSiteInitialized(site.id):
-            logging.info("init site %s: open %s", site.id, site.getDefaultOpen())
-            wstate.setSiteOpen(site.id, site.getDefaultOpen())
+        if site is not None and not wstate.isSiteInitialized(site.getID()):
+            logging.info("init site %s: open %s", site.getID(), site.getDefaultOpen())
+            wstate.setSiteOpen(site.getID(), site.getDefaultOpen())
             changed = True
         if wstate.isSiteOpen(entry.getID()):
             avail_sites.append(entry)
@@ -490,6 +490,6 @@ def saveWorldState(db, state):
     c.execute(
         "UPDATE world_state SET session_id = ?, "
         + "updated = ?, state = ? WHERE id = ?",
-        (state.session_id, now, state.get_model_str(), state.id),
+        (state.session_id, now, state.get_model_str(), state.wstate_id),
     )
     db.commit()

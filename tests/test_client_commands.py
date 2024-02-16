@@ -21,7 +21,7 @@ class Environment:
         db = db_access.open_db()
         assert db is not None
         worlds = elements.listWorlds(db)
-        world_id = worlds[0].id
+        world_id = worlds[0].getID()
         assert world_id is not None
         session_id = "1234"
         world = elements.loadWorld(db, world_id)
@@ -46,13 +46,13 @@ def test_go_command(app):
     response = client_actions.ExecCommand(command)
 
     # Real site
-    sites = elements.listSites(env.db, env.world.id)
-    command.to = sites[0].id
+    sites = elements.listSites(env.db, env.world.getID())
+    command.to = sites[0].getID()
     client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
     response = client_actions.ExecCommand(command)
 
     # No site
-    sites = elements.listSites(env.db, env.world.id)
+    sites = elements.listSites(env.db, env.world.getID())
     command.to = None
     client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
     response = client_actions.ExecCommand(command)
@@ -68,11 +68,11 @@ def test_take_command(app):
     response = client_actions.ExecCommand(command)
 
     # Real item - diff location
-    sites = elements.listSites(env.db, env.world.id)
-    site_id1 = sites[0].id
-    site_id2 = sites[1].id
-    items = elements.listItems(env.db, env.world.id)
-    item_id = items[0].id
+    sites = elements.listSites(env.db, env.world.getID())
+    site_id1 = sites[0].getID()
+    site_id2 = sites[1].getID()
+    items = elements.listItems(env.db, env.world.getID())
+    item_id = items[0].getID()
 
     env.wstate.setItemLocation(item_id, site_id1)
     env.wstate.setLocation(site_id2)
@@ -97,10 +97,10 @@ def test_select_command(app):
     assert not response.changed
 
     # Real item, do not have
-    sites = elements.listSites(env.db, env.world.id)
-    site_id = sites[0].id
-    items = elements.listItems(env.db, env.world.id)
-    item_id = items[0].id
+    sites = elements.listSites(env.db, env.world.getID())
+    site_id = sites[0].getID()
+    items = elements.listItems(env.db, env.world.getID())
+    item_id = items[0].getID()
 
     command.item = item_id
     client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
@@ -127,8 +127,8 @@ def test_enage_command(app):
     assert not response.changed
 
     # Real character, wrong location
-    site_id = elements.listSites(env.db, env.world.id)[0].id
-    cid = elements.listCharacters(env.db, env.world.id)[0].id
+    site_id = elements.listSites(env.db, env.world.getID())[0].getID()
+    cid = elements.listCharacters(env.db, env.world.getID())[0].getID()
     command.character = cid
 
     env.wstate.setCharacterLocation(cid, site_id)
@@ -152,8 +152,8 @@ def test_disenage_command(app):
     assert response.changed
 
     # Real character, not engaged
-    site_id = elements.listSites(env.db, env.world.id)[0].id
-    cid = elements.listCharacters(env.db, env.world.id)[0].id
+    site_id = elements.listSites(env.db, env.world.getID())[0].getID()
+    cid = elements.listCharacters(env.db, env.world.getID())[0].getID()
     env.wstate.setLocation(site_id)
     env.wstate.setCharacterLocation(cid, site_id)
     command.character = cid
@@ -179,7 +179,7 @@ def test_use_command(app):
     response = client_actions.ExecCommand(command)
     assert not response.changed
 
-    item_id = elements.listItems(env.db, env.world.id)[0].id
+    item_id = elements.listItems(env.db, env.world.getID())[0].getID()
 
     # Real item - don't have
     command.item = item_id
@@ -205,20 +205,20 @@ def test_use_character(app):
 
     # Real cid, not real item
     item_id = "id123"
-    cid = elements.listCharacters(env.db, env.world.id)[0].id
+    cid = elements.listCharacters(env.db, env.world.getID())[0].getID()
     (changed, message, chat) = client_actions.UseItemCharacter(item_id, cid)
     assert not changed
 
     # Not real cid, real item
-    item_id = elements.listItems(env.db, env.world.id)[0].id
+    item_id = elements.listItems(env.db, env.world.getID())[0].getID()
     cid = "id456"
     (changed, message, chat) = client_actions.UseItemCharacter(item_id, cid)
     assert not changed
 
     # Real item and cid, same location and engaged
-    item_id = elements.listItems(env.db, env.world.id)[0].id
-    cid = elements.listCharacters(env.db, env.world.id)[0].id
-    site_id = elements.listSites(env.db, env.world.id)[0].id
+    item_id = elements.listItems(env.db, env.world.getID())[0].getID()
+    cid = elements.listCharacters(env.db, env.world.getID())[0].getID()
+    site_id = elements.listSites(env.db, env.world.getID())[0].getID()
 
     # Not yet necessary to do all of this - but mimic real use
     env.wstate.setLocation(site_id)

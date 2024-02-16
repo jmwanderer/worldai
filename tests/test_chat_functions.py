@@ -438,10 +438,10 @@ class CharacterTestCase(unittest.TestCase):
             self.db.executescript(f.read())
 
         worlds = elements.listWorlds(self.db)
-        world_id = worlds[0].id
+        world_id = worlds[0].getID()
 
         characters = elements.listCharacters(self.db, world_id)
-        character_id = characters[0].id
+        character_id = characters[0].getID()
 
         session_id = "1234"
         wstate_id = world_state.getWorldStateID(self.db, session_id, world_id)

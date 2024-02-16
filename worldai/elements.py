@@ -122,18 +122,18 @@ class IdName:
     Used in list of elements.
     """
 
-    def __init__(self, id, name):
-        self.id = id
+    def __init__(self, eid, name):
+        self.eid = eid
         self.name = name
 
     def getID(self):
-        return self.id
+        return self.eid
 
     def getName(self):
         return self.name
 
     def getJSON(self):
-        return {"id": self.id, "name": self.name}
+        return {"id": self.eid, "name": self.name}
 
 
 class ElemTag:
@@ -145,9 +145,9 @@ class ElemTag:
     The type field is the readable string, useful for GPT use.
     """
 
-    def __init__(self, wid=None, id=None, element_type=ElementType.NONE):
+    def __init__(self, wid=None, eid=None, element_type=ElementType.NONE):
         self.world_id = wid
-        self.id = id
+        self.eid = eid
         self.element_type = element_type
 
     def __eq__(self, other):
@@ -155,12 +155,12 @@ class ElemTag:
             return False
         return (
             self.world_id == other.world_id
-            and self.id == other.id
+            and self.eid == other.eid
             and self.element_type == other.element_type
         )
 
     def getID(self):
-        return self.id
+        return self.eid
 
     def getWorldID(self):
         return self.world_id
@@ -181,7 +181,7 @@ class ElemTag:
         return {
             "wid": self.world_id,
             "element_type": self.element_type,
-            "id": self.id,
+            "id": self.eid,
         }
 
     def jsonStr(self):
@@ -203,7 +203,7 @@ class Element:
     """
 
     def __init__(self, element_type, parent_id):
-        self.id = None
+        self.eid = None
         self.type = element_type
         self.parent_id = parent_id
         self.name = None
@@ -212,17 +212,17 @@ class Element:
         self.setProperties({})
 
     def getID(self):
-        return self.id
+        return self.eid
 
     def hasImage(self):
         return len(self.images) > 0
 
     def getIdName(self):
-        return IdName(self.id, self.name)
+        return IdName(self.eid, self.name)
 
     def getElemTag(self):
-        wid = self.parent_id if self.type != ElementType.WORLD else self.id
-        return ElemTag(wid, self.id, ElementType.typeToName(self.type))
+        wid = self.parent_id if self.type != ElementType.WORLD else self.eid
+        return ElemTag(wid, self.eid, ElementType.typeToName(self.type))
 
     def fixProperties(self, properties):
         """
@@ -276,7 +276,7 @@ class Element:
         excluse internals of type and parent id.
         """
         return {
-            CoreProps.PROP_ID: self.id,
+            CoreProps.PROP_ID: self.eid,
             CoreProps.PROP_NAME: self.name,
             **self.getProperties(),
         }
@@ -330,7 +330,7 @@ class Element:
         type_str = ElementType.typeToName(self.type)
         propStr = json.dumps(self.getProperties())
         return (
-            f"type: {self.type}, id: {self.id}, parent_id: {self.parent_id}, "
+            f"type: {self.type}, id: {self.eid}, parent_id: {self.parent_id}, "
             + f"name: {self.name}, description: {self.getDescription()}, "
             + f"details: {self.getDetails()}"
         )
@@ -525,27 +525,27 @@ class Item(Element):
 
 
 class ElementStore:
-    def loadElement(db, id, element):
+    def loadElement(db, eid, element):
         """
         Return an element insance
         """
         q = db.execute(
             "SELECT parent_id, name, properties "
             + "FROM elements WHERE id = ? and type = ?",
-            (id, element.type),
+            (eid, element.type),
         )
         r = q.fetchone()
         if r is None:
             return None
 
-        element.id = id
+        element.eid = eid
         element.parent_id = r[0]
         element.name = r[1]
         element.setPropertiesStr(r[2])
 
         c = db.execute(
             "SELECT id FROM images WHERE parent_id = ? " + "AND is_hidden = FALSE",
-            (id,),
+            (eid,),
         )
         for entry in c.fetchall():
             element.images.append(entry[0])
@@ -571,7 +571,7 @@ class ElementStore:
         q = db.execute(
             "UPDATE elements SET  name = ?, properties = ? "
             + "WHERE id = ? and type = ?",
-            (element.name, element.getPropertiesStr(), element.id, element.type),
+            (element.name, element.getPropertiesStr(), element.eid, element.type),
         )
         db.commit()
 
@@ -579,12 +579,12 @@ class ElementStore:
         """
         Return an element insance
         """
-        element.id = "id%s" % os.urandom(4).hex()
+        element.eid = "id%s" % os.urandom(4).hex()
         q = db.execute(
             "INSERT INTO elements (id, type, parent_id, name, "
             + " properties) VALUES (?, ?, ?, ?, ?)",
             (
-                element.id,
+                element.eid,
                 element.type,
                 element.parent_id,
                 element.name,
@@ -596,7 +596,7 @@ class ElementStore:
 
     def getElements(db, element_type, parent_id):
         """
-        Return a list of elements: id and name
+        Return a list of elements: eid and name
         """
         result = []
         q = db.execute(
@@ -604,8 +604,8 @@ class ElementStore:
             + "type = ? AND parent_id = ? AND is_hidden = FALSE",
             (element_type, parent_id),
         )
-        for id, name in q.fetchall():
-            result.append(IdName(id, name))
+        for eid, name in q.fetchall():
+            result.append(IdName(eid, name))
 
         return result
 
@@ -615,7 +615,7 @@ class ElementStore:
             c = db.cursor()
             c.execute(
                 "UPDATE elements SET is_hidden = TRUE WHERE id = ? AND " + "type = ?",
-                (instance.id, element.type),
+                (instance.eid, element.type),
             )
             db.commit()
             return c.rowcount
@@ -638,11 +638,14 @@ class Image:
 
     """
 
-    def __init__(self, id=None):
-        self.id = id
+    def __init__(self, iid=None):
+        self.iid = iid
         self.filename = None
         self.prompt = None
         self.parent_id = None
+
+    def getID(self):
+        return self.iid
 
     def setPrompt(self, prompt):
         self.prompt = prompt
@@ -661,10 +664,10 @@ class Image:
 
 
 def createImage(db, image):
-    image.id = "id%s" % os.urandom(4).hex()
+    image.iid = "id%s" % os.urandom(4).hex()
     db.execute(
         "INSERT INTO images (id, parent_id, prompt, filename) " + "VALUES (?, ?, ?, ?)",
-        (image.id, image.parent_id, image.prompt, image.filename),
+        (image.iid, image.parent_id, image.prompt, image.filename),
     )
     db.commit()
     return image
@@ -679,8 +682,8 @@ def getImageFromIndex(db, parent_id, index):
     return None
 
 
-def hideImage(db, id):
-    db.execute("UPDATE images SET is_hidden = TRUE WHERE id = ?", (id,))
+def hideImage(db, iid):
+    db.execute("UPDATE images SET is_hidden = TRUE WHERE id = ?", (iid,))
     db.commit()
 
 
@@ -695,8 +698,8 @@ def recoverImages(db, parent_id):
     return c.rowcount
 
 
-def getImageFile(db, data_dir, id):
-    q = db.execute("SELECT filename FROM images WHERE id = ?", (id,))
+def getImageFile(db, data_dir, iid):
+    q = db.execute("SELECT filename FROM images WHERE id = ?", (iid,))
     r = q.fetchone()
     if r is not None:
         filename = r[0]
@@ -705,11 +708,11 @@ def getImageFile(db, data_dir, id):
     return None
 
 
-def getImage(db, id):
-    q = db.execute("SELECT parent_id, prompt, filename FROM images WHERE id = ?", (id,))
+def getImage(db, iid):
+    q = db.execute("SELECT parent_id, prompt, filename FROM images WHERE id = ?", (iid,))
     r = q.fetchone()
     if r is not None:
-        image = Image(id)
+        image = Image(iid)
         image.parent_id = r[0]
         image.prompt = r[1]
         image.filename = r[2]
@@ -731,8 +734,8 @@ def listImages(db, parent_id, include_hidden=False):
             (parent_id,),
         )
 
-    for id, prompt, filename in q.fetchall():
-        result.append({"id": id, "prompt": prompt, "filename": filename})
+    for iid, prompt, filename in q.fetchall():
+        result.append({"id": iid, "prompt": prompt, "filename": filename})
     return result
 
 
@@ -752,8 +755,8 @@ def getImages(db, parent_id=None):
     else:
         q = db.execute("SELECT id, parent_id, prompt, filename FROM images")
 
-    for id, parent_id, prompt, filename in q.fetchall():
-        image = Image(id)
+    for iid, parent_id, prompt, filename in q.fetchall():
+        image = Image(iid)
         image.parent_id = parent_id
         image.prompt = prompt
         image.filename = filename
@@ -761,20 +764,20 @@ def getImages(db, parent_id=None):
     return result
 
 
-def getElemTag(db, id):
+def getElemTag(db, eid):
     """
     Build an element tag from an id.
     Return null if not found
     """
-    q = db.execute("SELECT parent_id, type from ELEMENTS where id = ?", (id,))
+    q = db.execute("SELECT parent_id, type from ELEMENTS where id = ?", (eid,))
     r = q.fetchone()
     if r is None:
         return None
     wid = r[0]
     type = r[1]
     if type == ElementType.WORLD:
-        wid = id
-    return ElemTag(wid, id, ElementType.typeToName(type))
+        wid = eid
+    return ElemTag(wid, eid, ElementType.typeToName(type))
 
 
 def idNameToElemTag(db, idName):
@@ -790,11 +793,11 @@ def listWorlds(db):
     return ElementStore.getElements(db, ElementType.WORLD, "")
 
 
-def loadWorld(db, id: str) -> Optional[World]:
+def loadWorld(db, eid: str) -> Optional[World]:
     """
     Return a world instance
     """
-    return ElementStore.loadElement(db, id, World())
+    return ElementStore.loadElement(db, eid, World())
 
 
 def findWorld(db, name: str) -> Optional[World]:
@@ -835,8 +838,8 @@ def listDocuments(db, world_id: str):
     return ElementStore.getElements(db, ElementType.DOCUMENT, world_id)
 
 
-def loadDocument(db, id) -> Optional[Document]:
-    return ElementStore.loadElement(db, id, Document())
+def loadDocument(db, eid) -> Optional[Document]:
+    return ElementStore.loadElement(db, eid, Document())
 
 
 def findDocument(db, wid: str, name: str) -> Optional[Document]:
@@ -854,11 +857,11 @@ def listCharacters(db, world_id):
     return ElementStore.getElements(db, ElementType.CHARACTER, world_id)
 
 
-def loadCharacter(db, id: str) -> Optional[Character]:
+def loadCharacter(db, eid: str) -> Optional[Character]:
     """
     Return a character instance
     """
-    return ElementStore.loadElement(db, id, Character())
+    return ElementStore.loadElement(db, eid, Character())
 
 
 def findCharacter(db, wid: str, name: str) -> Optional[Character]:
@@ -895,11 +898,11 @@ def listSites(db, world_id):
     return ElementStore.getElements(db, ElementType.SITE, world_id)
 
 
-def loadSite(db, id: str) -> Optional[Site]:
+def loadSite(db, eid: str) -> Optional[Site]:
     """
     Return a site instance
     """
-    return ElementStore.loadElement(db, id, Site())
+    return ElementStore.loadElement(db, eid, Site())
 
 
 def findSite(db, pid: str, name: str) -> Optional[Site]:
@@ -936,11 +939,11 @@ def listItems(db, world_id):
     return ElementStore.getElements(db, ElementType.ITEM, world_id)
 
 
-def loadItem(db, id: str) -> Optional[Item]:
+def loadItem(db, eid: str) -> Optional[Item]:
     """
     Return an item instance
     """
-    return ElementStore.loadElement(db, id, Item())
+    return ElementStore.loadElement(db, eid, Item())
 
 
 def findItem(db, pid: str, name: str) -> Optional[Item]:
@@ -982,33 +985,33 @@ def deleteImage(db, data_dir, image_id):
     logging.info("delete file: %s", path)
 
 
-def deleteCharacter(db, data_dir, id):
-    character = loadCharacter(db, id)
-    logging.info("delete character: [%s] %s", character.id, character.getName())
-    images = listImages(db, id, include_hidden=True)
+def deleteCharacter(db, data_dir, eid):
+    character = loadCharacter(db, eid)
+    logging.info("delete character: [%s] %s", character.eid, character.getName())
+    images = listImages(db, eid, include_hidden=True)
 
     for image in images:
         deleteImage(db, data_dir, image["id"])
 
     db.execute(
-        "DELETE FROM elements WHERE id = ? AND type = ?", (id, ElementType.CHARACTER)
+        "DELETE FROM elements WHERE id = ? AND type = ?", (eid, ElementType.CHARACTER)
     )
     db.commit()
 
 
 def deleteWorld(db, data_dir, world_id):
     world = loadWorld(db, world_id)
-    logging.info("delete world: [%s] %s", world.id, world.getName())
-    characters = listCharacters(db, world.id)
+    logging.info("delete world: [%s] %s", world.eid, world.getName())
+    characters = listCharacters(db, world.eid)
     for entry in characters:
         deleteCharacter(db, data_dir, entry.getID())
 
-    images = listImages(db, world.id, include_hidden=True)
+    images = listImages(db, world.eid, include_hidden=True)
     for image in images:
         deleteImage(db, data_dir, image["id"])
 
     db.execute(
-        "DELETE FROM elements WHERE id = ? AND type = ?", (world.id, ElementType.WORLD)
+        "DELETE FROM elements WHERE id = ? AND type = ?", (world.eid, ElementType.WORLD)
     )
     db.commit()
 
