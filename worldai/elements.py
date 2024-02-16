@@ -3,7 +3,6 @@
 Represets the element of a world definition.
 """
 
-import datetime
 import os
 import json
 import logging
@@ -188,9 +187,11 @@ class ElemTag:
         tag = self.json()
         return json.dumps(tag)
 
+    @staticmethod
     def WorldTag(world_id):
         return ElemTag(world_id, world_id, ElementType.WorldType())
 
+    @staticmethod
     def JsonTag(tag):
         if tag is None or tag.get("wid") is None:
             return ElemTag()
@@ -209,7 +210,7 @@ class Element:
         self.name = None
         self.prop_model = None
         self.images = []  # List of image ids
-        self.setProperties({})
+        self._setProperties({})
 
     def getID(self):
         return self.eid
@@ -224,19 +225,20 @@ class Element:
         wid = self.parent_id if self.type != ElementType.WORLD else self.eid
         return ElemTag(wid, self.eid, ElementType.typeToName(self.type))
 
-    def fixProperties(self, properties):
+    def _fixProperties(self, properties):
         """
         Update any properties that need to change for backwards compatibility
         and migration
         """
         return properties
 
-    def setProperties(self, properties):
+    def _setProperties(self, properties):
         """
         Set the set of encode properties.
         Override in derived classes
         """
-        self.prop_model = {}
+        # Never used
+        self.prop_model = {**properties}
 
     def updateProperties(self, properties):
         """
@@ -246,12 +248,12 @@ class Element:
         if properties.get(CoreProps.PROP_NAME) is not None:
             self.name = properties[CoreProps.PROP_NAME]
             del properties[CoreProps.PROP_NAME]
-        new_props = self.getProperties()
+        new_props = self._getProperties()
         for key in properties.keys():
             new_props[key] = properties[key]
-        self.setProperties(new_props)
+        self._setProperties(new_props)
 
-    def getProperties(self):
+    def _getProperties(self):
         """
         Return dictonary of encoded properties
         """
@@ -261,14 +263,14 @@ class Element:
         """
         Take an encoded json string of property values.
         """
-        properties = self.fixProperties(json.loads(properties))
-        self.setProperties(properties)
+        properties = self._fixProperties(json.loads(properties))
+        self._setProperties(properties)
 
     def getPropertiesStr(self):
         """
         Return an encoded json string of property values.
         """
-        return json.dumps(self.getProperties())
+        return json.dumps(self._getProperties())
 
     def getAllProperties(self):
         """
@@ -278,7 +280,7 @@ class Element:
         return {
             CoreProps.PROP_ID: self.eid,
             CoreProps.PROP_NAME: self.name,
-            **self.getProperties(),
+            **self._getProperties(),
         }
 
     def getName(self):
@@ -299,6 +301,7 @@ class Element:
     def getDetails(self):
         if hasattr(self.prop_model, "details"):
             return self.prop_model.details
+        return ""
 
     def getDetailsHTML(self):
         return textToHTML(self.getDetails())
@@ -327,8 +330,6 @@ class Element:
         return self.images[index]
 
     def __str__(self):
-        type_str = ElementType.typeToName(self.type)
-        propStr = json.dumps(self.getProperties())
         return (
             f"type: {self.type}, id: {self.eid}, parent_id: {self.parent_id}, "
             + f"name: {self.name}, description: {self.getDescription()}, "
@@ -350,14 +351,14 @@ class World(Element):
     def __init__(self):
         super().__init__(ElementType.WORLD, "")
 
-    def setProperties(self, properties):
+    def _setProperties(self, properties):
         """
         Set the set of encode properties.
         Override base class
         """
         self.prop_model = WorldProps(**properties)
 
-    def fixProperties(self, properties):
+    def _fixProperties(self, properties):
         if properties.get("notes") is not None:
             del properties["notes"]
         return properties
@@ -382,14 +383,14 @@ class Document(Element):
     def __init__(self, parent_id=""):
         super().__init__(ElementType.DOCUMENT, parent_id)
 
-    def setProperties(self, properties):
+    def _setProperties(self, properties):
         """
         Set the set of encode properties.
         Override base class
         """
         self.prop_model = DocProps(**properties)
 
-    def fixProperties(self, properties):
+    def _fixProperties(self, properties):
         if properties.get("abstact") is not None:
             del properties["abstract"]
         if properties.get("outline") is not None:
@@ -440,7 +441,7 @@ class Character(Element):
     def __init__(self, parent_id=""):
         super().__init__(ElementType.CHARACTER, parent_id)
 
-    def setProperties(self, properties):
+    def _setProperties(self, properties):
         """
         Set the set of encode properties.
         Override base class
@@ -467,13 +468,13 @@ class Site(Element):
     def __init__(self, parent_id=""):
         super().__init__(ElementType.SITE, parent_id)
 
-    def fixProperties(self, properties):
+    def _fixProperties(self, properties):
         if properties.get("locked") is not None:
             properties["default_open"] = not properties["locked"]
             del properties["locked"]
         return properties
 
-    def setProperties(self, properties):
+    def _setProperties(self, properties):
         """
         Set the set of encode properties.
         Override base class
@@ -495,7 +496,7 @@ class Item(Element):
     def __init__(self, parent_id=""):
         super().__init__(ElementType.ITEM, parent_id)
 
-    def fixProperties(self, properties):
+    def _fixProperties(self, properties):
         if properties.get("ability") is not None:
             if properties["ability"].get("effect") is not None:
                 if properties["ability"]["effect"] == "unlock":
@@ -504,7 +505,7 @@ class Item(Element):
                     properties["ability"]["effect"] = "none"
         return properties
 
-    def setProperties(self, properties):
+    def _setProperties(self, properties):
         """
         Set the set of encode properties.
         Override base class
@@ -525,6 +526,7 @@ class Item(Element):
 
 
 class ElementStore:
+    @staticmethod
     def loadElement(db, eid, element):
         """
         Return an element insance
@@ -551,6 +553,7 @@ class ElementStore:
             element.images.append(entry[0])
         return element
 
+    @staticmethod
     def findElement(db, pid, name, element):
         """
         Return an element id
@@ -567,20 +570,22 @@ class ElementStore:
 
         return ElementStore.loadElement(db, r[0], element)
 
+    @staticmethod
     def updateElement(db, element):
-        q = db.execute(
+        db.execute(
             "UPDATE elements SET  name = ?, properties = ? "
             + "WHERE id = ? and type = ?",
             (element.name, element.getPropertiesStr(), element.eid, element.type),
         )
         db.commit()
 
+    @staticmethod        
     def createElement(db, element):
         """
         Return an element insance
         """
         element.eid = "id%s" % os.urandom(4).hex()
-        q = db.execute(
+        db.execute(
             "INSERT INTO elements (id, type, parent_id, name, "
             + " properties) VALUES (?, ?, ?, ?, ?)",
             (
@@ -594,6 +599,7 @@ class ElementStore:
         db.commit()
         return element
 
+    @staticmethod
     def getElements(db, element_type, parent_id):
         """
         Return a list of elements: eid and name
@@ -609,6 +615,7 @@ class ElementStore:
 
         return result
 
+    @staticmethod
     def hideElement(db, element, wid, name):
         instance = ElementStore.findElement(db, wid, name, element)
         if instance is not None:
@@ -621,6 +628,7 @@ class ElementStore:
             return c.rowcount
         return 0
 
+    @staticmethod
     def recoverElements(db, element_type, parent_id):
         c = db.cursor()
         c.execute(
@@ -755,9 +763,9 @@ def getImages(db, parent_id=None):
     else:
         q = db.execute("SELECT id, parent_id, prompt, filename FROM images")
 
-    for iid, parent_id, prompt, filename in q.fetchall():
+    for iid, pid, prompt, filename in q.fetchall():
         image = Image(iid)
-        image.parent_id = parent_id
+        image.parent_id = pid
         image.prompt = prompt
         image.filename = filename
         result.append(image)
@@ -774,10 +782,10 @@ def getElemTag(db, eid):
     if r is None:
         return None
     wid = r[0]
-    type = r[1]
-    if type == ElementType.WORLD:
+    etype = r[1]
+    if etype == ElementType.WORLD:
         wid = eid
-    return ElemTag(wid, eid, ElementType.typeToName(type))
+    return ElemTag(wid, eid, ElementType.typeToName(etype))
 
 
 def idNameToElemTag(db, idName):
