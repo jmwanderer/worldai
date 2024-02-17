@@ -4,6 +4,7 @@ Represets the element of a world definition.
 """
 
 import enum
+import io
 import json
 import logging
 import os
@@ -677,33 +678,33 @@ class Image:
 
     """
 
-    def __init__(self, iid=None):
+    def __init__(self, iid : ElemID = ELEM_ID_NONE):
         self.iid = iid
-        self.filename = None
-        self.prompt = None
-        self.parent_id = None
+        self.filename : str = ""
+        self.prompt : str = ""
+        self.parent_id : ElemID = ELEM_ID_NONE
 
-    def getID(self):
+    def getID(self) -> ElemID:
         return self.iid
 
-    def setPrompt(self, prompt):
+    def setPrompt(self, prompt : str):
         self.prompt = prompt
 
-    def setParentId(self, parent_id):
+    def setParentId(self, parent_id : ElemID):
         self.parent_id = parent_id
 
-    def getFilename(self):
-        if self.filename is None:
+    def getFilename(self) -> str:
+        if len(self.filename) == 0:
             self.filename = os.urandom(12).hex() + ".png"
         return self.filename
 
-    def getThumbName(self):
+    def getThumbName(self) -> str:
         filename = self.getFilename()
         return filename[0:-4] + ".thmb" + filename[-4:]
 
 
-def createImage(db, image):
-    image.iid = "id%s" % os.urandom(4).hex()
+def createImage(db, image : Image):
+    image.iid = ElemID("id%s" % os.urandom(4).hex())
     db.execute(
         "INSERT INTO images (id, parent_id, prompt, filename) " + "VALUES (?, ?, ?, ?)",
         (image.iid, image.parent_id, image.prompt, image.filename),
@@ -712,7 +713,7 @@ def createImage(db, image):
     return image
 
 
-def getImageFromIndex(db, parent_id, index):
+def getImageFromIndex(db, parent_id : ElemID, index : int) -> Image | None:
     # Convert index ordinal (0, 1, 2, ...) to an image id
     # TODO: Note this is probably broken and we need an ordering.
     images = listImages(db, parent_id)
@@ -721,12 +722,12 @@ def getImageFromIndex(db, parent_id, index):
     return None
 
 
-def hideImage(db, iid):
+def hideImage(db, iid : ElemID):
     db.execute("UPDATE images SET is_hidden = TRUE WHERE id = ?", (iid,))
     db.commit()
 
 
-def recoverImages(db, parent_id):
+def recoverImages(db, parent_id : ElemID):
     c = db.cursor()
     c.execute(
         "UPDATE images SET is_hidden = FALSE WHERE parent_id = ? "
@@ -737,7 +738,7 @@ def recoverImages(db, parent_id):
     return c.rowcount
 
 
-def getImageFile(db, data_dir, iid):
+def getImageFile(db, data_dir : str, iid : ElemID) -> io.BufferedIOBase | None:
     q = db.execute("SELECT filename FROM images WHERE id = ?", (iid,))
     r = q.fetchone()
     if r is not None:
@@ -747,7 +748,7 @@ def getImageFile(db, data_dir, iid):
     return None
 
 
-def getImage(db, iid):
+def getImage(db, iid : ElemID) -> Image | None:
     q = db.execute("SELECT parent_id, prompt, filename FROM images WHERE id = ?", (iid,))
     r = q.fetchone()
     if r is not None:
@@ -759,7 +760,8 @@ def getImage(db, iid):
     return None
 
 
-def listImages(db, parent_id, include_hidden=False):
+def listImages(db, parent_id : ElemID, 
+               include_hidden : bool = False) -> list[dict]:
     result = []
     if include_hidden:
         q = db.execute(
@@ -778,14 +780,14 @@ def listImages(db, parent_id, include_hidden=False):
     return result
 
 
-def getImages(db, parent_id=None):
+def getImages(db, parent_id : ElemID = WORLD_ID_NONE) -> list[Image]:
     """
     Return a list of image elements.
     If parent_id is None, return all images.
     Otherwise, return images for specified element.
     """
     result = []
-    if parent_id is not None:
+    if parent_id is not None and parent_id != WORLD_ID_NONE:
         q = db.execute(
             "SELECT id, parent_id, prompt, filename FROM images "
             + "WHERE parent_id = ? AND is_hidden = FALSE",
@@ -803,7 +805,7 @@ def getImages(db, parent_id=None):
     return result
 
 
-def getElemTag(db, eid):
+def getElemTag(db, eid : ElemID) -> ElemTag | None:
     """
     Build an element tag from an id.
     Return null if not found
@@ -819,7 +821,7 @@ def getElemTag(db, eid):
     return ElemTag(wid, eid, ElementTypes._typeToName(etype))
 
 
-def idNameToElemTag(db, idName):
+def idNameToElemTag(db, idName : IdName) -> ElemTag | None:
     if idName is None:
         return None
     return getElemTag(db, idName.getID())
@@ -1021,6 +1023,8 @@ def recoverItems(db, world_id: WorldID) -> int:
 
 def deleteImage(db, data_dir: str, image_id: ElemID):
     image = getImage(db, image_id)
+    if image is None:
+        return
 
     db.execute("DELETE FROM images WHERE id = ?", (image_id,))
     db.commit()
