@@ -1,6 +1,6 @@
-from worldai import chunk
-
 import unittest
+
+from worldai import chunk
 
 
 class BasicTestCase(unittest.TestCase):

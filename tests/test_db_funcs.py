@@ -1,10 +1,10 @@
-from worldai import threads
-from worldai import world_state
-import unittest
-import tempfile
-import os
 import json
+import os
 import sqlite3
+import tempfile
+import unittest
+
+from worldai import threads, world_state
 
 
 class BasicTestCase(unittest.TestCase):

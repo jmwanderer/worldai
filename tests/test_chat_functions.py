@@ -1,14 +1,11 @@
-from worldai import elements
-from worldai import chat_functions
-from worldai import design_functions
-from worldai import character_functions
-from worldai import world_state
-
-import unittest
-import tempfile
+import json
 import os
 import sqlite3
-import json
+import tempfile
+import unittest
+
+from worldai import (character_functions, chat_functions, design_functions,
+                     elements, world_state)
 
 
 class DesignTestCase(unittest.TestCase):

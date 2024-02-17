@@ -4,10 +4,7 @@ Test Client Command Functions
 Integration test
 """
 
-from worldai import elements
-from worldai import db_access
-from worldai import world_state
-from worldai import client_commands
+from worldai import client_commands, db_access, elements, world_state
 
 
 class Environment:

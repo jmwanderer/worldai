@@ -1,8 +1,9 @@
 # Unit test for world state
 
-from worldai import world_state
-import unittest
 import random
+import unittest
+
+from worldai import world_state
 
 
 class BasicTestCase(unittest.TestCase):

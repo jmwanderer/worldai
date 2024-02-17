@@ -1,9 +1,9 @@
-from worldai import elements
-from worldai import client_commands
-import unittest
-import tempfile
 import os
 import sqlite3
+import tempfile
+import unittest
+
+from worldai import client_commands, elements
 
 
 class BasicTestCase(unittest.TestCase):

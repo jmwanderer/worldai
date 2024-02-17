@@ -1,10 +1,8 @@
-from worldai import info_set
-from worldai import chunk
-from worldai import elements
-from worldai import world_state
-import unittest
 import os
 import sqlite3
+import unittest
+
+from worldai import chunk, elements, info_set, world_state
 
 
 class BasicTestCase(unittest.TestCase):

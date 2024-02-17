@@ -1,17 +1,13 @@
-from worldai import chat
-from worldai import design_chat
-from worldai import chat_cli
-from worldai import design_functions
-from worldai import message_records
-
-
-import unittest
-import unittest.mock
-import tempfile
 import json
 import os
-import tiktoken
 import sqlite3
+import tempfile
+import unittest
+import unittest.mock
+
+import tiktoken
+from worldai import (chat, chat_cli, design_chat, design_functions,
+                     message_records)
 
 
 def getInitSystemMessage():
