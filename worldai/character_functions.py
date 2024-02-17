@@ -1,10 +1,6 @@
 import logging
 
-
-from . import elements
-from . import chat_functions
-from . import world_state
-from . import info_set
+from . import chat_functions, elements, info_set, world_state
 
 INSTRUCTIONS = """
 You are an actor playing '{name}', a fictional character our story. Given the following character description, personality, goals, emotional state, adopt the personality described and respond as the character in a physical world.

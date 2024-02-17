@@ -1,8 +1,6 @@
-from . import chat
-from . import threads
-from . import character_functions
-
 import os
+
+from . import character_functions, chat, threads
 
 #
 # Module for the Character Chat Session

@@ -1,14 +1,12 @@
 import json
+import logging
 import os
+
 import openai
 import requests
-import logging
 from PIL import Image
 
-from . import elements
-from . import chat_functions
-from . import element_info
-
+from . import chat_functions, element_info, elements
 
 IMAGE_DIRECTORY = "/tmp"
 TESTING = False

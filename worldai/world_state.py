@@ -12,14 +12,15 @@ A player interacting with a specific world
 # Consider adding an instance ID to the element id
 #
 
-import time
-import os
-import json
-import random
-import logging
-import pydantic
-import typing
 import enum
+import json
+import logging
+import os
+import random
+import time
+import typing
+
+import pydantic
 
 from . import elements
 

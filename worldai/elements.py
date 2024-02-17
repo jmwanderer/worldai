@@ -3,13 +3,14 @@
 Represets the element of a world definition.
 """
 
-import os
+import enum
 import json
 import logging
-import enum
-import pydantic
+import os
 import typing
 from typing import Optional
+
+import pydantic
 
 
 class ElementType:

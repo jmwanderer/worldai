@@ -5,22 +5,20 @@ Text chat client that can make function calls update world model
 From: https://cookbook.openai.com/examples/how_to_call_functions_with_chat_models
 """
 
-import os
-import time
 import json
 import logging
-import openai
-import requests
-import pydantic
+import os
+import time
 import typing
 
-
-from tenacity import retry, wait_random_exponential, stop_after_attempt
-from termcolor import colored
+import openai
+import pydantic
+import requests
 import tiktoken
+from tenacity import retry, stop_after_attempt, wait_random_exponential
+from termcolor import colored
 
-from . import message_records
-from . import chat_functions
+from . import chat_functions, message_records
 
 # TODO:
 # Update chat messages:

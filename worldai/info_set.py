@@ -11,14 +11,15 @@ Tables:
 - info_docs
 - info_chunks
 """
-from . import chunk
-
+import json
+import logging
 import os
 import random
-import json
-import openai
-import logging
+
 import numpy as np
+import openai
+
+from . import chunk
 
 TEST = False
 

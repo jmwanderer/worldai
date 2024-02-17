@@ -1,8 +1,6 @@
 import logging
 
-from . import chat
-from . import chat_functions
-from . import db_access
+from . import chat, chat_functions, db_access
 
 
 def get_user_input():

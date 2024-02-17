@@ -1,27 +1,19 @@
+import functools
+import logging
 import os
 import os.path
 import time
-import functools
-import flask
-from flask import Flask
-from flask import request
-from flask import Blueprint, g, current_app, session
-from werkzeug.middleware.proxy_fix import ProxyFix
-import logging
+import threading
+
 import click
+import flask
 import openai
-from threading import Thread
-from . import db_access
-from . import elements
-from . import chat
-from . import design_functions
-from . import design_chat
-from . import character_chat
-from . import world_state
-from . import chat_cli
-from . import client_commands
-from . import info_set
-from . import element_info
+from flask import Blueprint, Flask, current_app, g, request, session
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+from . import (character_chat, chat, chat_cli, client_commands, db_access,
+               design_chat, design_functions, element_info, elements, info_set,
+               world_state)
 
 
 def create_app(instance_path=None, test_config=None):
@@ -79,7 +71,7 @@ def create_app(instance_path=None, test_config=None):
     app.register_blueprint(bp)
     app.teardown_appcontext(close_db)
 
-    bg_thread = Thread(target=BgEmbedTask)
+    bg_thread = threading.Thread(target=BgEmbedTask)
     bg_thread.daemon = True
     bg_thread.start()
 

@@ -1,10 +1,7 @@
-import os
 import logging
+import os
 
-from . import chat
-from . import elements
-from . import design_functions
-from . import threads
+from . import chat, design_functions, elements, threads
 
 #
 # Module for the Design Chat Session

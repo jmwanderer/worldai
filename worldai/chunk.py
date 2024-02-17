@@ -3,8 +3,9 @@ Function to take a file, covert the file to text, and return
 content divided into chunks
 """
 
-import tiktoken
 import logging
+
+import tiktoken
 
 AI_MODEL = "gpt-3.5-turbo-0125"
 

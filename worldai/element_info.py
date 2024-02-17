@@ -8,9 +8,9 @@ Tables:
 - element_info
 """
 
-from . import elements
-from . import info_set
 import logging
+
+from . import elements, info_set
 
 
 def UpdateElementInfo(db, element: elements.Element):
