@@ -376,6 +376,9 @@ class World(Element):
         super().__init__(ElementType.WORLD, WORLD_ID_NONE)
         self.prop_model : WorldProps = WorldProps()
 
+    def getID(self) -> WorldID:
+        return WorldID(self.eid)
+
     def _setProperties(self, properties: dict):
         """
         Set the set of encode properties.

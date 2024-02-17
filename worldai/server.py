@@ -10,6 +10,8 @@ import flask
 import openai
 from flask import Blueprint, Flask, current_app, g, request, session
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.wrappers import Response as Response
+
 
 from . import (character_chat, chat, chat_cli, client_commands, db_access,
                design_chat, design_functions, element_info, elements, info_set,
@@ -118,8 +120,9 @@ def run_chat_loop():
 
 @bp.cli.command("create-image-thumb")
 @click.argument("id")
-def create_image_thumb(eid):
+def create_image_thumb(arg : str):
     """Create a thumbnail for an image."""
+    eid = elements.ElemID(arg)
     image = elements.getImage(get_db(), eid)
     if image is not None:
         design_functions.create_image_thumbnail(image)
@@ -129,7 +132,7 @@ def create_image_thumb(eid):
 
 
 @bp.cli.command("create-thumbs")
-def create_image_thumbs():
+def create_image_thumbs() -> None:
     """Create a thumbnail for all images."""
     images = elements.getImages(get_db())
     for image in images:
@@ -139,8 +142,9 @@ def create_image_thumbs():
 
 @bp.cli.command("delete-image")
 @click.argument("id")
-def delete_image(eid):
+def delete_image(arg : str):
     """Delete an image."""
+    eid = elements.ElemID(arg)
     image = elements.getImage(get_db(), eid)
     if image is not None:
         elements.deleteImage(get_db(), current_app.instance_path, eid)
@@ -151,8 +155,9 @@ def delete_image(eid):
 
 @bp.cli.command("delete-character")
 @click.argument("id")
-def delete_character(eid):
+def delete_character(arg : str):
     """Delete a character and associated images."""
+    eid = elements.ElemID(arg)
     character = elements.loadCharacter(get_db(), eid)
     if character is not None:
         element_info.DeleteElementInfo(get_db(), eid)
@@ -164,8 +169,9 @@ def delete_character(eid):
 
 @bp.cli.command("delete-world")
 @click.argument("id")
-def delete_world(wid):
+def delete_world(arg):
     """Delete a world and associated characters and images."""
+    wid = elements.WorldID(arg)
     world = elements.loadWorld(get_db(), wid)
     if world is not None:
         elements.deleteWorld(get_db(), current_app.instance_path, wid)
@@ -184,35 +190,47 @@ def list_worlds_cli():
 
 
 @bp.cli.command("write-elements")
-def write_elements_cli():
+def write_elements_cli() -> None:
     worlds = elements.listWorlds(get_db())
     for entry in worlds:
         click.echo(f"World: {entry.getName()}")
         world = elements.loadWorld(get_db(), entry.getID())
+        if world is None:
+            continue
         elements.updateWorld(get_db(), world)
 
         characters = elements.listCharacters(get_db(), world.getID())
         for centry in characters:
             click.echo(f"Character: {centry.getName()}")
             character = elements.loadCharacter(get_db(), centry.getID())
-            elements.updateCharacter(get_db(), character)
+            if character is not None:
+                elements.updateCharacter(get_db(), character)
 
         items = elements.listItems(get_db(), world.getID())
         for ientry in items:
             click.echo(f"Item: {ientry.getName()}")
             item = elements.loadItem(get_db(), ientry.getID())
-            elements.updateItem(get_db(), item)
+            if item is not None:
+                elements.updateItem(get_db(), item)
 
         sites = elements.listSites(get_db(), world.getID())
         for sentry in sites:
             click.echo(f"Site: {sentry.getName()}")
             site = elements.loadSite(get_db(), sentry.getID())
-            elements.updateSite(get_db(), site)
+            if site is not None:
+                elements.updateSite(get_db(), site)
+
+        sites = elements.listDocuments(get_db(), world.getID())
+        for dentry in sites:
+            click.echo(f"Doc: {dentry.getName()}")
+            doc = elements.loadDocument(get_db(), dentry.getID())
+            if doc is not None:
+                elements.updateDocument(get_db(), doc)
 
 
 @bp.cli.command("update-embeddings")
 @click.argument("world_name")
-def update_embeddings(world_name):
+def update_embeddings(world_name : str) -> None:
     world = elements.findWorld(get_db(), world_name)
     if world is None:
         click.echo("No such world %s" % world_name)
@@ -220,38 +238,52 @@ def update_embeddings(world_name):
     update_world_embeddings(world)
 
 
-def update_world_embeddings(world):
+def update_world_embeddings(world : elements.World) -> None:
     click.echo(f"Update world {world.getName()}")
     element_info.UpdateElementInfo(get_db(), world)
 
     characters = elements.listCharacters(get_db(), world.getID())
     sites = elements.listSites(get_db(), world.getID())
     items = elements.listItems(get_db(), world.getID())
+    docs = elements.listDocuments(get_db(), world.getID())    
 
     for cid in characters:
         character = elements.loadCharacter(get_db(), cid.getID())
+        if character is None:
+            continue
         click.echo(f"Update character {character.getName()}")
         element_info.UpdateElementInfo(get_db(), character)
     for iid in items:
         item = elements.loadItem(get_db(), iid.getID())
+        if item is None:
+            continue
         click.echo(f"Update item {item.getName()}")
         element_info.UpdateElementInfo(get_db(), item)
     for sid in sites:
         site = elements.loadSite(get_db(), sid.getID())
+        if site is None:
+            continue
         click.echo(f"Update site {site.getName()}")
         element_info.UpdateElementInfo(get_db(), site)
+    for did in docs:
+        doc = elements.loadSite(get_db(), did.getID())
+        if doc is None:
+            continue
+        click.echo(f"Update site {doc.getName()}")
+        element_info.UpdateElementInfo(get_db(), doc)
     click.echo("done")
 
 
 @bp.cli.command("update-all-embeddings")
-def update_all_embeddings():
+def update_all_embeddings() -> None:
     worlds = elements.listWorlds(get_db())
     for entry in worlds:
         world = elements.loadWorld(get_db(), entry.getID())
-        update_world_embeddings(world)
+        if world is not None:
+            update_world_embeddings(world)
 
 
-def list_images(parent_id):
+def list_images(parent_id : elements.ElemID) -> None:
     print("Listing images...")
     image_list = elements.listImages(get_db(), parent_id)
     for entry in image_list:
@@ -262,7 +294,7 @@ def list_images(parent_id):
 
 
 @bp.cli.command("clear-state")
-def clear_state():
+def clear_state() -> None:
     """Clear the game state due to a new format"""
     print("clearing state...")
     db = get_db()
@@ -273,7 +305,7 @@ def clear_state():
 
 
 @bp.cli.command("dump-worlds")
-def dump_worlds():
+def dump_worlds() -> None:
     """Dump the contents of the world DB."""
     print("Loading worlds...")
     worlds = elements.listWorlds(get_db())
@@ -285,6 +317,9 @@ def dump_worlds():
         print(f"World({eid}): {name}")
 
         world = elements.loadWorld(get_db(), eid)
+        if world is None:
+            continue
+
         print(world.getAllProperties())
         list_images(world.getID())
 
@@ -296,6 +331,8 @@ def dump_worlds():
             print(f"Character({eid}): {name}")
 
             character = elements.loadCharacter(get_db(), eid)
+            if character is None:
+                continue
             print(character.getAllProperties())
             list_images(character.getID())
 
@@ -307,6 +344,8 @@ def dump_worlds():
             print(f"Site({sid}): {name}")
 
             site = elements.loadSite(get_db(), sid)
+            if site is None:
+                continue
             print(site.getAllProperties())
             list_images(site.getID())
 
@@ -318,13 +357,15 @@ def dump_worlds():
             print(f"Item({iid}): {name}")
 
             item = elements.loadItem(get_db(), iid)
+            if item is None:
+                continue
             print(item.getAllProperties())
             list_images(item.getID())
 
     print("\n\n")
 
 
-def extract_auth_key(headers):
+def extract_auth_key(headers : dict) -> str | None:
     auth = headers.get("Authorization")
     if auth is not None:
         index = auth.find(" ")
@@ -367,7 +408,7 @@ def login_required(view):
 
 
 @bp.route("/login", methods=["GET", "POST"])
-def login():
+def login() -> Response:
     """
     Login view
     """
@@ -380,7 +421,7 @@ def login():
         session["auth_key"] = auth
         return flask.redirect(flask.url_for("worldai.top_view"))
 
-    return flask.render_template("login.html")
+    return Response(flask.render_template("login.html"))
 
 
 @bp.route("/", methods=["GET"])
@@ -428,7 +469,7 @@ def react_ui(path):
 
 @bp.route("/view/worlds", methods=["GET"])
 @login_required
-def list_worlds():
+def list_worlds() -> Response:
     """
     List Worlds
     """
@@ -437,20 +478,22 @@ def list_worlds():
     for entry in worlds:
         wid = entry.getID()
         world = elements.loadWorld(get_db(), wid)
-        world_list.append((wid, world.getName(), world.getDescription()))
+        if world is not None:
+            world_list.append((wid, world.getName(), world.getDescription()))
 
-    return flask.render_template("list_worlds.html", world_list=world_list)
+    return Response(flask.render_template("list_worlds.html", 
+                                          world_list=world_list))
 
 
 @bp.route("/view/worlds/<wid>", methods=["GET"])
 @login_required
-def view_world(wid):
+def view_world(wid : elements.WorldID) -> Response:
     """
     View a world
     """
     world = elements.loadWorld(get_db(), wid)
-    if world == None:
-        return "World not found", 400
+    if world is None:
+        return Response("World not found", 404)
 
     worlds = elements.listWorlds(get_db())
     (pworld, nworld) = elements.getAdjacentElements(world.getIdName(), worlds)
@@ -461,7 +504,8 @@ def view_world(wid):
         char_id = entry.getID()
         char_name = entry.getName()
         character = elements.loadCharacter(get_db(), char_id)
-        char_list.append((char_id, char_name, character.getDescription()))
+        if character is not None:
+            char_list.append((char_id, char_name, character.getDescription()))
 
     items = elements.listItems(get_db(), world.getID())
     item_list = []
@@ -469,7 +513,8 @@ def view_world(wid):
         item_id = entry.getID()
         item_name = entry.getName()
         item = elements.loadItem(get_db(), item_id)
-        item_list.append((item_id, item_name, item.getDescription()))
+        if item is not None:
+            item_list.append((item_id, item_name, item.getDescription()))
 
     sites = elements.listSites(get_db(), world.getID())
     site_list = []
@@ -477,9 +522,10 @@ def view_world(wid):
         site_id = entry.getID()
         site_name = entry.getName()
         site = elements.loadSite(get_db(), site_id)
-        site_list.append((site_id, site_name, site.getDescription()))
+        if site is not None:
+            site_list.append((site_id, site_name, site.getDescription()))
 
-    return flask.render_template(
+    return Response(flask.render_template(
         "view_world.html",
         world=world,
         character_list=char_list,
@@ -487,106 +533,109 @@ def view_world(wid):
         site_list=site_list,
         pworld=pworld,
         nworld=nworld,
-    )
+    ))
 
 
 @bp.route("/view/worlds/<wid>/characters/<eid>", methods=["GET"])
 @login_required
-def view_character(wid, eid):
+def view_character(wid : elements.WorldID,
+                   eid : elements.ElemID) -> Response:
     """
     View a character
     """
     world = elements.loadWorld(get_db(), wid)
-    if world == None:
-        return "World not found", 400
+    if world is None:
+        return Response("World not found", 404)
     character = elements.loadCharacter(get_db(), eid)
-    if character == None:
-        return "Character not found", 400
+    if character is None:
+        return Response("Character not found", 404)
     characters = elements.listCharacters(get_db(), wid)
     (pchar, nchar) = elements.getAdjacentElements(character.getIdName(), characters)
 
-    return flask.render_template(
+    return Response(flask.render_template(
         "view_character.html",
         world=world,
         character=character,
         pchar=pchar,
         nchar=nchar,
-    )
+    ))
 
 
 @bp.route("/view/worlds/<wid>/items/<eid>", methods=["GET"])
 @login_required
-def view_item(wid, eid):
+def view_item(wid : elements.WorldID, 
+              eid : elements.ElemID) -> Response:
     """
     View a character
     """
     world = elements.loadWorld(get_db(), wid)
-    if world == None:
-        return "World not found", 400
+    if world is None:
+        return Response("World not found", 404)
     item = elements.loadItem(get_db(), eid)
-    if item == None:
-        return "Item not found", 400
+    if item is None:
+        return Response("Item not found", 404)
     items = elements.listItems(get_db(), wid)
     (pitem, nitem) = elements.getAdjacentElements(item.getIdName(), items)
 
-    return flask.render_template(
+    return Response(flask.render_template(
         "view_item.html", world=world, item=item, nitem=nitem, pitem=pitem
-    )
+    ))
 
 
 @bp.route("/view/worlds/<wid>/sites/<eid>", methods=["GET"])
 @login_required
-def view_site(wid, eid):
+def view_site(wid : elements.WorldID, 
+              eid : elements.ElemID) -> Response:
     """
     View a site
     """
     world = elements.loadWorld(get_db(), wid)
-    if world == None:
-        return "World not found", 400
+    if world is None:
+        return Response("World not found", 404)
     site = elements.loadSite(get_db(), eid)
-    if site == None:
-        return "Site not found", 400
+    if site is None:
+        return Response("Site not found", 404)
     sites = elements.listSites(get_db(), wid)
     (psite, nsite) = elements.getAdjacentElements(site.getIdName(), sites)
 
-    return flask.render_template(
+    return Response(flask.render_template(
         "view_site.html", world=world, site=site, psite=psite, nsite=nsite
-    )
+    ))
 
 
 @bp.route("/images/<iid>", methods=["GET"])
 @login_required
-def get_image(iid):
+def get_image(iid : elements.ElemID):
     """
     Return an image
     """
     image = elements.getImage(get_db(), iid)
     if image is None:
-        return "Image not found", 400
+        return Response("Image not found", 404)
 
     image_file = os.path.join(current_app.instance_path, image.filename)
     if not os.path.isfile(image_file):
-        return "Image file not found", 400
+        return Response("Image file not found", 404)
     return flask.send_file(image_file, mimetype="image/webp")
 
 
 @bp.route("/images/<iid>/thumb", methods=["GET"])
 @login_required
-def get_image_thumb(iid):
+def get_image_thumb(iid : elements.ElemID):
     """
     Return an image
     """
     image = elements.getImage(get_db(), iid)
     if image is None:
-        return "Image not found", 400
+        return "Image not found", 404
 
     image_file = os.path.join(current_app.instance_path, image.getThumbName())
     if not os.path.isfile(image_file):
-        return "Image file not found", 400
+        return "Image file not found", 404
     return flask.send_file(image_file, mimetype="image/webp")
 
 
-def get_session_id():
+def get_session_id() -> str:
     """
     Return an ID for the current session.
     Create one if needed.
@@ -724,7 +773,7 @@ def worlds_api(wid):
     """
     world = elements.loadWorld(get_db(), wid)
     if world == None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
 
     # Save last opened in session
     session["world_id"] = wid
@@ -773,7 +822,7 @@ def characters_list(wid):
     character_list = []
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
     characters = elements.listCharacters(get_db(), wid)
 
     for entry in characters:
@@ -806,7 +855,7 @@ def characters_inst_list(wid):
     session_id = get_session_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
     characters = elements.listCharacters(get_db(), wid)
@@ -837,7 +886,7 @@ def characters_api(wid, cid):
     """
     character = elements.loadCharacter(get_db(), cid)
     if character == None or character.parent_id != wid:
-        return {"error", "Character not found"}, 400
+        return {"error", "Character not found"}, 404
 
     images = getElementImageProps(character)
     result = character.getAllProperties()
@@ -855,7 +904,7 @@ def character_stats(wid, cid):
     session_id = get_session_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
 
@@ -875,7 +924,7 @@ def site_list_api(wid):
     session["world_id"] = wid
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
 
     site_list = []
     sites = elements.listSites(get_db(), wid)
@@ -906,7 +955,7 @@ def site_instances_list(wid):
     session["world_id"] = wid
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
 
     site_list = []
     session_id = get_session_id()
@@ -940,10 +989,10 @@ def site_api(wid, sid):
     """
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
     site = elements.loadSite(get_db(), sid)
     if site == None:
-        return {"error", "Site not found"}, 400
+        return {"error", "Site not found"}, 404
 
     images = getElementImageProps(site)
     result = site.getAllProperties()
@@ -961,12 +1010,12 @@ def site_instance(wid, sid):
     session_id = get_session_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
     site = elements.loadSite(get_db(), sid)
     if site == None:
-        return {"error", "Site not found"}, 400
+        return {"error", "Site not found"}, 404
 
     chat_char_id = wstate.getChatCharacter()
     images = getElementImageProps(site)
@@ -1023,7 +1072,7 @@ def items_list(wid):
     item_list = []
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
     items = elements.listItems(get_db(), wid)
 
     for entry in items:
@@ -1056,7 +1105,7 @@ def items_intances_list(wid):
     session_id = get_session_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
     items = elements.listItems(get_db(), wid)
@@ -1087,7 +1136,7 @@ def item_api(wid, iid):
     """
     item = elements.loadItem(get_db(), iid)
     if item == None or item.parent_id != wid:
-        return {"error", "Item not found"}, 400
+        return {"error", "Item not found"}, 404
 
     images = getElementImageProps(item)
     result = item.getAllProperties()
@@ -1113,7 +1162,7 @@ def item_instance(wid, iid):
     session_id = get_session_id()
     item = elements.loadItem(get_db(), iid)
     if item == None or item.parent_id != wid:
-        return {"error", "Item not found"}, 400
+        return {"error", "Item not found"}, 404
 
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
@@ -1143,7 +1192,7 @@ def command_api(wid):
     session_id = get_session_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
 
@@ -1169,7 +1218,7 @@ def player(wid):
     session_id = get_session_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
 
@@ -1237,7 +1286,7 @@ def action_api(wid, cid):
     session_id = get_session_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return {"error", "World not found"}, 400
+        return {"error", "World not found"}, 404
 
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
