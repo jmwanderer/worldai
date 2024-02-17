@@ -3,6 +3,8 @@ Plans
 - add show document to UI
 - add some command to read an existing document
 - add utility to reset a specific instance of a world
+- characters send messages to other characters
+- fix use of ListMyItems
 
 - add player stats to character chat screen
 
