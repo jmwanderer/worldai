@@ -66,11 +66,11 @@ class BasicTestCase(unittest.TestCase):
         elements.deleteImage(self.db, self.user_dir.name, image.getID())
 
     def testBasic(self):
-        self.assertEqual(elements.ElementType.WorldType(), "World")
-        self.assertEqual(elements.ElementType.CharacterType(), "Character")
-        self.assertEqual(elements.ElementType.ItemType(), "Item")
-        self.assertEqual(elements.ElementType.SiteType(), "Site")
-        self.assertEqual(elements.ElementType.DocumentType(), "Document")
+        self.assertEqual(elements.ElementTypes.WorldType(), "World")
+        self.assertEqual(elements.ElementTypes.CharacterType(), "Character")
+        self.assertEqual(elements.ElementTypes.ItemType(), "Item")
+        self.assertEqual(elements.ElementTypes.SiteType(), "Site")
+        self.assertEqual(elements.ElementTypes.DocumentType(), "Document")
 
     def testCRU(self):
         # Create world
@@ -90,7 +90,7 @@ class BasicTestCase(unittest.TestCase):
         tag = elements.getElemTag(self.db, world.getID())
         self.assertEqual(tag.getID(), world.getID())
         self.assertEqual(tag.getWorldID(), world.getID())
-        self.assertEqual(tag.getType(), elements.ElementType.WorldType())
+        self.assertEqual(tag.getType(), elements.ElementTypes.WorldType())
 
         # Create world
         world = elements.World()
@@ -161,7 +161,7 @@ class BasicTestCase(unittest.TestCase):
         tag = elements.getElemTag(self.db, character.getID())
         self.assertEqual(tag.getID(), character.getID())
         self.assertEqual(tag.getWorldID(), world1.getID())
-        self.assertEqual(tag.getType(), elements.ElementType.CharacterType())
+        self.assertEqual(tag.getType(), elements.ElementTypes.CharacterType())
 
         # Create character
         character = elements.Character(world1.getID())

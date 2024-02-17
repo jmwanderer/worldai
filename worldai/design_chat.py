@@ -64,7 +64,7 @@ class DesignChatSession:
             logging.info("next view: %s", next_view.jsonStr())
 
             # Handle when next view is world list.
-            if next_view.getType() == elements.ElementType.NoneType():
+            if next_view.getType() == elements.ElementTypes.NoneType():
                 self.chatFunctions.current_state = design_functions.STATE_WORLDS
                 self.chatFunctions.clearCurrentView()
                 return
@@ -83,7 +83,7 @@ class DesignChatSession:
                     )
 
             # Handle when next view is world.
-            if next_view.getType() == elements.ElementType.WorldType():
+            if next_view.getType() == elements.ElementTypes.WorldType():
                 new_state = design_functions.elemTypeToState(next_view.getType())
                 logging.info("world view, change state to: %s", new_state)
                 self.chatFunctions.current_state = new_state
@@ -96,19 +96,19 @@ class DesignChatSession:
             # Handle if the next view is a new item, character, or site
             if next_view.getID() != current_view.getID():
                 tool_choice = None
-                if next_view.getType() == elements.ElementType.CharacterType():
+                if next_view.getType() == elements.ElementTypes.CharacterType():
                     character = elements.loadCharacter(db, next_view.getID())
                     logging.info("Show character '%s'", character.getName())
                     tool_choice = "ShowCharacter"
                     system = f"Character is '{character.getName()}'"
 
-                elif next_view.getType() == elements.ElementType.ItemType():
+                elif next_view.getType() == elements.ElementTypes.ItemType():
                     item = elements.loadItem(db, next_view.getID())
                     logging.info("Show item '%s'", item.getName())
                     tool_choice = "ShowItem"
                     system = f"Item is '{item.getName()}'"
 
-                elif next_view.getType() == elements.ElementType.SiteType():
+                elif next_view.getType() == elements.ElementTypes.SiteType():
                     site = elements.loadSite(db, next_view.getID())
                     logging.info("Show site '%s'", site.getName())
                     tool_choice = "ShowSite"

@@ -21,15 +21,15 @@ STATE_SITES = "State_Sites"
 
 
 def elemTypeToState(element_type):
-    if element_type == elements.ElementType.WorldType():
+    if element_type == elements.ElementTypes.WorldType():
         return STATE_WORLD
-    if element_type == elements.ElementType.DocumentType():
+    if element_type == elements.ElementTypes.DocumentType():
         return STATE_DOCUMENTS
-    if element_type == elements.ElementType.CharacterType():
+    if element_type == elements.ElementTypes.CharacterType():
         return STATE_CHARACTERS
-    if element_type == elements.ElementType.ItemType():
+    if element_type == elements.ElementTypes.ItemType():
         return STATE_ITEMS
-    if element_type == elements.ElementType.SiteType():
+    if element_type == elements.ElementTypes.SiteType():
         return STATE_SITES
     return STATE_WORLDS
 
@@ -319,15 +319,15 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         return self.current_view.getType()
 
     def getCurrentElementName(self, db):
-        if self.getCurrentViewType() == elements.ElementType.CharacterType():
+        if self.getCurrentViewType() == elements.ElementTypes.CharacterType():
             character = elements.loadCharacter(db, self.current_view.getID())
             return character.getName()
 
-        if self.getCurrentViewType() == elements.ElementType.SiteType():
+        if self.getCurrentViewType() == elements.ElementTypes.SiteType():
             site = elements.loadSite(db, self.current_view.getID())
             return site.getName()
 
-        if self.getCurrentViewType() == elements.ElementType.ItemType():
+        if self.getCurrentViewType() == elements.ElementTypes.ItemType():
             item = elements.loadItem(db, self.current_view.getID())
             return item.getName()
         return ""
@@ -343,15 +343,15 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
     def get_state_instructions(self, db):
         element = ""
-        if self.getCurrentViewType() == elements.ElementType.CharacterType():
+        if self.getCurrentViewType() == elements.ElementTypes.CharacterType():
             element = (
                 f"We are looking at the character '{self.getCurrentElementName(db)}'"
             )
-        elif self.getCurrentViewType() == elements.ElementType.ItemType():
+        elif self.getCurrentViewType() == elements.ElementTypes.ItemType():
             element = f"We are looking at the item '{self.getCurrentElementName(db)}'"
-        elif self.getCurrentViewType() == elements.ElementType.SiteType():
+        elif self.getCurrentViewType() == elements.ElementTypes.SiteType():
             element = f"We are looking at the site '{self.getCurrentElementName(db)}'"
-        elif self.getCurrentViewType() == elements.ElementType.DocumentType():
+        elif self.getCurrentViewType() == elements.ElementTypes.DocumentType():
             element = (
                 f"We are looking at the document '{self.getCurrentElementName(db)}'"
             )

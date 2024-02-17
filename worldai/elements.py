@@ -16,16 +16,10 @@ import pydantic
 # Types for IDs
 ElemID = typing.NewType('ElemID', str)
 WorldID = typing.NewType('WorldID', ElemID)
-ElemTypeStr = typing.NewType('ElemTypeStr', str)
-
-elemTypeNames = ["None", "World", "Character", "Site", "Item", "Document"]
 
 
 class ElementType(int, enum.Enum):
-    """
-    Types of elements in a world.
-    """
-
+    # Used for storage into DB
     NONE = 0
     WORLD = 1
     CHARACTER = 2
@@ -33,33 +27,55 @@ class ElementType(int, enum.Enum):
     ITEM = 4
     DOCUMENT = 5
 
+class ElementTypeStr(str, enum.Enum):
+    """
+    Types of elements in a world.
+    """
+    NONE = "None"
+    WORLD = "World"
+    CHARACTER = "Character"
+    SITE = "Site"
+    ITEM = "Item"
+    DOCUMENT = "Document"
+
+class ElementTypes:
     @staticmethod
-    def _typeToName(element_type) -> ElemTypeStr:
-        return elemTypeNames[element_type]
+    def _typeToName(element_type: ElementType) -> ElementTypeStr:
+        if element_type == ElementType.WORLD:
+            return ElementTypeStr.WORLD
+        if element_type == ElementType.CHARACTER:
+            return ElementTypeStr.CHARACTER
+        if element_type == ElementType.SITE:
+            return ElementTypeStr.SITE
+        if element_type == ElementType.ITEM:
+            return ElementTypeStr.ITEM
+        if element_type == ElementType.DOCUMENT:
+            return ElementTypeStr.DOCUMENT
+        return ElementTypeStr.NONE
 
     @staticmethod
-    def NoneType() -> ElemTypeStr:
-        return ElementType._typeToName(ElementType.NONE)
+    def NoneType() -> ElementTypeStr:
+        return ElementTypes._typeToName(ElementType.NONE)
 
     @staticmethod
-    def WorldType() -> ElemTypeStr:
-        return ElementType._typeToName(ElementType.WORLD)
+    def WorldType() -> ElementTypeStr:
+        return ElementTypes._typeToName(ElementType.WORLD)
 
     @staticmethod
-    def DocumentType() -> ElemTypeStr:
-        return ElementType._typeToName(ElementType.DOCUMENT)
+    def DocumentType() -> ElementTypeStr:
+        return ElementTypes._typeToName(ElementType.DOCUMENT)
 
     @staticmethod
-    def CharacterType() -> ElemTypeStr:
-        return ElementType._typeToName(ElementType.CHARACTER)
+    def CharacterType() -> ElementTypeStr:
+        return ElementTypes._typeToName(ElementType.CHARACTER)
 
     @staticmethod
-    def SiteType() -> ElemTypeStr:
-        return ElementType._typeToName(ElementType.SITE)
+    def SiteType() -> ElementTypeStr:
+        return ElementTypes._typeToName(ElementType.SITE)
 
     @staticmethod
-    def ItemType() -> ElemTypeStr:
-        return ElementType._typeToName(ElementType.ITEM)
+    def ItemType() -> ElementTypeStr:
+        return ElementTypes._typeToName(ElementType.ITEM)
 
 
 class CoreProps(str, enum.Enum):
@@ -152,9 +168,9 @@ class ElemTag:
     """
 
     def __init__(self, 
-                 wid: WorldID | None = None, 
-                 eid: ElemID | None = None, 
-                 element_type : ElementType = ElementType.NONE):
+                 wid: WorldID = WorldID(ElemID("")), 
+                 eid: ElemID = ElemID(""), 
+                 element_type : ElementTypeStr = ElementTypeStr.NONE):
         self.world_id = wid
         self.eid = eid
         self.element_type = element_type
@@ -174,7 +190,7 @@ class ElemTag:
     def getWorldID(self) -> WorldID:
         return self.world_id
 
-    def getType(self) -> ElemTypeStr:
+    def getType(self) -> ElementTypeStr:
         """
         Return the type as a string
         """
@@ -199,7 +215,7 @@ class ElemTag:
 
     @staticmethod
     def WorldTag(world_id):
-        return ElemTag(world_id, world_id, ElementType.WorldType())
+        return ElemTag(world_id, world_id, ElementTypes.WorldType())
 
     @staticmethod
     def JsonTag(tag):
@@ -233,7 +249,7 @@ class Element:
 
     def getElemTag(self):
         wid = self.parent_id if self.type != ElementType.WORLD else self.eid
-        return ElemTag(wid, self.eid, ElementType._typeToName(self.type))
+        return ElemTag(wid, self.eid, ElementTypes._typeToName(self.type))
 
     def _fixProperties(self, properties):
         """
@@ -795,7 +811,7 @@ def getElemTag(db, eid):
     etype = r[1]
     if etype == ElementType.WORLD:
         wid = eid
-    return ElemTag(wid, eid, ElementType._typeToName(etype))
+    return ElemTag(wid, eid, ElementTypes._typeToName(etype))
 
 
 def idNameToElemTag(db, idName):
