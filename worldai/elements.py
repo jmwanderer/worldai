@@ -16,6 +16,8 @@ import pydantic
 # Types for IDs
 ElemID = typing.NewType('ElemID', str)
 WorldID = typing.NewType('WorldID', ElemID)
+ELEM_ID_NONE = ElemID("")
+WORLD_ID_NONE = WorldID(ELEM_ID_NONE)
 
 
 class ElementType(int, enum.Enum):
@@ -84,24 +86,24 @@ class CoreProps(str, enum.Enum):
     PROP_NAME = "name"
 
 
-class WorldProps(pydantic.BaseModel):
-    description: typing.Optional[str] = ""
-    details: typing.Optional[str] = ""
+class BaseProps(pydantic.BaseModel):
+    description: str = ""
+    details: str = ""
+
+class WorldProps(BaseProps):
     plans: typing.Optional[str] = ""
 
 
 class DocSection(pydantic.BaseModel):
-    heading: typing.Optional[str] = ""
-    text: typing.Optional[str] = ""
+    heading: str = ""
+    text: str = ""
 
 
-class DocProps(pydantic.BaseModel):
+class DocProps(BaseProps):
     sections: typing.List[DocSection] = []
 
 
-class CharacterProps(pydantic.BaseModel):
-    description: typing.Optional[str] = ""
-    details: typing.Optional[str] = ""
+class CharacterProps(BaseProps):
     personality: typing.Optional[str] = ""
 
 
@@ -124,18 +126,13 @@ class ItemAbility(pydantic.BaseModel):
     effect: typing.Optional[ItemEffect] = ItemEffect.NONE
     site_id: typing.Optional[str] = ""
 
-
-class ItemProps(pydantic.BaseModel):
-    description: typing.Optional[str] = ""
-    details: typing.Optional[str] = ""
-    mobile: typing.Optional[bool] = True
-    ability: typing.Optional[ItemAbility] = ItemAbility()
+class ItemProps(BaseProps):
+    mobile: bool = True
+    ability: ItemAbility = ItemAbility()
 
 
-class SiteProps(pydantic.BaseModel):
-    description: typing.Optional[str] = ""
-    details: typing.Optional[str] = ""
-    default_open: typing.Optional[bool] = True
+class SiteProps(BaseProps):
+    default_open: bool = True
 
 
 class IdName:
@@ -168,8 +165,8 @@ class ElemTag:
     """
 
     def __init__(self, 
-                 wid: WorldID = WorldID(ElemID("")), 
-                 eid: ElemID = ElemID(""), 
+                 wid: WorldID = WORLD_ID_NONE,
+                 eid: ElemID = ELEM_ID_NONE,
                  element_type : ElementTypeStr = ElementTypeStr.NONE):
         self.world_id = wid
         self.eid = eid
@@ -229,44 +226,44 @@ class Element:
     Represents an element building block of a world
     """
 
-    def __init__(self, element_type, parent_id):
-        self.eid = None
+    def __init__(self, element_type: ElementType, parent_id: WorldID):
+        self.eid = ELEM_ID_NONE
         self.type = element_type
         self.parent_id = parent_id
-        self.name = None
-        self.prop_model = None
-        self.images = []  # List of image ids
+        self.name = ""
+        self.prop_model = BaseProps()
+        self.images :list[ElemID] = []  # List of image ids
         self._setProperties({})
 
-    def getID(self):
+    def getID(self) -> ElemID:
         return self.eid
 
-    def hasImage(self):
+    def hasImage(self) -> bool:
         return len(self.images) > 0
 
-    def getIdName(self):
+    def getIdName(self) -> IdName:
         return IdName(self.eid, self.name)
 
-    def getElemTag(self):
-        wid = self.parent_id if self.type != ElementType.WORLD else self.eid
+    def getElemTag(self) -> ElemTag:
+        wid = self.parent_id if self.type != ElementType.WORLD else WorldID(self.eid)
         return ElemTag(wid, self.eid, ElementTypes._typeToName(self.type))
 
-    def _fixProperties(self, properties):
+    def _fixProperties(self, properties: dict) -> dict:
         """
         Update any properties that need to change for backwards compatibility
         and migration
         """
         return properties
 
-    def _setProperties(self, properties):
+    def _setProperties(self, properties: dict):
         """
         Set the set of encode properties.
         Override in derived classes
         """
         # Never used
-        self.prop_model = {**properties}
+        self.prop_model = BaseProps(**properties)        
 
-    def updateProperties(self, properties):
+    def updateProperties(self, properties: dict):
         """
         Change properties, including name, that are included.
         Do not remove properties.
@@ -279,26 +276,26 @@ class Element:
             new_props[key] = properties[key]
         self._setProperties(new_props)
 
-    def _getProperties(self):
+    def _getProperties(self) -> dict:
         """
         Return dictonary of encoded properties
         """
         return self.prop_model.model_dump()
 
-    def setPropertiesStr(self, properties):
+    def setPropertiesStr(self, properties: str):
         """
         Take an encoded json string of property values.
         """
-        properties = self._fixProperties(json.loads(properties))
-        self._setProperties(properties)
+        props = self._fixProperties(json.loads(properties))
+        self._setProperties(props)
 
-    def getPropertiesStr(self):
+    def getPropertiesStr(self) -> str:
         """
         Return an encoded json string of property values.
         """
         return json.dumps(self._getProperties())
 
-    def getAllProperties(self):
+    def getAllProperties(self) -> dict:
         """
         Return a map of properties including id and name,
         excluse internals of type and parent id.
@@ -309,34 +306,34 @@ class Element:
             **self._getProperties(),
         }
 
-    def getName(self):
+    def getName(self) -> str:
         return self.name
 
-    def setName(self, name):
+    def setName(self, name: str):
         self.name = name
 
-    def getDescription(self):
+    def getDescription(self) -> str:
         if hasattr(self.prop_model, "description"):
             return self.prop_model.description
         return ""
 
-    def setDescription(self, value):
+    def setDescription(self, value: str):
         if hasattr(self.prop_model, "description"):
             self.prop_model.description = value
 
-    def getDetails(self):
+    def getDetails(self) -> str:
         if hasattr(self.prop_model, "details"):
             return self.prop_model.details
         return ""
 
-    def getDetailsHTML(self):
+    def getDetailsHTML(self) -> str:
         return textToHTML(self.getDetails())
 
-    def setDetails(self, value):
+    def setDetails(self, value: str):
         if hasattr(self.prop_model, "details"):
             self.prop_model.details = value
 
-    def getInfoText(self):
+    def getInfoText(self) -> list[tuple[int, str]]:
         content = self.getName()
         if self.getDescription() is not None:
             content = content + ": " + self.getDescription()
@@ -344,11 +341,11 @@ class Element:
             content = content + "\n" + self.getDetails()
         return [(0, content)]
 
-    def getImages(self):
+    def getImages(self) -> list[ElemID]:
         # Return a list of image ids
         return self.images
 
-    def getImageByIndex(self, index):
+    def getImageByIndex(self, index: int) -> ElemID | None:
         if len(self.images) == 0:
             return None
 
@@ -363,7 +360,7 @@ class Element:
         )
 
 
-def textToHTML(text):
+def textToHTML(text: str) -> str:
     if text is None:
         return None
     return text.replace("\n\n", "<p>").replace("\n", "<br>")
@@ -375,29 +372,30 @@ class World(Element):
     """
 
     def __init__(self):
-        super().__init__(ElementType.WORLD, "")
+        super().__init__(ElementType.WORLD, WORLD_ID_NONE)
+        self.prop_model : WorldProps = WorldProps()
 
-    def _setProperties(self, properties):
+    def _setProperties(self, properties: dict):
         """
         Set the set of encode properties.
         Override base class
         """
         self.prop_model = WorldProps(**properties)
 
-    def _fixProperties(self, properties):
+    def _fixProperties(self, properties: dict) -> dict:
         if properties.get("notes") is not None:
             del properties["notes"]
         return properties
 
-    def getPlans(self):
+    def getPlans(self) -> str:
         if self.prop_model.plans is None:
             return ""
         return self.prop_model.plans
 
-    def getPlansHTML(self):
+    def getPlansHTML(self) -> str:
         return textToHTML(self.getPlans())
 
-    def setPlans(self, value):
+    def setPlans(self, value: str):
         self.prop_model.plans = value
 
 
@@ -406,24 +404,25 @@ class Document(Element):
     Represents a document associated with a world
     """
 
-    def __init__(self, parent_id=""):
+    def __init__(self, parent_id : WorldID = WORLD_ID_NONE):
         super().__init__(ElementType.DOCUMENT, parent_id)
+        self.prop_model : DocProps = DocProps()
 
-    def _setProperties(self, properties):
+    def _setProperties(self, properties: dict):
         """
         Set the set of encode properties.
         Override base class
         """
         self.prop_model = DocProps(**properties)
 
-    def _fixProperties(self, properties):
+    def _fixProperties(self, properties: dict) -> dict:
         if properties.get("abstact") is not None:
             del properties["abstract"]
         if properties.get("outline") is not None:
             del properties["outline"]
         return properties
 
-    def getSectionList(self):
+    def getSectionList(self) -> list[str]:
         return [x.heading for x in self.prop_model.sections]
 
     def addSection(self, heading: str, text: str):
@@ -449,14 +448,16 @@ class Document(Element):
                 section.heading = new_heading
                 break
 
-    def getInfoText(self):
+    def getInfoText(self) -> list[tuple[int, str]]:
         """
         Return entries of (index, text)
         """
         count = 0
+        result = []
         for section in self.prop_model.sections:
             count += 1
-            yield ((count, section.heading + " : " + section.text))
+            result.append((count, section.heading + " : " + section.text))
+        return result
 
 
 class Character(Element):
@@ -464,25 +465,26 @@ class Character(Element):
     Represents an instance of a Character.
     """
 
-    def __init__(self, parent_id=""):
+    def __init__(self, parent_id : WorldID = WORLD_ID_NONE):
         super().__init__(ElementType.CHARACTER, parent_id)
+        self.prop_model : CharacterProps = CharacterProps()
 
-    def _setProperties(self, properties):
+    def _setProperties(self, properties: dict):
         """
         Set the set of encode properties.
         Override base class
         """
         self.prop_model = CharacterProps(**properties)
 
-    def getPersonality(self):
+    def getPersonality(self) -> str:
         if self.prop_model.personality is None:
             return ""
         return self.prop_model.personality
 
-    def getPersonalityHTML(self):
+    def getPersonalityHTML(self) -> str:
         return textToHTML(self.getPersonality())
 
-    def setPersonality(self, value):
+    def setPersonality(self, value: str):
         self.prop_model.personality = value
 
 
@@ -491,26 +493,27 @@ class Site(Element):
     Represents an instance of a Site
     """
 
-    def __init__(self, parent_id=""):
+    def __init__(self, parent_id : WorldID = WORLD_ID_NONE):
         super().__init__(ElementType.SITE, parent_id)
+        self.prop_model : SiteProps = SiteProps()
 
-    def _fixProperties(self, properties):
+    def _fixProperties(self, properties : dict) -> dict:
         if properties.get("locked") is not None:
             properties["default_open"] = not properties["locked"]
             del properties["locked"]
         return properties
 
-    def _setProperties(self, properties):
+    def _setProperties(self, properties : dict):
         """
         Set the set of encode properties.
         Override base class
         """
         self.prop_model = SiteProps(**properties)
 
-    def getDefaultOpen(self):
+    def getDefaultOpen(self) -> bool:
         return self.prop_model.default_open
 
-    def setDefaultOpen(self, value):
+    def setDefaultOpen(self, value : bool):
         self.prop_model.default_open = value
 
 
@@ -519,10 +522,11 @@ class Item(Element):
     Represents an instance of an Item
     """
 
-    def __init__(self, parent_id=""):
+    def __init__(self, parent_id : WorldID = WORLD_ID_NONE):
         super().__init__(ElementType.ITEM, parent_id)
+        self.prop_model : ItemProps = ItemProps()
 
-    def _fixProperties(self, properties):
+    def _fixProperties(self, properties: dict) -> dict:
         if properties.get("ability") is not None:
             if properties["ability"].get("effect") is not None:
                 if properties["ability"]["effect"] == "unlock":
@@ -531,29 +535,29 @@ class Item(Element):
                     properties["ability"]["effect"] = "none"
         return properties
 
-    def _setProperties(self, properties):
+    def _setProperties(self, properties : dict):
         """
         Set the set of encode properties.
         Override base class
         """
         self.prop_model = ItemProps(**properties)
 
-    def getIsMobile(self):
+    def getIsMobile(self) -> bool:
         return self.prop_model.mobile
 
-    def setIsMobile(self, value):
+    def setIsMobile(self, value: bool):
         self.prop_model.mobile = value
 
-    def getAbility(self):
+    def getAbility(self) -> ItemAbility:
         return self.prop_model.ability
 
-    def setAbility(self, ability):
+    def setAbility(self, ability: ItemAbility):
         self.prop_model.ability = ability
 
 
 class ElementStore:
     @staticmethod
-    def loadElement(db, eid, element):
+    def loadElement(db, eid : ElemID, element : Element):
         """
         Return an element insance
         """
@@ -580,7 +584,7 @@ class ElementStore:
         return element
 
     @staticmethod
-    def findElement(db, pid, name, element):
+    def findElement(db, pid : WorldID, name : str, element : Element):
         """
         Return an element id
         """
@@ -597,7 +601,7 @@ class ElementStore:
         return ElementStore.loadElement(db, r[0], element)
 
     @staticmethod
-    def updateElement(db, element):
+    def updateElement(db, element : Element):
         db.execute(
             "UPDATE elements SET  name = ?, properties = ? "
             + "WHERE id = ? and type = ?",
@@ -606,11 +610,11 @@ class ElementStore:
         db.commit()
 
     @staticmethod        
-    def createElement(db, element):
+    def createElement(db, element : Element) -> ElemID:
         """
         Return an element insance
         """
-        element.eid = "id%s" % os.urandom(4).hex()
+        element.eid = ElemID("id%s" % os.urandom(4).hex())
         db.execute(
             "INSERT INTO elements (id, type, parent_id, name, "
             + " properties) VALUES (?, ?, ?, ?, ?)",
@@ -623,10 +627,11 @@ class ElementStore:
             ),
         )
         db.commit()
-        return element
+        return element.eid
 
     @staticmethod
-    def getElements(db, element_type, parent_id):
+    def getElements(db, element_type : ElementType, 
+                    parent_id : WorldID) -> list[IdName]:
         """
         Return a list of elements: eid and name
         """
@@ -642,7 +647,7 @@ class ElementStore:
         return result
 
     @staticmethod
-    def hideElement(db, element, wid, name):
+    def hideElement(db, element : Element, wid : WorldID, name : str):
         instance = ElementStore.findElement(db, wid, name, element)
         if instance is not None:
             c = db.cursor()
@@ -655,7 +660,7 @@ class ElementStore:
         return 0
 
     @staticmethod
-    def recoverElements(db, element_type, parent_id):
+    def recoverElements(db, element_type : ElementType, parent_id : WorldID):
         c = db.cursor()
         c.execute(
             "UPDATE elements SET is_hidden = FALSE WHERE "
@@ -820,14 +825,14 @@ def idNameToElemTag(db, idName):
     return getElemTag(db, idName.getID())
 
 
-def listWorlds(db):
+def listWorlds(db) -> list[IdName]:
     """
     Return a list of worlds.
     """
-    return ElementStore.getElements(db, ElementType.WORLD, "")
+    return ElementStore.getElements(db, ElementType.WORLD, WORLD_ID_NONE)
 
 
-def loadWorld(db, eid: str) -> Optional[World]:
+def loadWorld(db, eid: ElemID) -> Optional[World]:
     """
     Return a world instance
     """
@@ -854,7 +859,9 @@ def createWorld(db, world: World) -> World:
     """
     Return a world instance
     """
-    return ElementStore.createElement(db, world)
+    world.eid = ElementStore.createElement(db, world)
+    return world
+
 
 
 def updateWorld(db, world: World):
@@ -865,10 +872,11 @@ def createDocument(db, document: Document) -> Document:
     """
     Return a document instance
     """
-    return ElementStore.createElement(db, document)
+    document.eid = ElementStore.createElement(db, document)
+    return document
 
 
-def listDocuments(db, world_id: str):
+def listDocuments(db, world_id: WorldID) -> list[IdName]:
     return ElementStore.getElements(db, ElementType.DOCUMENT, world_id)
 
 
@@ -876,7 +884,7 @@ def loadDocument(db, eid) -> Optional[Document]:
     return ElementStore.loadElement(db, eid, Document())
 
 
-def findDocument(db, wid: str, name: str) -> Optional[Document]:
+def findDocument(db, wid: WorldID, name: str) -> Optional[Document]:
     return ElementStore.findElement(db, wid, name, Document())
 
 
@@ -884,21 +892,21 @@ def updateDocument(db, document: Document):
     ElementStore.updateElement(db, document)
 
 
-def listCharacters(db, world_id):
+def listCharacters(db, world_id : WorldID) -> list[IdName]:
     """
     Return a list of characters.
     """
     return ElementStore.getElements(db, ElementType.CHARACTER, world_id)
 
 
-def loadCharacter(db, eid: str) -> Optional[Character]:
+def loadCharacter(db, eid: ElemID) -> Optional[Character]:
     """
     Return a character instance
     """
     return ElementStore.loadElement(db, eid, Character())
 
 
-def findCharacter(db, wid: str, name: str) -> Optional[Character]:
+def findCharacter(db, wid: WorldID, name: str) -> Optional[Character]:
     """
     Return a character instance by name
     """
@@ -909,37 +917,38 @@ def createCharacter(db, character: Character) -> Character:
     """
     Return a character instance
     """
-    return ElementStore.createElement(db, character)
+    character.eid = ElementStore.createElement(db, character)
+    return character
 
 
 def updateCharacter(db, character: Character):
     ElementStore.updateElement(db, character)
 
 
-def hideCharacter(db, wid: str, name: str) -> int:
+def hideCharacter(db, wid: WorldID, name: str) -> int:
     count = ElementStore.hideElement(db, Character(), wid, name)
     return count == 1
 
 
-def recoverCharacters(db, world_id: str) -> int:
+def recoverCharacters(db, world_id: WorldID) -> int:
     return ElementStore.recoverElements(db, ElementType.CHARACTER, world_id)
 
 
-def listSites(db, world_id):
+def listSites(db, world_id: WorldID) -> list[IdName]:
     """
     Return a list of sites.
     """
     return ElementStore.getElements(db, ElementType.SITE, world_id)
 
 
-def loadSite(db, eid: str) -> Optional[Site]:
+def loadSite(db, eid: ElemID) -> Optional[Site]:
     """
     Return a site instance
     """
     return ElementStore.loadElement(db, eid, Site())
 
 
-def findSite(db, pid: str, name: str) -> Optional[Site]:
+def findSite(db, pid: WorldID, name: str) -> Optional[Site]:
     """
     Return a site instance by name
     """
@@ -950,37 +959,38 @@ def createSite(db, site: Site) -> Site:
     """
     Return a site instance
     """
-    return ElementStore.createElement(db, site)
+    site.eid = ElementStore.createElement(db, site)
+    return site
 
 
 def updateSite(db, site: Site):
     ElementStore.updateElement(db, site)
 
 
-def hideSite(db, wid: str, name: str) -> int:
+def hideSite(db, wid: WorldID, name: str) -> int:
     count = ElementStore.hideElement(db, Site(), wid, name)
     return count == 1
 
 
-def recoverSites(db, world_id: str) -> int:
+def recoverSites(db, world_id: WorldID) -> int:
     return ElementStore.recoverElements(db, ElementType.SITE, world_id)
 
 
-def listItems(db, world_id):
+def listItems(db, world_id : WorldID) -> list[IdName]:
     """
     Return a list of sites.
     """
     return ElementStore.getElements(db, ElementType.ITEM, world_id)
 
 
-def loadItem(db, eid: str) -> Optional[Item]:
+def loadItem(db, eid: ElemID) -> Optional[Item]:
     """
     Return an item instance
     """
     return ElementStore.loadElement(db, eid, Item())
 
 
-def findItem(db, pid: str, name: str) -> Optional[Item]:
+def findItem(db, pid: WorldID, name: str) -> Optional[Item]:
     """
     Return an item instance by name
     """
@@ -991,7 +1001,8 @@ def createItem(db, item: Item) -> Item:
     """
     Return an Item instance
     """
-    return ElementStore.createElement(db, item)
+    item.eid = ElementStore.createElement(db, item)
+    return item
 
 
 def updateItem(db, item: Item):
@@ -999,16 +1010,16 @@ def updateItem(db, item: Item):
     ElementStore.updateElement(db, item)
 
 
-def hideItem(db, wid: str, name: str) -> int:
+def hideItem(db, wid: WorldID, name: str) -> int:
     count = ElementStore.hideElement(db, Item(), wid, name)
     return count == 1
 
 
-def recoverItems(db, world_id: str) -> int:
+def recoverItems(db, world_id: WorldID) -> int:
     return ElementStore.recoverElements(db, ElementType.ITEM, world_id)
 
 
-def deleteImage(db, data_dir, image_id):
+def deleteImage(db, data_dir: str, image_id: ElemID):
     image = getImage(db, image_id)
 
     db.execute("DELETE FROM images WHERE id = ?", (image_id,))
@@ -1019,8 +1030,11 @@ def deleteImage(db, data_dir, image_id):
     logging.info("delete file: %s", path)
 
 
-def deleteCharacter(db, data_dir, eid):
+def deleteCharacter(db, data_dir: str, eid : ElemID):
     character = loadCharacter(db, eid)
+    if character is None:
+        return
+    
     logging.info("delete character: [%s] %s", character.eid, character.getName())
     images = listImages(db, eid, include_hidden=True)
 
@@ -1033,12 +1047,16 @@ def deleteCharacter(db, data_dir, eid):
     db.commit()
 
 
-def deleteWorld(db, data_dir, world_id):
+def deleteWorld(db, data_dir : str, world_id : WorldID):
     world = loadWorld(db, world_id)
+    if world is None:
+        return
+    
     logging.info("delete world: [%s] %s", world.eid, world.getName())
-    characters = listCharacters(db, world.eid)
+    characters = listCharacters(db, world_id)
     for entry in characters:
         deleteCharacter(db, data_dir, entry.getID())
+    # TODO: Delete items, sites, docs
 
     images = listImages(db, world.eid, include_hidden=True)
     for image in images:
@@ -1050,7 +1068,7 @@ def deleteWorld(db, data_dir, world_id):
     db.commit()
 
 
-def getAdjacentElements(id_name, id_name_list):
+def getAdjacentElements(id_name : IdName, id_name_list: list[IdName]):
     """
     Return (prev, next) IdName entries for the given IdName in the list
     """
