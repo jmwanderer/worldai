@@ -149,8 +149,9 @@ class DesignTestCase(unittest.TestCase):
         self.callFunction("AddDocumentSection", args)
 
         args = """{ "name": "World History" }"""
-        results = self.callFunction("ListDocumentSections", args)
-        self.assertEqual(len(results), 3)
+        results = self.callFunction("ShowDocument", args)
+        self.assertEqual(len(results), 2)
+        self.assertEqual(len(results["headings"]), 3)
 
         args = """{ "name": "World History",
               "heading": "Introduction",
