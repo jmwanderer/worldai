@@ -115,6 +115,12 @@ class DesignChatSession:
                     tool_choice = "ShowSite"
                     system = f"Site is '{site.getName()}'"
 
+                elif next_view.getType() == elements.ElementTypes.DocumentType():
+                    document = elements.loadDocument(db, next_view.getID())
+                    logging.info("Show document '%s'", document.getName())
+                    tool_choice = "ShowDocument"
+                    system = f"Document is '{document.getName()}'"                    
+
                 self.chatFunctions.current_state = new_state
                 if tool_choice is not None:
                     self.chat.chat_exchange(

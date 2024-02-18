@@ -63,7 +63,9 @@ function Site({ tag, setChatView }) {
               <ElementImages element={site}/>
               <Container >
                 <h2>{site.name}</h2>
-                <h5>{site.description}</h5>
+                <Markdown>
+                  {site.description}
+                </Markdown>
                 <br></br>
                 Default Open: {site.default_open? "Yes" : "No" }
               </Container>
@@ -82,6 +84,7 @@ function Document({ tag, setChatView }) {
     let ignore = false;
     async function getData() {
       try {
+        console.log("load doc: " + tag.id);
         const doc = await getDocument(tag.wid, tag.id)
         if (!ignore) {
           setDocument(doc)
@@ -170,7 +173,9 @@ function Item({ tag, setChatView }) {
       <ElementImages element={item}/>
       <Container >
         <h2>{item.name}</h2>
-        <h5>{item.description}</h5>
+        <Markdown>
+          {item.description}
+        </Markdown>
         <br></br>
         Mobile: {item.mobile ? "Yes" : "No" }
         <br></br>
@@ -180,7 +185,9 @@ function Item({ tag, setChatView }) {
       </Container>
     </Stack>
     <h2>Details:</h2>
-    { item.details }
+    <Markdown>
+      { item.details }
+    </Markdown>
   </Stack>);
 }
 
@@ -225,14 +232,19 @@ function Character({ tag, setChatView }) {
               <ElementImages element={character}/>
               <Container >
                 <h2>{character.name}</h2>
-                <h5>{character.description}</h5>
+                <Markdown>
+                  {character.description}
+                </Markdown>
               </Container>
             </Stack>
             <h2>Details:</h2>
-            { character.details }
-
+            <Markdown>
+              { character.details }
+            </Markdown>
             <h2>Personality:</h2>
-            { character.personality }
+            <Markdown>
+              { character.personality }
+            </Markdown>
           </Stack>);
 }
 
@@ -307,6 +319,17 @@ function World({ tag, setChatView }) {
                   "id": id });
   }
 
+  function formatDescription(description) {
+    if (description.length > 80) {
+      let cut = description.indexOf(" ", 65);
+      if (cut > 80) {
+        cut = 80;
+      }
+      return description.substring(0, cut) + "...";
+    }
+    return description;
+  }
+
   if (world !== null) {
     const character_list = characters.map(entry =>
       <li key={entry.id}>
@@ -317,7 +340,7 @@ function World({ tag, setChatView }) {
             {entry.name}
           </a>
         </b>
-        - {entry.description}
+        - {formatDescription(entry.description)}
       </li>
     );
 
@@ -331,7 +354,7 @@ function World({ tag, setChatView }) {
           </a>
 
         </b>
-        - {entry.description}
+        - {formatDescription(entry.description)}
       </li>
 
     );
@@ -345,7 +368,7 @@ function World({ tag, setChatView }) {
             {entry.name}
           </a>
         </b>
-        - {entry.description}
+        - {formatDescription(entry.description)}
       </li>
 
     );
@@ -369,11 +392,16 @@ function World({ tag, setChatView }) {
           <ElementImages element={world}/>
           <Container >
             <h2>{world.name}</h2>
-            {world.description}
+            <Markdown>
+              {world.description}
+            </Markdown>
           </Container>
         </Stack>
         <h2>Details:</h2>
-        { world.details }
+        <Markdown>
+          { world.details }
+        </Markdown>
+
 
         <h2>Main Characters:</h2>
         <ul>
@@ -577,7 +605,6 @@ function DesignChat({name, chatView, setChatView}) {
 
 function DesignClient() {
   const [chatView, setChatView] = useState(null);
-  
   return (
     <Container fluid>
       <Row>
