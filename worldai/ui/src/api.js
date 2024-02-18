@@ -123,14 +123,29 @@ async function getCharacterList(worldId) {
 async function getCharacterInstancesList(worldId) {
   const url = `/worlds/${worldId}/characters/instances`;
   const response = await fetch(get_url(url),
+                               { headers: headers_get() });
+  const values = await response.json();
+  return values;
+}
+
+async function getDocumentList(worldId) {
+  const url = `/worlds/${worldId}/documents`
+  const response = await fetch(get_url(url),
                                { headers: headers_get() });                     
   const values = await response.json();
   return values;
 }
 
+async function getDocument(worldId, docId) {
+  const url = `/worlds/${worldId}/documents/${docId}`;
+  const response = await fetch(get_url(url),
+                                { headers: headers_get()});
+  const values = await response.json();
+  return values;                              
+}
 
 export { getWorldList, getWorld, getSiteList, getItemList, getCharacterList };
 export { getCharacterInstancesList, getSiteInstancesList };
 export { getCharacter, getSite, getItem, getPlayerData };
 export { getCharacterData, getSiteInstance, getItemInstancesList };
-export { getItemInstance };
+export { getItemInstance, getDocumentList, getDocument };

@@ -115,6 +115,29 @@ def test_world_chars(client, app):
     assert id == response.json["id"]
     assert response.json["location"] is not None
 
+def test_documents(client, app):
+    response = client.get("/api/worlds", headers={"Authorization": bearer_token(app)})
+    assert response.status_code == 200
+    assert len(response.json) > 0
+    world_id = response.json[0]["id"]
+
+    response = client.get(f"api/worlds/{world_id}/documents",
+                          headers={"Authorization": bearer_token(app)})
+    assert response.status_code == 200
+    assert len(response.json) > 0
+
+    doc_id = response.json[0]["id"]
+
+    response = client.get(f"api/worlds/{world_id}/documents/{doc_id}",
+                          headers={"Authorization": bearer_token(app)})
+    assert response.status_code == 200
+    
+
+
+                          
+
+
+
 
 def test_character_chat(client, app):
     response = client.get("/api/worlds", headers={"Authorization": bearer_token(app)})

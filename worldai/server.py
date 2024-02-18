@@ -913,6 +913,41 @@ def character_stats(wid, cid):
     response["current_time"] = wstate.getCurrentTime()
     return response
 
+@bp.route("/api/worlds/<wid>/documents")
+@auth_required
+def doc_list_api(wid : elements.WorldID):
+    """
+    Return a list of documents for the world
+    """
+    session["world_id"] = wid
+    if elements.loadWorld(get_db(), wid) is None:
+        return Response( {"error", "World not found"}, 404)
+    doc_list = []
+    for entry in elements.listDocuments(get_db(), wid):
+        doc_list.append(entry.getJSON())
+    return doc_list
+
+@bp.route("/api/worlds/<wid>/documents/<did>")
+@auth_required
+def docs_api(wid: elements.WorldID,
+             did: elements.ElemID):
+    session["world_id"] = wid
+    if elements.loadWorld(get_db(), wid) is None:
+        return Response( {"error", "World not found"}, 404)
+    doc = elements.loadDocument(get_db(), did)
+    if doc is None:
+        return Response( {"error", "Document not found"}, 404)
+    sections = []
+    for heading in doc.getSectionList():
+        text = doc.getSectionText(heading)
+        if text is not None:
+            sections.append({
+                "heading": heading,
+                "text": text })
+    print(sections)            
+    return { "name": doc.getName(),
+             "sections": sections }
+            
 
 @bp.route("/api/worlds/<wid>/sites", methods=["GET"])
 @auth_required

@@ -1,7 +1,8 @@
 import { get_url, headers_get, headers_post } from './util.js';
-import { getWorldList, getWorld } from './api.js';
+import { getWorldList, getWorld  } from './api.js';
 import {  getSiteList, getItemList, getCharacterList } from './api.js';
 import {  getCharacter, getSite, getItem } from './api.js';
+import { getDocumentList, getDocument } from './api.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
 
 import ChatScreen from './ChatScreen.jsx';
@@ -75,6 +76,59 @@ function Site({ tag, setChatView }) {
 }
 
 
+function Document({ tag, setChatView }) {
+  const [document, setDocument ] = useState(null);
+  useEffect(() => {
+    let ignore = false;
+    async function getData() {
+      try {
+        const doc = await getDocument(tag.wid, tag.id)
+        if (!ignore) {
+          setDocument(doc)
+        }
+      }
+      catch (e) {
+        console.log(e)
+      }
+    }
+
+    getData();
+    return () => {
+      ignore = true;
+    }
+  }, [tag]);
+
+  function changeWorld() {
+    setChatView({ "wid": tag.wid,
+                  "element_type": "World",
+                  "id": tag.wid });
+  }
+
+  if (document === null) {
+    return (<></>);
+  }
+  console.log(document);
+  let sections = document.sections.map(entry => 
+    <div key={entry.heading}>
+      <h5>{entry.heading}</h5>
+      <Markdown>
+        {entry.text}
+      </Markdown>
+    </div>
+    );
+
+  return (<Stack>
+    <CloseBar onClose={changeWorld}/>
+    <Stack gap={3}
+           className="align-items-start m-3">
+        <h2>{document.name}</h2>
+        {sections}
+    </Stack>
+  </Stack>);
+  
+}
+
+
 function Item({ tag, setChatView }) {
   const [item, setItem] = useState(null);
   useEffect(() => {
@@ -110,24 +164,24 @@ function Item({ tag, setChatView }) {
   }
 
   return (<Stack>
-            <CloseBar onClose={changeWorld}/>
-            <Stack direction="horizontal" gap={3}
-                   className="align-items-start m-3">
-              <ElementImages element={item}/>
-              <Container >
-                <h2>{item.name}</h2>
-                <h5>{item.description}</h5>
-                <br></br>
-                Mobile: {item.mobile ? "Yes" : "No" }
-                <br></br>
-                Ability: {item.ability.effect}
-                {item.ability.effect == "open" ? " : "
-                                         + item.ability.site : "" }
-              </Container>
-            </Stack>
-            <h2>Details:</h2>
-            { item.details }
-          </Stack>);
+    <CloseBar onClose={changeWorld}/>
+    <Stack direction="horizontal" gap={3}
+           className="align-items-start m-3">
+      <ElementImages element={item}/>
+      <Container >
+        <h2>{item.name}</h2>
+        <h5>{item.description}</h5>
+        <br></br>
+        Mobile: {item.mobile ? "Yes" : "No" }
+        <br></br>
+        Ability: {item.ability.effect}
+        {item.ability.effect == "open" ? " : "
+                                 + item.ability.site : "" }
+      </Container>
+    </Stack>
+    <h2>Details:</h2>
+    { item.details }
+  </Stack>);
 }
 
 function Character({ tag, setChatView }) {
@@ -188,6 +242,7 @@ function World({ tag, setChatView }) {
   const [characters, setCharacters] = useState(null);
   const [items, setItems] = useState(null);
   const [sites, setSites] = useState(null);    
+  const [documents, setDocuments] = useState(null);      
   
   useEffect(() => {
     let ignore = false;
@@ -199,14 +254,16 @@ function World({ tag, setChatView }) {
         let calls = Promise.all([ getWorld(tag.wid),
                                   getSiteList(tag.wid),
                                   getItemList(tag.wid),
-                                  getCharacterList(tag.wid) ]);
-        let [world, sites, items, characters ] = await calls;
+                                  getCharacterList(tag.wid),
+                                  getDocumentList(tag.wid) ]);
+        let [world, sites, items, characters, docs ] = await calls;
         
         if (!ignore) {
           setWorld(world);
           setSites(sites);
           setItems(items);          
           setCharacters(characters);
+          setDocuments(docs);
         }
       } 
       catch (e) {
@@ -236,6 +293,12 @@ function World({ tag, setChatView }) {
   function changeToSite(id) {
     setChatView({ "wid": tag.wid,
                   "element_type": "Site",
+                  "id": id });
+  }
+
+  function changeToDocument(id) {
+    setChatView({ "wid": tag.wid,
+                  "element_type": "Document",
                   "id": id });
   }
 
@@ -288,6 +351,17 @@ function World({ tag, setChatView }) {
 
     );
 
+    const doc_list = documents.map(entry =>
+      <li key={entry.id}>
+        <b>
+          <a className="link-underline-primary"
+          href="#"
+          onClick={() => changeToDocument(entry.id)}>          
+            {entry.name}
+          </a>
+        </b>
+      </li>)
+
     
     return (
       <Stack>
@@ -315,6 +389,11 @@ function World({ tag, setChatView }) {
         <h2>Significant Items:</h2>
         <ul>
           { item_list }
+        </ul>
+
+        <h2>Documents:</h2>
+        <ul>
+          { doc_list }
         </ul>
 
         <h2>Planning Notes:</h2>
@@ -387,8 +466,10 @@ function DesignView({chatView, setChatView}) {
     content = (<Site tag={chatView} setChatView={setChatView}/>);
   } else if (type === 'Item') {
     content = (<Item tag={chatView} setChatView={setChatView}/>);
+  } else if (type === 'Document') {
+    content = (<Document tag={chatView} setChatView={setChatView}/>);
   }
-  
+
   return ( <div style={{ overflow: "auto",
                        maxHeight: "90vh" }}>
              { content }
