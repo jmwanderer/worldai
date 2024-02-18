@@ -284,7 +284,6 @@ function World({ tag, setChatView }) {
   }
 
   function changeToCharacter(id) {
-    console.log("change to char - wid: " + tag.wid + ", id: " + id);
     setChatView({ "wid": tag.wid,
                   "element_type": "Character",
                   "id": id });

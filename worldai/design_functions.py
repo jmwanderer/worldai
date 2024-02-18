@@ -61,8 +61,8 @@ states = {
         "UpdateDocument",
         "AddDocumentSection",
         "UpdateDocumentSection",
+        "ShowDocument",
         "ReadDocumentSection",
-        "ListDocumentSections",
         "ChangeState",
     ],
     STATE_CHARACTERS: [
@@ -330,6 +330,10 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         if self.getCurrentViewType() == elements.ElementTypes.ItemType():
             item = elements.loadItem(db, self.current_view.getID())
             return item.getName()
+
+        if self.getCurrentViewType() == elements.ElementTypes.DocumentType():
+            doc = elements.loadDocument(db, self.current_view.getID())
+            return doc.getName()
         return ""
 
     def clearCurrentView(self):
@@ -468,8 +472,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         elif function_name == "UpdateDocument":
             result = self.FuncUpdateDocument(db, arguments)
 
-        elif function_name == "ListDocumentSections":
-            result = self.FuncListDocumentSections(db, arguments)
+        elif function_name == "ShowDocument":
+            result = self.FuncShowDocument(db, arguments)
 
         elif function_name == "ReadDocumentSection":
             result = self.FuncReadDocumentSection(db, arguments)
@@ -659,6 +663,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         document.setName(arguments["name"])
         document = elements.createDocument(db, document)
 
+        self.current_state = STATE_DOCUMENTS
+        self.current_view = document.getElemTag()
+
         return self.funcStatus("Document created")
 
     def FuncUpdateDocument(self, db, arguments):
@@ -671,13 +678,16 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         if document is None:
             return self.funcError("Document not found")
 
+        self.current_state = STATE_DOCUMENTS
+        self.current_view = document.getElemTag()
+
         if arguments.get("new_name"):
             document.setName(arguments["new_name"])
         elements.updateDocument(db, document)
 
         return self.funcStatus("Document updated")
 
-    def FuncListDocumentSections(self, db, arguments):
+    def FuncShowDocument(self, db, arguments):
         if arguments.get("name") is None:
             return self.funcError("missing argument")
 
@@ -686,7 +696,12 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         )
         if document is None:
             return self.funcError("Document not found")
-        result = document.getSectionList()
+
+        self.current_state = STATE_DOCUMENTS
+        self.current_view = document.getElemTag()
+        
+        result = {"name": document.getName(),
+                  "headings": document.getSectionList() }
         return result
 
     def FuncAddDocumentSection(self, db, arguments):
@@ -830,7 +845,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
                 if site is not None:
                     content["ability"]["site"] = site.getName()
 
-            print("item: " + json.dumps(content))
             self.current_state = STATE_ITEMS
             self.current_view = item.getElemTag()
         else:
@@ -1103,7 +1117,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         if iid is None:
             return self.funcError(f"unknown image index: {index}")
         elements.hideImage(db, iid)
-        print(f"hide image id {iid}")
         return self.funcStatus("image removed")
 
     def FuncRecoverImages(self, db, arguments):
@@ -1334,8 +1347,8 @@ all_functions = [
         },
     },
     {
-        "name": "ListDocumentSections",
-        "description": "List the sections of the document.",
+        "name": "ShowDocument",
+        "description": "Show the document headings.",
         "parameters": {
             "type": "object",
             "properties": {

@@ -944,7 +944,6 @@ def docs_api(wid: elements.WorldID,
             sections.append({
                 "heading": heading,
                 "text": text })
-    print(sections)            
     return { "name": doc.getName(),
              "sections": sections }
             
@@ -1329,9 +1328,7 @@ def action_api(wid, cid):
 
     # Run the use command
     client_actions = client_commands.ClientActions(get_db(), world, wstate)
-    print("use item %s on character %s" % (item_id, cid))
     (changed, message, event) = client_actions.UseItemCharacter(item_id, cid)
-    print("result - changed: %s, message: %s, event: %s" % (changed, message, event))
     if changed:
         # Save state since chat functions may load it again
         world_state.saveWorldState(get_db(), wstate)

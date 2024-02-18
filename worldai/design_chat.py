@@ -96,6 +96,7 @@ class DesignChatSession:
             # Handle if the next view is a new item, character, or site
             if next_view.getID() != current_view.getID():
                 tool_choice = None
+                self.chatFunctions.current_view = next_view
                 if next_view.getType() == elements.ElementTypes.CharacterType():
                     character = elements.loadCharacter(db, next_view.getID())
                     logging.info("Show character '%s'", character.getName())

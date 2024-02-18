@@ -1,14 +1,13 @@
 Plans
 -----
-- add show document to UI
-- add some command to read an existing document
+- update design UI to use accordions on sections
 - add utility to reset a specific instance of a world
 - characters send messages to other characters
 - fix use of ListMyItems
+- address confusion around giveitem....
 
 - add player stats to character chat screen
 
-- address confusion around giveitem....
 - Handle incomplete message events using msg_id
   - may need to detect if previous message isnt complete
 - Add user approval to some tool functions
@@ -62,6 +61,8 @@ Plans
 - check if proper arguments are in the character function calls - DONE
 - locked is not a good prop name for the site access - DONE
 - Convert from IDs to names for the AI func calls - DONE
+- add show document to UI - DONE
+- add some command to read an existing document - DONE
 
 
 Bugs
