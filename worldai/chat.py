@@ -280,15 +280,12 @@ class ChatSession:
         logging.info("calc thread size %s",  thread_size)
         return messages
     
-    def AppendArchive(self, db, content: str) -> None:
-        pass
-
     def ArchiveMessages(self, db) -> None:
         for message_set in self.history.message_sets():
             if not message_set.isIncluded() and not message_set.isArchived():
                 content = message_set.extractContent()
                 message_set.markArchived()
-                self.AppendArchive(db, content)
+                self.chatFunctions.archive_content(db, content)
 
 
     def getMessageContent(self, message_set):
@@ -368,6 +365,7 @@ class ChatSession:
 
         instructions = self.chatFunctions.get_instructions(db)
         messages = self.BuildMessages(self.history, instructions)
+        self.ArchiveMessages(db)
         print_log(f"[{self.call_count}]: Chat completion call...")
         # Limit tools call to 7
         if self.call_count < 8:

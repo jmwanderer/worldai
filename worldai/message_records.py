@@ -40,6 +40,7 @@ class MessageSetRecord:
     def __init__(self):
         self.messages = []
         self.marked_include = False
+        self.archived = False
 
     @staticmethod
     def _recursiveValueCount(enc, elements):
@@ -162,10 +163,10 @@ class MessageSetRecord:
         return self.marked_include
     
     def isArchived(self) -> bool:
-        return False
+        return self.archived
     
     def markArchived(self) -> None:
-        pass
+        self.archived = True
 
     def wasCompleted(self):
         """
@@ -187,6 +188,14 @@ class MessageSetRecord:
 
     def extractContent(self) -> str:
         result : list[str] = []
+        if len(self.getRequestContent()) > 0:
+            result.append(self.getRequestContent())
+        if len(self.getSystemContent()) > 0:
+            result.append(self.getSystemContent())
+        if len(self.getStatusText()) > 0:
+            result.append(self.getStatusText())
+        if len(self.getResponseContent()) > 0:
+            result.append(self.getResponseContent())
         for message in self.messages:
             pass
         return "\n".join(result)
@@ -194,6 +203,7 @@ class MessageSetRecord:
 
     def dump_history(self) -> ChatMessageGroup:
         group = ChatMessageGroup() 
+        group.archived = self.archived
         for message in self.messages:
             msg_copy = {**message}
             if msg_copy.get("text") is not None:
@@ -205,6 +215,7 @@ class MessageSetRecord:
         return group
 
     def load_history(self, group: ChatMessageGroup) -> None:
+        self.archived = group.archived
         for chat_message in group.messages:
             message = json.loads(chat_message.message)
             if len(chat_message.action_text) > 0:

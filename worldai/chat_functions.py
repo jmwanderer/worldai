@@ -31,6 +31,10 @@ class BaseChatFunctions:
         world_id = 0
         track_tokens(db, world_id, prompt, complete, total)
 
+    def archive_content(self, db, content: str) -> None:
+        print("archive content '%s'" % content)
+        pass
+
     def execute_function_call(self, db, function_name, arguments):
         """
         Dispatch function for function_name
