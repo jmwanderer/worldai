@@ -18,7 +18,7 @@ import tiktoken
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from termcolor import colored
 
-from . import chat_functions, message_records
+from . import chat_functions, message_records, info_set
 
 # TODO:
 # Update chat messages:
@@ -140,29 +140,47 @@ def log_chat_message(messages, assistant_message):
 class ChatResponse(pydantic.BaseModel):
     id: str
     done: bool
-    user: typing.Optional[str] = ""
-    reply: typing.Optional[str] = ""
-    updates: typing.Optional[str] = ""
-    event: typing.Optional[str] = ""
-    tool_call: typing.Optional[str] = ""
-    status: typing.Optional[str] = "ok"
+    user: str = ""
+    reply: str = ""
+    updates: str = ""
+    event: str = ""
+    tool_call: str = ""
+    status: str = "ok"
 
 
 class ChatTokens(pydantic.BaseModel):
-    prompt_tokens: typing.Optional[int] = 0
-    complete_tokens: typing.Optional[int] = 0
-    total_tokens: typing.Optional[int] = 0
+    prompt_tokens: int = 0
+    complete_tokens: int = 0
+    total_tokens: int = 0
 
 
 class ChatState(pydantic.BaseModel):
-    msg_id: typing.Optional[str] = ""
-    call_count: typing.Optional[int] = 0
-    call_limit: typing.Optional[int] = 0
-    tool_call_pending: typing.Optional[bool] = False
-    tool_call_index: typing.Optional[int] = 0
-    history: typing.Optional[str] = "[]"
-    tokens: typing.Optional[ChatTokens] = ChatTokens()
-    functions: typing.Optional[str] = "{}"
+    # ID for in process message
+    msg_id: str = ""
+    
+    # Number of function calls made
+    call_count: int = 0
+    
+    # Total number function calls allowed
+    call_limit: int = 0
+    
+    # True if next action is a tool call
+    tool_call_pending: bool = False
+    # If tool_call_pending, this is the index of the call in the message
+    # Supports multiple tool calls per assistant response
+    tool_call_index: int = 0
+
+    # Current doc id for archiving messages
+    archive_doc_id: str = ""
+    
+    # Context passed to the chat_functions (world_id, etc)
+    context: str = "{}"
+    
+    # Message history - list of groups (each a list) of messages
+    messages: str = "[]"
+    
+    # Token counts
+    tokens: ChatTokens = ChatTokens()
 
 
 class ChatSession:
@@ -181,12 +199,13 @@ class ChatSession:
         self.total_tokens = 0
         self.enc = tiktoken.encoding_for_model(GPT_MODEL)
         self.history = message_records.MessageRecords()
+        self.archive_doc_id = ""
 
     def load(self, model_str):
         state = ChatState(**json.loads(model_str))
         self.history = message_records.MessageRecords()
-        self.history.load_history(json.loads(state.history))
-        self.chatFunctions.setProperties(json.loads(state.functions))
+        self.history.load_history(json.loads(state.messages))
+        self.chatFunctions.setProperties(json.loads(state.context))
 
         self.msg_id = state.msg_id
         self.tool_call_pending = state.tool_call_pending
@@ -196,6 +215,7 @@ class ChatSession:
         self.prompt_tokens = state.tokens.prompt_tokens
         self.complete_tokens == state.tokens.complete_tokens
         self.total_tokens == state.tokens.total_tokens
+        self.archive_doc_id = state.archive_doc_id
 
     def save(self):
         state = ChatState()
@@ -208,9 +228,9 @@ class ChatSession:
         state.tokens.prompt_tokens = self.prompt_tokens
         state.tokens.complete_tokens = self.complete_tokens
         state.tokens.total_tokens = self.total_tokens
-        messages = self.history.dump_history()
-        state.history = json.dumps(messages)
-        state.functions = json.dumps(self.chatFunctions.getProperties())
+        state.messages = json.dumps(self.history.dump_history())
+        state.context = json.dumps(self.chatFunctions.getProperties())
+        state.archive_doc_id = self.archive_doc_id
         model_str = json.dumps(state.model_dump())
         return model_str
 
@@ -259,7 +279,7 @@ class ChatSession:
         history.addIncludedMessagesToList(messages)
         logging.info("calc thread size %s",  thread_size)
         return messages
-
+    
     def getMessageContent(self, message_set):
         content = message_set.getMessageContent()
         return content

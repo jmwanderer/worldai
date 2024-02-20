@@ -273,7 +273,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         context = args["context"]
         logging.info("Lookup info: %s", context)
         embed = info_set.generateEmbedding(context)
-        content = info_set.getInformation(db, self.world_id, embed, 3)
+        content = info_set.getInformation(db, self.world_id, embed, 2)
         return {"context": context, "information": content}
 
     def FuncGiveItem(self, db, args):
