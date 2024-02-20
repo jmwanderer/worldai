@@ -177,7 +177,7 @@ class ChatState(pydantic.BaseModel):
     context: str = "{}"
     
     # Message history - list of groups (each a list) of messages
-    messages: str = "[]"
+    messages: list[message_records.ChatMessageGroup] = []
     
     # Token counts
     tokens: ChatTokens = ChatTokens()
@@ -204,7 +204,7 @@ class ChatSession:
     def load(self, model_str):
         state = ChatState(**json.loads(model_str))
         self.history = message_records.MessageRecords()
-        self.history.load_history(json.loads(state.messages))
+        self.history.load_history(state.messages)
         self.chatFunctions.setProperties(json.loads(state.context))
 
         self.msg_id = state.msg_id
@@ -228,7 +228,7 @@ class ChatSession:
         state.tokens.prompt_tokens = self.prompt_tokens
         state.tokens.complete_tokens = self.complete_tokens
         state.tokens.total_tokens = self.total_tokens
-        state.messages = json.dumps(self.history.dump_history())
+        state.messages = self.history.dump_history()
         state.context = json.dumps(self.chatFunctions.getProperties())
         state.archive_doc_id = self.archive_doc_id
         model_str = json.dumps(state.model_dump())
@@ -280,6 +280,17 @@ class ChatSession:
         logging.info("calc thread size %s",  thread_size)
         return messages
     
+    def AppendArchive(self, db, content: str) -> None:
+        pass
+
+    def ArchiveMessages(self, db) -> None:
+        for message_set in self.history.message_sets():
+            if not message_set.isIncluded() and not message_set.isArchived():
+                content = message_set.extractContent()
+                message_set.markArchived()
+                self.AppendArchive(db, content)
+
+
     def getMessageContent(self, message_set):
         content = message_set.getMessageContent()
         return content

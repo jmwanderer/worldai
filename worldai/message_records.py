@@ -6,6 +6,7 @@ import pydantic
 # Supports building a message history for a target size.
 # Supports ensuring required tool calls / information gets populated.
 #
+
 class ChatMessage(pydantic.BaseModel):
     # Message from chat API
     message: str = ""
@@ -184,11 +185,30 @@ class MessageSetRecord:
                 del msg_copy["text"]
             messages.append(msg_copy)
 
-    def dump_history(self):
-       return self.messages
+    def extractContent(self) -> str:
+        result : list[str] = []
+        for message in self.messages:
+            pass
+        return "\n".join(result)
 
-    def load_history(self, messages):
-        for message in messages:
+
+    def dump_history(self) -> ChatMessageGroup:
+        group = ChatMessageGroup() 
+        for message in self.messages:
+            msg_copy = {**message}
+            if msg_copy.get("text") is not None:
+                del msg_copy["text"]
+            chat_message = ChatMessage()
+            chat_message.action_text = message.get("text", "")
+            chat_message.message = json.dumps(msg_copy)
+            group.messages.append(chat_message)
+        return group
+
+    def load_history(self, group: ChatMessageGroup) -> None:
+        for chat_message in group.messages:
+            message = json.loads(chat_message.message)
+            if len(chat_message.action_text) > 0:
+                message["text"] = chat_message.action_text
             self.addMessage(message)
 
 class MessageRecords:
@@ -199,15 +219,15 @@ class MessageRecords:
         self.init_system_message = None
         self.function_tokens = 0
 
-    def dump_history(self):
-        messages = []
+    def dump_history(self) -> list[ChatMessageGroup]:
+        groups = []
         for message_set in self.message_history:
             group = message_set.dump_history()
-            messages.append(group)
-        return messages
+            groups.append(group)
+        return groups
 
-    def load_history(self, messages):
-        for group in messages:
+    def load_history(self, groups: list[ChatMessageGroup]):
+        for group in groups:
             message_set = MessageSetRecord()
             message_set.load_history(group)
             self.message_history.append(message_set)

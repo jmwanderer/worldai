@@ -63,11 +63,15 @@ class RecordsTestCase(unittest.TestCase):
         records.addMessage(getUserMessage())
         records.addMessage(getAssistantMessage())
 
-        messages = records.dump_history()
-        v1 = json.dumps(messages)
+        messages : list[message_records.ChatMessageGroup] = records.dump_history()
+        model = [ x.model_dump() for x in messages ]
+        v1 = json.dumps(model)
+
         records2 = message_records.MessageRecords()
         records2.load_history(messages)
-        v2 = json.dumps(records2.dump_history())
+        model = [ x.model_dump() for x in records2.dump_history() ]
+        v2 = json.dumps(model)
+
         assert v1 == v2
 
         # Just system message included
@@ -109,11 +113,12 @@ class RecordsTestCase(unittest.TestCase):
         self.assertEqual(content["assistant"], getAssistantMessage()["content"])
         self.assertEqual(content["updates"], "")
 
-        messages = records.dump_history()
-        v1 = json.dumps(messages)
+        model = [ x.model_dump() for x in records.dump_history() ]
+        v1 = json.dumps(model)
         records2 = message_records.MessageRecords()
-        records2.load_history(messages)
-        v2 = json.dumps(records2.dump_history())
+        records2.load_history(records.dump_history())
+        model = [ x.model_dump() for x in records2.dump_history() ]
+        v2 = json.dumps(model)
         assert v1 == v2
 
         print(records.jsonString())
