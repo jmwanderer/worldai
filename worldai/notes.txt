@@ -1,5 +1,10 @@
 Plans
 -----
+- create immediate embeddings on info_set
+- add no-chunk option
+- add an append for character thread archive messages
+- RAG lookup for character threads
+
 - update design UI to use accordions on sections
 - add utility to reset a specific instance of a world
 - characters send messages to other characters

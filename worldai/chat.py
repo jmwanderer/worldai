@@ -170,9 +170,6 @@ class ChatState(pydantic.BaseModel):
     # Supports multiple tool calls per assistant response
     tool_call_index: int = 0
 
-    # Current doc id for archiving messages
-    archive_doc_id: str = ""
-    
     # Context passed to the chat_functions (world_id, etc)
     context: str = "{}"
     
@@ -199,7 +196,6 @@ class ChatSession:
         self.total_tokens = 0
         self.enc = tiktoken.encoding_for_model(GPT_MODEL)
         self.history = message_records.MessageRecords()
-        self.archive_doc_id = ""
 
     def load(self, model_str):
         state = ChatState(**json.loads(model_str))
@@ -215,7 +211,6 @@ class ChatSession:
         self.prompt_tokens = state.tokens.prompt_tokens
         self.complete_tokens == state.tokens.complete_tokens
         self.total_tokens == state.tokens.total_tokens
-        self.archive_doc_id = state.archive_doc_id
 
     def save(self):
         state = ChatState()
@@ -230,7 +225,6 @@ class ChatSession:
         state.tokens.total_tokens = self.total_tokens
         state.messages = self.history.dump_history()
         state.context = json.dumps(self.chatFunctions.getProperties())
-        state.archive_doc_id = self.archive_doc_id
         model_str = json.dumps(state.model_dump())
         return model_str
 
