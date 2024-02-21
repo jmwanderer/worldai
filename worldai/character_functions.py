@@ -1,4 +1,5 @@
 import logging
+import json
 
 from . import chat_functions, elements, info_set, world_state
 
@@ -163,6 +164,17 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             tool = {"type": "function", "function": function}
             result.append(tool)
         return result
+
+    def archive_content(self, db, contents: dict[str,str]) -> None:
+        # Redefine function from the base class
+        # Archive a chat message
+        print("archive content")
+        print("user '%s'" % contents["user"])
+        print("system '%s'" % contents["system"])
+        print("updates '%s'" % contents["updates"])
+        print("assistant '%s'" % contents["assistant"])
+        doc_id = info_set.addInfoDoc(db, self.world_id, json.dumps(contents),
+                                     self.character_id, self.wstate_id)
 
     def execute_function_call(self, db, function_name, arguments):
         """

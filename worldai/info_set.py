@@ -172,6 +172,7 @@ def generateEmbedding(content):
 
 
 def addInfoDoc(db, world_id, content, owner_id=None, wstate_id=None):
+    # TODO: add a no chunk option
     doc_id = InfoStore.addInfoDoc(db, world_id, content, owner_id, wstate_id)
     logging.info("Add info doc id:%s, world id: %s", doc_id, world_id)
     result = chunk.chunk_text(content, 200, 0.2)

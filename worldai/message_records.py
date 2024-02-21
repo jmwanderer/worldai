@@ -186,21 +186,6 @@ class MessageSetRecord:
                 del msg_copy["text"]
             messages.append(msg_copy)
 
-    def extractContent(self) -> str:
-        result : list[str] = []
-        if len(self.getRequestContent()) > 0:
-            result.append(self.getRequestContent())
-        if len(self.getSystemContent()) > 0:
-            result.append(self.getSystemContent())
-        if len(self.getStatusText()) > 0:
-            result.append(self.getStatusText())
-        if len(self.getResponseContent()) > 0:
-            result.append(self.getResponseContent())
-        for message in self.messages:
-            pass
-        return "\n".join(result)
-
-
     def dump_history(self) -> ChatMessageGroup:
         group = ChatMessageGroup() 
         group.archived = self.archived
@@ -301,13 +286,13 @@ class MessageRecords:
             self.message_history.append(self.current_message)
         self.current_message.addMessage(message, text)
 
-    def message_sets(self):
+    def message_sets(self) -> list[MessageSetRecord]:
         return self.message_history
 
-    def current_message_set(self):
+    def current_message_set(self) -> MessageSetRecord:
         return self.current_message
 
-    def jsonString(self):
+    def jsonString(self) -> str:
         messages = []
         if self.init_system_message is not None:
             messages.append(self.init_system_message)

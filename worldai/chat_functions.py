@@ -31,9 +31,12 @@ class BaseChatFunctions:
         world_id = 0
         track_tokens(db, world_id, prompt, complete, total)
 
-    def archive_content(self, db, content: str) -> None:
-        print("archive content '%s'" % content)
-        pass
+    def archive_content(self, db, contents: dict[str,str]) -> None:
+        print("archive content")
+        print("user '%s'" % contents["user"])
+        print("system '%s'" % contents["system"])
+        print("updates '%s'" % contents["updates"])
+        print("assistant '%s'" % contents["assistant"])
 
     def execute_function_call(self, db, function_name, arguments):
         """

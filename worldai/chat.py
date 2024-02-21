@@ -283,7 +283,7 @@ class ChatSession:
     def ArchiveMessages(self, db) -> None:
         for message_set in self.history.message_sets():
             if not message_set.isIncluded() and not message_set.isArchived():
-                content = message_set.extractContent()
+                content = message_set.getMessageContent()
                 message_set.markArchived()
                 self.chatFunctions.archive_content(db, content)
 
@@ -366,6 +366,8 @@ class ChatSession:
         instructions = self.chatFunctions.get_instructions(db)
         messages = self.BuildMessages(self.history, instructions)
         self.ArchiveMessages(db)
+        # TODO: Lookup user message in current message, call info set to get 
+        # RAG information. Problem: info not yet available - unless we fix that
         print_log(f"[{self.call_count}]: Chat completion call...")
         # Limit tools call to 7
         if self.call_count < 8:
