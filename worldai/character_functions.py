@@ -169,6 +169,10 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         return result
 
     def archive_content(self, db, contents: dict[str,str]) -> None:
+        """
+        Archive a chat message into an info note.
+        May append to an existing note or create a new one if necessary.
+        """
         # Redefine function from the base class
         # Archive a chat message
         logging.info("archive content: user=%s", contents["user"])
@@ -195,6 +199,16 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                     # Start a new info note
                     self.archive_id = None
                 
+    def lookup_content(self, db, query: str) -> list[dict[str, str]]:
+        """
+        Return a list of archived messages that best match the query.
+        """
+        logging.info("lookup archived content: %s", query)
+        embed = info_set.generateEmbedding(query)
+        encoded = info_set.getInformation(db, self.world_id, embed, 1, self.character_id, self.wstate_id)
+        if len(encoded) > 0:
+            return json.loads(encoded)
+        return []
 
     def execute_function_call(self, db, function_name, arguments):
         """

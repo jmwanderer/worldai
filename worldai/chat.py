@@ -357,11 +357,18 @@ class ChatSession:
             result.status = "error"
             return result
 
+        # Build set of messages for the context window
         instructions = self.chatFunctions.get_instructions(db)
         messages = self.BuildMessages(self.history, instructions)
+
+        # Archive any messages that were newly not included in the context window
         self.ArchiveMessages(db)
-        # TODO: Lookup user message in current message, call info set to get 
-        # RAG information. Problem: info not yet available - unless we fix that
+
+        # Lookup archived messages to include in the context window.
+        archived = self.chatFunctions.lookup_content(db, self.history.current_message.getRequestContent())
+        # Make messages from the archived content
+        # TODO
+
         print_log(f"[{self.call_count}]: Chat completion call...")
         # Limit tools call to 7
         if self.call_count < 8:

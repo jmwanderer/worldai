@@ -298,13 +298,15 @@ def getOrderedChunks(db, world_id: elements.WorldID,
     return result
 
 def getInformation(db, world_id: elements.WorldID, 
-                   embed: list[float], count: int) -> str:
+                   embed: list[float], count: int,
+                   owner_id: elements.ElemID|None = None,
+                   wstate_id: str|None = None) -> str:
     """
     Return count number of entries that are closet to the  given embedding
     Result is a concat of strings for all included entries
     """
     results = []
-    entries = getOrderedChunks(db, world_id, embed)
+    entries = getOrderedChunks(db, world_id, embed, owner_id, wstate_id)
     for i in range(0, min(count, len(entries))):
         content = InfoStore.getChunkContent(db, entries[i][0])
         logging.info("%d: info lookup: %s", i, content)

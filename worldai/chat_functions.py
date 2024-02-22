@@ -1,4 +1,4 @@
-
+import logging
 
 class BaseChatFunctions:
     """
@@ -32,11 +32,16 @@ class BaseChatFunctions:
         track_tokens(db, world_id, prompt, complete, total)
 
     def archive_content(self, db, contents: dict[str,str]) -> None:
-        print("archive content")
-        print("user '%s'" % contents["user"])
-        print("system '%s'" % contents["system"])
-        print("updates '%s'" % contents["updates"])
-        print("assistant '%s'" % contents["assistant"])
+        """
+        Function to archive a message from a thread
+        """
+        logging.info("archive content: user=%s", contents["user"])
+
+    def lookup_content(self, db, query: str) -> list[dict[str, str]]:
+        """
+        Return a list of archived messages that best match the query.
+        """
+        return []
 
     def execute_function_call(self, db, function_name, arguments):
         """
