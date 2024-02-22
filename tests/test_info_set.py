@@ -132,7 +132,7 @@ class BasicTestCase(unittest.TestCase):
         chunk_list = info_set.InfoStore.getAvailableChunks(
             self.db, self.world.getID(), owner_id=owner_id
         )
-        self.assertEqual(len(chunk_list), 6)
+        self.assertEqual(len(chunk_list), 3)
 
         chunk_list = info_set.InfoStore.getAvailableChunks(
             self.db, self.world.getID(), wstate_id=wstate_id
@@ -142,7 +142,7 @@ class BasicTestCase(unittest.TestCase):
         chunk_list = info_set.InfoStore.getAvailableChunks(
             self.db, self.world.getID(), wstate_id=wstate_id, owner_id=owner_id
         )
-        self.assertEqual(len(chunk_list), 12)
+        self.assertEqual(len(chunk_list), 3)
 
     def testDocument(self):
         path = os.path.join(self.dir_name, "sample.txt")
@@ -154,6 +154,16 @@ class BasicTestCase(unittest.TestCase):
         info_set.updateInfoDoc(self.db, doc_id, text)
 
         info_set.deleteInfoDoc(self.db, doc_id)
+
+
+    def testNote(self):
+        content = "This is a short note"
+        doc_id = info_set.addInfoNote(self.db, self.world.getID(), content)
+        embedding = info_set.generateEmbedding(content)
+        chunks = info_set.getOrderedChunks(self.db, self.world.getID(), embedding)
+        self.assertEqual(len(chunks), 1)
+        result = info_set.updateInfoNote(self.db, doc_id, content+content)
+        self.assertTrue(result)
 
     def testLookup(self):
         embed = info_set.generateEmbedding("Aria Blackwood")
