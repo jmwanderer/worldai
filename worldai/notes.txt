@@ -2,7 +2,6 @@ Plans
 -----
 - include system messages in character thread RAG
 
-- fix initial scroll in chat screen
 - update design UI to use accordions on sections
 - add utility to reset a specific instance of a world
 - characters send messages to other characters
@@ -54,6 +53,7 @@ Plans
  
 - take items from character
 
+- fix initial scroll in chat screen - DONE
 - create immediate embeddings on info_set - DONE
 - add no-chunk option - DONE
 - add an append for character thread archive messages- DONE

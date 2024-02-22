@@ -108,7 +108,11 @@ function MessageScreen({chatHistory, currentMessage,
   useEffect(() => {
     const {current} = msgRef;
     if (current !== null) {
-      current.scrollIntoView({behavior: "smooth"});
+      if (currentMessage.user.length == 0) {
+        current.scrollIntoView({behavior: "instant"});
+      } else { 
+        current.scrollIntoView({behavior: "smooth"});
+      }
     }
   }, [chatHistory, currentMessage]);
   
@@ -133,7 +137,7 @@ function MessageScreen({chatHistory, currentMessage,
 
 function UserInput({value, onChange, onKeyDown, disabled}) {
   return (
-    <textarea className="m-2" style={{ minHeight: "2em" }}
+    <textarea className="m-2" style={{ minHeight: "3em" }}
               value={value} 
               disabled={disabled}
               onChange={onChange} onKeyDown={onKeyDown}/>
