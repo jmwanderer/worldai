@@ -246,9 +246,9 @@ def updateInfoNote(db, doc_id: DocID, content: str) -> bool:
     """
     Update the short entry, return False if it exceeds the size boundary
     """
-    logging.info("Update info  id:%s ", doc_id)
+    logging.info("Update info  id:%s len(%d)", doc_id, len(content))
     # Arbitrary limit in characters.
-    if len(content) > 500:
+    if len(content) > 1200:
         return False
     InfoStore.updateInfoDoc(db, doc_id, content)
     InfoStore.deleteDocChunks(db, doc_id)

@@ -61,12 +61,14 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         self.wstate_id = wstate_id
         self.world_id = world_id
         self.character_id = character_id
+        self.archive_id: info_set.DocID|None = None
 
     def getProperties(self):
         properties = super().getProperties()
         properties["wstate_id"] = self.wstate_id
         properties["world_id"] = self.world_id
         properties["character_id"] = self.character_id
+        properties["archive_id"] = self.archive_id
         return properties
 
     def setProperties(self, properties):
@@ -74,6 +76,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         self.wstate_id = properties["wstate_id"]
         self.world_id = properties["world_id"]
         self.character_id = properties["character_id"]
+        self.archive_id = properties["archive_id"]
 
     def get_instructions(self, db):
         world = elements.loadWorld(db, self.world_id)
@@ -168,13 +171,30 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     def archive_content(self, db, contents: dict[str,str]) -> None:
         # Redefine function from the base class
         # Archive a chat message
-        print("archive content")
-        print("user '%s'" % contents["user"])
-        print("system '%s'" % contents["system"])
-        print("updates '%s'" % contents["updates"])
-        print("assistant '%s'" % contents["assistant"])
-        doc_id = info_set.addInfoDoc(db, self.world_id, json.dumps(contents),
-                                     self.character_id, self.wstate_id)
+        logging.info("archive content: user=%s", contents["user"])
+        entry_added = False
+        # Store an encoded list of contents
+        while not entry_added:
+            if self.archive_id is None:
+                self.archive_id = info_set.addInfoNote(db, 
+                                                      self.world_id, 
+                                                      json.dumps([contents]),
+                                                      self.character_id, 
+                                                      self.wstate_id)
+                entry_added = True
+            else:
+                encoded = info_set.getInfoDoc(db, self.archive_id)
+                if len(encoded) == 0:
+                    self.archive_id = None
+                    continue
+                content_list = json.loads(encoded)
+                content_list.append(contents)
+                if info_set.updateInfoNote(db, self.archive_id, json.dumps(content_list)):
+                    entry_added = True
+                else:
+                    # Start a new info note
+                    self.archive_id = None
+                
 
     def execute_function_call(self, db, function_name, arguments):
         """
