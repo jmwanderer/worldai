@@ -133,12 +133,6 @@ def test_documents(client, app):
     assert response.status_code == 200
     
 
-
-                          
-
-
-
-
 def test_character_chat(client, app):
     response = client.get("/api/worlds", headers={"Authorization": bearer_token(app)})
     world_id = response.json[0]["id"]

@@ -7,6 +7,7 @@ import tiktoken
 import worldai.chat
 import worldai.db_access
 import worldai.server
+import worldai.info_set
 
 """
 Test fixtures for WorldAI
@@ -37,6 +38,7 @@ def app():
     # Mock out chat calls
     chatmock = ChatMockUtil()
     chatmock.setUp()
+    worldai.info_set.TEST = True
 
     yield app
 

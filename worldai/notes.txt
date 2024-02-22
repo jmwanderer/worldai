@@ -1,10 +1,8 @@
 Plans
 -----
-- create immediate embeddings on info_set
-- add no-chunk option
-- add an append for character thread archive messages
-- RAG lookup for character threads
+- include system messages in character thread RAG
 
+- fix initial scroll in chat screen
 - update design UI to use accordions on sections
 - add utility to reset a specific instance of a world
 - characters send messages to other characters
@@ -55,6 +53,11 @@ Plans
  - AI does an analysis of what is needed for design completion
  
 - take items from character
+
+- create immediate embeddings on info_set - DONE
+- add no-chunk option - DONE
+- add an append for character thread archive messages- DONE
+- RAG lookup for character threads - DONE
 
 - Basic world design - DONE
 - Basic character interaction - DONE

@@ -241,7 +241,7 @@ class ChatSession:
             db, function_name, function_args
         )
 
-    def BuildMessages(self, history, instructions):
+    def SelectMessages(self, history, instructions):
         """
         Take a MessageRecords instance
         Return a list of messages that fit context size
@@ -269,11 +269,9 @@ class ChatSession:
                 thread_size = new_size
             else:
                 break
-
-        history.addIncludedMessagesToList(messages)
         logging.info("calc thread size %s",  thread_size)
-        return messages
-    
+
+        
     def ArchiveMessages(self, db) -> None:
         for message_set in self.history.message_sets():
             if not message_set.isIncluded() and not message_set.isArchived():
@@ -359,7 +357,7 @@ class ChatSession:
 
         # Build set of messages for the context window
         instructions = self.chatFunctions.get_instructions(db)
-        messages = self.BuildMessages(self.history, instructions)
+        self.SelectMessages(self.history, instructions)
 
         # Archive any messages that were newly not included in the context window
         self.ArchiveMessages(db)
@@ -367,7 +365,10 @@ class ChatSession:
         # Lookup archived messages to include in the context window.
         archived = self.chatFunctions.lookup_content(db, self.history.current_message.getRequestContent())
         # Make messages from the archived content
-        # TODO
+        for entry in archived:
+            self.history.addContextMessage(entry)
+        messages: list[dict[str, typing.Any]] = []
+        self.history.addIncludedMessagesToList(messages)
 
         print_log(f"[{self.call_count}]: Chat completion call...")
         # Limit tools call to 7
@@ -385,7 +386,7 @@ class ChatSession:
         # Make completion request call with the messages we have
         # selected from the message history and potentially
         # available tools and specified tool choice.
-        # print(json.dumps(messages))
+        #print(json.dumps(messages))
         response = chat_completion_request(
             messages, tools=tools, tool_choice=tool_choice
         )

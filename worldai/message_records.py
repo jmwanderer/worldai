@@ -1,4 +1,5 @@
 import json
+import logging
 import pydantic
 
 #
@@ -182,6 +183,7 @@ class MessageSetRecord:
     def addMessagesToList(self, messages):
         for message in self.messages:
             msg_copy = {**message}
+            # TODO: I don't think we have the "text" embedding anymore
             if msg_copy.get("text") is not None:
                 del msg_copy["text"]
             messages.append(msg_copy)
@@ -213,6 +215,7 @@ class MessageRecords:
         self.message_history = []
         self.current_message = None
         self.init_system_message = None
+        self.context_messages = []
         self.function_tokens = 0
 
     def dump_history(self) -> list[ChatMessageGroup]:
@@ -322,12 +325,32 @@ class MessageRecords:
         for message in self.message_history:
             message.marked_include = False
 
+    def addContextMessage(self, contents: dict[str,str]) -> None:
+        """
+        Add messages to include for context.
+        Takes the format for getMessageContents: user, system, ...
+        """
+        if "user" in contents.keys() and "assistant" in contents.keys():
+            # TODO: add system messages
+            self.context_messages.append({ "role": "user",
+                                          "content": contents["user"]})
+            self.context_messages.append({"role": "assistant",
+                                         "content": contents["assistant"]})
+            logging.info("Added content messages user: %s", contents["user"])
+
     def addIncludedMessagesToList(self, messages):
+        # Add initial system message
         if self.init_system_message is not None:
             messages.append(self.init_system_message)
+
+        # Add any context messages from the archive
+        for message in self.context_messages:
+            messages.append(message)
+
+        # Add selected messages
         for message in self.message_history:
             if message.marked_include:
-                message.addMessagesToList(messages)
+                    message.addMessagesToList(messages)
 
     def hasToolCall(self, name, args):
         """
