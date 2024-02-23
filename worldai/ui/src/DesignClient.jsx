@@ -21,6 +21,8 @@ import Col from 'react-bootstrap/Col';
 import Image from 'react-bootstrap/Image';
 import Stack from 'react-bootstrap/Stack';
 import Carousel from 'react-bootstrap/Carousel';
+import Accordion from 'react-bootstrap/Accordion'
+import Table from 'react-bootstrap/Table'
 
 function Site({ tag, setChatView }) {
   const [site, setSite] = useState(null);
@@ -61,14 +63,22 @@ function Site({ tag, setChatView }) {
             <Stack direction="horizontal" gap={3}
                    className="align-items-start m-3">
               <ElementImages element={site}/>
-              <Container >
+              <Stack>
                 <h2>{site.name}</h2>
                 <Markdown>
                   {site.description}
                 </Markdown>
-                <br></br>
-                Default Open: {site.default_open? "Yes" : "No" }
-              </Container>
+                <Table>
+                 <tbody>
+                    <tr>
+                      <td>Default Open:</td>
+                      <td>
+                         { site.default_open ? "Yes" : "No" }
+                      </td>
+                    </tr>
+                  </tbody>
+                </Table>
+              </Stack>
             </Stack>
             <h2>Details:</h2>
             <Markdown>            
@@ -176,12 +186,28 @@ function Item({ tag, setChatView }) {
         <Markdown>
           {item.description}
         </Markdown>
-        <br></br>
-        Mobile: {item.mobile ? "Yes" : "No" }
-        <br></br>
-        Ability: {item.ability.effect}
-        {item.ability.effect == "open" ? " : "
-                                 + item.ability.site : "" }
+        <Table>
+          <tbody>
+            <tr>
+              <td>
+                Mobile:
+              </td>
+              <td>
+                {item.mobile ? "Yes" : "No" }
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Ability:
+              </td>
+              <td>
+                {item.ability.effect}
+                {item.ability.effect == "open" ? " : "
+                                         + item.ability.site : "" }
+              </td>
+            </tr>
+          </tbody>
+        </Table>
       </Container>
     </Stack>
     <h2>Details:</h2>
@@ -237,14 +263,29 @@ function Character({ tag, setChatView }) {
                 </Markdown>
               </Container>
             </Stack>
-            <h2>Details:</h2>
-            <Markdown>
-              { character.details }
-            </Markdown>
-            <h2>Personality:</h2>
-            <Markdown>
-              { character.personality }
-            </Markdown>
+            <Accordion>
+              <Accordion.Item eventKey='0'>
+                <Accordion.Header>
+                  Details
+                </Accordion.Header>
+                <Accordion.Body>
+                  <Markdown>
+                    { character.details }
+                  </Markdown>
+                </Accordion.Body>
+              </Accordion.Item>
+
+              <Accordion.Item eventKey='1'>
+                <Accordion.Header>
+                  Personality
+                </Accordion.Header>
+                <Accordion.Body>
+                  <Markdown>
+                    { character.personality }
+                  </Markdown>
+                </Accordion.Body>
+              </Accordion.Item>
+            </Accordion>
           </Stack>);
 }
 
@@ -397,36 +438,73 @@ function World({ tag, setChatView }) {
             </Markdown>
           </Container>
         </Stack>
-        <h2>Details:</h2>
-        <Markdown>
-          { world.details }
-        </Markdown>
+        <Accordion>
+          <Accordion.Item eventKey="0">
+            <Accordion.Header>
+              Details:
+            </Accordion.Header>
+            <Accordion.Body>
+              <Markdown>
+                { world.details }
+              </Markdown> 
+              </Accordion.Body>
+          </Accordion.Item>
 
+          <Accordion.Item eventKey='1'>
+            <Accordion.Header>
+              Main Characters
+            </Accordion.Header>
+            <Accordion.Body>
+              <ul>
+                { character_list }
+              </ul>
+            </Accordion.Body>
+          </Accordion.Item>
+ 
+          <Accordion.Item eventKey='2'>
+            <Accordion.Header>
+              Key Sites
+            </Accordion.Header>
+            <Accordion.Body>
+              <ul>
+                { site_list }
+              </ul>
+            </Accordion.Body>
+          </Accordion.Item>
 
-        <h2>Main Characters:</h2>
-        <ul>
-          { character_list }
-        </ul>
+          <Accordion.Item eventKey='3'>
+            <Accordion.Header>
+              Significant Items
+            </Accordion.Header>
+            <Accordion.Body>
+              <ul>
+                { item_list }
+              </ul>
+            </Accordion.Body>
+          </Accordion.Item>
 
-        <h2>Key Sites:</h2>
-        <ul>
-          { site_list }
-        </ul>
-        
-        <h2>Significant Items:</h2>
-        <ul>
-          { item_list }
-        </ul>
+          <Accordion.Item eventKey='4'>
+            <Accordion.Header>
+              Documents
+            </Accordion.Header>
+            <Accordion.Body>
+              <ul>
+                { doc_list }
+              </ul>
+            </Accordion.Body>
+          </Accordion.Item>
 
-        <h2>Documents:</h2>
-        <ul>
-          { doc_list }
-        </ul>
-
-        <h2>Planning Notes:</h2>
-        <Markdown>
-          { world.plans }          
-        </Markdown>
+          <Accordion.Item eventKey='5'>
+            <Accordion.Header>
+              Planning Notes:
+            </Accordion.Header>
+            <Accordion.Body>
+              <Markdown>
+                { world.plans }          
+              </Markdown>
+            </Accordion.Body>
+          </Accordion.Item>
+        </Accordion>
       </Stack>
     );
   } else {

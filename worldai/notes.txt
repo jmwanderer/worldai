@@ -1,8 +1,9 @@
 Plans
 -----
 - include system messages in character thread RAG
+- Add clearing wstate from info_docs on clear state
+- perhaps prompt for confirm on clear state
 
-- update design UI to use accordions on sections
 - add utility to reset a specific instance of a world
 - characters send messages to other characters
 - fix use of ListMyItems
@@ -53,6 +54,7 @@ Plans
  
 - take items from character
 
+- update design UI to use accordions on sections - DONE
 - fix initial scroll in chat screen - DONE
 - create immediate embeddings on info_set - DONE
 - add no-chunk option - DONE
