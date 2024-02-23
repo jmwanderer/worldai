@@ -71,8 +71,8 @@ function Site({ tag, setChatView }) {
                 <Table>
                  <tbody>
                     <tr>
-                      <td>Default Open:</td>
-                      <td>
+                      <td style={{whiteSpace: "nowrap"}}>Default Open:</td>
+                      <td style={{width: "99%"}}>
                          { site.default_open ? "Yes" : "No" }
                       </td>
                     </tr>
@@ -443,7 +443,7 @@ function World({ tag, setChatView }) {
         <Accordion>
           <Accordion.Item eventKey="0">
             <Accordion.Header>
-              Details:
+              Details
               { world.details.length === 0 ? " -- TBD" : ""}
             </Accordion.Header>
             <Accordion.Body>
