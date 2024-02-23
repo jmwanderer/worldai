@@ -818,12 +818,17 @@ function Inventory({ worldId, selectItem }) {
     }
   }, [worldId]);
 
-  const entries = itemList.filter(
+  let entries = itemList.filter(
     entry => entry.have_item).map(
       entry => <ItemListEntry key={entry.id}
                               item={entry}
                               selectItem={selectItem}/>);
   
+  if (entries.length === 0) {
+    entries = (<Alert className="m-3">
+                Inventory is empty.
+              </Alert>);
+  }
   return (
     <Stack className="mt-3">
       { entries }
@@ -877,7 +882,7 @@ function SiteItem({ site, onClick }) {
       <Card style={{ height: "100%", padding: "1em" }}>
         <Card.Img src={site.image.url}/>
         <Card.Title>
-          { site.name }
+          { site.name } 
           { site.open ? "" : <i className="bi bi-lock-fill"/> }
         </Card.Title>
         <Button onClick={handleClick} className="mt-auto">Go</Button>        

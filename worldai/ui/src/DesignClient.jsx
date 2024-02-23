@@ -267,6 +267,7 @@ function Character({ tag, setChatView }) {
               <Accordion.Item eventKey='0'>
                 <Accordion.Header>
                   Details
+                  { character.details.length === 0 ? " -- TBD" : ""}
                 </Accordion.Header>
                 <Accordion.Body>
                   <Markdown>
@@ -278,6 +279,7 @@ function Character({ tag, setChatView }) {
               <Accordion.Item eventKey='1'>
                 <Accordion.Header>
                   Personality
+                  { character.personality.length === 0 ? " -- TBD" : ""}
                 </Accordion.Header>
                 <Accordion.Body>
                   <Markdown>
@@ -442,6 +444,7 @@ function World({ tag, setChatView }) {
           <Accordion.Item eventKey="0">
             <Accordion.Header>
               Details:
+              { world.details.length === 0 ? " -- TBD" : ""}
             </Accordion.Header>
             <Accordion.Body>
               <Markdown>
@@ -453,6 +456,7 @@ function World({ tag, setChatView }) {
           <Accordion.Item eventKey='1'>
             <Accordion.Header>
               Main Characters
+              { characters.length === 0 ? " -- None" : ""}
             </Accordion.Header>
             <Accordion.Body>
               <ul>
@@ -464,6 +468,7 @@ function World({ tag, setChatView }) {
           <Accordion.Item eventKey='2'>
             <Accordion.Header>
               Key Sites
+              { sites.length === 0 ? " -- None" : ""}
             </Accordion.Header>
             <Accordion.Body>
               <ul>
@@ -475,6 +480,7 @@ function World({ tag, setChatView }) {
           <Accordion.Item eventKey='3'>
             <Accordion.Header>
               Significant Items
+              { items.length === 0 ? " -- None" : ""}
             </Accordion.Header>
             <Accordion.Body>
               <ul>
@@ -486,6 +492,7 @@ function World({ tag, setChatView }) {
           <Accordion.Item eventKey='4'>
             <Accordion.Header>
               Documents
+              { documents.length === 0 ? " -- None" : ""}
             </Accordion.Header>
             <Accordion.Body>
               <ul>
@@ -497,6 +504,7 @@ function World({ tag, setChatView }) {
           <Accordion.Item eventKey='5'>
             <Accordion.Header>
               Planning Notes:
+              { world.plans.length === 0 ? " -- None" : ""}
             </Accordion.Header>
             <Accordion.Body>
               <Markdown>

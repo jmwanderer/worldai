@@ -1,5 +1,6 @@
 Plans
 -----
+- Include item abilities in the info docs
 - include system messages in character thread RAG
 - Add clearing wstate from info_docs on clear state
 - perhaps prompt for confirm on clear state

@@ -14,6 +14,7 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Stack from 'react-bootstrap/Stack';
+import Spinner from 'react-bootstrap/Spinner'
 
 // Shows a single message exchange.
 function MessageExchange({ name, message }) {
@@ -81,10 +82,10 @@ const CurrentMessage = forwardRef(({ content, name,
   if (chatState === "waiting") {
     if (content.tool_call && content.tool_call.length > 0) {
       running = (<div>
-                   <i> Running {content.tool_call}... </i>
+                   <i> Running {content.tool_call}... </i><Spinner animation='border' variant='primary'/>
                  </div>);
     } else {
-      running = <div className="App-running"><i> Running Chat... </i></div>      
+      running = <div className="App-running"><i> Running Chat.... </i><Spinner animation='border' variant='primary'/></div>
     }
   }
   let error = "";

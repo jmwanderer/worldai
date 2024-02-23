@@ -1001,14 +1001,13 @@ def site_instances_list(wid):
         sid = entry.getID()
         site = elements.loadSite(get_db(), sid)
         image_prop = getElementThumbProperty(site)
-
         site_list.append(
             {
                 "id": sid,
                 "name": site.getName(),
                 "description": site.getDescription(),
                 "present": wstate.getLocation() == id,
-                "open": wstate.isSiteOpen(id),
+                "open": wstate.isSiteOpen(sid),
                 "image": image_prop,
             }
         )
@@ -1154,7 +1153,7 @@ def items_intances_list(wid):
                 "id": iid,
                 "name": item.getName(),
                 "description": item.getDescription(),
-                "have_item": wstate.hasItem(id),
+                "have_item": wstate.hasItem(iid),
                 "image": image_prop,
             }
         )
