@@ -558,6 +558,26 @@ class Item(Element):
     def setAbility(self, ability: ItemAbility):
         self.prop_model.ability = ability
 
+    def getInfoText(self) -> list[tuple[int, str]]:
+        # Append item ability to the info text
+        content = self.getName()
+        if self.getIsMobile():
+            content += "\nIs mobile\n"
+        else:
+            content += "\nIs not mobile\n"
+        content += "Ability: "
+        if self.getAbility().effect == ItemEffect.OPEN:
+            content += "Open a site\n"
+        else:
+            content += self.getAbility().effect + "\n"
+
+        if self.getDescription() is not None:
+            content = content + self.getDescription()
+        if self.getDetails() is not None:
+            content = content + "\n" + self.getDetails()
+        return [(0, content)]
+
+
 
 class ElementStore:
     @staticmethod

@@ -1,6 +1,6 @@
 Plans
 -----
-- Include item abilities in the info docs
+- Consider improving the description of item abilities in info text
 - include system messages in character thread RAG
 - Add clearing wstate from info_docs on clear state
 - perhaps prompt for confirm on clear state
@@ -54,7 +54,9 @@ Plans
  - AI does an analysis of what is needed for design completion
  
 - take items from character
+- A Paralized or sleeping character drops their items
 
+- Include item abilities in the info docs - DONE
 - update design UI to use accordions on sections - DONE
 - fix initial scroll in chat screen - DONE
 - create immediate embeddings on info_set - DONE
