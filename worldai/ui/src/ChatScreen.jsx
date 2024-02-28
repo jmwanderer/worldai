@@ -199,9 +199,13 @@ const ChatScreen = forwardRef(({ name, calls,
   }
 
   if (typeof submitActionRef !== 'undefined') {
-    useImperativeHandle(submitActionRef, (item_id, character_id) => ({
-      submitAction: (item_id, character_id) => {
-        runChatAction(item_id, character_id);
+    // Setup method that the application can use to dispatch
+    // an event or action as a chat loop. This enables the character
+    // to react to something the user does.
+    // All details of the action are opaque and carried in the context
+    useImperativeHandle(submitActionRef, () => ({
+      submitAction: () => {
+        runChatAction();
       }}))
   }
 
