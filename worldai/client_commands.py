@@ -46,10 +46,9 @@ class CommandResponse(pydantic.BaseModel):
     """
     Response to a client command
     """
-
-    message: str = ""
-    status: CallStatus = CallStatus()
-    changed: bool = False
+    message: str = ""                   # Return message in response to command. E.G. Nothing happened.
+    status: CallStatus = CallStatus()   # ok or error with an optional message  (message not currently used...)
+    changed: bool = False               # True if command changed the state of the world
 
 
 class ClientActions:

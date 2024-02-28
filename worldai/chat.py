@@ -139,13 +139,21 @@ def log_chat_message(messages, assistant_message):
 
 class ChatResponse(pydantic.BaseModel):
     id: str
-    done: bool
-    user: str = ""
-    reply: str = ""
-    updates: str = ""
-    event: str = ""
-    tool_call: str = ""
-    status: str = "ok"
+    # Status flags
+    done: bool          # True if last message in chat exchange, otherwise client should make another call.
+    status: str = "ok"  # Set to "error" if not ok. Something went wrong...
+
+    # Input to GPT function
+    user: str = ""      # User message that initiated chat. E.G. Hello
+    event: str = ""     # Event that initiated chat. E.G. User has arrived
+                        # Usually either the user or event is set. But no protection against both being set.
+
+    # Output of GPT function
+    reply: str = ""     # GPT Reply to the original message
+    updates: str = ""   # Text describing something the character did
+                        # E.G. Character used item X
+    tool_call: str = "" # Indicates if the next chat is a tool call
+                        # Client may show: Calling MakeImage....
 
 
 class ChatTokens(pydantic.BaseModel):

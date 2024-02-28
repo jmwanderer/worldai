@@ -1,5 +1,23 @@
 Plans
 -----
+
+* Events and Changes
+Three things cause the world state to change:
+- client commands
+  go, take, select, user, engage, disengage
+- character actions - client_commands: UseItemCharacter
+  User invokes an action with a character.
+- GPT invoking character functions -
+  TODO: update execfunc to have one saveWorldState for all funcions
+        on change
+
+  Design a facility that:
+  - runs time going foward each call
+  - accumulates events and status updates
+  - reports events and status updates on return call
+
+
+* List 
 - Consider improving the description of item abilities in info text
 - include system messages in character thread RAG
 - Add clearing wstate from info_docs on clear state
@@ -16,8 +34,6 @@ Plans
   - may need to detect if previous message isnt complete
 - Add user approval to some tool functions
 
-- Add history of conversations and use in RAG calls
-- Add world knowledege and facts - use RAG
 - Add per character knowledge, use RAG
 - find character and items?
 
@@ -56,6 +72,9 @@ Plans
 - take items from character
 - A Paralized or sleeping character drops their items
 
+
+- Add history of conversations and use in RAG calls - DONE
+- Add world knowledege and facts - use RAG - DONE
 - Include item abilities in the info docs - DONE
 - update design UI to use accordions on sections - DONE
 - fix initial scroll in chat screen - DONE
