@@ -124,8 +124,8 @@ class ItemEffect(str, enum.Enum):
 
 
 class ItemAbility(pydantic.BaseModel):
-    effect: typing.Optional[ItemEffect] = ItemEffect.NONE
-    site_id: typing.Optional[str] = ""
+    effect: ItemEffect = ItemEffect.NONE
+    site_id: str = ""
 
 class ItemProps(BaseProps):
     mobile: bool = True

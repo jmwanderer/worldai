@@ -21,6 +21,16 @@ class CallStatus(pydantic.BaseModel):
     message: typing.Optional[str] = ""
 
 
+# Standard message suffix for replies to client
+# calls that mutate the world.  WIP
+class WorldStatus(pydantic.BaseModel):
+    current_time: int = 0
+    player_alive: bool = True
+    location_id: str = ""
+    world_changed: bool = False
+    status_message: str = ""
+
+
 class CommandName(str, enum.Enum):
     go = "go"
     take = "take"
