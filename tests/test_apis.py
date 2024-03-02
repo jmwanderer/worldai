@@ -175,7 +175,7 @@ def test_chat_get(client, app):
     )
     assert response.status_code == 200
     assert response.json["view"] is not None
-    assert len(response.json["messages"]) == 0
+    assert len(response.json["history_response"]["messages"]) == 0
 
     response = client.get(
         f"/api/design_chat",
@@ -185,7 +185,7 @@ def test_chat_get(client, app):
     )
     assert response.status_code == 200
     assert response.json["view"] is not None
-    assert len(response.json["messages"]) == 0
+    assert len(response.json["history_response"]["messages"]) == 0
 
     response = client.post(
         f"/api/design_chat",
@@ -198,7 +198,7 @@ def test_chat_get(client, app):
             "user": "hi there!",
         },
     )
-    assert response.json["done"]
+    assert response.json["chat_response"]["done"]
     assert response.status_code == 200
 
     response = client.get(
@@ -209,7 +209,7 @@ def test_chat_get(client, app):
     )
     assert response.status_code == 200
     assert response.json["view"] is not None
-    assert len(response.json["messages"]) > 0
+    assert len(response.json["history_response"]["messages"]) > 0
 
 
 def test_chat_post(client, app):
@@ -225,8 +225,8 @@ def test_chat_post(client, app):
         },
     )
     assert response.status_code == 200
-    assert response.json["reply"] is not None
-    assert not response.json["changes"]
+    assert response.json["chat_response"]["reply"] is not None
+    assert not response.json["made_changes"]
     assert response.json["view"] is not None
 
 
@@ -251,7 +251,7 @@ def test_chat_cmd_clear(client, app):
         },
     )
     assert response.status_code == 200
-    assert len(response.json["messages"]) > 0
+    assert len(response.json["history_response"]["messages"]) > 0
 
     response = client.post(
         f"/api/design_chat",
@@ -273,7 +273,7 @@ def test_chat_cmd_clear(client, app):
         },
     )
     assert response.status_code == 200
-    assert len(response.json["messages"]) == 0
+    assert len(response.json["history_response"]["messages"]) == 0
 
 
 def test_command(client, app):

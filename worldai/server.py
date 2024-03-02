@@ -659,35 +659,27 @@ def design_chat_api():
     deleteSession = False
 
     if request.method == "GET":
-        history = chat_session.chat_history()
-        content = {"messages": history}
-        content["enabled"] = True
-        view = chat_session.get_view()
-        content["view"] = view
+        content = chat_session.chat_history().model_dump()
     else:
         command = request.json.get("command")
         if command == "start":
             user_msg = request.json.get("user")
             reply = chat_session.chat_start(get_db(), user_msg)
-            content = reply.model_dump()
 
             # Add additional entries to the message
-            content["changes"] = chat_session.madeChanges()
-            content["enabled"] = True
-            view = chat_session.get_view()
-            content["view"] = view
+            reply.chat_response.chat_enabled = True
+            reply.made_changes = chat_session.madeChanges()
+            content = reply.model_dump()
 
         elif command == "continue":
             msg_id = request.json.get("id")
             reply = chat_session.chat_continue(get_db(), msg_id)
-            content = reply.model_dump()
-            logging.info("design chat updates: %s", content["updates"])
+            logging.info("design chat updates: %s", reply.chat_response.updates)
 
             # Add additional entries to the message
-            content["changes"] = chat_session.madeChanges()
-            content["enabled"] = True
-            view = chat_session.get_view()
-            content["view"] = view
+            reply.chat_response.chat_enabled = True
+            reply.made_changes = chat_session.madeChanges()
+            content = reply.model_dump()
 
         elif request.json.get("command") == "clear":
             content = {"status": "ok"}

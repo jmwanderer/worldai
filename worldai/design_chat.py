@@ -1,5 +1,6 @@
 import logging
 import os
+import pydantic
 
 from . import chat, design_functions, elements, threads
 
@@ -8,6 +9,14 @@ from . import chat, design_functions, elements, threads
 # uses ChatSession and DesignFunctions
 #
 
+class DesignChatResponse(pydantic.BaseModel):
+    chat_response: chat.ChatResponse = chat.ChatResponse(id="")
+    view: dict[str, str] = dict()
+    made_changes: bool = True
+
+class DesignHistoryResponse(pydantic.BaseModel):
+    history_response: chat.ChatHistoryResponse = chat.ChatHistoryResponse()
+    view: dict[str, str] = dict()
 
 class DesignChatSession:
     def __init__(self, session_id, chat_session=None):
@@ -35,10 +44,10 @@ class DesignChatSession:
     def deleteChatSession(self, db):
         threads.delete_thread(db, self.session_id)
 
-    def chat_history(self):
-        history = []
+    def chat_history(self) -> DesignHistoryResponse:
+        response = DesignHistoryResponse()
         for message in self.chat.chat_history()["messages"]:
-            history.append(
+            response.history_response.messages.append(
                 {
                     "id": os.urandom(4).hex(),
                     "user": message["user"],
@@ -46,7 +55,8 @@ class DesignChatSession:
                     "updates": message.get("updates", ""),
                 }
             )
-        return history
+        response.view = self.get_view()
+        return response
 
     def get_view(self):
         return self.chatFunctions.get_view()
@@ -127,11 +137,17 @@ class DesignChatSession:
                         db, system=system, tool_choice=tool_choice, call_limit=1
                     )
 
-    def madeChanges(self):
+    def madeChanges(self) -> bool:
         return self.chatFunctions.madeChanges()
 
-    def chat_start(self, db, user):
-        return self.chat.chat_start(db, user=user)
+    def chat_start(self, db, user: str) -> DesignChatResponse:
+        response = DesignChatResponse()
+        response.chat_response = self.chat.chat_start(db, user=user)
+        response.view = self.get_view()
+        return response
 
-    def chat_continue(self, db, msg_id):
-        return self.chat.chat_continue(db, msg_id)
+    def chat_continue(self, db, msg_id: str) -> DesignChatResponse:
+        response = DesignChatResponse()
+        response.chat_response =  self.chat.chat_continue(db, msg_id)
+        response.view = self.get_view()
+        return response

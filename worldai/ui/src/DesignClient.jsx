@@ -594,7 +594,6 @@ function DesignView({chatView, setChatView}) {
 function DesignChat({name, chatView, setChatView}) {
 
   async function getDesignChats(context) {
-    console.log("get design chats");
     const url = '/design_chat'  
     const response =
           await fetch(get_url(url),
@@ -605,7 +604,7 @@ function DesignChat({name, chatView, setChatView}) {
     if (values.view.element_type !== "None") {
       setChatView(values.view);
     }
-    return values;
+    return values.history_response;
   }
 
   async function postChatStart(context, user_msg) {
@@ -635,7 +634,7 @@ function DesignChat({name, chatView, setChatView}) {
     });
     const values = await response.json();
     setChatView(values.view); 
-    return values;
+    return values.chat_response;
   }
 
   async function postChatContinue(context, msg_id) {
@@ -654,7 +653,7 @@ function DesignChat({name, chatView, setChatView}) {
     });
     const values = await response.json();
     setChatView(values.view); 
-    return values;
+    return values.chat_response;
   }
 
   async function clearDesignChat(context) {
