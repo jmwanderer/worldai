@@ -1235,9 +1235,10 @@ def command_api(wid):
     logging.info("commmand name %s", command.name)
     logging.info("location: %s", wstate.getLocation())
     client_actions = client_commands.ClientActions(get_db(), world, wstate)
+    # TODO: make this return include a WorldStatus
     response = client_actions.ExecCommand(command)
 
-    if response.changed:
+    if response.world_status.changed:
         logging.info("COMMAND: save world state")
         world_state.saveWorldState(get_db(), wstate)
 
@@ -1295,6 +1296,7 @@ def thread_api(wid, cid):
             reply = chat_session.chat_continue(get_db(), msg_id)
             content = reply.model_dump()
 
+    # TODO: make this return include a WorldStatus
     if content is None:
         content = {"error": "malformed input"}
 

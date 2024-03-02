@@ -76,11 +76,11 @@ def test_take_command(app):
 
     command.item = item_id
     response = client_actions.ExecCommand(command)
-    assert not response.changed
+    assert not response.world_status.changed
 
     env.wstate.setItemLocation(item_id, site_id2)
     response = client_actions.ExecCommand(command)
-    assert response.changed
+    assert response.world_status.changed
 
 
 def test_select_command(app):
@@ -91,7 +91,7 @@ def test_select_command(app):
     command = client_commands.Command(**command)
     client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
     response = client_actions.ExecCommand(command)
-    assert not response.changed
+    assert not response.world_status.changed
 
     # Real item, do not have
     sites = elements.listSites(env.db, env.world.getID())
@@ -102,7 +102,7 @@ def test_select_command(app):
     command.item = item_id
     client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
     response = client_actions.ExecCommand(command)
-    assert not response.changed
+    assert not response.world_status.changed
 
     # Real item, do have
     env.wstate.setLocation(site_id)
@@ -110,7 +110,7 @@ def test_select_command(app):
     env.wstate.addItem(item_id)
     client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
     response = client_actions.ExecCommand(command)
-    assert response.changed
+    assert response.world_status.changed
 
 
 def test_enage_command(app):
@@ -121,7 +121,7 @@ def test_enage_command(app):
     command = client_commands.Command(**command)
     client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
     response = client_actions.ExecCommand(command)
-    assert not response.changed
+    assert not response.world_status.changed
 
     # Real character, wrong location
     site_id = elements.listSites(env.db, env.world.getID())[0].getID()
@@ -130,12 +130,12 @@ def test_enage_command(app):
 
     env.wstate.setCharacterLocation(cid, site_id)
     response = client_actions.ExecCommand(command)
-    assert not response.changed
+    assert not response.world_status.changed
 
     # Real character, right location
     env.wstate.setLocation(site_id)
     response = client_actions.ExecCommand(command)
-    assert response.changed
+    assert response.world_status.changed
 
 
 def test_disenage_command(app):
@@ -146,7 +146,7 @@ def test_disenage_command(app):
     command = client_commands.Command(**command)
     client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
     response = client_actions.ExecCommand(command)
-    assert response.changed
+    assert response.world_status.changed
 
     # Real character, not engaged
     site_id = elements.listSites(env.db, env.world.getID())[0].getID()
@@ -155,15 +155,15 @@ def test_disenage_command(app):
     env.wstate.setCharacterLocation(cid, site_id)
     command.character = cid
     response = client_actions.ExecCommand(command)
-    assert response.changed
+    assert response.world_status.changed
 
     # Real character, enaged
     command.name = "engage"
     response = client_actions.ExecCommand(command)
-    assert response.changed
+    assert response.world_status.changed
     command.name = "disengage"
     response = client_actions.ExecCommand(command)
-    assert response.changed
+    assert response.world_status.changed
 
 
 def test_use_command(app):
@@ -174,20 +174,20 @@ def test_use_command(app):
     command = client_commands.Command(**command)
     client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
     response = client_actions.ExecCommand(command)
-    assert not response.changed
+    assert not response.world_status.changed
 
     item_id = elements.listItems(env.db, env.world.getID())[0].getID()
 
     # Real item - don't have
     command.item = item_id
     response = client_actions.ExecCommand(command)
-    assert not response.changed
+    assert not response.world_status.changed
 
     # Real item - have, not selected
     # If item is not mobile, still works, but not great test coverage here
     env.wstate.addItem(item_id)
     response = client_actions.ExecCommand(command)
-    assert response.changed
+    assert response.world_status.changed
 
 
 def test_use_character(app):

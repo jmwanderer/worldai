@@ -30,8 +30,8 @@ class BasicTestCase(unittest.TestCase):
 
     def testClient(self):
         response = client_commands.CommandResponse()
-        response.changed = True
-        response.message = "Hi"
+        response.world_status.changed = True
+        response.world_status.response_message = "Hi"
 
     def testImages(self):
         parent_id = "my_parent"

@@ -8,27 +8,7 @@ import typing
 
 import pydantic
 
-from . import elements, world_state
-
-
-class StatusCode(str, enum.Enum):
-    ok = "ok"
-    error = "error"
-
-
-class CallStatus(pydantic.BaseModel):
-    result: StatusCode = StatusCode.ok
-    message: typing.Optional[str] = ""
-
-
-# Standard message suffix for replies to client
-# calls that mutate the world.  WIP
-class WorldStatus(pydantic.BaseModel):
-    current_time: int = 0
-    player_alive: bool = True
-    location_id: str = ""
-    world_changed: bool = False
-    status_message: str = ""
+from . import elements, world_state, client
 
 
 class CommandName(str, enum.Enum):
@@ -56,10 +36,19 @@ class CommandResponse(pydantic.BaseModel):
     """
     Response to a client command
     """
-    message: str = ""                   # Return message in response to command. E.G. Nothing happened.
-    status: CallStatus = CallStatus()   # ok or error with an optional message  (message not currently used...)
-    changed: bool = False               # True if command changed the state of the world
+    call_status: client.CallStatus = client.CallStatus()   # ok or error with an optional message  (message not currently used...)
+    # World status has:
+    # response_message - Return message in response to command. E.G. Nothing happened.
+    # changed - indicates if the state of the world was changed
+    world_status: client.WorldStatus = client.WorldStatus()
 
+
+def update_world_status(wstate: world_state.WorldState, status: client.WorldStatus):
+    status.current_time = wstate.getCurrentTime()
+    status.location_id = wstate.getLocation()
+    status.player_alive = wstate.getPlayerHealth() > 0
+    # Add chat enabled -list of character ids that can chat
+    #    status.
 
 class ClientActions:
     def __init__(self, db, world, wstate):
@@ -86,82 +75,83 @@ class ClientActions:
                 if self.wstate.isSiteOpen(site_id):
                     self.wstate.setLocation(site_id)
                     logging.info("GO: set location %s", site_id)
-                    response.message = f"Arrival: {site.getName()}"
+                    response.world_status.response_message = f"Arrival: {site.getName()}"
                     self.wstate.advanceTime(30)
                 else:
-                    response.message = f"{site.getName()} is not open"
+                    response.world_status.response_message = f"{site.getName()} is not open"
             else:
                 self.wstate.setLocation("")
                 logging.info("GO: clear location")
-            response.changed = True
+            response.world_status.changed = True
 
         elif command.name == CommandName.take:
             item_id = command.item
             logging.info("take item %s", item_id)
             item = elements.loadItem(self.db, item_id)
             if item is None:
-                response.status.result = StatusCode.error
+                response.call_status.result = client.StatusCode.ERROR
             # Verify
             elif self.wstate.getItemLocation(item_id) == self.wstate.getLocation():
                 if item.getIsMobile():
                     self.wstate.addItem(item_id)
-                    response.changed = True
-                    response.message = f"You picked up {item.getName()}"
+                    response.world_status.changed = True
+                    response.world_status.response_message = f"You picked up {item.getName()}"
 
         elif command.name == CommandName.select:
             item_id = command.item
             if item_id is None or len(item_id) == 0:
                 self.wstate.selectItem("")
-                response.changed = True
+                response.world_status.changed = True
             else:
                 logging.info("select item %s", item_id)
                 if self.wstate.hasItem(item_id):
                     item = elements.loadItem(self.db, item_id)
                     self.wstate.selectItem(item_id)
-                    response.changed = True
-                    response.message = f"You are holding {item.getName()}"
+                    response.world_status.changed = True
+                    response.world_status.response_message = f"You are holding {item.getName()}"
 
         elif command.name == CommandName.use:
             item = elements.loadItem(self.db, command.item)
             if item is None:
-                response.status.result = StatusCode.error
+                response.call_status.result = client.StatusCode.ERROR
             else:
                 logging.info("use item %s", command.item)
                 (changed, message, chat_message) = self.UseItem("Travler", item)
                 if changed:
                     self.wstate.advanceTime(5)
-                response.changed = changed
-                response.message = message
+                response.world_status.changed = changed
+                response.world_status.response_message = message
 
         elif command.name == CommandName.engage:
             character_id = command.character
             character = elements.loadCharacter(self.db, character_id)
             if character is None:
-                response.status.result = StatusCode.error
+                response.call_status.result = client.StatusCode.ERROR
 
             elif self.wstate.getLocation() != self.wstate.getCharacterLocation(
                 character_id
             ):
                 # Check same location
-                response.message = f"{character.getName()} is not here"
+                response.world_status.response_message = f"{character.getName()} is not here"
             else:
                 self.wstate.setChatCharacter(character_id)
                 logging.info("engage character %s", character_id)
                 logging.info("ENGAGE: location: %s", self.wstate.getLocation())
-                response.changed = True
+                response.world_status.changed = True
                 if not self.wstate.isCharacterDead(character_id):
-                    response.message = f"Talking to {character.getName()}"
+                    response.world_status.response_message = f"Talking to {character.getName()}"
                 else:
-                    response.message = f"{character.getName()} is dead"
+                    response.world_status.response_message = f"{character.getName()} is dead"
                 self.wstate.advanceTime(5)
 
         elif command.name == CommandName.disengage:
             self.wstate.setChatCharacter(None)
             logging.info("disengage character")
-            response.changed = True
-            response.message = f"Talking to nobody"
+            response.world_status.changed = True
+            response.world_status.response_message = f"Talking to nobody"
 
         logging.info("Client command response: %s", response.model_dump())
+        update_world_status(self.wstate, response.world_status)
         return response
 
     def UseItemCharacter(self, item_id, cid):

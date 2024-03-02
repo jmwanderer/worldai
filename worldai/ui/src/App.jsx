@@ -511,8 +511,8 @@ function Site({ world, siteId,
   async function takeItem(item_id) {
     try {
       let response = await postTakeItem(world.id, item_id);
-      setStatusMessage(response.message)
-      if (response.changed) {
+      setStatusMessage(response.world_status.response_message)
+      if (response.world_status.changed) {
         reloadState()
       }
     } catch (e) {
@@ -526,8 +526,8 @@ function Site({ world, siteId,
     try {
       // TODO: display some type of result here
       let response = await postUseItem(world.id, item_id);
-      setStatusMessage(response.message)
-      if (response.changed) {
+      setStatusMessage(response.world_status.response_message)
+      if (response.world_status.changed) {
         reloadState()
       }
     } catch (e) {
@@ -562,7 +562,7 @@ function Site({ world, siteId,
     try {    
       const response = await postEngage(world.id, char_id);
       setCharacterId(char_id);
-      setStatusMessage(response.message);      
+      setStatusMessage(response.world_status.response_message);      
     } catch (e) {
       console.log(e);
     }
@@ -1040,8 +1040,8 @@ function World({ worldId, setWorldId }) {
   async function selectItem(item_id) {
     try {
       let response = await postSelectItem(world.id, item_id);
-      setStatusMessage(response.message)
-      if (response.changed) {
+      setStatusMessage(response.world_status.message)
+      if (response.world_status.changed) {
         updateWorldData();
       }
     } catch (e) {
@@ -1053,8 +1053,10 @@ function World({ worldId, setWorldId }) {
   async function goToSite(site_id) {
     try {    
       let response = await postGoTo(world.id, site_id);
-      setStatusMessage(response.message);    
-      if (response.changed) {
+      console.log("post go to");
+      setStatusMessage(response.world_status.response_message);    
+      if (response.world_status.changed) {
+        console.log("update world data");
         updateWorldData();
       }
     } catch (e) {
