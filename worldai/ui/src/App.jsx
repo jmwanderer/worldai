@@ -160,7 +160,7 @@ async function getCharacterChats(context) {
         await fetch(get_url(url),
                     { headers: headers_get() });
   const values = await response.json();
-  return values;
+  return values.history_response;
 }
 
 async function postChatStart(context, user_msg) {
@@ -176,7 +176,8 @@ async function postChatStart(context, user_msg) {
     headers: headers_post()
   });
   const values = await response.json();
-  return values;
+  console.log(values);
+  return values.chat_response;
 }
 
 async function postChatContinue(context, msg_id) {
@@ -192,7 +193,7 @@ async function postChatContinue(context, msg_id) {
     headers: headers_post()
   });
   const values = await response.json();
-  return values;
+  return values.chat_response;
 }
 
 async function postCharacterAction(context) {
@@ -304,7 +305,7 @@ function ChatCharacter({ world, characterId,
   async function runCharacterAction(context) {
     let values = await postCharacterAction(context);
     setStatusMessage(values.message)
-    if (values["changed"]) {
+    if (values.changed) {
       reloadState();
     }
     return values

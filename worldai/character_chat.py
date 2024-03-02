@@ -1,6 +1,7 @@
 import os
+import pydantic
 
-from . import character_functions, chat, threads
+from . import character_functions, chat, threads, client, world_state
 
 #
 # Module for the Character Chat Session
@@ -8,6 +9,13 @@ from . import character_functions, chat, threads
 #      right now, just surpressing html. 
 #
 
+class CharacterResponse(pydantic.BaseModel):
+    chat_response: chat.ChatResponse = chat.ChatResponse(id="")
+    world_status: client.WorldStatus = client.WorldStatus()
+    
+class CharacterHistoryResponse(pydantic.BaseModel):
+    history_response: chat.ChatHistoryResponse = chat.ChatHistoryResponse()
+    world_status: client.WorldStatus = client.WorldStatus()
 
 class CharacterChat:
     def __init__(self, chat_session, wstate_id, character_id):
@@ -31,10 +39,10 @@ class CharacterChat:
     def deleteChatSession(self, db):
         threads.delete_character_thread(db, self.wstate_id, self.character_id)
 
-    def chat_history(self):
-        history = []
+    def chat_history(self, db) -> CharacterHistoryResponse:
+        response = CharacterHistoryResponse()
         for message in self.chat.chat_history()["messages"]:
-            history.append(
+            response.history_response.messages.append(
                 {
                     "id": os.urandom(4).hex(),
                     "user": message["user"],
@@ -43,20 +51,52 @@ class CharacterChat:
                     "updates": message.get("updates", ""),
                 }
             )
-        return history
+        wstate = world_state.loadWorldState(db, self.wstate_id)
+        client.update_world_status(wstate, response.world_status)
+        return response
 
-    def chat_message(self, db, user):
+    def checkChatEnabled(self, wstate: world_state.WorldState) -> bool:
+        cid = wstate.getChatCharacter()
+        # Check player and character are in the same location
+        chat_enabled = wstate.getCharacterLocation(cid) == wstate.getLocation()
+        # Check player and character are alive
+        chat_enabled = chat_enabled and wstate.getCharacterHealth(cid) > 0
+        chat_enabled = chat_enabled and wstate.getPlayerHealth() > 0
+        return chat_enabled
+
+    def chat_message(self, db, user) -> CharacterResponse:
         if len(user) == 0:
             user = None
-        return self.chat.chat_exchange(db, user=user)
+        response = CharacterResponse() 
+        response.chat_response = self.chat.chat_exchange(db, user=user)
+        wstate = world_state.loadWorldState(db, self.wstate_id)
+        response.chat_response.chat_enabled = self.checkChatEnabled(wstate) 
+        client.update_world_status(wstate, response.world_status)
+        return response
 
-    def chat_start(self, db, user):
+    def chat_start(self, db, user) -> CharacterResponse:
         if len(user) == 0:
             user = None
-        return self.chat.chat_start(db, user=user)
+        response = CharacterResponse() 
+        response.chat_response = self.chat.chat_start(db, user=user)
+        wstate = world_state.loadWorldState(db, self.wstate_id)
+        response.chat_response.chat_enabled = self.checkChatEnabled(wstate) 
+        client.update_world_status(wstate, response.world_status)
+        return response
 
-    def chat_continue(self, db, msg_id):
-        return self.chat.chat_continue(db, msg_id)
 
-    def chat_event(self, db, event):
-        return self.chat.chat_exchange(db, system=event)
+    def chat_continue(self, db, msg_id) -> CharacterResponse:
+        response = CharacterResponse() 
+        response.chat_response =  self.chat.chat_continue(db, msg_id)
+        wstate = world_state.loadWorldState(db, self.wstate_id)
+        response.chat_response.chat_enabled = self.checkChatEnabled(wstate) 
+        client.update_world_status(wstate, response.world_status)
+        return response
+
+    def chat_event(self, db, event) -> CharacterResponse:
+        response = CharacterResponse() 
+        response.chat_response =  self.chat.chat_exchange(db, system=event)
+        wstate = world_state.loadWorldState(db, self.wstate_id)
+        response.chat_response.chat_enabled = self.checkChatEnabled(wstate) 
+        client.update_world_status(wstate, response.world_status)
+        return response

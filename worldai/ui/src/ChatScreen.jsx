@@ -168,7 +168,7 @@ const ChatScreen = forwardRef(({ name, calls,
         const values = await calls.getChats(calls.context);
         if (!ignore) {
           setChatHistory(values["messages"]);
-          if (values["enabled"]) {
+          if (values.chat_enabled) {
             setChatState("ready");
           } else {
             setChatState("disabled");
@@ -232,15 +232,15 @@ const ChatScreen = forwardRef(({ name, calls,
         // Clear the current message
         setToolCalls([])
         setCurrentMessage({user: "", error: "" });
-        console.log("enabled: " + values["enabled"]);
+        console.log("enabled: " + values.chat_enabled);
       }
         
-      if (values["enabled"]) {
+      if (values.chat_enabled) {
         setChatState("ready");
       } else {
         setChatState("disabled");            
       }
-      if (values["updates"].length > 0) {
+      if (values.updates.length > 0) {
         // Server signaled a change in state.
         onChange();
       }
@@ -258,6 +258,7 @@ const ChatScreen = forwardRef(({ name, calls,
 
     try {
       const values = await calls.postChatAction(calls.context);
+      console.log(values);
       processChatMessage(values);
     } catch (e) {
       console.log(e);

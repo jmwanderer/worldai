@@ -155,7 +155,7 @@ def test_character_chat(client, app):
         },
     )
     assert response.status_code == 200
-    assert response.json["id"] is not None
+    assert response.json["chat_response"]["id"] is not None
 
     # Get chat history
     response = client.get(

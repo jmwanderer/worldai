@@ -140,7 +140,7 @@ def log_chat_message(messages, assistant_message):
 class ChatResponse(pydantic.BaseModel):
     id: str
     # Status flags
-    done: bool          # True if last message in chat exchange, otherwise client should make another call.
+    done: bool = False  # True if last message in chat exchange, otherwise client should make another call.
     status: str = "ok"  # Set to "error" if not ok. Something went wrong...
 
     # Input to GPT function
@@ -154,7 +154,12 @@ class ChatResponse(pydantic.BaseModel):
                         # E.G. Character used item X
     tool_call: str = "" # Indicates if the next chat is a tool call
                         # Client may show: Calling MakeImage....
+    # Flag to client that chat function is enabled. Not set by this module
+    chat_enabled: bool = True
 
+class ChatHistoryResponse(pydantic.BaseModel):
+    messages: list[dict[str,str]] = list()
+    chat_enabled: bool = True
 
 class ChatTokens(pydantic.BaseModel):
     prompt_tokens: int = 0

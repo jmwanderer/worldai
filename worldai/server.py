@@ -1281,9 +1281,8 @@ def thread_api(wid, cid):
     )
     content = None
     if request.method == "GET":
-        history = chat_session.chat_history()
-        content = {"messages": history}
-
+        history_response = chat_session.chat_history(get_db())
+        content = history_response.model_dump()
     else:
         command = request.json.get("command")
         if command == "start":
@@ -1299,17 +1298,6 @@ def thread_api(wid, cid):
     # TODO: make this return include a WorldStatus
     if content is None:
         content = {"error": "malformed input"}
-
-    # Player and character must be in same location to continue to chat.
-    logging.info("threads API: load world state")
-    wstate = world_state.loadWorldState(get_db(), wstate_id)
-    enabled = wstate.getCharacterLocation(cid) == wstate.getLocation()
-    logging.info("location: %s", wstate.getLocation())
-    logging.info("char location: %s", wstate.getCharacterLocation(cid))
-    engaged = wstate.getChatCharacter() == cid
-    logging.info("enabled: %s", enabled)
-    logging.info("engaged: %s", engaged)
-    content["enabled"] = enabled and engaged
 
     chat_session.saveChatSession(get_db())
     return content
