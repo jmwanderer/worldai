@@ -245,7 +245,7 @@ class ClientActions:
                         world_status.response_message = f"{character.getName()} is dead"
                         world_status.last_event = (
                             f"{name} used {item.getName()} to kill {character.getName()}. "
-                            + response_message
+                            + world_status.response_message
                         )
                     else:
                         world_status.response_message = f"{character.getName()} took damage"

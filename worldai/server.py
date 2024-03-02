@@ -665,20 +665,12 @@ def design_chat_api():
         if command == "start":
             user_msg = request.json.get("user")
             reply = chat_session.chat_start(get_db(), user_msg)
-
-            # Add additional entries to the message
-            reply.chat_response.chat_enabled = True
-            reply.made_changes = chat_session.madeChanges()
             content = reply.model_dump()
 
         elif command == "continue":
             msg_id = request.json.get("id")
             reply = chat_session.chat_continue(get_db(), msg_id)
             logging.info("design chat updates: %s", reply.chat_response.updates)
-
-            # Add additional entries to the message
-            reply.chat_response.chat_enabled = True
-            reply.made_changes = chat_session.madeChanges()
             content = reply.model_dump()
 
         elif request.json.get("command") == "clear":

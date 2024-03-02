@@ -56,6 +56,7 @@ class DesignChatSession:
                 }
             )
         response.view = self.get_view()
+        response.history_response.chat_enabled = True
         return response
 
     def get_view(self):
@@ -144,10 +145,14 @@ class DesignChatSession:
         response = DesignChatResponse()
         response.chat_response = self.chat.chat_start(db, user=user)
         response.view = self.get_view()
+        response.made_changes = self.madeChanges()
+        response.chat_response.chat_enabled = True
         return response
 
     def chat_continue(self, db, msg_id: str) -> DesignChatResponse:
         response = DesignChatResponse()
         response.chat_response =  self.chat.chat_continue(db, msg_id)
         response.view = self.get_view()
+        response.made_changes = self.madeChanges()
+        response.chat_response.chat_enabled = True
         return response
