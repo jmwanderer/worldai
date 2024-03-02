@@ -411,5 +411,5 @@ def testCharacterAction(client, app):
     # assert len(content["event"]) > 0
     # assert content["reply"] is not None
     # assert len(content["reply"]) > 0
-    assert content["message"] is not None
-    assert len(content["message"]) > 0
+    assert content["world_status"]["response_message"] is not None
+    assert len(content["world_status"]["response_message"]) > 0

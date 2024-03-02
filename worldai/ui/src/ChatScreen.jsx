@@ -258,7 +258,6 @@ const ChatScreen = forwardRef(({ name, calls,
 
     try {
       const values = await calls.postChatAction(calls.context);
-      console.log(values);
       processChatMessage(values);
     } catch (e) {
       console.log(e);

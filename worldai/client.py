@@ -24,6 +24,7 @@ class WorldStatus(pydantic.BaseModel):
     engaged_character: str = ""
     changed: bool = False
     response_message: str = ""
+    last_event: str = ""
 
 
 def update_world_status(wstate: world_state.WorldState, status: WorldStatus):

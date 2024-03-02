@@ -304,11 +304,11 @@ function ChatCharacter({ world, characterId,
 
   async function runCharacterAction(context) {
     let values = await postCharacterAction(context);
-    setStatusMessage(values.message)
-    if (values.changed) {
+    setStatusMessage(values.world_status.response_message)
+    if (values.world_status.changed) {
       reloadState();
     }
-    return values
+    return values.chat_response
   }
   
   let item_card = "";

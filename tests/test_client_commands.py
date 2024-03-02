@@ -197,20 +197,20 @@ def test_use_character(app):
     # Not real cid, item
     item_id = "id123"
     cid = "id456"
-    (changed, message, chat) = client_actions.UseItemCharacter(item_id, cid)
-    assert not changed
+    world_status = client_actions.UseItemCharacter(item_id, cid)
+    assert not world_status.changed
 
     # Real cid, not real item
     item_id = "id123"
     cid = elements.listCharacters(env.db, env.world.getID())[0].getID()
-    (changed, message, chat) = client_actions.UseItemCharacter(item_id, cid)
-    assert not changed
+    world_status = client_actions.UseItemCharacter(item_id, cid)
+    assert not world_status.changed
 
     # Not real cid, real item
     item_id = elements.listItems(env.db, env.world.getID())[0].getID()
     cid = "id456"
-    (changed, message, chat) = client_actions.UseItemCharacter(item_id, cid)
-    assert not changed
+    world_status = client_actions.UseItemCharacter(item_id, cid)
+    assert not world_status.changed
 
     # Real item and cid, same location and engaged
     item_id = elements.listItems(env.db, env.world.getID())[0].getID()
@@ -223,7 +223,7 @@ def test_use_character(app):
     env.wstate.addItem(item_id)
     env.wstate.setChatCharacter(cid)
 
-    (changed, message, chat) = client_actions.UseItemCharacter(item_id, cid)
-    assert changed
-    assert message is not None
-    assert chat is not None
+    world_status = client_actions.UseItemCharacter(item_id, cid)
+    assert world_status.changed
+    assert world_status.response_message is not None
+    assert world_status.last_event is not None

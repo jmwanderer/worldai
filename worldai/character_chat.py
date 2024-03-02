@@ -95,7 +95,8 @@ class CharacterChat:
 
     def chat_event(self, db, event) -> CharacterResponse:
         response = CharacterResponse() 
-        response.chat_response =  self.chat.chat_exchange(db, system=event)
+        if len(event) > 0:
+            response.chat_response =  self.chat.chat_exchange(db, system=event)
         wstate = world_state.loadWorldState(db, self.wstate_id)
         response.chat_response.chat_enabled = self.checkChatEnabled(wstate) 
         client.update_world_status(wstate, response.world_status)
