@@ -13,7 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.wrappers import Response as Response
 
 
-from . import (character_chat, chat, chat_cli, client_commands, db_access,
+from . import (character_chat, chat, chat_cli, client, client_commands, db_access,
                design_chat, design_functions, element_info, elements, info_set,
                world_state)
 
@@ -894,7 +894,6 @@ def character_stats(wid, cid):
 
     character_data = client_commands.LoadCharacterData(get_db(), wstate, cid)
     response = character_data.model_dump()
-    response["current_time"] = wstate.getCurrentTime()
     return response
 
 @bp.route("/api/worlds/<wid>/documents")
@@ -990,7 +989,6 @@ def site_instances_list(wid):
                 "id": sid,
                 "name": site.getName(),
                 "description": site.getDescription(),
-                "present": wstate.getLocation() == id,
                 "open": wstate.isSiteOpen(sid),
                 "image": image_prop,
             }
@@ -1057,8 +1055,6 @@ def site_instance(wid, sid):
         characters.append(record)
 
     result["characters"] = characters
-    result["chatting"] = chat_char_id
-    result["current_time"] = wstate.getCurrentTime()
 
     items = []
     iid_list = wstate.getItemsAtLocation(sid)
@@ -1228,6 +1224,22 @@ def command_api(wid):
 
     return response.model_dump()
 
+@bp.route("/api/worlds/<wid>/status")
+@auth_required
+def state(wid):
+    """
+    Load and return the world status
+    """
+    session_id = get_session_id()
+    world = elements.loadWorld(get_db(), wid)
+    if world is None:
+        return {"error", "World not found"}, 404
+    wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+    wstate = world_state.loadWorldState(get_db(), wstate_id)
+    response = client.WorldStatus()
+    client.update_world_status(wstate, response)
+    return response.model_dump()
+
 
 @bp.route("/api/worlds/<wid>/player", methods=["GET"])
 @auth_required
@@ -1244,7 +1256,6 @@ def player(wid):
 
     player_data = client_commands.LoadPlayerData(get_db(), wstate)
     response = player_data.model_dump()
-    response["current_time"] = wstate.getCurrentTime()
     return response
 
 

@@ -43,13 +43,6 @@ class CommandResponse(pydantic.BaseModel):
     world_status: client.WorldStatus = client.WorldStatus()
 
 
-def update_world_status(wstate: world_state.WorldState, status: client.WorldStatus):
-    status.current_time = wstate.getCurrentTime()
-    status.location_id = wstate.getLocation()
-    status.player_alive = wstate.getPlayerHealth() > 0
-    # Add chat enabled -list of character ids that can chat
-    #    status.
-
 class ClientActions:
     def __init__(self, db, world, wstate):
         self.db = db
@@ -140,7 +133,6 @@ class ClientActions:
                     response.world_status.response_message = f"Talking to {character.getName()}"
                 else:
                     response.world_status.response_message = f"{character.getName()} is dead"
-                self.wstate.advanceTime(5)
 
         elif command.name == CommandName.disengage:
             self.wstate.setChatCharacter(None)
@@ -148,8 +140,8 @@ class ClientActions:
             response.world_status.changed = True
             response.world_status.response_message = f"Talking to nobody"
 
+        client.update_world_status(self.wstate, response.world_status)
         logging.info("Client command response: %s", response.model_dump())
-        update_world_status(self.wstate, response.world_status)
         return response
 
     def UseItemCharacter(self, item_id: elements.ElemID, cid: elements.ElemID) -> client.WorldStatus:

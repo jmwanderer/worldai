@@ -1,6 +1,6 @@
 import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
-import { getWorldList, getWorld, getPlayerData } from './api.js';
+import { getWorldList, getWorld, getPlayerData, getWorldStatus } from './api.js';
 import { getSiteInstancesList, getItemInstancesList, getCharacterInstancesList } from './api.js';
 import { getSiteInstance, getItemInstance, getCharacter, getCharacterData } from './api.js';
 
@@ -177,7 +177,7 @@ async function postChatStart(context, user_msg) {
   });
   const values = await response.json();
   console.log(values);
-  return values.chat_response;
+  return values;
 }
 
 async function postChatContinue(context, msg_id) {
@@ -193,7 +193,7 @@ async function postChatContinue(context, msg_id) {
     headers: headers_post()
   });
   const values = await response.json();
-  return values.chat_response;
+  return values;
 }
 
 async function postCharacterAction(context) {
@@ -244,7 +244,7 @@ function ChatCharacter({ world, characterId,
           setCharacter(character);
           setCharacterData(characterData);
           setChatEnabled(characterData.can_chat);
-          setCurrentTime(characterData.current_time);
+          console.log("current time: " + characterData.current_time)
         }
       } catch (e) {
         console.log(e);        
@@ -279,7 +279,6 @@ function ChatCharacter({ world, characterId,
       setCharacter(character);
       setCharacterData(characterData);
       setChatEnabled(characterData.can_chat);
-      setCurrentTime(characterData.current_time);      
       
     } catch (e) {
       console.log(e);
@@ -302,9 +301,30 @@ function ChatCharacter({ world, characterId,
     }
   }
 
+  async function runChatStart(context, user_msg) {
+    let values = await postChatStart(context, user_msg);
+    setStatusMessage(values.world_status.response_message)
+    if (values.world_status.changed) {
+      reloadState();
+    }
+    setCurrentTime(values.world_status.current_time)
+    return values.chat_response
+  }
+
+   async function runChatContinue(context, msg_id) {
+    let values = await postChatContinue(context, msg_id);
+    setStatusMessage(values.world_status.response_message)
+    setCurrentTime(values.world_status.current_time)
+    if (values.world_status.changed) {
+      reloadState();
+    }
+    return values.chat_response
+  }
+ 
   async function runCharacterAction(context) {
     let values = await postCharacterAction(context);
     setStatusMessage(values.world_status.response_message)
+    setCurrentTime(values.world_status.current_time)
     if (values.world_status.changed) {
       reloadState();
     }
@@ -322,8 +342,8 @@ function ChatCharacter({ world, characterId,
   const calls = {
     context: context,
     getChats: getCharacterChats,
-    postChat: postChatStart,
-    continueChat: postChatContinue,
+    postChat: runChatStart,
+    continueChat: runChatContinue,
     clearChat: null,
     postChatAction: runCharacterAction
   };
@@ -471,10 +491,10 @@ function Site({ world, siteId,
                 selectedItem, selectItem,
                 statusMessage, setStatusMessage,
                 currentTime,  setCurrentTime,
+                characterId, setCharacterId,
                 onClose }) {
   const [site, setSite] = useState(null);
   const [view, setView] = useState(null);
-  const [characterId, setCharacterId] = useState(null);
   
   useEffect(() => {
     let ignore = false;
@@ -485,8 +505,6 @@ function Site({ world, siteId,
         const value = await getSiteInstance(world.id, siteId)
         if (!ignore) {
           setSite(value);
-          setCurrentTime(value.current_time);
-          setCharacterId(value.chatting);
         }
       } catch (e) {
         console.log(e);        
@@ -503,7 +521,6 @@ function Site({ world, siteId,
       updateWorldData()
       const newSite = await getSiteInstance(world.id, siteId);
       setSite(newSite);
-      setCurrentTime(newSite.current_time);      
     } catch (e) {
       console.log(e);
     } 
@@ -513,6 +530,7 @@ function Site({ world, siteId,
     try {
       let response = await postTakeItem(world.id, item_id);
       setStatusMessage(response.world_status.response_message)
+      setCurrentTime(response.world_status.current_time);
       if (response.world_status.changed) {
         reloadState()
       }
@@ -528,6 +546,7 @@ function Site({ world, siteId,
       // TODO: display some type of result here
       let response = await postUseItem(world.id, item_id);
       setStatusMessage(response.world_status.response_message)
+      setCurrentTime(response.world_status.current_time);
       if (response.world_status.changed) {
         reloadState()
       }
@@ -562,8 +581,9 @@ function Site({ world, siteId,
   async function engageCharacter(char_id) {
     try {    
       const response = await postEngage(world.id, char_id);
-      setCharacterId(char_id);
+      setCharacterId(response.world_status.engaged_character_id);
       setStatusMessage(response.world_status.response_message);      
+      setCurrentTime(response.world_status.current_time);
     } catch (e) {
       console.log(e);
     }
@@ -952,7 +972,8 @@ function World({ worldId, setWorldId }) {
   const [statusMessage, setStatusMessage] = useState("");
   const [playerData, setPlayerData] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);  
-  
+  const [characterId, setCharacterId] = useState(null);
+
   useEffect(() => {
     let ignore = false;
 
@@ -962,16 +983,18 @@ function World({ worldId, setWorldId }) {
 
         let calls = Promise.all([ getSiteInstancesList(worldId),
           getWorld(worldId),
-          getPlayerData(worldId)]);
-        let [newSites, newWorld, newPlayer] = await calls;
+          getPlayerData(worldId),
+          getWorldStatus(worldId)]);
+        let [newSites, newWorld, newPlayer, newStatus] = await calls;
 
         if (!ignore) {
           setWorld(newWorld);
           setSiteList(newSites);
           setPlayerData(newPlayer);
-          setCurrentTime(newPlayer.current_time);  // TODO - decide on this
+          setCurrentTime(newStatus.current_time);  // TODO - decide on this
           loadSelectedItem(newWorld, newPlayer);
-          setSiteId(newPlayer.status.location);
+          setSiteId(newStatus.location_id);
+          setCharacterId(newStatus.engaged_character_id);
         }
       } 
       catch (e) {
@@ -1008,6 +1031,7 @@ function World({ worldId, setWorldId }) {
       if (playerData.selected_item === null) {
         setSelectedItem(null);
       } else if (selectedItem === null) {
+        // No currently selected item
         const newItem = await getItemInstance(world.id, playerData.selected_item);
         setSelectedItem(newItem);
       } else if (playerData.selected_item !== selectedItem.id) {
@@ -1031,7 +1055,6 @@ function World({ worldId, setWorldId }) {
       setPlayerData(newPlayerData);
       setSiteId(newPlayerData.status.location);      
       loadSelectedItem(world, newPlayerData);
-      setCurrentTime(newPlayerData.current_time);  // TODO - decide on this 
     } catch (e) {
       console.log(e);
     }
@@ -1056,6 +1079,7 @@ function World({ worldId, setWorldId }) {
       let response = await postGoTo(world.id, site_id);
       console.log("post go to");
       setStatusMessage(response.world_status.response_message);    
+      setCurrentTime(response.world_status.current_time);
       if (response.world_status.changed) {
         console.log("update world data");
         updateWorldData();
@@ -1090,6 +1114,8 @@ function World({ worldId, setWorldId }) {
                   setStatusMessage={setStatusMessage}
                   currentTime={currentTime}
                   setCurrentTime={setCurrentTime}
+                  characterId={characterId}
+                  setCharacterId={setCharacterId}
                   onClose={clearSite}/>);
   }
 

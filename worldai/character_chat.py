@@ -80,6 +80,8 @@ class CharacterChat:
         response = CharacterResponse() 
         response.chat_response = self.chat.chat_start(db, user=user)
         wstate = world_state.loadWorldState(db, self.wstate_id)
+        wstate.advanceTime(1)
+        world_state.saveWorldState(db, wstate)
         response.chat_response.chat_enabled = self.checkChatEnabled(wstate) 
         client.update_world_status(wstate, response.world_status)
         return response

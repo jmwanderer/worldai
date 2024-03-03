@@ -359,6 +359,14 @@ def testLoadPlayerData(client, app):
     )
     assert response.status_code == 200
 
+    response = client.get(
+        f"/api/worlds/{world_id}/status",
+         headers={
+            "Authorization": bearer_token(app),
+        },
+    )
+    assert response.status_code == 200
+
 
 def testLoadCharacterData(client, app):
     response = client.get("/api/worlds", headers={"Authorization": bearer_token(app)})
