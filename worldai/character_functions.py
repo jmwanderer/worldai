@@ -56,12 +56,15 @@ Your level of enimity is {level} of 10.
 
 class CharacterFunctions(chat_functions.BaseChatFunctions):
 
-    def __init__(self, wstate_id, world_id, character_id):
+    def __init__(self, wstate_id, world_id: elements.WorldID, character_id: elements.ElemID):
         chat_functions.BaseChatFunctions.__init__(self)
         self.wstate_id = wstate_id
-        self.world_id = world_id
-        self.character_id = character_id
+        self.world_id: elements.WorldID = world_id
+        self.character_id: elements.ElemID = character_id
         self.archive_id: info_set.DocID|None = None
+
+        # Run time only flags, not saved.
+        self.world_changed: bool = False
 
     def getProperties(self):
         properties = super().getProperties()
@@ -294,6 +297,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             "response": self.funcStatus("OK"),
             "text": character.getName() + " increases friendship",
         }
+        self.world_changed = True
         return result
 
     def FuncDecreaseFriendship(self, db):
@@ -310,6 +314,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             "response": self.funcStatus("OK"),
             "text": character.getName() + " increases enimity",
         }
+        self.world_changed = True
         return result
 
     def FuncLookupInformation(self, db, args):
@@ -351,7 +356,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
         world_state.saveWorldState(db, wstate)
         result = {"response": self.funcStatus("OK"), "text": text}
-
+        self.world_changed = True
         return result
 
     def FuncUseItem(self, db, args):
@@ -412,6 +417,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         world_state.saveWorldState(db, wstate)
         result = {"action": text, "result": impact, "text": fulltext}
 
+        self.world_changed = True
         return result
 
     def healPlayer(self, wstate):
@@ -478,6 +484,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             "response": self.funcStatus("You are enroute to " + site.getName()),
             "text": character.getName() + " left " + old_site.getName(),
         }
+        self.world_changed = True
 
         return result
 

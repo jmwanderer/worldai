@@ -666,8 +666,6 @@ function DesignChat({name, chatView, setChatView}) {
   }
 
 
-  function handleUpdate() {
-  }
 
   const calls = {
     context: chatView,
@@ -682,8 +680,7 @@ function DesignChat({name, chatView, setChatView}) {
   return ( <div style={{ height: "100%", maxHeight: "90vh" }}>
              <ChatScreen name={name}
                          chatEnabled={true}
-                         calls={calls}
-                         onChange={handleUpdate}/>
+                         calls={calls}/>
            </div> );
 }
 

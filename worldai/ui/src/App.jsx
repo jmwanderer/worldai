@@ -264,9 +264,6 @@ function ChatCharacter({ world, characterId,
     });
   }, [ selectedItem ]);
 
-  function handleChatChange() {
-    reloadState();
-  }
   
   async function reloadState() {
     // Chat signaled state change on server side
@@ -285,10 +282,6 @@ function ChatCharacter({ world, characterId,
     }
     // Let parent component know
     onChange();
-  }
-
-  function clearView() {
-    setView(null)
   }
 
   if (!character) {
@@ -379,7 +372,6 @@ function ChatCharacter({ world, characterId,
             <ChatScreen name={character.name}
                         calls={calls}
                         chatEnabled={chatEnabled}
-                        onChange={handleChatChange}
                         ref={submitActionRef}/>
         </Col>
       </Row>

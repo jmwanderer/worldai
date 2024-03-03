@@ -147,7 +147,7 @@ function UserInput({value, onChange, onKeyDown, disabled}) {
 
 
 const ChatScreen = forwardRef(({ name, calls,
-                                 chatEnabled, onChange, onChatDone},
+                                 chatEnabled },
                                submitActionRef) =>
 {
   const [chatHistory, setChatHistory] = useState([]);
@@ -192,12 +192,6 @@ const ChatScreen = forwardRef(({ name, calls,
     }
   }, []);
 
-  function chatDone() {
-    if (typeof onChatDone !== 'undefined') {
-      onChatDone();
-    }
-  }
-
   if (typeof submitActionRef !== 'undefined') {
     // Setup method that the application can use to dispatch
     // an event or action as a chat loop. This enables the character
@@ -240,10 +234,6 @@ const ChatScreen = forwardRef(({ name, calls,
       } else {
         setChatState("disabled");            
       }
-      if (values.updates.length > 0) {
-        // Server signaled a change in state.
-        onChange();
-      }
     }
   }
   
@@ -264,9 +254,6 @@ const ChatScreen = forwardRef(({ name, calls,
       setCurrentMessage({error: "Something went wrong."});
       setChatState("ready")
     }
-    // Signal chat was completed
-    chatDone();
-    // TODO - return a result
   }
 
   async function runChatExchange(user_msg) {
@@ -289,8 +276,6 @@ const ChatScreen = forwardRef(({ name, calls,
                          error: "Something went wrong."});
       setChatState("ready")
     }
-    // Signal chat was completed
-    chatDone();
   }
   
                                     
