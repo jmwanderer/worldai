@@ -36,7 +36,10 @@ class CommandResponse(pydantic.BaseModel):
     """
     Response to a client command
     """
-    call_status: client.CallStatus = client.CallStatus()   # ok or error with an optional message  (message not currently used...)
+
+    call_status: client.CallStatus = (
+        client.CallStatus()
+    )  # ok or error with an optional message  (message not currently used...)
     # World status has:
     # response_message - Return message in response to command. E.G. Nothing happened.
     # changed - indicates if the state of the world was changed
@@ -68,10 +71,14 @@ class ClientActions:
                 if self.wstate.isSiteOpen(site_id):
                     self.wstate.setLocation(site_id)
                     logging.info("GO: set location %s", site_id)
-                    response.world_status.response_message = f"Arrival: {site.getName()}"
+                    response.world_status.response_message = (
+                        f"Arrival: {site.getName()}"
+                    )
                     self.wstate.advanceTime(30)
                 else:
-                    response.world_status.response_message = f"{site.getName()} is not open"
+                    response.world_status.response_message = (
+                        f"{site.getName()} is not open"
+                    )
             else:
                 self.wstate.setLocation("")
                 logging.info("GO: clear location")
@@ -88,7 +95,9 @@ class ClientActions:
                 if item.getIsMobile():
                     self.wstate.addItem(item_id)
                     response.world_status.changed = True
-                    response.world_status.response_message = f"You picked up {item.getName()}"
+                    response.world_status.response_message = (
+                        f"You picked up {item.getName()}"
+                    )
 
         elif command.name == CommandName.select:
             item_id = command.item
@@ -101,7 +110,9 @@ class ClientActions:
                     item = elements.loadItem(self.db, item_id)
                     self.wstate.selectItem(item_id)
                     response.world_status.changed = True
-                    response.world_status.response_message = f"You are holding {item.getName()}"
+                    response.world_status.response_message = (
+                        f"You are holding {item.getName()}"
+                    )
 
         elif command.name == CommandName.use:
             item = elements.loadItem(self.db, command.item)
@@ -123,16 +134,22 @@ class ClientActions:
                 character_id
             ):
                 # Check same location
-                response.world_status.response_message = f"{character.getName()} is not here"
+                response.world_status.response_message = (
+                    f"{character.getName()} is not here"
+                )
             else:
                 self.wstate.setChatCharacter(character_id)
                 logging.info("engage character %s", character_id)
                 logging.info("ENGAGE: location: %s", self.wstate.getLocation())
                 response.world_status.changed = True
                 if not self.wstate.isCharacterDead(character_id):
-                    response.world_status.response_message = f"Talking to {character.getName()}"
+                    response.world_status.response_message = (
+                        f"Talking to {character.getName()}"
+                    )
                 else:
-                    response.world_status.response_message = f"{character.getName()} is dead"
+                    response.world_status.response_message = (
+                        f"{character.getName()} is dead"
+                    )
 
         elif command.name == CommandName.disengage:
             self.wstate.setChatCharacter(None)
@@ -144,7 +161,9 @@ class ClientActions:
         logging.info("Client command response: %s", response.model_dump())
         return response
 
-    def UseItemCharacter(self, item_id: elements.ElemID, cid: elements.ElemID) -> client.WorldStatus:
+    def UseItemCharacter(
+        self, item_id: elements.ElemID, cid: elements.ElemID
+    ) -> client.WorldStatus:
         """
         Player uses an item in the context of a specific character
         Returns a client.WorldStatus with the following set:
@@ -194,7 +213,7 @@ class ClientActions:
                 logging.info(
                     "item %s is not mobile and not in same location", item.getName()
                 )
-                world_status.response_message =  f"{item.getName()} is not present"
+                world_status.response_message = f"{item.getName()} is not present"
                 return world_status
 
         sleeping = world_state.CharStatus.SLEEPING
@@ -220,7 +239,9 @@ class ClientActions:
                     if not self.wstate.isCharacterDead(cid):
                         if not self.wstate.isCharacterHealthy(cid):
                             self.wstate.healCharacter(cid)
-                            world_status.response_message = f"{character.getName()} is healed"
+                            world_status.response_message = (
+                                f"{character.getName()} is healed"
+                            )
                             world_status.last_event = f"{name} used {item.getName()} to heal {character.getName()}"
                         else:
                             world_status.response_message = (
@@ -240,14 +261,18 @@ class ClientActions:
                             + world_status.response_message
                         )
                     else:
-                        world_status.response_message = f"{character.getName()} took damage"
+                        world_status.response_message = (
+                            f"{character.getName()} took damage"
+                        )
                         world_status.last_event = f"{name} used {item.getName()} to cause {character.getName()} harm"
 
             case elements.ItemEffect.PARALIZE:
                 # Only other TODO: extend so characters can use
                 if cid is not None:
                     self.wstate.addCharacterStatus(cid, paralized)
-                    world_status.response_message = f"{character.getName()} is paralized"
+                    world_status.response_message = (
+                        f"{character.getName()} is paralized"
+                    )
                     world_status.last_event = f"{name} used {item.getName()} to paralize {character.getName()}"
 
             case elements.ItemEffect.POISON:
@@ -269,18 +294,24 @@ class ClientActions:
                 # Other character
                 if cid is not None:
                     self.wstate.addCharacterStatus(cid, brainwashed)
-                    world_status.response_message = f"{character.getName()} is brainwashed"
+                    world_status.response_message = (
+                        f"{character.getName()} is brainwashed"
+                    )
 
             case elements.ItemEffect.CAPTURE:
                 # Other character - toggle
                 if cid is not None:
                     if self.wstate.hasCharacterStatus(cid, captured):
                         self.wstate.removeCharacterStatus(cid, captured)
-                        world_status.response_message = f"{character.getName()} is released"
+                        world_status.response_message = (
+                            f"{character.getName()} is released"
+                        )
                         world_status.last_event = f"{name} used {item.getName()} to release {character.getName()} from capture"
                     else:
                         self.wstate.addCharacterStatus(cid, captured)
-                        world_status.response_message = f"{character.getName()} is captured"
+                        world_status.response_message = (
+                            f"{character.getName()} is captured"
+                        )
                         world_status.last_event = f"{name} used {item.getName()} to capture {character.getName()}"
 
             case elements.ItemEffect.INVISIBILITY:
@@ -292,7 +323,9 @@ class ClientActions:
                 else:
                     self.wstate.addPlayerStatus(invisible)
                     world_status.response_message = "You are invisible"
-                    world_status.last_event = f"{name} used {item.getName()} to turn invisible"
+                    world_status.last_event = (
+                        f"{name} used {item.getName()} to turn invisible"
+                    )
 
             case elements.ItemEffect.OPEN:
                 site_id = item.getAbility().site_id
@@ -301,8 +334,12 @@ class ClientActions:
                 if site is not None:
                     if not self.wstate.isSiteOpen(site_id):
                         self.wstate.setSiteOpen(site_id, True)
-                        world_status.response_message = f"Site {site.getName()} is now open."
+                        world_status.response_message = (
+                            f"Site {site.getName()} is now open."
+                        )
                     else:
-                        world_status.response_message = f"Site {site.getName()} is already open."
+                        world_status.response_message = (
+                            f"Site {site.getName()} is already open."
+                        )
         world_status.changed = True
         return world_status

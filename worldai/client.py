@@ -9,9 +9,11 @@ import logging
 
 from . import world_state, elements
 
+
 class StatusCode(str, enum.Enum):
     OK = "ok"
     ERROR = "error"
+
 
 class CallStatus(pydantic.BaseModel):
     result: StatusCode = StatusCode.OK
@@ -46,6 +48,7 @@ class PlayerData(pydantic.BaseModel):
     """
     Vital stats for the player character
     """
+
     status: CharacterData = CharacterData()
     selected_item: typing.Optional[str] = None
     # Time in minutes
@@ -110,6 +113,7 @@ def LoadCharacterData(db, wstate, cid):
 
     return data
 
+
 def LoadPlayerData(db, wstate):
     data = PlayerData()
     data.selected_item = wstate.getSelectedItem()
@@ -143,6 +147,7 @@ def LoadPlayerData(db, wstate):
             data.status.inventory.append(item_info)
 
     return data
+
 
 def update_world_status(db, wstate: world_state.WorldState, status: WorldStatus):
     status.current_time = wstate.getCurrentTime()

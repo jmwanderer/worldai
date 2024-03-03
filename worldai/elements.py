@@ -15,8 +15,8 @@ import pydantic
 
 
 # Types for IDs
-ElemID = typing.NewType('ElemID', str)
-WorldID = typing.NewType('WorldID', ElemID)
+ElemID = typing.NewType("ElemID", str)
+WorldID = typing.NewType("WorldID", ElemID)
 ELEM_ID_NONE = ElemID("")
 WORLD_ID_NONE = WorldID(ELEM_ID_NONE)
 
@@ -30,16 +30,19 @@ class ElementType(int, enum.Enum):
     ITEM = 4
     DOCUMENT = 5
 
+
 class ElementTypeStr(str, enum.Enum):
     """
     Types of elements in a world.
     """
+
     NONE = "None"
     WORLD = "World"
     CHARACTER = "Character"
     SITE = "Site"
     ITEM = "Item"
     DOCUMENT = "Document"
+
 
 class ElementTypes:
     @staticmethod
@@ -91,6 +94,7 @@ class BaseProps(pydantic.BaseModel):
     description: str = ""
     details: str = ""
 
+
 class WorldProps(BaseProps):
     plans: typing.Optional[str] = ""
 
@@ -126,6 +130,7 @@ class ItemEffect(str, enum.Enum):
 class ItemAbility(pydantic.BaseModel):
     effect: ItemEffect = ItemEffect.NONE
     site_id: str = ""
+
 
 class ItemProps(BaseProps):
     mobile: bool = True
@@ -165,10 +170,12 @@ class ElemTag:
     The type field is the readable string, useful for GPT use.
     """
 
-    def __init__(self, 
-                 wid: WorldID = WORLD_ID_NONE,
-                 eid: ElemID = ELEM_ID_NONE,
-                 element_type : ElementTypeStr = ElementTypeStr.NONE):
+    def __init__(
+        self,
+        wid: WorldID = WORLD_ID_NONE,
+        eid: ElemID = ELEM_ID_NONE,
+        element_type: ElementTypeStr = ElementTypeStr.NONE,
+    ):
         self.world_id = wid
         self.eid = eid
         self.element_type = element_type
@@ -233,7 +240,7 @@ class Element:
         self.parent_id = parent_id
         self.name = ""
         self.prop_model = BaseProps()
-        self.images :list[ElemID] = []  # List of image ids
+        self.images: list[ElemID] = []  # List of image ids
         self._setProperties({})
 
     def getID(self) -> ElemID:
@@ -262,7 +269,7 @@ class Element:
         Override in derived classes
         """
         # Never used
-        self.prop_model = BaseProps(**properties)        
+        self.prop_model = BaseProps(**properties)
 
     def updateProperties(self, properties: dict):
         """
@@ -374,7 +381,7 @@ class World(Element):
 
     def __init__(self):
         super().__init__(ElementType.WORLD, WORLD_ID_NONE)
-        self.prop_model : WorldProps = WorldProps()
+        self.prop_model: WorldProps = WorldProps()
 
     def getID(self) -> WorldID:
         return WorldID(self.eid)
@@ -408,9 +415,9 @@ class Document(Element):
     Represents a document associated with a world
     """
 
-    def __init__(self, parent_id : WorldID = WORLD_ID_NONE):
+    def __init__(self, parent_id: WorldID = WORLD_ID_NONE):
         super().__init__(ElementType.DOCUMENT, parent_id)
-        self.prop_model : DocProps = DocProps()
+        self.prop_model: DocProps = DocProps()
 
     def _setProperties(self, properties: dict):
         """
@@ -469,9 +476,9 @@ class Character(Element):
     Represents an instance of a Character.
     """
 
-    def __init__(self, parent_id : WorldID = WORLD_ID_NONE):
+    def __init__(self, parent_id: WorldID = WORLD_ID_NONE):
         super().__init__(ElementType.CHARACTER, parent_id)
-        self.prop_model : CharacterProps = CharacterProps()
+        self.prop_model: CharacterProps = CharacterProps()
 
     def _setProperties(self, properties: dict):
         """
@@ -497,17 +504,17 @@ class Site(Element):
     Represents an instance of a Site
     """
 
-    def __init__(self, parent_id : WorldID = WORLD_ID_NONE):
+    def __init__(self, parent_id: WorldID = WORLD_ID_NONE):
         super().__init__(ElementType.SITE, parent_id)
-        self.prop_model : SiteProps = SiteProps()
+        self.prop_model: SiteProps = SiteProps()
 
-    def _fixProperties(self, properties : dict) -> dict:
+    def _fixProperties(self, properties: dict) -> dict:
         if properties.get("locked") is not None:
             properties["default_open"] = not properties["locked"]
             del properties["locked"]
         return properties
 
-    def _setProperties(self, properties : dict):
+    def _setProperties(self, properties: dict):
         """
         Set the set of encode properties.
         Override base class
@@ -517,7 +524,7 @@ class Site(Element):
     def getDefaultOpen(self) -> bool:
         return self.prop_model.default_open
 
-    def setDefaultOpen(self, value : bool):
+    def setDefaultOpen(self, value: bool):
         self.prop_model.default_open = value
 
 
@@ -526,9 +533,9 @@ class Item(Element):
     Represents an instance of an Item
     """
 
-    def __init__(self, parent_id : WorldID = WORLD_ID_NONE):
+    def __init__(self, parent_id: WorldID = WORLD_ID_NONE):
         super().__init__(ElementType.ITEM, parent_id)
-        self.prop_model : ItemProps = ItemProps()
+        self.prop_model: ItemProps = ItemProps()
 
     def _fixProperties(self, properties: dict) -> dict:
         if properties.get("ability") is not None:
@@ -539,7 +546,7 @@ class Item(Element):
                     properties["ability"]["effect"] = "none"
         return properties
 
-    def _setProperties(self, properties : dict):
+    def _setProperties(self, properties: dict):
         """
         Set the set of encode properties.
         Override base class
@@ -578,10 +585,9 @@ class Item(Element):
         return [(0, content)]
 
 
-
 class ElementStore:
     @staticmethod
-    def loadElement(db, eid : ElemID, element : Element):
+    def loadElement(db, eid: ElemID, element: Element):
         """
         Return an element insance
         """
@@ -608,7 +614,7 @@ class ElementStore:
         return element
 
     @staticmethod
-    def findElement(db, pid : WorldID, name : str, element : Element):
+    def findElement(db, pid: WorldID, name: str, element: Element):
         """
         Return an element id
         """
@@ -625,7 +631,7 @@ class ElementStore:
         return ElementStore.loadElement(db, r[0], element)
 
     @staticmethod
-    def updateElement(db, element : Element):
+    def updateElement(db, element: Element):
         db.execute(
             "UPDATE elements SET  name = ?, properties = ? "
             + "WHERE id = ? and type = ?",
@@ -633,8 +639,8 @@ class ElementStore:
         )
         db.commit()
 
-    @staticmethod        
-    def createElement(db, element : Element) -> ElemID:
+    @staticmethod
+    def createElement(db, element: Element) -> ElemID:
         """
         Return an element insance
         """
@@ -654,8 +660,7 @@ class ElementStore:
         return element.eid
 
     @staticmethod
-    def getElements(db, element_type : ElementType, 
-                    parent_id : WorldID) -> list[IdName]:
+    def getElements(db, element_type: ElementType, parent_id: WorldID) -> list[IdName]:
         """
         Return a list of elements: eid and name
         """
@@ -671,7 +676,7 @@ class ElementStore:
         return result
 
     @staticmethod
-    def hideElement(db, element : Element, wid : WorldID, name : str):
+    def hideElement(db, element: Element, wid: WorldID, name: str):
         instance = ElementStore.findElement(db, wid, name, element)
         if instance is not None:
             c = db.cursor()
@@ -684,7 +689,7 @@ class ElementStore:
         return 0
 
     @staticmethod
-    def recoverElements(db, element_type : ElementType, parent_id : WorldID):
+    def recoverElements(db, element_type: ElementType, parent_id: WorldID):
         c = db.cursor()
         c.execute(
             "UPDATE elements SET is_hidden = FALSE WHERE "
@@ -701,19 +706,19 @@ class Image:
 
     """
 
-    def __init__(self, iid : ElemID = ELEM_ID_NONE):
+    def __init__(self, iid: ElemID = ELEM_ID_NONE):
         self.iid = iid
-        self.filename : str = ""
-        self.prompt : str = ""
-        self.parent_id : ElemID = ELEM_ID_NONE
+        self.filename: str = ""
+        self.prompt: str = ""
+        self.parent_id: ElemID = ELEM_ID_NONE
 
     def getID(self) -> ElemID:
         return self.iid
 
-    def setPrompt(self, prompt : str):
+    def setPrompt(self, prompt: str):
         self.prompt = prompt
 
-    def setParentId(self, parent_id : ElemID):
+    def setParentId(self, parent_id: ElemID):
         self.parent_id = parent_id
 
     def getFilename(self) -> str:
@@ -726,7 +731,7 @@ class Image:
         return filename[0:-4] + ".thmb" + filename[-4:]
 
 
-def createImage(db, image : Image):
+def createImage(db, image: Image):
     image.iid = ElemID("id%s" % os.urandom(4).hex())
     db.execute(
         "INSERT INTO images (id, parent_id, prompt, filename) " + "VALUES (?, ?, ?, ?)",
@@ -736,7 +741,7 @@ def createImage(db, image : Image):
     return image
 
 
-def getImageFromIndex(db, parent_id : ElemID, index : int) -> Image | None:
+def getImageFromIndex(db, parent_id: ElemID, index: int) -> Image | None:
     # Convert index ordinal (0, 1, 2, ...) to an image id
     # TODO: Note this is probably broken and we need an ordering.
     images = listImages(db, parent_id)
@@ -745,12 +750,12 @@ def getImageFromIndex(db, parent_id : ElemID, index : int) -> Image | None:
     return None
 
 
-def hideImage(db, iid : ElemID):
+def hideImage(db, iid: ElemID):
     db.execute("UPDATE images SET is_hidden = TRUE WHERE id = ?", (iid,))
     db.commit()
 
 
-def recoverImages(db, parent_id : ElemID):
+def recoverImages(db, parent_id: ElemID):
     c = db.cursor()
     c.execute(
         "UPDATE images SET is_hidden = FALSE WHERE parent_id = ? "
@@ -761,7 +766,7 @@ def recoverImages(db, parent_id : ElemID):
     return c.rowcount
 
 
-def getImageFile(db, data_dir : str, iid : ElemID) -> io.BufferedIOBase | None:
+def getImageFile(db, data_dir: str, iid: ElemID) -> io.BufferedIOBase | None:
     q = db.execute("SELECT filename FROM images WHERE id = ?", (iid,))
     r = q.fetchone()
     if r is not None:
@@ -771,8 +776,10 @@ def getImageFile(db, data_dir : str, iid : ElemID) -> io.BufferedIOBase | None:
     return None
 
 
-def getImage(db, iid : ElemID) -> Image | None:
-    q = db.execute("SELECT parent_id, prompt, filename FROM images WHERE id = ?", (iid,))
+def getImage(db, iid: ElemID) -> Image | None:
+    q = db.execute(
+        "SELECT parent_id, prompt, filename FROM images WHERE id = ?", (iid,)
+    )
     r = q.fetchone()
     if r is not None:
         image = Image(iid)
@@ -783,8 +790,7 @@ def getImage(db, iid : ElemID) -> Image | None:
     return None
 
 
-def listImages(db, parent_id : ElemID, 
-               include_hidden : bool = False) -> list[dict]:
+def listImages(db, parent_id: ElemID, include_hidden: bool = False) -> list[dict]:
     result = []
     if include_hidden:
         q = db.execute(
@@ -803,7 +809,7 @@ def listImages(db, parent_id : ElemID,
     return result
 
 
-def getImages(db, parent_id : ElemID = WORLD_ID_NONE) -> list[Image]:
+def getImages(db, parent_id: ElemID = WORLD_ID_NONE) -> list[Image]:
     """
     Return a list of image elements.
     If parent_id is None, return all images.
@@ -828,7 +834,7 @@ def getImages(db, parent_id : ElemID = WORLD_ID_NONE) -> list[Image]:
     return result
 
 
-def getElemTag(db, eid : ElemID) -> ElemTag | None:
+def getElemTag(db, eid: ElemID) -> ElemTag | None:
     """
     Build an element tag from an id.
     Return null if not found
@@ -844,7 +850,7 @@ def getElemTag(db, eid : ElemID) -> ElemTag | None:
     return ElemTag(wid, eid, ElementTypes._typeToName(etype))
 
 
-def idNameToElemTag(db, idName : IdName) -> ElemTag | None:
+def idNameToElemTag(db, idName: IdName) -> ElemTag | None:
     if idName is None:
         return None
     return getElemTag(db, idName.getID())
@@ -888,7 +894,6 @@ def createWorld(db, world: World) -> World:
     return world
 
 
-
 def updateWorld(db, world: World):
     ElementStore.updateElement(db, world)
 
@@ -917,7 +922,7 @@ def updateDocument(db, document: Document):
     ElementStore.updateElement(db, document)
 
 
-def listCharacters(db, world_id : WorldID) -> list[IdName]:
+def listCharacters(db, world_id: WorldID) -> list[IdName]:
     """
     Return a list of characters.
     """
@@ -1001,7 +1006,7 @@ def recoverSites(db, world_id: WorldID) -> int:
     return ElementStore.recoverElements(db, ElementType.SITE, world_id)
 
 
-def listItems(db, world_id : WorldID) -> list[IdName]:
+def listItems(db, world_id: WorldID) -> list[IdName]:
     """
     Return a list of sites.
     """
@@ -1057,11 +1062,11 @@ def deleteImage(db, data_dir: str, image_id: ElemID):
     logging.info("delete file: %s", path)
 
 
-def deleteCharacter(db, data_dir: str, eid : ElemID):
+def deleteCharacter(db, data_dir: str, eid: ElemID):
     character = loadCharacter(db, eid)
     if character is None:
         return
-    
+
     logging.info("delete character: [%s] %s", character.eid, character.getName())
     images = listImages(db, eid, include_hidden=True)
 
@@ -1074,11 +1079,11 @@ def deleteCharacter(db, data_dir: str, eid : ElemID):
     db.commit()
 
 
-def deleteWorld(db, data_dir : str, world_id : WorldID):
+def deleteWorld(db, data_dir: str, world_id: WorldID):
     world = loadWorld(db, world_id)
     if world is None:
         return
-    
+
     logging.info("delete world: [%s] %s", world.eid, world.getName())
     characters = listCharacters(db, world_id)
     for entry in characters:
@@ -1095,7 +1100,7 @@ def deleteWorld(db, data_dir : str, world_id : WorldID):
     db.commit()
 
 
-def getAdjacentElements(id_name : IdName, id_name_list: list[IdName]):
+def getAdjacentElements(id_name: IdName, id_name_list: list[IdName]):
     """
     Return (prev, next) IdName entries for the given IdName in the list
     """

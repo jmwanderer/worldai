@@ -295,7 +295,9 @@ class BasicTestCase(unittest.TestCase):
         self.assertIsNotNone(character)
         self.assertEqual(len(character.getImages()), 1)
 
-        character2 = elements.findCharacter(self.db, world1.getID(), character.getName())
+        character2 = elements.findCharacter(
+            self.db, world1.getID(), character.getName()
+        )
         self.assertIsNotNone(character2)
         self.assertEqual(character2.getID(), char_id)
 

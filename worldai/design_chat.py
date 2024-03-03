@@ -9,14 +9,17 @@ from . import chat, design_functions, elements, threads
 # uses ChatSession and DesignFunctions
 #
 
+
 class DesignChatResponse(pydantic.BaseModel):
     chat_response: chat.ChatResponse = chat.ChatResponse(id="")
     view: dict[str, str] = dict()
     made_changes: bool = True
 
+
 class DesignHistoryResponse(pydantic.BaseModel):
     history_response: chat.ChatHistoryResponse = chat.ChatHistoryResponse()
     view: dict[str, str] = dict()
+
 
 class DesignChatSession:
     def __init__(self, session_id, chat_session=None):
@@ -130,7 +133,7 @@ class DesignChatSession:
                     document = elements.loadDocument(db, next_view.getID())
                     logging.info("Show document '%s'", document.getName())
                     tool_choice = "ShowDocument"
-                    system = f"Document is '{document.getName()}'"                    
+                    system = f"Document is '{document.getName()}'"
 
                 self.chatFunctions.current_state = new_state
                 if tool_choice is not None:
@@ -151,7 +154,7 @@ class DesignChatSession:
 
     def chat_continue(self, db, msg_id: str) -> DesignChatResponse:
         response = DesignChatResponse()
-        response.chat_response =  self.chat.chat_continue(db, msg_id)
+        response.chat_response = self.chat.chat_continue(db, msg_id)
         response.view = self.get_view()
         response.made_changes = self.madeChanges()
         response.chat_response.chat_enabled = True

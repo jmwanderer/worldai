@@ -21,7 +21,9 @@ class BasicTestCase(unittest.TestCase):
         character.setName("character")
         session_id = "id1234"
         self.character = elements.createCharacter(self.db, character)
-        self.wstate_id = world_state.getWorldStateID(self.db, session_id, self.world.getID())
+        self.wstate_id = world_state.getWorldStateID(
+            self.db, session_id, self.world.getID()
+        )
         self.wstate = world_state.loadWorldState(self.db, self.wstate_id)
 
     def tearDown(self):
@@ -156,14 +158,13 @@ class BasicTestCase(unittest.TestCase):
 
         info_set.deleteInfoDoc(self.db, doc_id)
 
-
     def testNote(self):
         content = "This is a short note"
         doc_id = info_set.addInfoNote(self.db, self.world.getID(), content)
         embedding = info_set.generateEmbedding(content)
         chunks = info_set.getOrderedChunks(self.db, self.world.getID(), embedding)
         self.assertEqual(len(chunks), 1)
-        result = info_set.updateInfoNote(self.db, doc_id, content+content)
+        result = info_set.updateInfoNote(self.db, doc_id, content + content)
         self.assertTrue(result)
 
     def testLookup(self):

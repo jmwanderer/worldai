@@ -529,28 +529,24 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         elif function_name == "UpdateSite":
             result = self.FuncUpdateSite(db, arguments)
 
-        elif function_name in [ "CreateWorldImage",
-                                "CreateCharacterImage",
-                                "CreateItemImage",
-                                "CreateSiteImage" ]:
+        elif function_name in [
+            "CreateWorldImage",
+            "CreateCharacterImage",
+            "CreateItemImage",
+            "CreateSiteImage",
+        ]:
             result = self.FuncCreateImage(db, arguments)
 
-        elif function_name in [ "RemoveImage",
-                                "RemoveWorldImage" ]:
+        elif function_name in ["RemoveImage", "RemoveWorldImage"]:
             result = self.FuncRemoveImage(db, arguments)
 
-        elif function_name in [ "RecoverImages",
-                               "RecoverWorldImages"]:
+        elif function_name in ["RecoverImages", "RecoverWorldImages"]:
             result = self.FuncRecoverImages(db, arguments)
 
-        elif function_name in [ "RemoveSite",
-                                "RemoveCharacter",
-                                "RemoveItem" ]:
+        elif function_name in ["RemoveSite", "RemoveCharacter", "RemoveItem"]:
             result = self.FuncRemoveElement(db, arguments)
 
-        elif function_name in [ "RecoverSites",
-                                "RecoverItems",
-                                "RecoverCharacters" ]:
+        elif function_name in ["RecoverSites", "RecoverItems", "RecoverCharacters"]:
             result = self.FuncRecoverElements(db, arguments)
 
         if self.current_state == STATE_WORLDS:
@@ -567,8 +563,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             return self.funcError(f"unknown state: {state}")
 
         # Check is state is legal - TODO: more states here?
-        if (state in [ STATE_WORLD, STATE_CHARACTERS] and 
-            self.current_view.noElement()):
+        if state in [STATE_WORLD, STATE_CHARACTERS] and self.current_view.noElement():
             return self.funcError(f"Must read or create a world for {state}")
         self.current_state = state
 
@@ -699,9 +694,8 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
         self.current_state = STATE_DOCUMENTS
         self.current_view = document.getElemTag()
-        
-        result = {"name": document.getName(),
-                  "headings": document.getSectionList() }
+
+        result = {"name": document.getName(), "headings": document.getSectionList()}
         return result
 
     def FuncAddDocumentSection(self, db, arguments):
@@ -1061,12 +1055,12 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             if elements.hideCharacter(db, self.getCurrentWorldID(), name):
                 return self.funcStatus("removed character")
             return self.funcError("character not found")
-        
+
         if self.current_state == STATE_ITEMS:
             if elements.hideItem(db, self.getCurrentWorldID(), name):
                 return self.funcStatus("removed item")
             return self.funcError("item not found")
-        
+
         if self.current_state == STATE_SITES:
             if elements.hideSite(db, self.getCurrentWorldID(), name):
                 return self.funcStatus("removed site")
@@ -1185,9 +1179,7 @@ def image_get_request(prompt, dest_file):
         if result.get("data") is None:
             return False
 
-        response = requests.get(result["data"][0]["url"],
-                                stream=True,
-                                timeout=20)
+        response = requests.get(result["data"][0]["url"], stream=True, timeout=20)
         if response.status_code != 200:
             return False
 

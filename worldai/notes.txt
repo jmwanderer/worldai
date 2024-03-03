@@ -20,11 +20,22 @@ Three things cause the world state to change:
 * List 
 - Consider improving the description of item abilities in info text
 - include system messages in character thread RAG
-- Add clearing wstate from info_docs on clear state
-- perhaps prompt for confirm on clear state
+- Add clearing wstate from info_docs on clear state - DONE
+- perhaps prompt for confirm on clear state - DONE
 
-- add utility to reset a specific instance of a world
-- characters send messages to other characters
+- add utility to reset a specific instance of a world - DONE
+- give characters ability to learn about:
+  * who has which item
+  * who is present at the current site
+  * the ability of all of the items
+- consider adding a secret password facility
+- do something with player !alive
+- design instructions for what is a good personality
+  - what to they wants?
+  - how do they talk?
+  - who do they like and dislike? relationships
+  
+- characters send messages to other characters 
 - fix use of ListMyItems
 - address confusion around giveitem....
 

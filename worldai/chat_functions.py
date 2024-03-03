@@ -1,5 +1,6 @@
 import logging
 
+
 class BaseChatFunctions:
     """
     Base interface used by ChatSession to customize capabilities.
@@ -31,7 +32,7 @@ class BaseChatFunctions:
         world_id = 0
         track_tokens(db, world_id, prompt, complete, total)
 
-    def archive_content(self, db, contents: dict[str,str]) -> None:
+    def archive_content(self, db, contents: dict[str, str]) -> None:
         """
         Function to archive a message from a thread
         """

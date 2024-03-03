@@ -56,12 +56,14 @@ Your level of enimity is {level} of 10.
 
 class CharacterFunctions(chat_functions.BaseChatFunctions):
 
-    def __init__(self, wstate_id, world_id: elements.WorldID, character_id: elements.ElemID):
+    def __init__(
+        self, wstate_id, world_id: elements.WorldID, character_id: elements.ElemID
+    ):
         chat_functions.BaseChatFunctions.__init__(self)
         self.wstate_id = wstate_id
         self.world_id: elements.WorldID = world_id
         self.character_id: elements.ElemID = character_id
-        self.archive_id: info_set.DocID|None = None
+        self.archive_id: info_set.DocID | None = None
 
         # Run time only flags, not saved.
         self.world_changed: bool = False
@@ -171,7 +173,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             result.append(tool)
         return result
 
-    def archive_content(self, db, contents: dict[str,str]) -> None:
+    def archive_content(self, db, contents: dict[str, str]) -> None:
         """
         Archive a chat message into an info note.
         May append to an existing note or create a new one if necessary.
@@ -183,11 +185,13 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         # Store an encoded list of contents
         while not entry_added:
             if self.archive_id is None:
-                self.archive_id = info_set.addInfoNote(db, 
-                                                      self.world_id, 
-                                                      json.dumps([contents]),
-                                                      self.character_id, 
-                                                      self.wstate_id)
+                self.archive_id = info_set.addInfoNote(
+                    db,
+                    self.world_id,
+                    json.dumps([contents]),
+                    self.character_id,
+                    self.wstate_id,
+                )
                 entry_added = True
             else:
                 encoded = info_set.getInfoDoc(db, self.archive_id)
@@ -196,19 +200,23 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                     continue
                 content_list = json.loads(encoded)
                 content_list.append(contents)
-                if info_set.updateInfoNote(db, self.archive_id, json.dumps(content_list)):
+                if info_set.updateInfoNote(
+                    db, self.archive_id, json.dumps(content_list)
+                ):
                     entry_added = True
                 else:
                     # Start a new info note
                     self.archive_id = None
-                
+
     def lookup_content(self, db, query: str) -> list[dict[str, str]]:
         """
         Return a list of archived messages that best match the query.
         """
         logging.info("lookup archived content: %s", query)
         embed = info_set.generateEmbedding(query)
-        encoded = info_set.getInformation(db, self.world_id, embed, 1, self.character_id, self.wstate_id)
+        encoded = info_set.getInformation(
+            db, self.world_id, embed, 1, self.character_id, self.wstate_id
+        )
         if len(encoded) > 0:
             return json.loads(encoded)
         return []

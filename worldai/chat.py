@@ -140,26 +140,30 @@ def log_chat_message(messages, assistant_message):
 class ChatResponse(pydantic.BaseModel):
     id: str
     # Status flags
-    done: bool = True  # True if last message in chat exchange, otherwise client should make another call.
+    done: bool = (
+        True  # True if last message in chat exchange, otherwise client should make another call.
+    )
     status: str = "ok"  # Set to "error" if not ok. Something went wrong...
 
     # Input to GPT function
-    user: str = ""      # User message that initiated chat. E.G. Hello
-    event: str = ""     # Event that initiated chat. E.G. User has arrived
-                        # Usually either the user or event is set. But no protection against both being set.
+    user: str = ""  # User message that initiated chat. E.G. Hello
+    event: str = ""  # Event that initiated chat. E.G. User has arrived
+    # Usually either the user or event is set. But no protection against both being set.
 
     # Output of GPT function
-    reply: str = ""     # GPT Reply to the original message
-    updates: str = ""   # Text describing something the character did
-                        # E.G. Character used item X
-    tool_call: str = "" # Indicates if the next chat is a tool call
-                        # Client may show: Calling MakeImage....
+    reply: str = ""  # GPT Reply to the original message
+    updates: str = ""  # Text describing something the character did
+    # E.G. Character used item X
+    tool_call: str = ""  # Indicates if the next chat is a tool call
+    # Client may show: Calling MakeImage....
     # Flag to client that chat function is enabled. Not set by this module
     chat_enabled: bool = True
 
+
 class ChatHistoryResponse(pydantic.BaseModel):
-    messages: list[dict[str,str]] = list()
+    messages: list[dict[str, str]] = list()
     chat_enabled: bool = True
+
 
 class ChatTokens(pydantic.BaseModel):
     prompt_tokens: int = 0
@@ -170,13 +174,13 @@ class ChatTokens(pydantic.BaseModel):
 class ChatState(pydantic.BaseModel):
     # ID for in process message
     msg_id: str = ""
-    
+
     # Number of function calls made
     call_count: int = 0
-    
+
     # Total number function calls allowed
     call_limit: int = 0
-    
+
     # True if next action is a tool call
     tool_call_pending: bool = False
     # If tool_call_pending, this is the index of the call in the message
@@ -185,10 +189,10 @@ class ChatState(pydantic.BaseModel):
 
     # Context passed to the chat_functions (world_id, etc)
     context: str = "{}"
-    
+
     # Message history - list of groups (each a list) of messages
     messages: list[message_records.ChatMessageGroup] = []
-    
+
     # Token counts
     tokens: ChatTokens = ChatTokens()
 
@@ -246,8 +250,7 @@ class ChatSession:
         self.complete_tokens += complete
         self.total_tokens += total
         self.chatFunctions.track_tokens(db, prompt, complete, total)
-        logging.info("prompt: %s, complete: %s, total: %s",
-                     prompt, complete, total)
+        logging.info("prompt: %s, complete: %s, total: %s", prompt, complete, total)
 
     def execute_function_call(self, db, function_name, function_args):
         return self.chatFunctions.execute_function_call(
@@ -282,16 +285,14 @@ class ChatSession:
                 thread_size = new_size
             else:
                 break
-        logging.info("calc thread size %s",  thread_size)
+        logging.info("calc thread size %s", thread_size)
 
-        
     def ArchiveMessages(self, db) -> None:
         for message_set in self.history.message_sets():
             if not message_set.isIncluded() and not message_set.isArchived():
                 content = message_set.getMessageContent()
                 message_set.markArchived()
                 self.chatFunctions.archive_content(db, content)
-
 
     def getMessageContent(self, message_set):
         content = message_set.getMessageContent()
@@ -376,7 +377,9 @@ class ChatSession:
         self.ArchiveMessages(db)
 
         # Lookup archived messages to include in the context window.
-        archived = self.chatFunctions.lookup_content(db, self.history.current_message.getRequestContent())
+        archived = self.chatFunctions.lookup_content(
+            db, self.history.current_message.getRequestContent()
+        )
         # Make messages from the archived content
         for entry in archived:
             self.history.addContextMessage(entry)
@@ -399,7 +402,7 @@ class ChatSession:
         # Make completion request call with the messages we have
         # selected from the message history and potentially
         # available tools and specified tool choice.
-        #print(json.dumps(messages))
+        # print(json.dumps(messages))
         response = chat_completion_request(
             messages, tools=tools, tool_choice=tool_choice
         )

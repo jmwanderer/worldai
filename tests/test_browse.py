@@ -122,5 +122,3 @@ def test_view_site_exist(client, app):
     response = client.get("/view/worlds/ida1ad7f2c/sites/id6c7f129d")
     assert response.status_code == 200
     assert b"Kaer Morhen" in response.data
-
-

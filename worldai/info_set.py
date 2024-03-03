@@ -26,19 +26,21 @@ import pydantic
 
 
 # Types for IDs
-DocID = typing.NewType('DocID', str)
-ChunkID = typing.NewType('ChunkID', str)
+DocID = typing.NewType("DocID", str)
+ChunkID = typing.NewType("ChunkID", str)
 
 TEST = False
 
 
 class InfoStore:
     @staticmethod
-    def addInfoDoc(db, 
-                   world_id: elements.WorldID, 
-                   content: str, 
-                   owner_id: elements.ElemID | None = None,
-                   wstate_id: str|None = None) -> DocID:
+    def addInfoDoc(
+        db,
+        world_id: elements.WorldID,
+        content: str,
+        owner_id: elements.ElemID | None = None,
+        wstate_id: str | None = None,
+    ) -> DocID:
         doc_id: DocID = DocID("id%s" % os.urandom(8).hex())
         # Put a Null into the DB instead of """
         db.execute(
@@ -51,9 +53,7 @@ class InfoStore:
 
     @staticmethod
     def updateInfoDoc(db, doc_id: DocID, content: str) -> None:
-        db.execute(
-            "UPDATE info_docs SET content = ? WHERE id = ?", (content, doc_id)
-        )
+        db.execute("UPDATE info_docs SET content = ? WHERE id = ?", (content, doc_id))
         db.commit()
 
     @staticmethod
@@ -67,13 +67,13 @@ class InfoStore:
             return r[0]
         return ""
 
-    @staticmethod        
+    @staticmethod
     def deleteInfoDoc(db, doc_id: DocID) -> None:
         db.execute("DELETE FROM info_chunks WHERE doc_id = ?", (doc_id,))
         db.execute("DELETE FROM info_docs WHERE id = ?", (doc_id,))
         db.commit()
 
-    @staticmethod        
+    @staticmethod
     def deleteInfoDocs(db, wstate_id: str) -> None:
         """
         Delete all info docs and chunks for a given wstate_id
@@ -84,8 +84,10 @@ class InfoStore:
         db.execute(sql, (wstate_id,))
         db.commit()
 
-    @staticmethod        
-    def addInfoChunk(db, doc_id: DocID, content: str, embedding: list[float]|None =None) -> ChunkID:
+    @staticmethod
+    def addInfoChunk(
+        db, doc_id: DocID, content: str, embedding: list[float] | None = None
+    ) -> ChunkID:
         """
         Create a new chunk entry
         """
@@ -96,13 +98,14 @@ class InfoStore:
             str_val = json.dumps(embedding)
 
         db.execute(
-            "INSERT INTO info_chunks (id, doc_id, content, embedding) " + "VALUES (?, ?, ?,?)",
+            "INSERT INTO info_chunks (id, doc_id, content, embedding) "
+            + "VALUES (?, ?, ?,?)",
             (chunk_id, doc_id, content, str_val),
         )
         db.commit()
         return chunk_id
 
-    @staticmethod    
+    @staticmethod
     def getChunkContent(db, chunk_id: ChunkID) -> str:
         q = db.execute("SELECT content FROM info_chunks WHERE id = ?", (chunk_id,))
         r = q.fetchone()
@@ -110,24 +113,26 @@ class InfoStore:
             return ""
         return r[0]
 
-    @staticmethod    
+    @staticmethod
     def deleteDocChunks(db, doc_id: DocID):
         db.execute("DELETE FROM info_chunks WHERE doc_id = ?", (doc_id,))
         db.commit()
 
-    @staticmethod        
-    def getOneNewChunk(db) -> ChunkID|None:
+    @staticmethod
+    def getOneNewChunk(db) -> ChunkID | None:
         q = db.execute("SELECT id FROM info_chunks WHERE embedding IS NULL")
         r = q.fetchone()
         if r is None:
             return None
         return ChunkID(r[0])
 
-    @staticmethod    
-    def getAvailableChunks(db, 
-                           world_id: elements.WorldID,
-                           owner_id: elements.ElemID|None = None,
-                           wstate_id: str|None = None) -> list[tuple[ChunkID, list[float]]]:
+    @staticmethod
+    def getAvailableChunks(
+        db,
+        world_id: elements.WorldID,
+        owner_id: elements.ElemID | None = None,
+        wstate_id: str | None = None,
+    ) -> list[tuple[ChunkID, list[float]]]:
         if owner_id is not None and wstate_id is not None:
             # Lookup state entry with an owner in a specific world
             # This is a character thread
@@ -187,8 +192,8 @@ class InfoStore:
             result.append((chunk_id, embed))
         return result
 
-    @staticmethod    
-    def updateChunkEmbed(db, chunk_id: ChunkID, embedding:list[float]):
+    @staticmethod
+    def updateChunkEmbed(db, chunk_id: ChunkID, embedding: list[float]):
         str_val = json.dumps(embedding)
         db.execute(
             "UPDATE info_chunks SET embedding = ? WHERE id = ?", (str_val, chunk_id)
@@ -196,8 +201,8 @@ class InfoStore:
         db.commit()
 
 
-
 client = None
+
 
 def _get_aiclient():
     global client
@@ -218,10 +223,14 @@ def generateEmbedding(content: str) -> list[float]:
     )
     return response.data[0].embedding
 
-def addInfoDoc(db, world_id: elements.WorldID, 
-               content: str, 
-               owner_id: elements.ElemID|None = None, 
-               wstate_id: str|None = None) -> DocID:
+
+def addInfoDoc(
+    db,
+    world_id: elements.WorldID,
+    content: str,
+    owner_id: elements.ElemID | None = None,
+    wstate_id: str | None = None,
+) -> DocID:
     doc_id = InfoStore.addInfoDoc(db, world_id, content, owner_id, wstate_id)
     logging.info("Add info doc id:%s, world id: %s", doc_id, world_id)
     result = chunk.chunk_text(content, 200, 0.2)
@@ -240,10 +249,13 @@ def updateInfoDoc(db, doc_id: DocID, content: str) -> None:
         InfoStore.addInfoChunk(db, doc_id, entry)
 
 
-def addInfoNote(db, world_id: elements.WorldID, 
-                content: str, 
-                owner_id: elements.ElemID|None = None,
-                wstate_id: str|None = None) -> DocID:
+def addInfoNote(
+    db,
+    world_id: elements.WorldID,
+    content: str,
+    owner_id: elements.ElemID | None = None,
+    wstate_id: str | None = None,
+) -> DocID:
     """
     Add a short entry that isn't chunked and will get an embedding immediately.
     """
@@ -253,6 +265,7 @@ def addInfoNote(db, world_id: elements.WorldID,
     embed = generateEmbedding(content)
     InfoStore.addInfoChunk(db, doc_id, content, embed)
     return doc_id
+
 
 def updateInfoNote(db, doc_id: DocID, content: str) -> bool:
     """
@@ -268,11 +281,14 @@ def updateInfoNote(db, doc_id: DocID, content: str) -> bool:
     InfoStore.addInfoChunk(db, doc_id, content, embed)
     return True
 
+
 def getInfoDoc(db, doc_id: DocID) -> str:
     return InfoStore.getInfoDoc(db, doc_id)
 
+
 def deleteInfoDoc(db, doc_id: DocID):
     InfoStore.deleteInfoDoc(db, doc_id)
+
 
 def deleteInfoDocs(db, wstate_id: str):
     InfoStore.deleteInfoDocs(db, wstate_id)
@@ -296,10 +312,13 @@ def cosine_similarity(a: list[float], b: list[float]) -> float:
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
-def getOrderedChunks(db, world_id: elements.WorldID, 
-                     embed: list[float], 
-                     owner_id: elements.ElemID|None = None, 
-                     wstate_id: str|None = None) -> list[tuple[ChunkID, float]]:
+def getOrderedChunks(
+    db,
+    world_id: elements.WorldID,
+    embed: list[float],
+    owner_id: elements.ElemID | None = None,
+    wstate_id: str | None = None,
+) -> list[tuple[ChunkID, float]]:
 
     chunks = InfoStore.getAvailableChunks(
         db, world_id, owner_id=owner_id, wstate_id=wstate_id
@@ -311,10 +330,15 @@ def getOrderedChunks(db, world_id: elements.WorldID,
 
     return result
 
-def getInformation(db, world_id: elements.WorldID, 
-                   embed: list[float], count: int,
-                   owner_id: elements.ElemID|None = None,
-                   wstate_id: str|None = None) -> str:
+
+def getInformation(
+    db,
+    world_id: elements.WorldID,
+    embed: list[float],
+    count: int,
+    owner_id: elements.ElemID | None = None,
+    wstate_id: str | None = None,
+) -> str:
     """
     Return count number of entries that are closet to the  given embedding
     Result is a concat of strings for all included entries

@@ -14,9 +14,20 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.wrappers import Response as Response
 
 
-from . import (character_chat, chat, chat_cli, client, client_commands, db_access,
-               design_chat, design_functions, element_info, elements, info_set,
-               world_state)
+from . import (
+    character_chat,
+    chat,
+    chat_cli,
+    client,
+    client_commands,
+    db_access,
+    design_chat,
+    design_functions,
+    element_info,
+    elements,
+    info_set,
+    world_state,
+)
 
 
 def create_app(instance_path=None, test_config=None):
@@ -121,7 +132,7 @@ def run_chat_loop():
 
 @bp.cli.command("create-image-thumb")
 @click.argument("id")
-def create_image_thumb(arg : str):
+def create_image_thumb(arg: str):
     """Create a thumbnail for an image."""
     eid = elements.ElemID(arg)
     image = elements.getImage(get_db(), eid)
@@ -143,7 +154,7 @@ def create_image_thumbs() -> None:
 
 @bp.cli.command("delete-image")
 @click.argument("id")
-def delete_image(arg : str):
+def delete_image(arg: str):
     """Delete an image."""
     eid = elements.ElemID(arg)
     image = elements.getImage(get_db(), eid)
@@ -156,14 +167,16 @@ def delete_image(arg : str):
 
 @bp.cli.command("delete-character")
 @click.argument("id")
-def delete_character(arg : str):
+def delete_character(arg: str):
     """Delete a character and associated images."""
     eid = elements.ElemID(arg)
     character = elements.loadCharacter(get_db(), eid)
     if character is not None:
         element_info.DeleteElementInfo(get_db(), eid)
         elements.deleteCharacter(get_db(), current_app.instance_path, eid)
-        click.echo("Deleted character [%s] %s." % (character.getID(), character.getName()))
+        click.echo(
+            "Deleted character [%s] %s." % (character.getID(), character.getName())
+        )
     else:
         click.echo(f"Error, no such character id:{eid}")
 
@@ -231,7 +244,7 @@ def write_elements_cli() -> None:
 
 @bp.cli.command("update-embeddings")
 @click.argument("world_name")
-def update_embeddings(world_name : str) -> None:
+def update_embeddings(world_name: str) -> None:
     world = elements.findWorld(get_db(), world_name)
     if world is None:
         click.echo("No such world %s" % world_name)
@@ -239,14 +252,14 @@ def update_embeddings(world_name : str) -> None:
     update_world_embeddings(world)
 
 
-def update_world_embeddings(world : elements.World) -> None:
+def update_world_embeddings(world: elements.World) -> None:
     click.echo(f"Update world {world.getName()}")
     element_info.UpdateElementInfo(get_db(), world)
 
     characters = elements.listCharacters(get_db(), world.getID())
     sites = elements.listSites(get_db(), world.getID())
     items = elements.listItems(get_db(), world.getID())
-    docs = elements.listDocuments(get_db(), world.getID())    
+    docs = elements.listDocuments(get_db(), world.getID())
 
     for cid in characters:
         character = elements.loadCharacter(get_db(), cid.getID())
@@ -284,7 +297,7 @@ def update_all_embeddings() -> None:
             update_world_embeddings(world)
 
 
-def list_images(parent_id : elements.ElemID) -> None:
+def list_images(parent_id: elements.ElemID) -> None:
     print("Listing images...")
     image_list = elements.listImages(get_db(), parent_id)
     for entry in image_list:
@@ -326,7 +339,9 @@ def clear_world_state(wstate_id) -> None:
     db.execute(sql, (wstate_id,))
     sql = "DELETE FROM info_docs WHERE info_docs.wstate_id = ? "
     db.execute(sql, (wstate_id,))
-    q = db.execute("SELECT thread_id FROM character_threads WHERE world_state_id = ?", (wstate_id,))
+    q = db.execute(
+        "SELECT thread_id FROM character_threads WHERE world_state_id = ?", (wstate_id,)
+    )
     for entry in q.fetchall():
         thread_id = entry[0]
         db.execute("DELETE FROM character_threads WHERE thread_id = ?", (thread_id,))
@@ -398,7 +413,7 @@ def dump_worlds() -> None:
     print("\n\n")
 
 
-def extract_auth_key(headers : dict) -> str | None:
+def extract_auth_key(headers: dict) -> str | None:
     auth = headers.get("Authorization")
     if auth is not None:
         index = auth.find(" ")
@@ -514,13 +529,12 @@ def list_worlds() -> Response:
         if world is not None:
             world_list.append((wid, world.getName(), world.getDescription()))
 
-    return Response(flask.render_template("list_worlds.html", 
-                                          world_list=world_list))
+    return Response(flask.render_template("list_worlds.html", world_list=world_list))
 
 
 @bp.route("/view/worlds/<wid>", methods=["GET"])
 @login_required
-def view_world(wid : elements.WorldID) -> Response:
+def view_world(wid: elements.WorldID) -> Response:
     """
     View a world
     """
@@ -558,21 +572,22 @@ def view_world(wid : elements.WorldID) -> Response:
         if site is not None:
             site_list.append((site_id, site_name, site.getDescription()))
 
-    return Response(flask.render_template(
-        "view_world.html",
-        world=world,
-        character_list=char_list,
-        item_list=item_list,
-        site_list=site_list,
-        pworld=pworld,
-        nworld=nworld,
-    ))
+    return Response(
+        flask.render_template(
+            "view_world.html",
+            world=world,
+            character_list=char_list,
+            item_list=item_list,
+            site_list=site_list,
+            pworld=pworld,
+            nworld=nworld,
+        )
+    )
 
 
 @bp.route("/view/worlds/<wid>/characters/<eid>", methods=["GET"])
 @login_required
-def view_character(wid : elements.WorldID,
-                   eid : elements.ElemID) -> Response:
+def view_character(wid: elements.WorldID, eid: elements.ElemID) -> Response:
     """
     View a character
     """
@@ -585,19 +600,20 @@ def view_character(wid : elements.WorldID,
     characters = elements.listCharacters(get_db(), wid)
     (pchar, nchar) = elements.getAdjacentElements(character.getIdName(), characters)
 
-    return Response(flask.render_template(
-        "view_character.html",
-        world=world,
-        character=character,
-        pchar=pchar,
-        nchar=nchar,
-    ))
+    return Response(
+        flask.render_template(
+            "view_character.html",
+            world=world,
+            character=character,
+            pchar=pchar,
+            nchar=nchar,
+        )
+    )
 
 
 @bp.route("/view/worlds/<wid>/items/<eid>", methods=["GET"])
 @login_required
-def view_item(wid : elements.WorldID, 
-              eid : elements.ElemID) -> Response:
+def view_item(wid: elements.WorldID, eid: elements.ElemID) -> Response:
     """
     View a character
     """
@@ -610,15 +626,16 @@ def view_item(wid : elements.WorldID,
     items = elements.listItems(get_db(), wid)
     (pitem, nitem) = elements.getAdjacentElements(item.getIdName(), items)
 
-    return Response(flask.render_template(
-        "view_item.html", world=world, item=item, nitem=nitem, pitem=pitem
-    ))
+    return Response(
+        flask.render_template(
+            "view_item.html", world=world, item=item, nitem=nitem, pitem=pitem
+        )
+    )
 
 
 @bp.route("/view/worlds/<wid>/sites/<eid>", methods=["GET"])
 @login_required
-def view_site(wid : elements.WorldID, 
-              eid : elements.ElemID) -> Response:
+def view_site(wid: elements.WorldID, eid: elements.ElemID) -> Response:
     """
     View a site
     """
@@ -631,14 +648,16 @@ def view_site(wid : elements.WorldID,
     sites = elements.listSites(get_db(), wid)
     (psite, nsite) = elements.getAdjacentElements(site.getIdName(), sites)
 
-    return Response(flask.render_template(
-        "view_site.html", world=world, site=site, psite=psite, nsite=nsite
-    ))
+    return Response(
+        flask.render_template(
+            "view_site.html", world=world, site=site, psite=psite, nsite=nsite
+        )
+    )
 
 
 @bp.route("/images/<iid>", methods=["GET"])
 @login_required
-def get_image(iid : elements.ElemID):
+def get_image(iid: elements.ElemID):
     """
     Return an image
     """
@@ -654,7 +673,7 @@ def get_image(iid : elements.ElemID):
 
 @bp.route("/images/<iid>/thumb", methods=["GET"])
 @login_required
-def get_image_thumb(iid : elements.ElemID):
+def get_image_thumb(iid: elements.ElemID):
     """
     Return an image
     """
@@ -929,40 +948,38 @@ def character_stats(wid, cid):
     response = character_data.model_dump()
     return response
 
+
 @bp.route("/api/worlds/<wid>/documents")
 @auth_required
-def doc_list_api(wid : elements.WorldID):
+def doc_list_api(wid: elements.WorldID):
     """
     Return a list of documents for the world
     """
     session["world_id"] = wid
     if elements.loadWorld(get_db(), wid) is None:
-        return Response( {"error", "World not found"}, 404)
+        return Response({"error", "World not found"}, 404)
     doc_list = []
     for entry in elements.listDocuments(get_db(), wid):
         doc_list.append(entry.getJSON())
     return doc_list
 
+
 @bp.route("/api/worlds/<wid>/documents/<did>")
 @auth_required
-def docs_api(wid: elements.WorldID,
-             did: elements.ElemID):
+def docs_api(wid: elements.WorldID, did: elements.ElemID):
     session["world_id"] = wid
     if elements.loadWorld(get_db(), wid) is None:
-        return Response( {"error", "World not found"}, 404)
+        return Response({"error", "World not found"}, 404)
     doc = elements.loadDocument(get_db(), did)
     if doc is None:
-        return Response( {"error", "Document not found"}, 404)
+        return Response({"error", "Document not found"}, 404)
     sections = []
     for heading in doc.getSectionList():
         text = doc.getSectionText(heading)
         if text is not None:
-            sections.append({
-                "heading": heading,
-                "text": text })
-    return { "name": doc.getName(),
-             "sections": sections }
-            
+            sections.append({"heading": heading, "text": text})
+    return {"name": doc.getName(), "sections": sections}
+
 
 @bp.route("/api/worlds/<wid>/sites", methods=["GET"])
 @auth_required
@@ -1257,6 +1274,7 @@ def command_api(wid):
 
     return response.model_dump()
 
+
 @bp.route("/api/worlds/<wid>/status")
 @auth_required
 def state(wid):
@@ -1281,7 +1299,7 @@ def thread_api(wid, cid):
     Character chat interface
     Returns a:
     - character_chat.CharacterChatResponse
-    or 
+    or
     - character_chat.CharacterHistoryResponse
     """
     session_id = get_session_id()
@@ -1339,13 +1357,13 @@ def action_api(wid, cid):
 
     # Run the use command
     client_actions = client_commands.ClientActions(get_db(), world, wstate)
-    world_status  = client_actions.UseItemCharacter(item_id, cid)
+    world_status = client_actions.UseItemCharacter(item_id, cid)
     if world_status.changed:
         # Save state since chat functions may load it again
         world_state.saveWorldState(get_db(), wstate)
 
     chat_session = character_chat.CharacterChat.loadChatSession(
-            get_db(), wstate_id, wid, cid
+        get_db(), wstate_id, wid, cid
     )
     # Run event - ok to call will an empty event
     result = chat_session.chat_event(get_db(), world_status.last_event)
