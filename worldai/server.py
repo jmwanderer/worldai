@@ -3,8 +3,8 @@ import logging
 import os
 import os.path
 import sys
-import time
 import threading
+import time
 
 import click
 import flask
@@ -13,21 +13,9 @@ from flask import Blueprint, Flask, current_app, g, request, session
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.wrappers import Response as Response
 
-
-from . import (
-    character_chat,
-    chat,
-    chat_cli,
-    client,
-    client_commands,
-    db_access,
-    design_chat,
-    design_functions,
-    element_info,
-    elements,
-    info_set,
-    world_state,
-)
+from . import (character_chat, chat, chat_cli, client, client_commands,
+               db_access, design_chat, design_functions, element_info,
+               elements, info_set, world_state)
 
 
 def create_app(instance_path=None, test_config=None):

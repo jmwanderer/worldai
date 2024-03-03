@@ -8,7 +8,7 @@ import typing
 
 import pydantic
 
-from . import elements, world_state, client
+from . import client, elements, world_state
 
 
 class CommandName(str, enum.Enum):

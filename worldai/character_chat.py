@@ -1,7 +1,8 @@
 import os
+
 import pydantic
 
-from . import character_functions, chat, threads, client, world_state, elements
+from . import character_functions, chat, client, elements, threads, world_state
 
 #
 # Module for the Character Chat Session

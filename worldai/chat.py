@@ -18,7 +18,7 @@ import tiktoken
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from termcolor import colored
 
-from . import chat_functions, message_records, info_set
+from . import chat_functions, info_set, message_records
 
 # TODO:
 # Update chat messages:

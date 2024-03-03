@@ -15,15 +15,13 @@ import json
 import logging
 import os
 import random
+import typing
 
 import numpy as np
 import openai
-import typing
-
-from . import chunk, elements
-
 import pydantic
 
+from . import chunk, elements
 
 # Types for IDs
 DocID = typing.NewType("DocID", str)

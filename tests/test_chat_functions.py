@@ -4,13 +4,8 @@ import sqlite3
 import tempfile
 import unittest
 
-from worldai import (
-    character_functions,
-    chat_functions,
-    design_functions,
-    elements,
-    world_state,
-)
+from worldai import (character_functions, chat_functions, design_functions,
+                     elements, world_state)
 
 
 class DesignTestCase(unittest.TestCase):

@@ -13,7 +13,6 @@ from typing import Optional
 
 import pydantic
 
-
 # Types for IDs
 ElemID = typing.NewType("ElemID", str)
 WorldID = typing.NewType("WorldID", ElemID)

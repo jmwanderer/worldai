@@ -6,7 +6,9 @@ import unittest
 import unittest.mock
 
 import tiktoken
-from worldai import chat, chat_cli, design_chat, design_functions, message_records
+
+from worldai import (chat, chat_cli, design_chat, design_functions,
+                     message_records)
 
 
 def getInitSystemMessage():
