@@ -2,6 +2,7 @@ import functools
 import logging
 import os
 import os.path
+import sys
 import time
 import threading
 
@@ -293,15 +294,47 @@ def list_images(parent_id : elements.ElemID) -> None:
         )
 
 
-@bp.cli.command("clear-state")
-def clear_state() -> None:
+@bp.cli.command("clear-all-world-state")
+def clear_all_world_state() -> None:
     """Clear the game state due to a new format"""
+    print("really clear everything????")
+    answer = sys.stdin.readline().strip()
+    if answer != "y" and answer != "Y":
+        print("aborting")
+        return
+
     print("clearing state...")
     db = get_db()
+    sql = "DELETE FROM info_chunks WHERE doc_id IN (SELECT id FROM info_docs WHERE wstate_id IS NOT NULL)"
+    db.execute(sql)
+    sql = "DELETE FROM info_docs WHERE info_docs.wstate_id  is NOT NULL"
+    db.execute(sql)
     db.execute("DELETE FROM character_threads")
     db.execute("DELETE FROM threads")
     db.execute("DELETE FROM world_state")
     db.commit()
+
+
+@bp.cli.command("clear-world-state")
+@click.argument("wstate_id")
+def clear_world_state(wstate_id) -> None:
+    """Clear a specific wstate"""
+    print("clearing state for %s..." % wstate_id)
+    db = get_db()
+    db.execute("BEGIN TRANSACTION")
+    sql = "DELETE FROM info_chunks WHERE doc_id IN (SELECT id FROM info_docs WHERE wstate_id = ?)"
+    db.execute(sql, (wstate_id,))
+    sql = "DELETE FROM info_docs WHERE info_docs.wstate_id = ? "
+    db.execute(sql, (wstate_id,))
+    q = db.execute("SELECT thread_id FROM character_threads WHERE world_state_id = ?", (wstate_id,))
+    for entry in q.fetchall():
+        thread_id = entry[0]
+        db.execute("DELETE FROM character_threads WHERE thread_id = ?", (thread_id,))
+        db.execute("DELETE FROM threads where id = ?", (thread_id,))
+    db.execute("DELETE FROM world_state where id = ?", (wstate_id,))
+    db.commit()
+
+    pass
 
 
 @bp.cli.command("dump-worlds")

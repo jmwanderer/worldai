@@ -49,7 +49,8 @@ class BasicTestCase(unittest.TestCase):
             self.db, "This is my content", self.world.getID(), wstate_id=self.wstate_id
         )
         info_set.InfoStore.updateInfoDoc(self.db, doc_id, "This is more content")
-        info_set.InfoStore.deleteInfoDoc(self.db, doc_id)
+        info_set.InfoStore.deleteInfoDocs(self.db, self.wstate_id)
+        self.assertEqual(len(info_set.getInfoDoc(self.db, doc_id)), 0)
 
     def testOwnerWorldState(self):
         doc_id = info_set.InfoStore.addInfoDoc(
@@ -60,7 +61,7 @@ class BasicTestCase(unittest.TestCase):
             wstate_id=self.wstate_id,
         )
         info_set.InfoStore.updateInfoDoc(self.db, doc_id, "This is more content")
-        info_set.InfoStore.deleteInfoDoc(self.db, doc_id)
+        info_set.InfoStore.deleteInfoDocs(self.db, self.wstate_id)
 
     def testBasicChunk(self):
         doc_id = info_set.InfoStore.addInfoDoc(

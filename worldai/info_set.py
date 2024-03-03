@@ -69,7 +69,19 @@ class InfoStore:
 
     @staticmethod        
     def deleteInfoDoc(db, doc_id: DocID) -> None:
+        db.execute("DELETE FROM info_chunks WHERE doc_id = ?", (doc_id,))
         db.execute("DELETE FROM info_docs WHERE id = ?", (doc_id,))
+        db.commit()
+
+    @staticmethod        
+    def deleteInfoDocs(db, wstate_id: str) -> None:
+        """
+        Delete all info docs and chunks for a given wstate_id
+        """
+        sql = "DELETE FROM info_chunks WHERE doc_id IN (SELECT id FROM info_docs WHERE wstate_id = ?)"
+        db.execute(sql, (wstate_id,))
+        sql = "DELETE FROM info_docs WHERE info_docs.wstate_id = ?"
+        db.execute(sql, (wstate_id,))
         db.commit()
 
     @staticmethod        
@@ -260,8 +272,10 @@ def getInfoDoc(db, doc_id: DocID) -> str:
     return InfoStore.getInfoDoc(db, doc_id)
 
 def deleteInfoDoc(db, doc_id: DocID):
-    InfoStore.deleteDocChunks(db, doc_id)
     InfoStore.deleteInfoDoc(db, doc_id)
+
+def deleteInfoDocs(db, wstate_id: str):
+    InfoStore.deleteInfoDocs(db, wstate_id)
 
 
 def addEmbeddings(db) -> bool:
