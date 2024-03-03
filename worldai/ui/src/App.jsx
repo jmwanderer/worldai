@@ -1,6 +1,6 @@
 import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
-import { getWorldList, getWorld, getPlayerData, getWorldStatus } from './api.js';
+import { getWorldList, getWorld, getWorldStatus } from './api.js';
 import { getSiteInstancesList, getItemInstancesList, getCharacterInstancesList } from './api.js';
 import { getSiteInstance, getItemInstance, getCharacter, getCharacterData } from './api.js';
 
@@ -983,16 +983,15 @@ function World({ worldId, setWorldId }) {
 
         let calls = Promise.all([ getSiteInstancesList(worldId),
           getWorld(worldId),
-          getPlayerData(worldId),
           getWorldStatus(worldId)]);
-        let [newSites, newWorld, newPlayer, newStatus] = await calls;
+        let [newSites, newWorld, newStatus] = await calls;
 
         if (!ignore) {
           setWorld(newWorld);
           setSiteList(newSites);
-          setPlayerData(newPlayer);
+          setPlayerData(newStatus.player);
           setCurrentTime(newStatus.current_time);  // TODO - decide on this
-          loadSelectedItem(newWorld, newPlayer);
+          loadSelectedItem(newWorld, newStatus.player);
           setSiteId(newStatus.location_id);
           setCharacterId(newStatus.engaged_character_id);
         }
@@ -1048,13 +1047,13 @@ function World({ worldId, setWorldId }) {
     // Reload player data and dependent information.
     try {
       let calls = Promise.all([ getSiteInstancesList(worldId),
-        getPlayerData(worldId)]);
-      let [newSites, newPlayerData] = await calls;
+        getWorldStatus(worldId)]);
+      let [newSites, newWorldStatus] = await calls;
 
       setSiteList(newSites)
-      setPlayerData(newPlayerData);
-      setSiteId(newPlayerData.status.location);      
-      loadSelectedItem(world, newPlayerData);
+      setPlayerData(newWorldStatus.player);
+      setSiteId(newWorldStatus.location_id);      
+      loadSelectedItem(world, newWorldStatus.player);
     } catch (e) {
       console.log(e);
     }

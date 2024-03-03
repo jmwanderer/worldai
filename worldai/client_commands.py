@@ -140,7 +140,7 @@ class ClientActions:
             response.world_status.changed = True
             response.world_status.response_message = f"Talking to nobody"
 
-        client.update_world_status(self.wstate, response.world_status)
+        client.update_world_status(self.db, self.wstate, response.world_status)
         logging.info("Client command response: %s", response.model_dump())
         return response
 
@@ -163,7 +163,7 @@ class ClientActions:
         world_status = self.UseItem("Travler", item, character)
         if world_status.changed:
             self.wstate.advanceTime(5)
-        client.update_world_status(self.wstate, world_status)
+        client.update_world_status(self.db, self.wstate, world_status)
         return world_status
 
     def UseItem(self, name, item, character=None):
@@ -306,124 +306,3 @@ class ClientActions:
                         world_status.response_message = f"Site {site.getName()} is already open."
         world_status.changed = True
         return world_status
-
-
-class ElemInfo(pydantic.BaseModel):
-    id: str = ""
-    name: str = ""
-    description: str = ""
-
-
-class CharacterData(pydantic.BaseModel):
-    id: str = ""
-    name: str = ""
-    description: str = ""
-    sleeping: bool = False
-    paralized: bool = False
-    poisoned: bool = False
-    brainwashed: bool = False
-    captured: bool = False
-    invisible: bool = False
-    location: str = ""
-    credits: int = 0
-    health: int = 0
-    strength: int = 0
-    friendship: int = 0
-    can_chat: bool = True
-    inventory: typing.List[ElemInfo] = []
-
-
-def LoadCharacterData(db, wstate, cid):
-    data = CharacterData()
-    character = elements.loadCharacter(db, cid)
-    if character is None:
-        return {"error": f"character {cid} does not exist"}
-
-    data.name = character.getName()
-    data.description = character.getDescription()
-    sleeping = world_state.CharStatus.SLEEPING
-    data.sleeping = wstate.hasCharacterStatus(cid, sleeping)
-    paralized = world_state.CharStatus.PARALIZED
-    data.paralized = wstate.hasCharacterStatus(cid, paralized)
-    poisoned = world_state.CharStatus.POISONED
-    data.poisoned = wstate.hasCharacterStatus(cid, poisoned)
-    brainwashed = world_state.CharStatus.BRAINWASHED
-    data.brainwashed = wstate.hasCharacterStatus(cid, brainwashed)
-    captured = world_state.CharStatus.CAPTURED
-    data.captured = wstate.hasCharacterStatus(cid, captured)
-    invisible = world_state.CharStatus.INVISIBLE
-    data.invisible = wstate.hasCharacterStatus(cid, invisible)
-    data.location = wstate.getCharacterLocation(cid)
-    data.credits = wstate.getCharacterCredits(cid)
-    data.health = wstate.getCharacterHealthPercent(cid)
-    data.strength = wstate.getCharacterStrengthPercent(cid)
-    data.friendship = wstate.getFriendship(cid)
-
-    for item_id in wstate.getCharacterItems(cid):
-        item = elements.loadItem(db, item_id)
-        if item is None:
-            logging.error("unknown item in inventory: %s", item_id)
-        else:
-            item_info = ElemInfo()
-            item_info.id = item_id
-            item_info.name = item.getName()
-            item_info.description = item.getDescription()
-            data.inventory.append(item_info)
-
-    # Check if character can chat with player
-    if (
-        data.sleeping
-        or wstate.isCharacterDead(cid)
-        or data.location != wstate.getLocation()
-    ):
-        data.can_chat = False
-
-    return data
-
-
-class PlayerData(pydantic.BaseModel):
-    """
-    Vital stats for the player character
-    """
-
-    status: CharacterData = CharacterData()
-    selected_item: typing.Optional[str] = None
-    chat_who: str = ""
-    # Time in minutes
-
-
-def LoadPlayerData(db, wstate):
-    data = PlayerData()
-    data.selected_item = wstate.getSelectedItem()
-    data.chat_who = wstate.getChatCharacter()
-    data.status.name = "Traveler"
-    data.status.description = "A visitor"
-    sleeping = world_state.CharStatus.SLEEPING
-    data.status.sleeping = wstate.hasPlayerStatus(sleeping)
-    paralized = world_state.CharStatus.PARALIZED
-    data.status.paralized = wstate.hasPlayerStatus(paralized)
-    poisoned = world_state.CharStatus.POISONED
-    data.status.poisoned = wstate.hasPlayerStatus(poisoned)
-    brainwashed = world_state.CharStatus.BRAINWASHED
-    data.status.brainwashed = wstate.hasPlayerStatus(brainwashed)
-    captured = world_state.CharStatus.CAPTURED
-    data.status.captured = wstate.hasPlayerStatus(captured)
-    invisible = world_state.CharStatus.INVISIBLE
-    data.status.invisible = wstate.hasPlayerStatus(invisible)
-    data.status.location = wstate.getLocation()
-    data.status.credits = wstate.getPlayerCredits()
-    data.status.health = wstate.getPlayerHealthPercent()
-    data.status.strength = wstate.getPlayerStrengthPercent()
-
-    for item_id in wstate.getItems():
-        item = elements.loadItem(db, item_id)
-        if item is None:
-            logging.error("unknown item in inventory: %s", item_id)
-        else:
-            item_info = ElemInfo()
-            item_info.id = item_id
-            item_info.name = item.getName()
-            item_info.description = item.getDescription()
-            data.status.inventory.append(item_info)
-
-    return data

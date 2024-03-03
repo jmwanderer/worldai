@@ -57,7 +57,6 @@ def test_world_chars(client, app):
     assert response.status_code == 200
     assert len(response.json) > 0
     id = response.json[0]["id"]
-    assert response.json[0].get("present") is None
 
     response = client.get(
         f"/api/worlds/{world_id}/sites/instances",
@@ -66,7 +65,6 @@ def test_world_chars(client, app):
     assert response.status_code == 200
     assert len(response.json) > 0
     id = response.json[0]["id"]
-    assert response.json[0].get("present") is not None
 
     response = client.get(
         f"/api/worlds/{world_id}/sites/{id}",
@@ -347,12 +345,12 @@ def test_command(client, app):
     assert response.status_code == 200
 
 
-def testLoadPlayerData(client, app):
+def testLoadWorldStatus(client, app):
     response = client.get("/api/worlds", headers={"Authorization": bearer_token(app)})
     world_id = response.json[0]["id"]
 
     response = client.get(
-        f"/api/worlds/{world_id}/player",
+        f"/api/worlds/{world_id}/status",
         headers={
             "Authorization": bearer_token(app),
         },

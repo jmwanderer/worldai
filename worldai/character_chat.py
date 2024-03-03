@@ -52,7 +52,7 @@ class CharacterChat:
                 }
             )
         wstate = world_state.loadWorldState(db, self.wstate_id)
-        client.update_world_status(wstate, response.world_status)
+        client.update_world_status(db, wstate, response.world_status)
         return response
 
     def checkChatEnabled(self, wstate: world_state.WorldState) -> bool:
@@ -71,7 +71,7 @@ class CharacterChat:
         response.chat_response = self.chat.chat_exchange(db, user=user)
         wstate = world_state.loadWorldState(db, self.wstate_id)
         response.chat_response.chat_enabled = self.checkChatEnabled(wstate) 
-        client.update_world_status(wstate, response.world_status)
+        client.update_world_status(db, wstate, response.world_status)
         return response
 
     def chat_start(self, db, user) -> CharacterResponse:
@@ -83,7 +83,7 @@ class CharacterChat:
         wstate.advanceTime(1)
         world_state.saveWorldState(db, wstate)
         response.chat_response.chat_enabled = self.checkChatEnabled(wstate) 
-        client.update_world_status(wstate, response.world_status)
+        client.update_world_status(db, wstate, response.world_status)
         return response
 
 
@@ -92,7 +92,7 @@ class CharacterChat:
         response.chat_response =  self.chat.chat_continue(db, msg_id)
         wstate = world_state.loadWorldState(db, self.wstate_id)
         response.chat_response.chat_enabled = self.checkChatEnabled(wstate) 
-        client.update_world_status(wstate, response.world_status)
+        client.update_world_status(db, wstate, response.world_status)
         return response
 
     def chat_event(self, db, event) -> CharacterResponse:
@@ -101,5 +101,5 @@ class CharacterChat:
             response.chat_response =  self.chat.chat_exchange(db, system=event)
         wstate = world_state.loadWorldState(db, self.wstate_id)
         response.chat_response.chat_enabled = self.checkChatEnabled(wstate) 
-        client.update_world_status(wstate, response.world_status)
+        client.update_world_status(db, wstate, response.world_status)
         return response
