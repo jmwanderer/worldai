@@ -402,7 +402,7 @@ def getWorldStateID(db, session_id, world_id):
     return wstate_id
 
 
-def checkWorldState(db, wstate):
+def checkWorldState(db, wstate: WorldState) -> bool:
     # Ensure all characters and items are assigned.
     # Initializes everything on first load. Will also
     # set locations for newly added items and characters.
@@ -430,6 +430,8 @@ def checkWorldState(db, wstate):
             if wstate.getCharacterLocation(character.getID()) == "":
                 site = random.choice(avail_sites)
                 wstate.setCharacterLocation(character.getID(), site.getID())
+                wstate.setCharacterHealth(character.getID(), 
+                                          wstate.getCharacterHealth(character.getID()) - 1)
                 changed = True
                 logging.info(
                     "assign %s to location %s", character.getName(), site.getName()
