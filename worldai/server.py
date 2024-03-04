@@ -768,9 +768,6 @@ def worlds_list():
     """
     API to access worldlist
     """
-    # Reset last opened world
-    if session.get("world_id"):
-        del session["world_id"]
     world_list = []
     worlds = elements.listWorlds(get_db())
     for entry in worlds:
@@ -799,8 +796,6 @@ def worlds_api(wid):
     if world == None:
         return {"error", "World not found"}, 404
 
-    # Save last opened in session
-    session["world_id"] = wid
     images = getElementImageProps(world)
     result = world.getAllProperties()
     result["images"] = images
@@ -929,6 +924,9 @@ def character_stats(wid, cid):
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
+    # Save last opened in session
+    session["world_id"] = wid
+
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
 
@@ -943,7 +941,6 @@ def doc_list_api(wid: elements.WorldID):
     """
     Return a list of documents for the world
     """
-    session["world_id"] = wid
     if elements.loadWorld(get_db(), wid) is None:
         return Response({"error", "World not found"}, 404)
     doc_list = []
@@ -955,7 +952,6 @@ def doc_list_api(wid: elements.WorldID):
 @bp.route("/api/worlds/<wid>/documents/<did>")
 @auth_required
 def docs_api(wid: elements.WorldID, did: elements.ElemID):
-    session["world_id"] = wid
     if elements.loadWorld(get_db(), wid) is None:
         return Response({"error", "World not found"}, 404)
     doc = elements.loadDocument(get_db(), did)
@@ -976,7 +972,6 @@ def site_list_api(wid):
     Get a list of sites
     """
     # Save last opened in session
-    session["world_id"] = wid
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
@@ -1006,11 +1001,12 @@ def site_instances_list(wid):
     """
     Get a list of sites
     """
-    # Save last opened in session
-    session["world_id"] = wid
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
+
+    # Save last opened in session
+    session["world_id"] = wid
 
     site_list = []
     session_id = get_session_id()
@@ -1064,6 +1060,9 @@ def site_instance(wid, sid):
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
+    # Save last opened in session
+    session["world_id"] = wid
+
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
     site = elements.loadSite(get_db(), sid)
@@ -1149,14 +1148,14 @@ def items_intances_list(wid):
     """
     API to get the items instances for a world
     """
-    # Save last opened in session
-    session["world_id"] = wid
-
     item_list = []
     session_id = get_session_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
+    # Save last opened in session
+    session["world_id"] = wid
+
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
     items = elements.listItems(get_db(), wid)
@@ -1215,6 +1214,8 @@ def item_instance(wid, iid):
     item = elements.loadItem(get_db(), iid)
     if item == None or item.parent_id != wid:
         return {"error", "Item not found"}, 404
+    # Save last opened in session
+    session["world_id"] = wid
 
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)

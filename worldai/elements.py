@@ -1050,7 +1050,7 @@ def recoverItems(db, world_id: WorldID) -> int:
 def getItemAbilityDescription(db, item: Item) -> str:
     ability = item.getAbility().effect
     if ability == "open":
-        site = loadSite(get_db(), item.getAbility().site_id)
+        site = loadSite(db, item.getAbility().site_id)
         if site is not None:
             ability += " " + site.getName()
     return ability

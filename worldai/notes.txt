@@ -23,6 +23,11 @@ Three things cause the world state to change:
   - relationships
   - motivations
 - Align steps and details in design instructions with the property names of the character
+  - traits
+  - backstory
+  - behavior
+  - relationships
+- Perhaps have a world list instance that has info about the game play and unsets the world_id session cookie
 - Mention selecting an ability for an item in the design instructions
 - Consider improving the description of item abilities in info text
 - include system messages in character thread RAG
