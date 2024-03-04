@@ -247,6 +247,7 @@ class ClientActions:
                             world_status.response_message = (
                                 f"{character.getName()} is already healthy"
                             )
+                            world_status.last_event = f"{name} used {item.getName()} to heal {character.getName()}, but they were already healthy"
 
             case elements.ItemEffect.HURT:
                 # Only other TODO: extend so characters can use

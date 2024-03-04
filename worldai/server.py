@@ -1165,12 +1165,13 @@ def items_intances_list(wid):
         iid = entry.getID()
         item = elements.loadItem(get_db(), iid)
         image_prop = getElementThumbProperty(item)
-
+        
         item_list.append(
             {
                 "id": iid,
                 "name": item.getName(),
                 "description": item.getDescription(),
+                "ability": elements.getItemAbilityDescription(get_db(), item),
                 "have_item": wstate.hasItem(iid),
                 "image": image_prop,
             }

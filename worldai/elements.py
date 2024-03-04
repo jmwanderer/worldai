@@ -571,7 +571,7 @@ class Item(Element):
             content += "\nIs mobile\n"
         else:
             content += "\nIs not mobile\n"
-        content += "Ability: "
+        content += "Key Function: "
         if self.getAbility().effect == ItemEffect.OPEN:
             content += "Open a site\n"
         else:
@@ -1046,6 +1046,15 @@ def hideItem(db, wid: WorldID, name: str) -> int:
 
 def recoverItems(db, world_id: WorldID) -> int:
     return ElementStore.recoverElements(db, ElementType.ITEM, world_id)
+
+def getItemAbilityDescription(db, item: Item) -> str:
+    ability = item.getAbility().effect
+    if ability == "open":
+        site = loadSite(get_db(), item.getAbility().site_id)
+        if site is not None:
+            ability += " " + site.getName()
+    return ability
+
 
 
 def deleteImage(db, data_dir: str, image_id: ElemID):

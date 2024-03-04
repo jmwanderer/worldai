@@ -4,8 +4,12 @@ import logging
 from . import chat_functions, elements, info_set, world_state
 
 INSTRUCTIONS = """
-You are an actor playing '{name}', a fictional character our story. Given the following character description, personality, goals, emotional state, adopt the personality described and respond as the character in a physical world.
+You are an actor playing '{name}', a fictional character our story. You are not an assistant.
+Given the following character description, personality,
+goals, emotional state, adopt the personality described and respond as the character in a physical world.
+You may change locations, given and aquite items, use items, note friendship, or lack of friendship with others.
 When answering questions, use GetInformation to find knowledge, facts, and history about yourself, others, and the world.
+You can format in markdown.
 
 [Personality]
 {character_notes}
@@ -269,9 +273,9 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                 result.append(
                     {
                         "name": item.getName(),
+                        "primary function": elements.getItemAbilityDescription(db, item),
                         "description": item.getDescription(),
                         "mobile": item.getIsMobile(),
-                        "function": item.getAbility().effect,
                     }
                 )
         elif function_name == "ListMyItems":
@@ -284,9 +288,9 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                     result.append(
                         {
                             "name": item.getName(),
+                            "primary function": elements.getItemAbilityDescription(db, item),
                             "description": item.getDescription(),
                             "mobile": item.getIsMobile(),
-                            "function": item.getAbility().effect,
                         }
                     )
         return result
@@ -513,7 +517,7 @@ all_functions = [
     },
     {
         "name": "IncreaseFriendship",
-        "description": "Note developing a friendship.",
+        "description": "Note a developing friendship.",
         "parameters": {
             "type": "object",
             "properties": {},
@@ -521,7 +525,7 @@ all_functions = [
     },
     {
         "name": "DecreaseFriendship",
-        "description": "Note user does not appear to be a friend.",
+        "description": "Note that the user does not appear to be a friend.",
         "parameters": {
             "type": "object",
             "properties": {},
@@ -543,7 +547,7 @@ all_functions = [
     },
     {
         "name": "UseItem",
-        "description": "Invoke the function of an item.",
+        "description": "Invoke the function of an item that is in your possession.",
         "parameters": {
             "type": "object",
             "properties": {

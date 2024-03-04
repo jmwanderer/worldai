@@ -791,6 +791,8 @@ function ItemListEntry({ item, selectItem}) {
             </h5>
             <p className="card-text" style={{ textAlign: "left" }}>
               { item.description }
+              <br/>
+              Ability: { item.ability }
             </p>
           </div>
         </div>

@@ -22,6 +22,8 @@ Three things cause the world state to change:
   - appearance
   - relationships
   - motivations
+- Align steps and details in design instructions with the property names of the character
+- Mention selecting an ability for an item in the design instructions
 - Consider improving the description of item abilities in info text
 - include system messages in character thread RAG
 - Add clearing wstate from info_docs on clear state - DONE
