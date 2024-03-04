@@ -513,6 +513,7 @@ all_functions = [
                     "descripton": "Context of the information query",
                 }
             },
+            "required": ["context"],
         },
     },
     {
