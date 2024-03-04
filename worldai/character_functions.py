@@ -20,6 +20,12 @@ You reside in the world {world_name}.
 
 Your current location is "{location}"
 
+The following characters are present at the current location:
+{characters_present}
+
+The following items are present at the current location:
+{items_present}
+
 You are talking to the user, who you know by the name 'Traveler'. We greet with curiousity.
 {friendship}
 
@@ -109,6 +115,24 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         else:
             character_state = NO_CHAR_ITEMS.format(name=character.getName())
 
+        characters_present = []
+        cid_list = wstate.getCharactersAtLocation(site_id)
+        for cid in cid_list:
+            present = elements.loadCharacter(db, cid)
+            if present is not None:
+                characters_present.append("- " + present.getName())
+        if len(characters_present) == 0:
+            characters_present.append("None")
+
+        items_present = []
+        iid_list = wstate.getItemLocation(site_id)
+        for iid in iid_list:
+            item = elements.loadItem(db, iid)
+            if item is not None:
+                items_present.append("- " + item.getName())
+        if len(items_present) == 0:
+            items_present.append("None")
+
         user_state = []
 
         # Invisibility
@@ -139,14 +163,6 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         # Convert into a string.
         user_state = "\n".join(user_state)
 
-        character_details = ""
-        if len(character.getDetails()) > 0:
-            character_details = character.getDetails()
-
-        personality = ""
-        if len(character.getPersonality()) > 0:
-            personality = character.getPersonality()
-
         world_details = ""
         if len(world.getDetails()) > 0:
             world_details = world_details = world.getDetails()
@@ -154,6 +170,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         instructions = INSTRUCTIONS.format(
             name=character.getName(),
             character_notes=character.getProfile(),
+            items_present="\n".join(items_present),
+            characters_present="\n".join(characters_present),
             world_name=world.getName(),
             world_details=world_details,
             friendship=friendship,
@@ -244,11 +262,15 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             result = self.FuncUseItem(db, arguments)
         if function_name == "ChangeLocation":
             result = self.FuncChangeLocation(db, arguments)
-        elif function_name == "ListCharacters":
-            result = [
-                {"name": entry.getName()}
-                for entry in elements.listCharacters(db, self.world_id)
-            ]
+        elif function_name == "ListWorldCharacters":
+            result = []
+            wstate = world_state.loadWorldState(db, self.wstate_id)
+            for entry in elements.listCharacters(db, self.world_id):
+                site_id = wstate.getCharacterLocation(entry.getID())
+                site = elements.loadSite(db, site_id)
+                result.append(
+                    {"name": entry.getName(),
+                     "location": site.getName() if site is not None else "" })
         elif function_name == "ListSites":
             result = []
             wstate = world_state.loadWorldState(db, self.wstate_id)
@@ -330,8 +352,20 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         """
         context = args["context"]
         logging.info("Lookup info: %s", context)
-        embed = info_set.generateEmbedding(context)
-        content = info_set.getInformation(db, self.world_id, embed, 2)
+        if context == "Traveler":
+            content = "A visitor to our world with an unknown quest."
+        else:
+            wstate = world_state.loadWorldState(db, self.wstate_id)
+            character = elements.findCharacter(db, self.world_id, context)
+            if character is not None:
+                content = character.getProfile()
+                site_id = wstate.getCharacterLocation(character.getID()) 
+                site = elements.loadSite(db, site_id)
+                if site is not None:
+                    content = content + "\nLocation: " + site.getName()
+            else:
+                embed = info_set.generateEmbedding(context)
+                content = info_set.getInformation(db, self.world_id, embed, 2)
         return {"context": context, "information": content}
 
     def FuncGiveItem(self, db, args):
@@ -594,8 +628,8 @@ all_functions = [
         },
     },
     {
-        "name": "ListCharacters",
-        "description": "Get the list of all existing characters",
+        "name": "ListWorldCharacters",
+        "description": "Get the list of all characters in the world",
         "parameters": {
             "type": "object",
             "properties": {},
