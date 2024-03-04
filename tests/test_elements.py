@@ -139,8 +139,14 @@ class BasicTestCase(unittest.TestCase):
                 elements.CoreProps.PROP_NAME: "char1",
                 "description": "description",
                 "details": "details",
+                "personality": "a personality",
+                "appearance": "average",
+                "traits": "impatient",
+                "behavior": "cooperative"
             }
         )
+        profile = character.getProfile()
+        self.assertGreater(len(profile), 0)
 
         character.updateProperties({"details": "my details"})
         character = elements.createCharacter(self.db, character)

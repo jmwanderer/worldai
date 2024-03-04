@@ -190,7 +190,7 @@ We are working on world "{current_world_name}": {current_world_description}
 {element}
 
 Worlds have characters which are actors in the world. 
-Characters have a detailed description with appearance, relationships, abilities, weaknesses, motivations and a backstory.
+Characters have a description of appearance, relationships, abilities, weaknesses, motivations and a backstory.
 Characters have a personality that include how they talk, act, and think. Does the person tend towards good or evil?
 Selfishnes or selflessness?  Law abiding or chaotic?
 You can create characters and change information about the characters.
@@ -1479,7 +1479,27 @@ all_functions = [
                 },
                 "personality": {
                     "type": "string",
-                    "description": "Describes the personality of the character.",
+                    "description": "Personality of the character.",
+                },
+                "appearance": {
+                    "type": "string",
+                    "description": "Character appearance.",
+                },
+                "traits": {
+                    "type": "string",
+                    "description": "Character traits.",
+                },
+                "behavior": {
+                    "type": "string",
+                    "description": "Character behavior.",
+                },
+                "relationships": {
+                    "type": "string",
+                    "description": "Relationships with other characters.",
+                },
+                "backstory": {
+                    "type": "string",
+                    "description": "Backstory for the character.",
                 },
             },
             "required": ["name"],

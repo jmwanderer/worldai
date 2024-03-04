@@ -108,7 +108,12 @@ class DocProps(BaseProps):
 
 
 class CharacterProps(BaseProps):
-    personality: typing.Optional[str] = ""
+    personality: str = ""
+    appearance: str = ""
+    traits: str = ""
+    behavior: str = ""
+    relationships: str = ""
+    backstory: str = ""
 
 
 class ItemEffect(str, enum.Enum):
@@ -342,9 +347,9 @@ class Element:
 
     def getInfoText(self) -> list[tuple[int, str]]:
         content = self.getName()
-        if self.getDescription() is not None:
+        if len(self.getDescription()) > 0:
             content = content + ": " + self.getDescription()
-        if self.getDetails() is not None:
+        if len(self.getDetails()) > 0:
             content = content + "\n" + self.getDetails()
         return [(0, content)]
 
@@ -378,7 +383,7 @@ class World(Element):
     Represents an instance of a World.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(ElementType.WORLD, WORLD_ID_NONE)
         self.prop_model: WorldProps = WorldProps()
 
@@ -496,6 +501,64 @@ class Character(Element):
 
     def setPersonality(self, value: str):
         self.prop_model.personality = value
+
+    def getAppearance(self) -> str:
+        return self.prop_model.appearance
+
+    def setAppearance(self, value: str) -> None:
+        self.prop_model.appearance = value
+
+    def getTraits(self) -> str:
+        return self.prop_model.traits
+
+    def setTraits(self, value: str) -> None:
+        self.prop_model.traits = value
+
+    def getBehavior(self) -> str:
+        return self.prop_model.behavior
+
+    def setBehavior(self, value: str) -> None:
+        self.prop_model.behavior = value
+
+    def getRelationships(self) -> str:
+        return self.prop_model.relationships
+
+    def setRelationships(self, value: str) -> None:
+        self.prop_model.relationships = value
+
+    def getBackstory(self) -> str:
+        return self.prop_model.backstory
+
+    def setBackstory(self, value: str) -> None:
+        self.prop_model.backstory = value
+
+    def getProfile(self) -> str:
+        content = list()
+        content.append("Name: " + self.getName())
+        content.append("[Description]")
+        content.append(self.getDescription())
+        if len(self.getDetails()) > 0:
+            content.append("[Details]")
+            content.append(self.getDetails())
+        if len(self.getAppearance()) > 0:
+            content.append("[Appearance]")
+            content.append(self.getAppearance())
+        if len(self.getTraits()) > 0:
+            content.append("[Traits]")
+            content.append(self.getTraits())
+        if len(self.getBehavior()) > 0:
+            content.append("[Behavior]")
+            content.append(self.getBehavior())
+        if len(self.getRelationships()) > 0:
+            content.append("[Relationships]")
+            content.append(self.getRelationships())
+        if len(self.getBackstory()) > 0:
+            content.append("[Backstory]")
+            content.append(self.getBackstory())
+        return "\n".join(content)
+
+    def getInfoText(self) -> list[tuple[int, str]]:
+        return [(0, self.getProfile())]
 
 
 class Site(Element):
@@ -1049,10 +1112,10 @@ def recoverItems(db, world_id: WorldID) -> int:
 
 def getItemAbilityDescription(db, item: Item) -> str:
     ability = item.getAbility().effect
-    if ability == "open":
-        site = loadSite(db, item.getAbility().site_id)
+    if ability == ItemEffect.OPEN:
+        site = loadSite(db, ElemID(item.getAbility().site_id))
         if site is not None:
-            ability += " " + site.getName()
+            return str(ability) + " " + site.getName()
     return ability
 
 

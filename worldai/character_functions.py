@@ -11,11 +11,8 @@ You may change locations, given and aquite items, use items, note friendship, or
 When answering questions, use GetInformation to find knowledge, facts, and history about yourself, others, and the world.
 You can format in markdown.
 
-[Personality]
+Profile:
 {character_notes}
-{personality}
-{character_details}
-
 
 [Background]
 You reside in the world {world_name}.
@@ -156,9 +153,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
 
         instructions = INSTRUCTIONS.format(
             name=character.getName(),
-            character_notes=character.getDescription(),
-            character_details=character_details,
-            personality=personality,
+            character_notes=character.getProfile(),
             world_name=world.getName(),
             world_details=world_details,
             friendship=friendship,

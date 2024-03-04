@@ -287,6 +287,67 @@ function Character({ tag, setChatView }) {
                   </Markdown>
                 </Accordion.Body>
               </Accordion.Item>
+
+              <Accordion.Item eventKey='2'>
+                <Accordion.Header>
+                  Appearance
+                  { character.appearance.length === 0 ? " -- TBD" : ""}
+                </Accordion.Header>
+                <Accordion.Body>
+                  <Markdown>
+                    { character.appearance }
+                  </Markdown>
+                </Accordion.Body>
+              </Accordion.Item>
+
+              <Accordion.Item eventKey='3'>
+                <Accordion.Header>
+                  Traits
+                  { character.traits.length === 0 ? " -- TBD" : ""}
+                </Accordion.Header>
+                <Accordion.Body>
+                  <Markdown>
+                    { character.traits }
+                  </Markdown>
+                </Accordion.Body>
+              </Accordion.Item>
+
+              <Accordion.Item eventKey='4'>
+                <Accordion.Header>
+                  Behavior
+                  { character.behavior.length === 0 ? " -- TBD" : ""}
+                </Accordion.Header>
+                <Accordion.Body>
+                  <Markdown>
+                    { character.behavior }
+                  </Markdown>
+                </Accordion.Body>
+              </Accordion.Item>
+
+              <Accordion.Item eventKey='5'>
+                <Accordion.Header>
+                  Relationships
+                  { character.relationships.length === 0 ? " -- TBD" : ""}
+                </Accordion.Header>
+                <Accordion.Body>
+                  <Markdown>
+                    { character.relationships }
+                  </Markdown>
+                </Accordion.Body>
+              </Accordion.Item>
+
+              <Accordion.Item eventKey='6'>
+                <Accordion.Header>
+                  Backstory
+                  { character.backstory.length === 0 ? " -- TBD" : ""}
+                </Accordion.Header>
+                <Accordion.Body>
+                  <Markdown>
+                    { character.backstory }
+                  </Markdown>
+                </Accordion.Body>
+              </Accordion.Item>
+
             </Accordion>
           </Stack>);
 }
