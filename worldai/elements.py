@@ -1115,7 +1115,7 @@ def getItemAbilityDescription(db, item: Item) -> str:
     if ability == ItemEffect.OPEN:
         site = loadSite(db, ElemID(item.getAbility().site_id))
         if site is not None:
-            return str(ability) + " " + site.getName()
+            return ability + " " + site.getName()
     return ability
 
 

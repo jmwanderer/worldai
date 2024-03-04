@@ -4,9 +4,10 @@ import logging
 from . import chat_functions, elements, info_set, world_state
 
 INSTRUCTIONS = """
-You are an actor playing '{name}', a fictional character our story. You are not an assistant.
+You are a  professonal actor playing '{name}', a fictional character in a story taking
+place in the world {world_name}.
 Given the following character description, personality,
-goals, emotional state, adopt the personality described and respond as the character in a physical world.
+goals, and emotional state, adopt the personality described and respond as the character in a physical world.
 You may change locations, given and aquite items, use items, note friendship, or lack of friendship with others.
 When answering questions, use GetInformation to find knowledge, facts, and history about yourself, others, and the world.
 You can format in markdown.
@@ -16,7 +17,7 @@ Profile:
 
 [Background]
 You reside in the world {world_name}.
-{world_description}
+{world_name} is described as: {world_description}
 
 Your current location is "{location}"
 
@@ -25,6 +26,9 @@ The following characters are present at the current location:
 
 The following items are present at the current location:
 {items_present}
+
+You possess the following items:
+{character_items}
 
 You are talking to the user, who you know by the name 'Traveler'. We greet with curiousity.
 {friendship}
@@ -125,13 +129,22 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             characters_present.append("None")
 
         items_present = []
-        iid_list = wstate.getItemLocation(site_id)
+        iid_list = wstate.getItemsAtLocation(site_id)
         for iid in iid_list:
             item = elements.loadItem(db, iid)
             if item is not None:
                 items_present.append("- " + item.getName())
         if len(items_present) == 0:
             items_present.append("None")
+
+        character_items = []
+        iid_list = wstate.getCharacterItems(character.getID())
+        for iid in iid_list:
+            item = elements.loadItem(db, iid)
+            if item is not None:
+                character_items.append("- " + item.getName())
+        if len(character_items) == 0:
+            character_items.append("None")
 
         user_state = []
 
@@ -171,6 +184,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             name=character.getName(),
             character_notes=character.getProfile(),
             items_present="\n".join(items_present),
+            character_items="\n".join(character_items),
             characters_present="\n".join(characters_present),
             world_name=world.getName(),
             world_details=world_details,
@@ -258,6 +272,10 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             result = self.FuncLookupInformation(db, arguments)
         elif function_name == "GiveItem":
             result = self.FuncGiveItem(db, arguments)
+        elif function_name == "FetchItem":
+            result = self.FuncFetchItem(db, arguments)
+        elif function_name == "DropItem":
+            result = self.FuncDropItem(db, arguments)
         elif function_name == "UseItem":
             result = self.FuncUseItem(db, arguments)
         if function_name == "ChangeLocation":
@@ -283,7 +301,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                         "open": wstate.isSiteOpen(id),
                     }
                 )
-        elif function_name == "ListItems":
+        elif function_name == "ListWorldItems":
             result = []
             for entry in elements.listItems(db, self.world_id):
                 item = elements.loadItem(db, entry.getID())
@@ -295,21 +313,6 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                         "mobile": item.getIsMobile(),
                     }
                 )
-        elif function_name == "ListMyItems":
-            wstate = world_state.loadWorldState(db, self.wstate_id)
-            result = []
-            char_items = wstate.getCharacterItems(self.character_id)
-            for entry in elements.listItems(db, self.world_id):
-                if entry.getID() in char_items:
-                    item = elements.loadItem(db, entry.getID())
-                    result.append(
-                        {
-                            "name": item.getName(),
-                            "primary function": elements.getItemAbilityDescription(db, item),
-                            "description": item.getDescription(),
-                            "mobile": item.getIsMobile(),
-                        }
-                    )
         return result
 
     def FuncIncreaseFriendship(self, db):
@@ -372,13 +375,12 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         """
         Give or receive an item
         """
-        # TODO: this is where we need lock for updating
         item_name = args["name"]
         print(f"give item {item_name}")
         wstate = world_state.loadWorldState(db, self.wstate_id)
         item = elements.findItem(db, self.world_id, item_name)
         if item is None:
-            return self.funcError("Not an existing item. Perhaps call ListMyItems?")
+            return self.funcError("Not an existing item.")
 
         character = elements.loadCharacter(db, self.character_id)
         text = ""
@@ -386,16 +388,57 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             # Charracter has item to give to the user
             wstate.addItem(item.getID())
             text = character.getName() + " gave the " + item.getName()
-        elif wstate.hasItem(item.getID()):
-            # User has item to give to the character
-            wstate.addCharacterItem(self.character_id, item.getID())
-            text = character.getName() + " accepted the " + item.getName()
-            if wstate.getSelectedItem() == item.getID():
-                wstate.selectItem(None)
         else:
-            return self.funcError("Niether you or the user have this item")
+            return self.funcError("you do not have this item")
 
         world_state.saveWorldState(db, wstate)
+        result = {"response": self.funcStatus("OK"), "text": text}
+        self.world_changed = True
+        return result
+
+    def FuncFetchItem(self, db, args):
+        """
+        Pick up an available item
+        """
+        item_name = args["name"]
+        print(f"fetch item {item_name}")
+        wstate = world_state.loadWorldState(db, self.wstate_id)
+        item = elements.findItem(db, self.world_id, item_name)
+        if item is None:
+            return self.funcError("Not an existing item.")
+
+        if wstate.hasItem(item.getID()):
+            return self.funcError("The user has the item. They need to drop it.")
+
+        if wstate.getItemLocation(item.getID()) != wstate.getCharacterLocation(self.character_id):
+            return self.funcError("The item is not here.")
+
+        wstate.addCharacterItem(self.character_id, item.getID())
+        world_state.saveWorldState(db, wstate)
+        character = elements.loadCharacter(db, self.character_id)
+        text = character.getName() + " picked up the " + item.getName()
+        result = {"response": self.funcStatus("OK"), "text": text}
+        self.world_changed = True
+        return result
+
+    def FuncDropItem(self, db, args):
+        """
+        Drop an item that is in possesion.
+        """
+        item_name = args["name"]
+        print(f"drop {item_name}")
+        wstate = world_state.loadWorldState(db, self.wstate_id)
+        item = elements.findItem(db, self.world_id, item_name)
+        if item is None:
+            return self.funcError("Not an existing item.")
+
+        if not wstate.hasCharacterItem(self.character_id, item.getID()):
+            return self.funcError("You do not have this item.")
+
+        wstate.setItemLocation(item.getID(), wstate.getCharacterLocation(self.character_id))
+        world_state.saveWorldState(db, wstate)
+        character = elements.loadCharacter(db, self.character_id)
+        text = character.getName() + " set down the " + item.getName()
         result = {"response": self.funcStatus("OK"), "text": text}
         self.world_changed = True
         return result
@@ -563,7 +606,35 @@ all_functions = [
     },
     {
         "name": "GiveItem",
-        "description": "Give or recieve an item.",
+        "description": "Give an item to the user.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the item.",
+                },
+            },
+            "required": ["name"],
+        },
+    },
+    {
+        "name": "FetchItem",
+        "description": "Fetch an item at the current location.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the item.",
+                },
+            },
+            "required": ["name"],
+        },
+    },
+    {
+        "name": "DropItem",
+        "description": "Set down an item at the current location.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -612,16 +683,8 @@ all_functions = [
         },
     },
     {
-        "name": "ListItems",
-        "description": "Get the list of all existing items",
-        "parameters": {
-            "type": "object",
-            "properties": {},
-        },
-    },
-    {
-        "name": "ListMyItems",
-        "description": "Get the list of items the character possesses",
+        "name": "ListWorldItems",
+        "description": "Get the list of all items that exist in this world",
         "parameters": {
             "type": "object",
             "properties": {},

@@ -324,7 +324,7 @@ class WorldState:
         self.get_item(item_id).location = site_id
 
     def getItemLocation(self, item_id):
-        # Set the location of an item
+        # Return the location of an item
         return self.get_item(item_id).location
 
     def getItemsAtLocation(self, site_id):

@@ -109,7 +109,7 @@ class BasicTestCase(unittest.TestCase):
         self.assertNotEqual(len(self.wstate.getSelectedItem()), 0)
         self.wstate.dropItem(iid)
         self.assertFalse(self.wstate.hasItem(iid))
-        self.assertEqual(len(self.wstate.getSelectedItem()), 0)
+        self.assertIsNone(self.wstate.getSelectedItem())
 
         self.wstate.addItem(iid)
         self.assertEqual(len(self.wstate.getItems()), 1)
