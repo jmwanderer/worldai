@@ -17,7 +17,11 @@ Three things cause the world state to change:
   - reports events and status updates on return call
 
 
-* List 
+* List
+- Consider adding character elements of
+  - appearance
+  - relationships
+  - motivations
 - Consider improving the description of item abilities in info text
 - include system messages in character thread RAG
 - Add clearing wstate from info_docs on clear state - DONE
