@@ -302,6 +302,11 @@ class WorldState:
         # Give an item to the player
         self.get_item(item_id).location = PLAYER_ID
 
+    def dropItem(self, item_id):
+        self.get_item(item_id).location = self.getLocation()
+        if self.getSelectedItem() == item_id:
+            self.model.player_state.selected_item = None
+
     def hasItem(self, item_id):
         # True if player has this item
         return self.get_item(item_id).location == PLAYER_ID

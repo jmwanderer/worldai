@@ -176,7 +176,6 @@ async function postChatStart(context, user_msg) {
     headers: headers_post()
   });
   const values = await response.json();
-  console.log(values);
   return values;
 }
 
@@ -466,6 +465,18 @@ async function postSelectItem(worldId, itemId) {
   return response.json();
 }
 
+async function postDropItem(worldId, itemId) {
+  const url = `/worlds/${worldId}/command`;
+  const data = { "name": "drop",
+                 "item": itemId }
+  const response = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()    
+  });
+  return response.json();
+}
+
 
 async function postUseItem(worldId, itemId) {
   const url = `/worlds/${worldId}/command`;
@@ -480,8 +491,8 @@ async function postUseItem(worldId, itemId) {
 }
 
 function Site({ world, siteId,
-                playerData, updateWorldData,
-                selectedItem, selectItem,
+                playerData, setPlayerData,
+                selectedItem, selectItem, 
                 statusMessage, setStatusMessage,
                 currentTime,  setCurrentTime,
                 characterId, setCharacterId,
@@ -511,9 +522,11 @@ function Site({ world, siteId,
 
   async function reloadState() {
     try {
-      updateWorldData()
-      const newSite = await getSiteInstance(world.id, siteId);
+      let calls = Promise.all([ getWorldStatus(world.id), getSiteInstance(world.id, siteId) ]);
+      let [newWorldStatus, newSite] = await calls;
       setSite(newSite);
+      setPlayerData(newWorldStatus.player);
+      setCurrentTime(newWorldStatus.current_time);
     } catch (e) {
       console.log(e);
     } 
@@ -524,6 +537,19 @@ function Site({ world, siteId,
       let response = await postTakeItem(world.id, item_id);
       setStatusMessage(response.world_status.response_message)
       setCurrentTime(response.world_status.current_time);
+      if (response.world_status.changed) {
+        reloadState()
+      }
+    } catch (e) {
+      // TODO: fix reporting
+      console.log(e);      
+    }
+  }
+
+  async function siteDropItem(item_id) {
+    try {
+      let response = await postDropItem(world.id, item_id);
+      setStatusMessage(response.world_status.message)
       if (response.world_status.changed) {
         reloadState()
       }
@@ -597,6 +623,7 @@ function Site({ world, siteId,
     return (<DetailsView view={view}
                          world={ world }
                          selectItem={selectItem}
+                         dropItem={siteDropItem}
                          onClose={clearView}/>);
   }
 
@@ -765,16 +792,22 @@ function CharacterList({ worldId }) {
   );
 }
 
-function ItemListEntry({ item, selectItem}) {
+function ItemListEntry({ item, selectItem, dropItem}) {
 
   let in_inventory = "";
   if (item.have_item || true) {
     in_inventory = <i className="bi bi-check" style={{ fontSize: "4rem"}}/>
   }
 
-  function handleClick() {
+  function selectClick() {
     if (selectItem) {
       selectItem(item.id);
+    }
+  }
+  
+  function dropClick() {
+    if (selectItem) {
+      dropItem(item.id);
     }
   }
   
@@ -797,11 +830,18 @@ function ItemListEntry({ item, selectItem}) {
             </p>
           </div>
         </div>
-        <div className="col-2">
-          <Button onClick={handleClick}
+        <div className="col-1">
+          <Button onClick={selectClick}
                   disabled={selectItem === null}                  
                   className="mt-auto">
             Select
+          </Button>
+        </div>
+        <div className="col-1">
+          <Button onClick={dropClick}
+                  disabled={dropItem === null}                  
+                  className="mt-auto">
+            Drop
           </Button>
         </div>
       </div>
@@ -810,7 +850,7 @@ function ItemListEntry({ item, selectItem}) {
 }
 
 
-function Inventory({ worldId, selectItem }) {
+function Inventory({ worldId, selectItem, dropItem }) {
 
   const [itemList, setItemList] = useState([]);
 
@@ -838,7 +878,8 @@ function Inventory({ worldId, selectItem }) {
     entry => entry.have_item).map(
       entry => <ItemListEntry key={entry.id}
                               item={entry}
-                              selectItem={selectItem}/>);
+                              selectItem={selectItem}
+                              dropItem={dropItem}/>);
   
   if (entries.length === 0) {
     entries = (<Alert className="m-3">
@@ -852,11 +893,18 @@ function Inventory({ worldId, selectItem }) {
   );
 }
 
-function DetailsView({view, world, selectItem, onClose}) {
+function DetailsView({view, world, selectItem, dropItem, onClose}) {
 
   function onSelect(item_id) {
     if (typeof selectItem !== 'undefined') {    
       selectItem(item_id)
+      onClose()
+    }
+  }
+  
+  function onDrop(item_id) {
+    if (typeof selectItem !== 'undefined') {    
+      dropItem(item_id)
       onClose()
     }
   }
@@ -879,7 +927,9 @@ function DetailsView({view, world, selectItem, onClose}) {
           Inventory
         </h5>
         <Inventory worldId={world.id}
-                   selectItem={ typeof selectItem !== 'undefined' ? onSelect : null}/>
+                   selectItem={ typeof selectItem !== 'undefined' ? onSelect : null}
+                   dropItem={ typeof dropItem !== 'undefined' ? onDrop : null}
+                   />
       </div>
     );        
   }
@@ -1068,32 +1118,31 @@ function World({ worldId, setWorldId }) {
     }
   }
   
-  async function goToSite(site_id) {
-    try {    
-      let response = await postGoTo(world.id, site_id);
-      console.log("post go to");
-      setStatusMessage(response.world_status.response_message);    
-      setCurrentTime(response.world_status.current_time);
-      if (response.world_status.changed) {
-        console.log("update world data");
-        updateWorldData();
+    async function goToSite(site_id) {
+      try {    
+        let response = await postGoTo(world.id, site_id);
+        console.log("post go to");
+        setStatusMessage(response.world_status.response_message);    
+        setCurrentTime(response.world_status.current_time);
+        if (response.world_status.changed) {
+          updateWorldData();
+        }
+      } catch (e) {
+        console.log(e);
       }
-    } catch (e) {
-      console.log(e);
     }
-  }
 
 
-  // Wait until data loads
-  if (world === null || siteList === null) {
-    return (<div></div>);
-  }
+    // Wait until data loads
+    if (world === null || siteList === null) {
+      return (<div></div>);
+    }
 
-  if (view) {
-    return (<DetailsView view={view}
-                         world={ world }
-                         selectItem={ selectItem }
-                         onClose={clearView}/>);
+    if (view) {
+      return (<DetailsView view={view}
+                          world={ world }
+                          selectItem={ selectItem }
+                          onClose={clearView}/>);
   }
 
   // Show a specific site
@@ -1101,7 +1150,7 @@ function World({ worldId, setWorldId }) {
     return (<Site world={world}
                   siteId={siteId}
                   playerData={playerData}
-                  updateWorldData={updateWorldData}
+                  setPlayerData={setPlayerData}
                   selectedItem={selectedItem}
                   selectItem={selectItem}
                   statusMessage={statusMessage}

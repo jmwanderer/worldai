@@ -14,6 +14,7 @@ from . import client, elements, world_state
 class CommandName(str, enum.Enum):
     go = "go"
     take = "take"
+    drop = "drop"
     select = "select"
     use = "use"
     engage = "engage"
@@ -98,6 +99,20 @@ class ClientActions:
                     response.world_status.response_message = (
                         f"You picked up {item.getName()}"
                     )
+
+        elif command.name == CommandName.drop:
+            item_id = command.item
+            logging.info("drop item %s", item_id)
+            item = elements.loadItem(self.db, item_id)
+            if item is None:
+                response.call_status.result = client.StatusCode.ERROR
+            # Verify
+            elif self.wstate.hasItem(item_id):
+                self.wstate.dropItem(item_id)
+                response.world_status.changed = True
+                response.world_status.response_message = (
+                    f"You dropped {item.getName()}"
+                )
 
         elif command.name == CommandName.select:
             item_id = command.item

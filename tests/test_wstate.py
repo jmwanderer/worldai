@@ -105,7 +105,13 @@ class BasicTestCase(unittest.TestCase):
         self.assertFalse(self.wstate.hasItem(iid))
         self.wstate.addItem(iid)
         self.assertTrue(self.wstate.hasItem(iid))
+        self.wstate.selectItem(iid)
+        self.assertNotEqual(len(self.wstate.getSelectedItem()), 0)
+        self.wstate.dropItem(iid)
+        self.assertFalse(self.wstate.hasItem(iid))
+        self.assertEqual(len(self.wstate.getSelectedItem()), 0)
 
+        self.wstate.addItem(iid)
         self.assertEqual(len(self.wstate.getItems()), 1)
 
         self.assertEqual(self.wstate.getFriendship(cid), 0)
