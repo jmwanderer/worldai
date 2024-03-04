@@ -16,13 +16,13 @@ Three things cause the world state to change:
   - accumulates events and status updates
   - reports events and status updates on return call
 
-
 * List
-- Consider adding character elements of
+- Change function for character taking an item to picking it up
+- Consider adding character elements of - DONE
   - appearance
   - relationships
   - motivations
-- Align steps and details in design instructions with the property names of the character
+- Align steps and details in design instructions with the property names of the character - DONE
   - traits
   - backstory
   - behavior

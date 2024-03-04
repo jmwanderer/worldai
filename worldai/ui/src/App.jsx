@@ -492,7 +492,8 @@ async function postUseItem(worldId, itemId) {
 
 function Site({ world, siteId,
                 playerData, setPlayerData,
-                selectedItem, selectItem, 
+                selectedItem, setSelectedItem,
+                selectItem, 
                 statusMessage, setStatusMessage,
                 currentTime,  setCurrentTime,
                 characterId, setCharacterId,
@@ -520,13 +521,17 @@ function Site({ world, siteId,
     }
   }, [world, siteId]);
 
-  async function reloadState() {
+  async function reloadSiteState() {
     try {
       let calls = Promise.all([ getWorldStatus(world.id), getSiteInstance(world.id, siteId) ]);
       let [newWorldStatus, newSite] = await calls;
       setSite(newSite);
       setPlayerData(newWorldStatus.player);
       setCurrentTime(newWorldStatus.current_time);
+      // Reset selected item if necessary
+      if (newWorldStatus.player.selected_item === null) {
+        setSelectedItem(null);
+      }
     } catch (e) {
       console.log(e);
     } 
@@ -538,7 +543,7 @@ function Site({ world, siteId,
       setStatusMessage(response.world_status.response_message)
       setCurrentTime(response.world_status.current_time);
       if (response.world_status.changed) {
-        reloadState()
+        reloadSiteState()
       }
     } catch (e) {
       // TODO: fix reporting
@@ -549,9 +554,9 @@ function Site({ world, siteId,
   async function siteDropItem(item_id) {
     try {
       let response = await postDropItem(world.id, item_id);
-      setStatusMessage(response.world_status.message)
+      setStatusMessage(response.world_status.response_message);
       if (response.world_status.changed) {
-        reloadState()
+        reloadSiteState()
       }
     } catch (e) {
       // TODO: fix reporting
@@ -567,7 +572,7 @@ function Site({ world, siteId,
       setStatusMessage(response.world_status.response_message)
       setCurrentTime(response.world_status.current_time);
       if (response.world_status.changed) {
-        reloadState()
+        reloadSiteState()
       }
     } catch (e) {
       // TODO: fix reporting
@@ -582,7 +587,7 @@ function Site({ world, siteId,
   }
 
   function handleChanges() {
-    reloadState();
+    reloadSiteState();
   }
   
   function clearView() {
@@ -1108,9 +1113,9 @@ function World({ worldId, setWorldId }) {
   async function selectItem(item_id) {
     try {
       let response = await postSelectItem(world.id, item_id);
-      setStatusMessage(response.world_status.message)
+      setStatusMessage(response.world_status.response_message)
       if (response.world_status.changed) {
-        updateWorldData();
+        loadSelectedItem(world, response.world_status.player);
       }
     } catch (e) {
       // TODO: fix reporting
@@ -1152,6 +1157,7 @@ function World({ worldId, setWorldId }) {
                   playerData={playerData}
                   setPlayerData={setPlayerData}
                   selectedItem={selectedItem}
+                  setSelectedItem={setSelectedItem}
                   selectItem={selectItem}
                   statusMessage={statusMessage}
                   setStatusMessage={setStatusMessage}
