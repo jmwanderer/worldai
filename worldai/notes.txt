@@ -29,7 +29,7 @@ Three things cause the world state to change:
   - relationships
 - Perhaps have a world list instance that has info about the game play and unsets the world_id session cookie
 - Mention selecting an ability for an item in the design instructions
-- Consider improving the description of item abilities in info text
+- Consider improving the description of item abilities in info text - DONE
 - include system messages in character thread RAG
 - Add clearing wstate from info_docs on clear state - DONE
 - perhaps prompt for confirm on clear state - DONE
@@ -50,7 +50,7 @@ Three things cause the world state to change:
 - fix use of ListMyItems
 - address confusion around giveitem....
 
-- add player stats to character chat screen
+- add player stats to character chat screen  - DONE
 
 - Handle incomplete message events using msg_id
   - may need to detect if previous message isnt complete

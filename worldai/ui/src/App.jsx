@@ -85,7 +85,7 @@ function CharacterStats({ charStats }) {
     <Table striped bordered hover>
       <thead>
         <tr>
-          <th>Health</th>
+          <th>{ charStats.name } Health</th>
           <th>State</th>          
           <th>Feel</th>
         </tr>
@@ -123,7 +123,7 @@ function PlayerStats({ charStats }) {
     <Table striped bordered hover>
       <thead>
         <tr>
-          <th>Health</th>
+          <th>Player Health</th>
           <th>State</th>          
         </tr>
       </thead>
@@ -360,6 +360,7 @@ function ChatCharacter({ world, characterId,
                     { statusMessage }
                   </Alert>
                   <CharacterStats charStats={characterData}/>
+                  <PlayerStats charStats={playerData.status}/>
                 </Col>
                 <Col xs={4}>
                   { item_card }
