@@ -680,6 +680,7 @@ class ElementStore:
         """
         Return an element id
         """
+        name = '%' + name + '%'
         q = db.execute(
             "SELECT id FROM elements WHERE "
             + "name LIKE ? "

@@ -17,7 +17,31 @@ Three things cause the world state to change:
   - reports events and status updates on return call
 
 * List
-- Change function for character taking an item to picking it up
+- Make drop item happen in a character context
+- Perhaps have a world list instance that has info about the game play and unsets the world_id session cookie
+- Mention selecting an ability for an item in the design instructions
+
+- include system messages in character thread RAG
+- give characters ability to learn about:
+  * who has which item
+  * who is present at the current site - DONE
+  * the ability of all of the items - DONE
+- consider adding a secret password facility
+- do something with player !alive
+- design instructions for what is a good personality
+  - what to they wants?
+  - how do they talk?
+  - who do they like and dislike? relationships
+  
+- characters send messages to other characters 
+- address confusion around giveitem.... - still is strange
+
+- Add clearing wstate from info_docs on clear state - DONE
+- perhaps prompt for confirm on clear state - DONE
+- Consider improving the description of item abilities in info text - DONE
+- add utility to reset a specific instance of a world - DONE
+
+- Change function for character taking an item to picking it up - DONE
 - Consider adding character elements of - DONE
   - appearance
   - relationships
@@ -27,28 +51,6 @@ Three things cause the world state to change:
   - backstory
   - behavior
   - relationships
-- Perhaps have a world list instance that has info about the game play and unsets the world_id session cookie
-- Mention selecting an ability for an item in the design instructions
-- Consider improving the description of item abilities in info text - DONE
-- include system messages in character thread RAG
-- Add clearing wstate from info_docs on clear state - DONE
-- perhaps prompt for confirm on clear state - DONE
-
-- add utility to reset a specific instance of a world - DONE
-- give characters ability to learn about:
-  * who has which item
-  * who is present at the current site
-  * the ability of all of the items
-- consider adding a secret password facility
-- do something with player !alive
-- design instructions for what is a good personality
-  - what to they wants?
-  - how do they talk?
-  - who do they like and dislike? relationships
-  
-- characters send messages to other characters 
-- fix use of ListMyItems
-- address confusion around giveitem....
 
 - add player stats to character chat screen  - DONE
 

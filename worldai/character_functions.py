@@ -8,7 +8,7 @@ You are a  professonal actor playing '{name}', a fictional character in a story 
 place in the world {world_name}.
 Given the following character description, personality,
 goals, and emotional state, adopt the personality described and respond as the character in a physical world.
-You may change locations, given and aquite items, use items, note friendship, or lack of friendship with others.
+You may change locations, fetch items, give items to the user, use items, note friendship, or lack of friendship with the user.
 When answering questions, use GetInformation to find knowledge, facts, and history about yourself, others, and the world.
 You can format in markdown.
 
@@ -270,7 +270,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             result = self.FuncDecreaseFriendship(db)
         elif function_name == "GetInformation":
             result = self.FuncLookupInformation(db, arguments)
-        elif function_name == "GiveItem":
+        elif function_name == "GiveItemToUser":
             result = self.FuncGiveItem(db, arguments)
         elif function_name == "FetchItem":
             result = self.FuncFetchItem(db, arguments)
@@ -303,11 +303,23 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                 )
         elif function_name == "ListWorldItems":
             result = []
+            wstate = world_state.loadWorldState(db, self.wstate_id)
             for entry in elements.listItems(db, self.world_id):
                 item = elements.loadItem(db, entry.getID())
+                location_id = wstate.getItemLocation(item.getID())
+                location = "unknown"
+                character = elements.loadCharacter(db, location_id)
+                if character is not None:
+                    location = character.getName()
+                else:
+                    site = elements.loadSite(db, location_id)
+                    if site is not None:
+                        location = site.getName()
+
                 result.append(
                     {
                         "name": item.getName(),
+                        "location": location,
                         "primary function": elements.getItemAbilityDescription(db, item),
                         "description": item.getDescription(),
                         "mobile": item.getIsMobile(),
@@ -605,7 +617,7 @@ all_functions = [
         },
     },
     {
-        "name": "GiveItem",
+        "name": "GiveItemToUser",
         "description": "Give an item to the user.",
         "parameters": {
             "type": "object",
@@ -684,7 +696,7 @@ all_functions = [
     },
     {
         "name": "ListWorldItems",
-        "description": "Get the list of all items that exist in this world",
+        "description": "Get the list of all items and their locations that exist in this world",
         "parameters": {
             "type": "object",
             "properties": {},
@@ -692,7 +704,7 @@ all_functions = [
     },
     {
         "name": "ListWorldCharacters",
-        "description": "Get the list of all characters in the world",
+        "description": "Get the list of all characters and their locations in the world",
         "parameters": {
             "type": "object",
             "properties": {},
