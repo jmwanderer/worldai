@@ -68,6 +68,8 @@ class CharacterChat:
 
     def checkChatEnabled(self, wstate: world_state.WorldState) -> bool:
         cid = wstate.getChatCharacter()
+        if cid is None:
+            return False
         # Check player and character are in the same location
         chat_enabled = wstate.getCharacterLocation(cid) == wstate.getLocation()
         # Check player and character are alive

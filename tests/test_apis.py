@@ -144,6 +144,20 @@ def test_character_chat(client, app):
     )
     char_id = response.json[0]["id"]
 
+    # Engage caracter
+    response = client.post(
+        f"/api/worlds/{world_id}/command",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": bearer_token(app),
+        },
+        json={
+            "name": "engage",
+            "character": char_id
+        },
+    )
+    assert response.status_code == 200
+
     # Post chat
     response = client.post(
         f"/api/worlds/{world_id}/characters/{char_id}/thread",
@@ -404,6 +418,21 @@ def testCharacterAction(client, app):
         f"/api/worlds/{wid}/items", headers={"Authorization": bearer_token(app)}
     )
     item_id = response.json[0]["id"]
+
+    # Engage caracter
+    response = client.post(
+        f"/api/worlds/{wid}/command",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": bearer_token(app),
+        },
+        json={
+            "name": "engage",
+            "character": cid
+        },
+    )
+    assert response.status_code == 200
+
 
     response = client.post(
         f"/api/worlds/{wid}/characters/{cid}/action",

@@ -1293,6 +1293,10 @@ def thread_api(wid, cid):
     - character_chat.CharacterHistoryResponse
     """
     session_id = get_session_id()
+    character = elements.loadCharacter(get_db(), cid)
+    if character is None:
+        return {"error", "Character not found"}, 404
+
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     # TODO: this is where we need lock for updating
     chat_session = character_chat.CharacterChat.loadChatSession(
@@ -1340,6 +1344,9 @@ def action_api(wid, cid):
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
+    character = elements.loadCharacter(get_db(), cid)
+    if character is None:
+        return {"error", "Character not found"}, 404
 
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)

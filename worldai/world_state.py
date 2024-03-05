@@ -36,20 +36,28 @@ class CharStatus(str, enum.Enum):
     CAPTURED = "captured"
     INVISIBLE = "invisible"
 
+class CharStatusRecord(pydantic.BaseModel):
+    """
+    Record of an active character status affliction
+    """
+    char_status: CharStatus
+    update_time: int = 0
+    count: int = 3
+
 
 class CharState(pydantic.BaseModel):
     """
     Represents state for a instance of a character
     Either a player or an NPC
     """
-
+    char_id: elements.ElemID
     location: str = ""
     credits: int = 1000
     health: int = 10
     max_health: int = 10
     strength: int = 8
     max_strength: int = 8
-    status: typing.List[CharStatus] = []
+    status: typing.Dict[CharStatus, CharStatusRecord] = {}
 
 
 class PlayerState(pydantic.BaseModel):
@@ -102,7 +110,7 @@ class WorldState:
 
     def get_char(self, char_id: elements.ElemID) -> CharState:
         if not char_id in self.model.character_state.keys():
-            self.model.character_state[char_id] = CharState()
+            self.model.character_state[char_id] = CharState(char_id=char_id)
         return self.model.character_state[char_id]
 
     def get_item(self, item_id):
@@ -124,6 +132,7 @@ class WorldState:
 
     def advanceTime(self, minutes):
         self.model.current_time = self.model.current_time + minutes
+        self.processCharStatusUpdates()
 
     def getCharacterLocation(self, char_id):
         return self.get_char(char_id).location
@@ -185,38 +194,71 @@ class WorldState:
     def setCharacterCredits(self, char_id, value):
         self.get_char(char_id).credits = value
 
-    def addCharacterStatus(self, char_id, status):
+    def addCharacterStatus(self, char_id: elements.ElemID, status: CharStatus) -> None:
         """
         Add a status to the list of CharStatus
         state: CharStatus
         """
-        if not status in self.get_char(char_id).status:
-            self.get_char(char_id).status.append(status)
+        char_status = CharStatusRecord(char_status=status)
+        char_status.update_time = self.getCurrentTime()
+        self.get_char(char_id).status.update({ status: char_status})
 
-    def removeCharacterStatus(self, char_id, status):
+    def removeCharacterStatus(self, char_id: elements.ElemID, status: CharStatus):
         """
         Remove a status from the list of CharStatus
         state: CharStatus
         """
-        if status in self.get_char(char_id).status:
-            self.get_char(char_id).status.remove(status)
+        if self.get_char(char_id).status.get(status) != None:
+            del self.get_char(char_id).status[status]
 
-    def hasCharacterStatus(self, char_id, status):
+    def getCharacterStatusRecord(self, char_id: elements.ElemID, status: CharStatus) -> CharStatusRecord|None:
+        return self.get_char(char_id).status.get(status)
+
+    def hasCharacterStatus(self, char_id: elements.ElemID, status: CharStatus) -> bool:
         logging.info("check character status %s", status)
-        logging.info(self.get_char(char_id).status)
-        logging.info(status in self.get_char(char_id).status)
-        return status in self.get_char(char_id).status
+        return self.getCharacterStatusRecord(char_id, status) != None
 
     def addPlayerStatus(self, status: CharStatus):
         self.addCharacterStatus(PLAYER_ID, status)
 
-    def removePlayerStatus(self, status):
+    def removePlayerStatus(self, status: CharStatus):
         self.removeCharacterStatus(PLAYER_ID, status)
 
-    def hasPlayerStatus(self, status):
+    def hasPlayerStatus(self, status: CharStatus):
         return self.hasCharacterStatus(PLAYER_ID, status)
 
-    def healCharacter(self, char_id):
+    def processCharStatusUpdates(self) -> None:
+        for char_state in self.model.character_state.values():
+            remove_list = []
+            for char_status_rec in char_state.status.values():
+                # Process every hour
+                if char_status_rec.update_time + 60 <= self.getCurrentTime():
+                    self.updateCharStatus(char_state.char_id, char_status_rec)
+                if char_status_rec.count <= 0:
+                    remove_list.append(char_status_rec.char_status)
+            for char_status in remove_list:
+                logging.info("Status %s expired for character: %s", char_status, char_state.char_id)
+                self.removeCharacterStatus(char_state.char_id, char_status)
+
+    def updateCharStatus(self, char_id: elements.ElemID, 
+                         char_status_rec: CharStatusRecord) -> None:
+        """"
+        Implement the periodic updates for Character Status records
+        """
+        char_status_rec.update_time = self.getCurrentTime()
+        if char_status_rec.char_status == CharStatus.PARALIZED:
+            char_status_rec.count -= 1
+
+        elif char_status_rec.char_status == CharStatus.POISONED:
+            char_status_rec.count -= 1
+            logging.info("Reduce health for poisoned character: %s", char_id)
+            self.setCharacterHealth(char_id, self.getCharacterHealth(char_id) - 1)
+
+        elif char_status_rec.char_status == CharStatus.SLEEPING:
+            char_status_rec.count -= 1
+
+        
+    def healCharacter(self, char_id: elements.ElemID) -> None:
         self.removeCharacterStatus(char_id, CharStatus.SLEEPING)
         self.removeCharacterStatus(char_id, CharStatus.POISONED)
         self.removeCharacterStatus(char_id, CharStatus.PARALIZED)
