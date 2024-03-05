@@ -74,6 +74,7 @@ class CharacterChat:
         chat_enabled = wstate.getCharacterLocation(cid) == wstate.getLocation()
         # Check player and character are alive
         chat_enabled = chat_enabled and wstate.getCharacterHealth(cid) > 0
+        chat_enabled = chat_enabled and not wstate.hasCharacterStatus(cid, world_state.CharStatus.SLEEPING)
         chat_enabled = chat_enabled and wstate.getPlayerHealth() > 0
         return chat_enabled
 
