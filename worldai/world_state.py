@@ -24,7 +24,7 @@ import pydantic
 
 from . import elements
 
-PLAYER_ID = "id0"
+PLAYER_ID = elements.ElemID("id0")
 
 
 class CharStatus(str, enum.Enum):
@@ -77,15 +77,17 @@ class WorldStateModel(pydantic.BaseModel):
     site_state: typing.Dict[str, SiteState] = {}
     current_time: int = 0
 
+# Types for IDs
+WorldStateID = typing.NewType("WorldStateID", str)
 
 class WorldState:
-    def __init__(self, wstate_id):
-        self.wstate_id = wstate_id
+    def __init__(self, wstate_id: WorldStateID) -> None:
+        self.wstate_id: WorldStateID = wstate_id
         self.session_id = None
-        self.world_id = None
-        self.model = WorldStateModel()
+        self.world_id: elements.WorldID = elements.WORLD_ID_NONE
+        self.model: WorldStateModel = WorldStateModel()
 
-    def set_model_str(self, value):
+    def set_model_str(self, value: str) -> None:
         props = json.loads(value)
         # Fix up from old formats
         for site in props["site_state"]:
@@ -95,10 +97,10 @@ class WorldState:
                 props["site_state"][site]["is_open"] = not locked
         self.model = WorldStateModel(**props)
 
-    def get_model_str(self):
+    def get_model_str(self) -> str:
         return self.model.model_dump_json()
 
-    def get_char(self, char_id):
+    def get_char(self, char_id: elements.ElemID) -> CharState:
         if not char_id in self.model.character_state.keys():
             self.model.character_state[char_id] = CharState()
         return self.model.character_state[char_id]
@@ -205,7 +207,7 @@ class WorldState:
         logging.info(status in self.get_char(char_id).status)
         return status in self.get_char(char_id).status
 
-    def addPlayerStatus(self, status):
+    def addPlayerStatus(self, status: CharStatus):
         self.addCharacterStatus(PLAYER_ID, status)
 
     def removePlayerStatus(self, status):
@@ -428,13 +430,13 @@ def checkWorldState(db, wstate: WorldState) -> bool:
         # Assign characters to sites
         for character in characters:
             if wstate.getCharacterLocation(character.getID()) == "":
-                site = random.choice(avail_sites)
-                wstate.setCharacterLocation(character.getID(), site.getID())
+                site_entry = random.choice(avail_sites)
+                wstate.setCharacterLocation(character.getID(), site_entry.getID())
                 wstate.setCharacterHealth(character.getID(), 
                                           wstate.getCharacterHealth(character.getID()) - 1)
                 changed = True
                 logging.info(
-                    "assign %s to location %s", character.getName(), site.getName()
+                    "assign %s to location %s", character.getName(), site_entry.getName()
                 )
 
         places = []
@@ -447,13 +449,14 @@ def checkWorldState(db, wstate: WorldState) -> bool:
                 if wstate.model.item_state.get(item_entry.getID()) is None:
                     changed = True
                     item = elements.loadItem(db, item_entry.getID())
-                    # Place non-mobile items at sites
-                    if item.getIsMobile():
-                        place = random.choice(places)
-                    else:
-                        place = random.choice(avail_sites)
-                    wstate.setItemLocation(item.getID(), place.getID())
-                    logging.info("place item %s: %s", item.getName(), place.getName())
+                    if item is not None:
+                        # Place non-mobile items at sites
+                        if item.getIsMobile():
+                            place = random.choice(places)
+                        else:
+                            place = random.choice(avail_sites)
+                        wstate.setItemLocation(item.getID(), place.getID())
+                        logging.info("place item %s: %s", item.getName(), place.getName())
 
     return changed
 

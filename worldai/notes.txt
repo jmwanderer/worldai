@@ -28,14 +28,14 @@ Three things cause the world state to change:
   * the ability of all of the items - DONE
 - consider adding a secret password facility
 - do something with player !alive
-- design instructions for what is a good personality
-  - what to they wants?
-  - how do they talk?
-  - who do they like and dislike? relationships
   
 - characters send messages to other characters 
 - address confusion around giveitem.... - still is strange
 
+- design instructions for what is a good personality - DONE
+  - what to they wants?
+  - how do they talk?
+  - who do they like and dislike? relationships
 - Add clearing wstate from info_docs on clear state - DONE
 - perhaps prompt for confirm on clear state - DONE
 - Consider improving the description of item abilities in info text - DONE

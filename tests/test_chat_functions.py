@@ -245,7 +245,7 @@ class DesignTestCase(unittest.TestCase):
         # Non-existant character
         result = self.callFunction(
             "UpdateCharacter",
-            '{ "name": "char 1", '
+            '{ "name": "not char 1", '
             + ' "description": "a description", '
             + ' "details": "my details" }',
         )
@@ -286,7 +286,7 @@ class DesignTestCase(unittest.TestCase):
         # Not existant item
         result = self.callFunction(
             "UpdateItem",
-            '{ "name": "item 1", '
+            '{ "name": "not item 1", '
             + ' "description": "a description", '
             + ' "details": "my details" }',
         )
@@ -331,7 +331,7 @@ class DesignTestCase(unittest.TestCase):
         # Non-existant site
         result = self.callFunction(
             "UpdateSite",
-            '{ "name": "site 1", '
+            '{ "name": "not site 1", '
             + ' "description": "a description", '
             + ' "details": "my details" }',
         )
