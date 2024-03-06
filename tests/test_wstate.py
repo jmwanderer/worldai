@@ -143,3 +143,35 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(self.wstate.getPlayerCredits(), 1000)
         self.wstate.setPlayerCredits(2000)
         self.assertEqual(self.wstate.getPlayerCredits(), 2000)
+
+    def testEvents(self):
+        cid1 = self.char_ids[0]
+        cid2 = self.char_ids[1]
+        event1 = "event #1"
+        event2 = "event #2"
+        event3 = "event #3"
+
+        self.assertIsNone(self.wstate.removeCharacterEvent(cid1))
+        self.wstate.addCharacterEvent(cid1, event1)
+        self.assertIsNotNone(self.wstate.removeCharacterEvent(cid1))
+        self.assertIsNone(self.wstate.removeCharacterEvent(cid1))
+        self.wstate.addCharacterEvent(cid2, event1)
+        self.assertIsNone(self.wstate.removeCharacterEvent(cid1))
+        self.assertIsNotNone(self.wstate.removeCharacterEvent(cid2))
+        self.assertIsNone(self.wstate.removeCharacterEvent(cid2))
+
+        self.wstate.addCharacterEvent(cid1, event1)
+        self.wstate.addCharacterEvent(cid1, event2)
+        self.wstate.addCharacterEvent(cid2, event1)
+        self.wstate.addCharacterEvent(cid1, event3)
+        self.wstate.addCharacterEvent(cid2, event2)
+        self.wstate.addCharacterEvent(cid2, event3)
+
+        event = self.wstate.removeCharacterEvent(cid1)
+        self.assertEqual(event, event1)
+        event = self.wstate.removeCharacterEvent(cid1)
+        self.assertEqual(event, event2)
+        event = self.wstate.removeCharacterEvent(cid1)
+        self.assertEqual(event, event3)
+        event = self.wstate.removeCharacterEvent(cid1)
+        self.assertIsNone(event)

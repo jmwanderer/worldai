@@ -83,6 +83,7 @@ class WorldStateModel(pydantic.BaseModel):
     player_state: PlayerState = PlayerState()
     item_state: typing.Dict[elements.ElemID, ItemState] = {}
     site_state: typing.Dict[elements.ElemID, SiteState] = {}
+    character_events: typing.Dict[elements.ElemID, list[str]] = {}
     current_time: int = 0
 
 # Types for IDs
@@ -119,6 +120,11 @@ class WorldState:
             self.model.item_state[item_id] = ItemState()
         return self.model.item_state[item_id]
 
+    def get_events(self, char_id: elements.ElemID) -> list[str]:
+        if not char_id in self.model.character_events.keys():
+            self.model.character_events[char_id] = []
+        return self.model.character_events[char_id]
+
     def isSiteInitialized(self, site_id: elements.ElemID) -> bool:
         return site_id in self.model.site_state.keys()
 
@@ -134,6 +140,16 @@ class WorldState:
     def advanceTime(self, minutes: int) -> None:
         self.model.current_time = self.model.current_time + minutes
         self.processCharStatusUpdates()
+
+    def addCharacterEvent(self, char_id: elements.ElemID, event: str) -> None:
+        self.get_events(char_id).append(event)
+
+    def removeCharacterEvent(self, char_id: elements.ElemID) -> str|None:
+        events = self.get_events(char_id)
+        if len(events) == 0:
+            return None
+        # Remove and return 1st item in the list
+        return events.pop(0)
 
     def getCharacterLocation(self, char_id: elements.ElemID) -> elements.ElemID:
         return self.get_char(char_id).location
