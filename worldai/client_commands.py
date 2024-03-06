@@ -117,7 +117,7 @@ class ClientActions:
         elif command.name == CommandName.select:
             item_id = command.item
             if item_id is None or len(item_id) == 0:
-                self.wstate.selectItem("")
+                self.wstate.selectItem(elements.ELEM_ID_NONE)
                 response.world_status.changed = True
             else:
                 logging.info("select item %s", item_id)
@@ -167,7 +167,7 @@ class ClientActions:
                     )
 
         elif command.name == CommandName.disengage:
-            self.wstate.setChatCharacter(None)
+            self.wstate.setChatCharacter(elements.ELEM_ID_NONE)
             logging.info("disengage character")
             response.world_status.changed = True
             response.world_status.response_message = f"Talking to nobody"
@@ -209,9 +209,9 @@ class ClientActions:
         does NOT call client.update_world_status to set location, etc. Caller will do this.
         """
         logging.info("Use item %s", item.getName())
-        cid = None
+        cid = elements.ELEM_ID_NONE
         world_status = client.WorldStatus()
-        if character is not None:
+        if character != None:
             cid = character.getID()
 
         if item.getIsMobile():
@@ -244,7 +244,7 @@ class ClientActions:
         match item.getAbility().effect:
             case elements.ItemEffect.HEAL:
                 # Self or other
-                if cid is None:
+                if cid == elements.ELEM_ID_NONE:
                     if not self.wstate.isPlayerHealthy():
                         world_status.response_message = "You are healed"
                         self.wstate.healPlayer()
@@ -266,7 +266,7 @@ class ClientActions:
 
             case elements.ItemEffect.HURT:
                 # Only other TODO: extend so characters can use
-                if cid is not None:
+                if cid != elements.ELEM_ID_NONE:
                     health = self.wstate.getCharacterHealth(cid) - 4
                     health = max(health, 0)
                     self.wstate.setCharacterHealth(cid, health)
@@ -284,7 +284,7 @@ class ClientActions:
 
             case elements.ItemEffect.PARALIZE:
                 # Only other TODO: extend so characters can use
-                if cid is not None:
+                if cid != elements.ELEM_ID_NONE:
                     self.wstate.addCharacterStatus(cid, paralized)
                     world_status.response_message = (
                         f"{character.getName()} is paralized"
@@ -297,7 +297,7 @@ class ClientActions:
 
             case elements.ItemEffect.POISON:
                 # Other
-                if cid is not None:
+                if cid != elements.ELEM_ID_NONE:
                     self.wstate.addCharacterStatus(cid, poisoned)
                     world_status.response_message = f"{character.getName()} is poisoned"
                     world_status.last_event = (
@@ -306,7 +306,7 @@ class ClientActions:
 
             case elements.ItemEffect.SLEEP:
                 # Other character
-                if cid is not None:
+                if cid != elements.ELEM_ID_NONE:
                     self.wstate.addCharacterStatus(cid, sleeping)
                     world_status.response_message = f"{character.getName()} is sleeping"
                     world_status.last_event = (
@@ -316,7 +316,7 @@ class ClientActions:
 
             case elements.ItemEffect.BRAINWASH:
                 # Other character
-                if cid is not None:
+                if cid != elements.ELEM_ID_NONE:
                     self.wstate.addCharacterStatus(cid, brainwashed)
                     world_status.response_message = (
                         f"{character.getName()} is brainwashed"
@@ -324,7 +324,7 @@ class ClientActions:
 
             case elements.ItemEffect.CAPTURE:
                 # Other character - toggle
-                if cid is not None:
+                if cid != elements.ELEM_ID_NONE:
                     if self.wstate.hasCharacterStatus(cid, captured):
                         self.wstate.removeCharacterStatus(cid, captured)
                         world_status.response_message = (
@@ -355,7 +355,7 @@ class ClientActions:
                 site_id = item.getAbility().site_id
 
                 site = elements.loadSite(self.db, site_id)
-                if site is not None:
+                if site != elements.ELEM_ID_NONE:
                     if not self.wstate.isSiteOpen(site_id):
                         self.wstate.setSiteOpen(site_id, True)
                         world_status.response_message = (

@@ -169,7 +169,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
                 user_state.append("Traveler is injured")
 
             # Selected item
-            if wstate.getSelectedItem() != None:
+            if wstate.getSelectedItem() != elements.ELEM_ID_NONE:
                 item = elements.loadItem(db, wstate.getSelectedItem())
                 user_state.append(USER_ITEMS.format(selected_item=item.getName()))
 

@@ -529,7 +529,7 @@ function Site({ world, siteId,
       setPlayerData(newWorldStatus.player);
       setCurrentTime(newWorldStatus.current_time);
       // Reset selected item if necessary
-      if (newWorldStatus.player.selected_item === null) {
+      if (newWorldStatus.player.selected_item === "") {
         setSelectedItem(null);
       }
     } catch (e) {
@@ -1077,7 +1077,7 @@ function World({ worldId, setWorldId }) {
 
   async function loadSelectedItem(world, playerData) {
     try {    
-      if (playerData.selected_item === null) {
+      if (playerData.selected_item === "") {
         setSelectedItem(null);
       } else if (selectedItem === null) {
         // No currently selected item

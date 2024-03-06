@@ -51,23 +51,23 @@ class CharState(pydantic.BaseModel):
     Either a player or an NPC
     """
     char_id: elements.ElemID
-    location: str = ""
+    location: elements.ElemID = elements.ELEM_ID_NONE
     credits: int = 1000
     health: int = 10
     max_health: int = 10
     strength: int = 8
     max_strength: int = 8
-    status: typing.Dict[CharStatus, CharStatusRecord] = {}
+    status_recs: typing.Dict[CharStatus, CharStatusRecord] = {}
 
 
 class PlayerState(pydantic.BaseModel):
-    friendship: typing.Dict[str, int] = {}
-    chat_who: typing.Optional[str] = None
-    selected_item: typing.Optional[str] = None
+    friendship: typing.Dict[elements.ElemID, int] = {}
+    chat_who_id: elements.ElemID = elements.ELEM_ID_NONE
+    selected_item_id: elements.ElemID = elements.ELEM_ID_NONE
 
 
 class ItemState(pydantic.BaseModel):
-    location: str = ""
+    location: elements.ElemID = elements.ELEM_ID_NONE
 
 
 class SiteState(pydantic.BaseModel):
@@ -79,14 +79,15 @@ class WorldStateModel(pydantic.BaseModel):
     Represents an instantation of a world
     """
 
-    character_state: typing.Dict[str, CharState] = {}
+    character_state: typing.Dict[elements.ElemID, CharState] = {}
     player_state: PlayerState = PlayerState()
-    item_state: typing.Dict[str, ItemState] = {}
-    site_state: typing.Dict[str, SiteState] = {}
+    item_state: typing.Dict[elements.ElemID, ItemState] = {}
+    site_state: typing.Dict[elements.ElemID, SiteState] = {}
     current_time: int = 0
 
 # Types for IDs
 WorldStateID = typing.NewType("WorldStateID", str)
+WORLD_STATE_ID_NONE = WorldStateID("")
 
 class WorldState:
     def __init__(self, wstate_id: WorldStateID) -> None:
@@ -113,85 +114,85 @@ class WorldState:
             self.model.character_state[char_id] = CharState(char_id=char_id)
         return self.model.character_state[char_id]
 
-    def get_item(self, item_id):
+    def get_item(self, item_id: elements.ElemID) -> ItemState:
         if not item_id in self.model.item_state.keys():
             self.model.item_state[item_id] = ItemState()
         return self.model.item_state[item_id]
 
-    def isSiteInitialized(self, site_id):
+    def isSiteInitialized(self, site_id: elements.ElemID) -> bool:
         return site_id in self.model.site_state.keys()
 
-    def get_site(self, site_id):
+    def get_site(self, site_id: elements.ElemID) -> SiteState:
         if not site_id in self.model.site_state.keys():
             self.model.site_state[site_id] = SiteState()
         return self.model.site_state[site_id]
 
-    def getCurrentTime(self):
+    def getCurrentTime(self) -> int:
         # Return time in minutes
         return self.model.current_time
 
-    def advanceTime(self, minutes):
+    def advanceTime(self, minutes: int) -> None:
         self.model.current_time = self.model.current_time + minutes
         self.processCharStatusUpdates()
 
-    def getCharacterLocation(self, char_id):
+    def getCharacterLocation(self, char_id: elements.ElemID) -> elements.ElemID:
         return self.get_char(char_id).location
 
-    def setCharacterLocation(self, char_id, site_id):
+    def setCharacterLocation(self, char_id: elements.ElemID, site_id: elements.ElemID) -> None:
         self.get_char(char_id).location = site_id
 
-    def getCharactersAtLocation(self, site_id):
+    def getCharactersAtLocation(self, site_id: elements.ElemID) -> list[elements.ElemID]:
         result = []
         for char_id in self.model.character_state.keys():
             if char_id != PLAYER_ID and self.getCharacterLocation(char_id) == site_id:
                 result.append(char_id)
         return result
 
-    def setLocation(self, site_id=""):
+    def setLocation(self, site_id: elements.ElemID = elements.ELEM_ID_NONE) -> None:
         self.setCharacterLocation(PLAYER_ID, site_id)
 
-    def getLocation(self):
+    def getLocation(self) -> elements.ElemID:
         return self.getCharacterLocation(PLAYER_ID)
 
-    def getCharacterStrength(self, char_id):
+    def getCharacterStrength(self, char_id: elements.ElemID) -> int:
         return self.get_char(char_id).strength
 
-    def getCharacterMaxStrength(self, char_id):
+    def getCharacterMaxStrength(self, char_id: elements.ElemID) -> int:
         return self.get_char(char_id).max_strength
 
-    def getCharacterStrengthPercent(self, char_id):
+    def getCharacterStrengthPercent(self, char_id: elements.ElemID) -> int:
         char = self.get_char(char_id)
         return int((char.strength / char.max_strength) * 100)
 
-    def setCharacterStrength(self, char_id, value):
+    def setCharacterStrength(self, char_id: elements.ElemID, value:int ) -> None:
         self.get_char(char_id).strength = value
 
-    def setCharacterToMaxStrength(self, char_id):
+    def setCharacterToMaxStrength(self, char_id: elements.ElemID) -> None:
         self.get_char(char_id).strength = self.get_char(char_id).max_strength
 
-    def getCharacterHealth(self, char_id):
+    def getCharacterHealth(self, char_id: elements.ElemID) -> int:
         return self.get_char(char_id).health
 
-    def isCharacterDead(self, char_id):
+    def isCharacterDead(self, char_id: elements.ElemID) -> bool:
         return self.get_char(char_id).health < 1
 
-    def getCharacterHealthPercent(self, char_id):
+    def getCharacterHealthPercent(self, char_id: elements.ElemID) -> int:
         char = self.get_char(char_id)
         return int((char.health / char.max_health) * 100.0)
 
-    def setCharacterHealth(self, char_id, value):
+    def setCharacterHealth(self, char_id: elements.ElemID, value: int) -> None:
         self.get_char(char_id).health = value
 
-    def setCharacterToMaxHealth(self, char_id):
+    def setCharacterToMaxHealth(self, char_id: elements.ElemID) -> None:
         self.get_char(char_id).health = self.get_char(char_id).max_health
 
-    def getCharacterMaxHealth(self, char_id):
+    def getCharacterMaxHealth(self, char_id: elements.ElemID) -> int:
         return self.get_char(char_id).max_health
 
-    def getCharacterCredits(self, char_id):
+    def getCharacterCredits(self, char_id: elements.ElemID) -> int:
         return self.get_char(char_id).credits
 
-    def setCharacterCredits(self, char_id, value):
+    def setCharacterCredits(self, char_id: elements.ElemID, value: int) -> None:
         self.get_char(char_id).credits = value
 
     def addCharacterStatus(self, char_id: elements.ElemID, status: CharStatus) -> None:
@@ -201,18 +202,18 @@ class WorldState:
         """
         char_status = CharStatusRecord(char_status=status)
         char_status.update_time = self.getCurrentTime()
-        self.get_char(char_id).status.update({ status: char_status})
+        self.get_char(char_id).status_recs.update({ status: char_status})
 
-    def removeCharacterStatus(self, char_id: elements.ElemID, status: CharStatus):
+    def removeCharacterStatus(self, char_id: elements.ElemID, status: CharStatus) -> None:
         """
         Remove a status from the list of CharStatus
         state: CharStatus
         """
-        if self.get_char(char_id).status.get(status) != None:
-            del self.get_char(char_id).status[status]
+        if self.get_char(char_id).status_recs.get(status) != None:
+            del self.get_char(char_id).status_recs[status]
 
     def getCharacterStatusRecord(self, char_id: elements.ElemID, status: CharStatus) -> CharStatusRecord|None:
-        return self.get_char(char_id).status.get(status)
+        return self.get_char(char_id).status_recs.get(status)
 
     def hasCharacterStatus(self, char_id: elements.ElemID, status: CharStatus) -> bool:
         logging.info("check character status %s", status)
@@ -221,16 +222,16 @@ class WorldState:
     def addPlayerStatus(self, status: CharStatus):
         self.addCharacterStatus(PLAYER_ID, status)
 
-    def removePlayerStatus(self, status: CharStatus):
+    def removePlayerStatus(self, status: CharStatus) -> None:
         self.removeCharacterStatus(PLAYER_ID, status)
 
-    def hasPlayerStatus(self, status: CharStatus):
+    def hasPlayerStatus(self, status: CharStatus) -> bool:
         return self.hasCharacterStatus(PLAYER_ID, status)
 
     def processCharStatusUpdates(self) -> None:
         for char_state in self.model.character_state.values():
             remove_list = []
-            for char_status_rec in char_state.status.values():
+            for char_status_rec in char_state.status_recs.values():
                 # Process every hour
                 if char_status_rec.update_time + 60 <= self.getCurrentTime():
                     self.updateCharStatus(char_state.char_id, char_status_rec)
@@ -266,7 +267,7 @@ class WorldState:
         self.setCharacterToMaxHealth(char_id)
         self.setCharacterToMaxStrength(char_id)
 
-    def isCharacterHealthy(self, cid):
+    def isCharacterHealthy(self, cid: elements.ElemID):
         return (
             self.getCharacterHealth(cid) == self.getCharacterMaxHealth(cid)
             and self.getCharacterStrength(cid) == self.getCharacterMaxStrength(cid)
@@ -276,86 +277,86 @@ class WorldState:
             and not self.hasCharacterStatus(cid, CharStatus.BRAINWASHED)
         )
 
-    def healPlayer(self):
+    def healPlayer(self) -> None:
         self.healCharacter(PLAYER_ID)
 
-    def getPlayerStrength(self):
+    def getPlayerStrength(self) -> int:
         return self.getCharacterStrength(PLAYER_ID)
 
-    def getPlayerMaxStrength(self):
+    def getPlayerMaxStrength(self) -> int:
         return self.getCharacterMaxStrength(PLAYER_ID)
 
-    def getPlayerStrengthPercent(self):
+    def getPlayerStrengthPercent(self) -> int:
         return self.getCharacterStrengthPercent(PLAYER_ID)
 
-    def setPlayerStrength(self, value):
+    def setPlayerStrength(self, value: int) -> None:
         self.setCharacterStrength(PLAYER_ID, value)
 
-    def setPlayerToMaxStrength(self):
+    def setPlayerToMaxStrength(self) -> None:
         self.setCharacterToMaxStrength(PLAYER_ID)
 
-    def getPlayerHealth(self):
+    def getPlayerHealth(self) -> int:
         return self.getCharacterHealth(PLAYER_ID)
 
-    def getPlayerHealthPercent(self):
+    def getPlayerHealthPercent(self) -> int:
         return self.getCharacterHealthPercent(PLAYER_ID)
 
-    def setPlayerHealth(self, value):
+    def setPlayerHealth(self, value: int):
         self.setCharacterHealth(PLAYER_ID, value)
 
-    def setPlayerToMaxHealth(self):
+    def setPlayerToMaxHealth(self) -> None:
         self.setCharacterToMaxHealth(PLAYER_ID)
 
-    def getPlayerMaxHealth(self):
+    def getPlayerMaxHealth(self) -> int:
         return self.getCharacterMaxHealth(PLAYER_ID)
 
-    def isPlayerHealthy(self):
+    def isPlayerHealthy(self) -> bool:
         return self.isCharacterHealthy(PLAYER_ID)
 
-    def isPlayerDead(self):
+    def isPlayerDead(self) -> bool:
         return self.isCharacterDead(PLAYER_ID)
 
-    def getPlayerCredits(self):
+    def getPlayerCredits(self) -> int:
         return self.getCharacterCredits(PLAYER_ID)
 
-    def setPlayerCredits(self, value):
+    def setPlayerCredits(self, value: int) -> None:
         self.setCharacterCredits(PLAYER_ID, value)
 
-    def getCharacterItems(self, char_id):
+    def getCharacterItems(self, char_id: elements.ElemID) -> list[elements.ElemID]:
         result = []
         for item_id in self.model.item_state.keys():
             if self.model.item_state[item_id].location == char_id:
                 result.append(item_id)
         return result
 
-    def addCharacterItem(self, char_id, item_id):
+    def addCharacterItem(self, char_id: elements.ElemID, item_id: elements.ElemID) -> None:
         self.get_item(item_id).location = char_id
 
-    def hasCharacterItem(self, char_id, item_id):
+    def hasCharacterItem(self, char_id: elements.ElemID, item_id: elements.ElemID) -> bool:
         # True if a character has an item
         return self.get_item(item_id).location == char_id
 
-    def selectItem(self, item_id):
+    def selectItem(self, item_id: elements.ElemID) -> None:
         # mark item as selected by the player. May be empty string
-        self.model.player_state.selected_item = item_id
+        self.model.player_state.selected_item_id = item_id
 
-    def getSelectedItem(self):
-        return self.model.player_state.selected_item
+    def getSelectedItem(self) -> elements.ElemID:
+        return self.model.player_state.selected_item_id
 
-    def addItem(self, item_id):
+    def addItem(self, item_id: elements.ElemID) -> None:
         # Give an item to the player
         self.get_item(item_id).location = PLAYER_ID
 
-    def dropItem(self, item_id):
+    def dropItem(self, item_id: elements.ElemID) -> None:
         self.get_item(item_id).location = self.getLocation()
         if self.getSelectedItem() == item_id:
-            self.model.player_state.selected_item = None
+            self.model.player_state.selected_item_id = elements.ELEM_ID_NONE
 
-    def hasItem(self, item_id):
+    def hasItem(self, item_id: elements.ElemID) -> bool:
         # True if player has this item
         return self.get_item(item_id).location == PLAYER_ID
 
-    def getItems(self):
+    def getItems(self) -> list[elements.ElemID]:
         # Return a list of item ids possesed by the player
         result = []
         for item_id in self.model.item_state.keys():
@@ -363,15 +364,15 @@ class WorldState:
                 result.append(item_id)
         return result
 
-    def setItemLocation(self, item_id, site_id):
+    def setItemLocation(self, item_id: elements.ElemID, site_id: elements.ElemID) -> None:
         # Set the location of an item
         self.get_item(item_id).location = site_id
 
-    def getItemLocation(self, item_id):
+    def getItemLocation(self, item_id: elements.ElemID) -> elements.ElemID:
         # Return the location of an item
         return self.get_item(item_id).location
 
-    def getItemsAtLocation(self, site_id):
+    def getItemsAtLocation(self, site_id: elements.ElemID) -> list[elements.ElemID]:
         # Return list of item_ids at a specific site
         result = []
         for item_id in self.model.item_state.keys():
@@ -379,48 +380,45 @@ class WorldState:
                 result.append(item_id)
         return result
 
-    def increaseFriendship(self, char_id, amount=5):
+    def increaseFriendship(self, char_id: elements.ElemID, amount: int =5) -> None:
         level = self.getFriendship(char_id) + amount
         self.model.player_state.friendship[char_id] = level
 
-    def decreaseFriendship(self, char_id, amount=5):
+    def decreaseFriendship(self, char_id: elements.ElemID, amount: int =5) -> None:
         level = self.getFriendship(char_id) - amount
         self.model.player_state.friendship[char_id] = level
 
-    def getFriendship(self, char_id):
+    def getFriendship(self, char_id: elements.ElemID) -> int:
         if self.model.player_state.friendship.get(char_id) is None:
             return 0
         return self.model.player_state.friendship[char_id]
 
-    def setChatCharacter(self, char_id=None):
-        if char_id is None:
-            char_id = ""
-        self.model.player_state.chat_who = char_id
+    def setChatCharacter(self, char_id: elements.ElemID=elements.ELEM_ID_NONE) -> None:
+        self.model.player_state.chat_who_id = char_id
 
-    def getChatCharacter(self):
+    def getChatCharacter(self) -> elements.ElemID:
         """
         Returns character ID or empty string.
         """
-        return self.model.player_state.chat_who
+        return self.model.player_state.chat_who_id
 
-    def isSiteOpen(self, site_id):
+    def isSiteOpen(self, site_id: elements.ElemID) -> bool:
         """
         Returns True if the site is open.
         """
         return self.get_site(site_id).is_open
 
-    def setSiteOpen(self, site_id, value):
+    def setSiteOpen(self, site_id: elements.ElemID, value: bool) -> None:
         """
         Record if site is open
         """
         self.get_site(site_id).is_open = value
 
 
-def getWorldStateID(db, session_id, world_id):
+def getWorldStateID(db, session_id: str, world_id: elements.WorldID) -> WorldStateID:
     """
     Get an ID for a World State record - create if needed.
     """
-    wstate_id = None
     now = time.time()
     c = db.cursor()
     c.execute("BEGIN EXCLUSIVE")
@@ -431,7 +429,7 @@ def getWorldStateID(db, session_id, world_id):
     r = c.fetchone()
     if r is None:
         # Insert a record and then populate
-        wstate_id = "id%s" % os.urandom(4).hex()
+        wstate_id = WorldStateID("id%s" % os.urandom(4).hex())
         state = WorldState(wstate_id)
         logging.info("world id %s", world_id)
         c.execute(
@@ -440,7 +438,7 @@ def getWorldStateID(db, session_id, world_id):
             (wstate_id, session_id, world_id, now, now, state.get_model_str()),
         )
     else:
-        wstate_id = r[0]
+        wstate_id = WorldStateID(r[0])
     db.commit()
 
     return wstate_id
@@ -503,11 +501,11 @@ def checkWorldState(db, wstate: WorldState) -> bool:
     return changed
 
 
-def loadWorldState(db, wstate_id):
+def loadWorldState(db, wstate_id: WorldStateID) -> WorldState:
     """
     Get or create a world state.
     """
-    wstate = None
+    wstate = WorldState(WORLD_STATE_ID_NONE)
     c = db.cursor()
     c.execute(
         "SELECT session_id, world_id, state FROM world_state WHERE id = ?", (wstate_id,)
@@ -527,7 +525,7 @@ def loadWorldState(db, wstate_id):
     return wstate
 
 
-def saveWorldState(db, state):
+def saveWorldState(db, state: WorldState) -> None:
     """
     Update world state.
     """

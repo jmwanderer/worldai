@@ -4,7 +4,7 @@ import sqlite3
 import tempfile
 import unittest
 
-from worldai import threads, world_state
+from worldai import elements, threads, world_state
 
 
 class BasicTestCase(unittest.TestCase):
@@ -56,7 +56,7 @@ class BasicTestCase(unittest.TestCase):
         site_id = "id789"
 
         state = world_state.loadWorldState(self.db, wstate_id)
-        self.assertIsNone(state)
+        self.assertEqual(state.wstate_id, world_state.WORLD_STATE_ID_NONE)
 
         wstate_id = world_state.getWorldStateID(self.db, session_id, world_id)
         state = world_state.loadWorldState(self.db, wstate_id)
@@ -73,7 +73,7 @@ class BasicTestCase(unittest.TestCase):
         state.increaseFriendship(char_id)
         self.assertTrue(state.getFriendship(char_id) > 0)
 
-        self.assertIsNone(state.getChatCharacter())
+        self.assertEqual(state.getChatCharacter(), elements.ELEM_ID_NONE)
         state.setChatCharacter(char_id)
 
         self.assertEqual(len(state.getItems()), 0)
