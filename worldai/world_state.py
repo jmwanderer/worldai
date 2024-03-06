@@ -145,11 +145,24 @@ class WorldState:
         self.get_events(char_id).append(event)
 
     def removeCharacterEvent(self, char_id: elements.ElemID) -> str|None:
+        """
+        Return the next saved character event or None if there are no more.
+        Note: the string will have {name} place holders to be expanded to the character name.
+        """
         events = self.get_events(char_id)
         if len(events) == 0:
             return None
         # Remove and return 1st item in the list
         return events.pop(0)
+
+    def getCharacterEvents(self, char_id: elements.ElemID) -> list[str]:
+        """
+        Return all of the events for the character and clear the list.
+        """
+        events = self.get_events(char_id)
+        if len(events) != 0:
+            self.model.character_events[char_id] = []
+        return events
 
     def getCharacterLocation(self, char_id: elements.ElemID) -> elements.ElemID:
         return self.get_char(char_id).location
@@ -246,6 +259,7 @@ class WorldState:
 
     def processCharStatusUpdates(self) -> None:
         for char_state in self.model.character_state.values():
+            # Build list of items to remove done after the iteration is complete.
             remove_list = []
             for char_status_rec in char_state.status_recs.values():
                 # Process every hour
@@ -256,6 +270,12 @@ class WorldState:
             for char_status in remove_list:
                 logging.info("Status %s expired for character: %s", char_status, char_state.char_id)
                 self.removeCharacterStatus(char_state.char_id, char_status)
+                if char_status == CharStatus.PARALIZED:
+                    self.addCharacterEvent(char_state.char_id, "{name} is no longer paralized")
+                elif char_status == CharStatus.POISONED:
+                    self.addCharacterEvent(char_state.char_id, "{name} is no longer poisoned")
+                elif char_status == CharStatus.SLEEPING:
+                    self.addCharacterEvent(char_state.char_id, "{name} is now awake")
 
     def updateCharStatus(self, char_id: elements.ElemID, 
                          char_status_rec: CharStatusRecord) -> None:

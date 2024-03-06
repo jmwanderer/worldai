@@ -17,7 +17,7 @@ Three things cause the world state to change:
   - reports events and status updates on return call
 
 * List
-- Add ending of character status events to char thread.
+- Add ending of character status events to char thread. - DONE
 - Make drop item happen in a character context
 - Perhaps have a world list instance that has info about the game play and unsets the world_id session cookie
 - Mention selecting an ability for an item in the design instructions

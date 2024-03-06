@@ -175,3 +175,8 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(event, event3)
         event = self.wstate.removeCharacterEvent(cid1)
         self.assertIsNone(event)
+
+        events = self.wstate.getCharacterEvents(cid2)
+        self.assertEqual(len(events), 3)
+        events = self.wstate.getCharacterEvents(cid2)
+        self.assertEqual(len(events), 0)

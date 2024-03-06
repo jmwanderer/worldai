@@ -96,11 +96,27 @@ class CharacterChat:
             message = None
         else:
             message = user
+
+        # Load any pending character events into a system message
+        wstate = world_state.loadWorldState(db, self.wstate_id)
+        events = wstate.getCharacterEvents(self.character_id)
+        system_message = None
+        if len(events) > 0:
+            system_message = "\n".join(events)
+            # Only save if there were events removed, otherwise it is not necessary
+            world_state.saveWorldState(db, wstate)
+            character = elements.loadCharacter(db, self.character_id)
+            if character  is not None:
+                system_message = system_message.format(name=character.getName())
+
         response = CharacterResponse()
-        response.chat_response = self.chat.chat_start(db, user=message)
+        response.chat_response = self.chat.chat_start(db, user=message, system=system_message)
+
+        # Reload world state as it may have changed during message processing
         wstate = world_state.loadWorldState(db, self.wstate_id)
         wstate.advanceTime(1)
         world_state.saveWorldState(db, wstate)
+
         response.chat_response.chat_enabled = self.checkChatEnabled(wstate)
         client.update_world_status(db, wstate, response.world_status)
         response.world_status.changed = self.char_functions.world_changed
@@ -117,8 +133,24 @@ class CharacterChat:
 
     def chat_event(self, db, event: str) -> CharacterResponse:
         response = CharacterResponse()
+
+        # Load any pending character events into a system message
+        wstate = world_state.loadWorldState(db, self.wstate_id)
+        events = wstate.getCharacterEvents(self.character_id)
+        if len(events) > 0:
+            world_state.saveWorldState(db, wstate)
+
         if len(event) > 0:
-            response.chat_response = self.chat.chat_exchange(db, system=event)
+            events.append(event)
+
+        if len(events) > 0:
+            system = "\n".join(events)
+            character = elements.loadCharacter(db, self.character_id)
+            if character  is not None:
+                system = system.format(name=character.getName())
+
+            response.chat_response = self.chat.chat_exchange(db, system=system)
+
         wstate = world_state.loadWorldState(db, self.wstate_id)
         response.chat_response.chat_enabled = self.checkChatEnabled(wstate)
         client.update_world_status(db, wstate, response.world_status)
