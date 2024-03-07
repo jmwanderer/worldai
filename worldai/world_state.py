@@ -79,7 +79,7 @@ class WorldStateModel(pydantic.BaseModel):
     Represents an instantation of a world
     """
 
-    character_state: typing.Dict[elements.ElemID, CharState] = {}
+    char_state: typing.Dict[elements.ElemID, CharState] = {}
     player_state: PlayerState = PlayerState()
     item_state: typing.Dict[elements.ElemID, ItemState] = {}
     site_state: typing.Dict[elements.ElemID, SiteState] = {}
@@ -111,9 +111,9 @@ class WorldState:
         return self.model.model_dump_json()
 
     def get_char(self, char_id: elements.ElemID) -> CharState:
-        if not char_id in self.model.character_state.keys():
-            self.model.character_state[char_id] = CharState(char_id=char_id)
-        return self.model.character_state[char_id]
+        if not char_id in self.model.char_state.keys():
+            self.model.char_state[char_id] = CharState(char_id=char_id)
+        return self.model.char_state[char_id]
 
     def get_item(self, item_id: elements.ElemID) -> ItemState:
         if not item_id in self.model.item_state.keys():
@@ -172,7 +172,7 @@ class WorldState:
 
     def getCharactersAtLocation(self, site_id: elements.ElemID) -> list[elements.ElemID]:
         result = []
-        for char_id in self.model.character_state.keys():
+        for char_id in self.model.char_state.keys():
             if char_id != PLAYER_ID and self.getCharacterLocation(char_id) == site_id:
                 result.append(char_id)
         return result
@@ -258,7 +258,7 @@ class WorldState:
         return self.hasCharacterStatus(PLAYER_ID, status)
 
     def processCharStatusUpdates(self) -> None:
-        for char_state in self.model.character_state.values():
+        for char_state in self.model.char_state.values():
             # Build list of items to remove done after the iteration is complete.
             remove_list = []
             for char_status_rec in char_state.status_recs.values():
