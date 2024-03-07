@@ -53,8 +53,8 @@ function MessageExchange({ name, message }) {
   }
   return (
     <div>
-      { user_message }
       { event_message }
+      { user_message }
       { updates_message }
       { reply_message }
     </div>
