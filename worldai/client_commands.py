@@ -319,12 +319,22 @@ class ClientActions:
             case elements.ItemEffect.SLEEP:
                 # Other character
                 if cid != elements.ELEM_ID_NONE:
-                    self.wstate.addCharacterStatus(cid, sleeping)
-                    world_status.response_message = f"{character.getName()} is sleeping"
-                    world_status.last_event = (
-                        f"{self.player_name} uses {item.getName()} to put {character.getName()} to sleep.\n"  +
-                        f"{character.getName()} is asleep."
-                    )
+                    if not self.wstate.hasCharacterStatus(cid, sleeping):
+                        # Sleep character
+                        self.wstate.addCharacterStatus(cid, sleeping)
+                        world_status.response_message = f"{character.getName()} is sleeping"
+                        world_status.last_event = (
+                            f"{self.player_name} uses {item.getName()} to put {character.getName()} to sleep.\n"  +
+                            f"{character.getName()} is asleep."
+                        )
+                    else:
+                        # Wake character
+                        self.wstate.removeCharacterStatus(cid, sleeping)
+                        world_status.response_message = f"{character.getName()} is awake"
+                        world_status.last_event = (
+                            f"{self.player_name} uses {item.getName()} to wake {character.getName()}.\n"  +
+                            f"{character.getName()} is awake."
+                        )
 
             case elements.ItemEffect.BRAINWASH:
                 # Other character

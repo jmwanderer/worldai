@@ -351,6 +351,13 @@ class ChatSession:
         if user is not None:
             self.history.addMessage({"role": "user", "content": user})
 
+        # If there is a system message, the first step is to simply return that system
+        # message to the client.
+        if system is not None:
+            result = ChatResponse(id=self.msg_id, done=False)
+            result.event = system
+            return result
+
         # First run a chat completion, may be the last operation
         return self.chat_message(db, tool_name)
 
