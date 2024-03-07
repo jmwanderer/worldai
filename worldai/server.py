@@ -1286,8 +1286,9 @@ def thread_api(wid, cid):
     """
     session_id = get_session_id()
     character = elements.loadCharacter(get_db(), cid)
-    if character is None:
-        return {"error", "Character not found"}, 404
+    world = elements.loadWorld(get_db(), wid)
+    if character is None or world is None:
+        return {"error", "World not found"}, 404
 
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     # TODO: this is where we need lock for updating
@@ -1333,48 +1334,63 @@ def action_api(wid, cid):
       - result.chat_response.chat_enabled  (enabled): user can continue to chat with character
     """
     session_id = get_session_id()
+    character = elements.loadCharacter(get_db(), cid)
     world = elements.loadWorld(get_db(), wid)
-    if world is None:
+    if character is None or world is None:
         return {"error", "World not found"}, 404
 
-    action = request.json.get("action")
-    item_id = request.json.get("item")
-    if action == None or item_id == None:
+
+    command = request.json.get("command")
+    if command == None:
         return {"error", "missing arguments"}, 400
 
-    character = elements.loadCharacter(get_db(), cid)
-    item = elements.loadItem(get_db(), item_id)
-    if item is None or character is None:
-        return {"error", "Element not found"}, 404
-
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
-    wstate = world_state.loadWorldState(get_db(), wstate_id)
-
-    client_actions = client_commands.ClientActions(get_db(), world, wstate, "Travler")
-    if action == "use":
-        # Run the use command
-        world_status = client_actions.UseItemCharacter(item, character)
-    elif action == "drop":
-        # Run the drop item command
-        # Note: this is currently not used. Instead wstate.character_event is used on a drop
-        world_status = client_actions.DropItem(item_id, item)
-
-    if world_status.changed:
-        # Save state since chat functions may load it again
-        world_state.saveWorldState(get_db(), wstate)
-
     chat_session = character_chat.CharacterChat.loadChatSession(
         get_db(), wstate_id, wid, cid
     )
-    # Run event - ok to call will an empty event
-    result = chat_session.chat_event(get_db(), world_status.last_event)
-    chat_session.saveChatSession(get_db())
 
-    # Copy results from command action into final resonse
-    # TODO: just copy entire world_status?
-    result.world_status.changed = world_status.changed
-    result.world_status.response_message = world_status.response_message
-    result.world_status.last_event = world_status.last_event
-    content = result.model_dump()
+    # Run event - ok to call will an empty event
+    if command == "start":
+        action = request.json.get("action")
+        item_id = request.json.get("item")
+        if action == None or item_id == None:
+            return {"error", "missing arguments"}, 400
+
+        character = elements.loadCharacter(get_db(), cid)
+        item = elements.loadItem(get_db(), item_id)
+        if item is None or character is None:
+            return {"error", "Element not found"}, 404
+
+        # Perform action
+        wstate = world_state.loadWorldState(get_db(), wstate_id)
+
+        client_actions = client_commands.ClientActions(get_db(), world, wstate, "Travler")
+        if action == "use":
+            # Run the use command
+            world_status = client_actions.UseItemCharacter(item, character)
+        elif action == "drop":
+            # Run the drop item command
+            # Note: this is currently not used. Instead wstate.character_event is used on a drop
+            world_status = client_actions.DropItem(item_id, item)
+
+        if world_status.changed:
+            # Save state since chat functions may load it again
+            world_state.saveWorldState(get_db(), wstate)
+
+        reply = chat_session.chat_event_start(get_db(), world_status.last_event)
+        
+        # Copy results from command action into resonse
+        # TODO: just copy entire world_status?
+        reply.world_status.changed = world_status.changed
+        reply.world_status.response_message = world_status.response_message
+        reply.world_status.last_event = world_status.last_event
+        content = reply.model_dump()
+
+    elif command == "continue":
+        msg_id = request.json.get("id")
+        reply = chat_session.chat_continue(get_db(), msg_id)
+        content = reply.model_dump()
+
+    chat_session.saveChatSession(get_db())
 
     return content

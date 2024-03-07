@@ -195,12 +195,31 @@ async function postChatContinue(context, msg_id) {
   return values;
 }
 
-async function postCharacterAction(context, args) {
+async function postActionStart(context, args) {
   const worldId = context.worldId
   const characterId = context.characterId
-  const data = { "action": args.action, "item": args.itemId }
+  const data = { "command": "start",
+                 "action": args.action,
+                 "item": args.itemId }
   const url = `/worlds/${worldId}/characters/${characterId}/action`;
-  // Post the user request
+  // Post action
+  const response = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: headers_post()
+  });
+  const values = await response.json();
+  return values;
+}
+
+async function postActionContinue(context, args) {
+  const worldId = context.worldId
+  const characterId = context.characterId
+  const data = { "command": "continue",
+                 "action": args.action, 
+                 "item": args.itemId }
+  const url = `/worlds/${worldId}/characters/${characterId}/action`;
+  // Post next step in action
   const response = await fetch(get_url(url), {
     method: 'POST',
     body: JSON.stringify(data),
@@ -314,9 +333,21 @@ function ChatCharacter({ world, characterId,
     return values.chat_response
   }
  
-  async function runCharacterAction(context, args) {
-    let values = await postCharacterAction(context, args);
+  async function startCharacterAction(context, args) {
+    let values = await postActionStart(context, args);
     setStatusMessage(values.world_status.response_message)
+    setCurrentTime(values.world_status.current_time)
+    if (values.world_status.changed) {
+      reloadState();
+    }
+    return values.chat_response
+  }
+  
+  async function continueCharacterAction(context, msg_id) {
+    let values = await postActionContinue(context, msg_id);
+    if (values.world_status.response_message.length > 0) {
+      setStatusMessage(values.world_status.response_message)
+    }
     setCurrentTime(values.world_status.current_time)
     if (values.world_status.changed) {
       reloadState();
@@ -338,7 +369,8 @@ function ChatCharacter({ world, characterId,
     postChat: runChatStart,
     continueChat: runChatContinue,
     clearChat: null,
-    postChatAction: runCharacterAction
+    startChatAction: startCharacterAction,
+    continueChatAction: continueCharacterAction
   };
   
   

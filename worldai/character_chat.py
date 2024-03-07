@@ -131,7 +131,7 @@ class CharacterChat:
         response.world_status.changed = self.char_functions.world_changed
         return response
 
-    def chat_event(self, db, event: str) -> CharacterResponse:
+    def chat_event_start(self, db, event: str) -> CharacterResponse:
         response = CharacterResponse()
 
         # Load any pending character events into a system message
@@ -149,7 +149,7 @@ class CharacterChat:
             if character  is not None:
                 system = system.format(name=character.getName())
 
-            response.chat_response = self.chat.chat_exchange(db, system=system)
+            response.chat_response = self.chat.chat_start(db, system=system)
 
         wstate = world_state.loadWorldState(db, self.wstate_id)
         response.chat_response.chat_enabled = self.checkChatEnabled(wstate)

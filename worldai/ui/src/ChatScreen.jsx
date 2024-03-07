@@ -219,7 +219,7 @@ const ChatScreen = forwardRef(({ name, calls,
       }
     } else {
       if (values.status !== "ok") {
-        setCurrentMessage({error: "Something went wrong."});        
+        setCurrentMessage({user: "", error: "Something went wrong."});        
       } else {
         // Append to history that is displayed
         setChatHistory([...chatHistory, values])
@@ -229,17 +229,13 @@ const ChatScreen = forwardRef(({ name, calls,
         console.log("enabled: " + values.chat_enabled);
       }
         
-      if (values.chat_enabled) {
-        setChatState("ready");
-      } else {
-        setChatState("disabled");            
-      }
+      setChatState("ready");
     }
   }
   
   async function runChatAction(args) {
     if (chatState !== "ready") {
-      return
+      return;
     }
 
     // Post a user action for the character
@@ -247,11 +243,18 @@ const ChatScreen = forwardRef(({ name, calls,
     setChatState("waiting");
 
     try {
-      const values = await calls.postChatAction(calls.context, args);
+      let values = await calls.startChatAction(calls.context, args);
+      let msg_id = values.id;
+      let count = 0;
       processChatMessage(values);
+      while (!values.done && count < 20) {
+        count += 1;
+        values = await calls.continueChatAction(calls.context, msg_id);
+        processChatMessage(values);
+      }
     } catch (e) {
       console.log(e);
-      setCurrentMessage({error: "Something went wrong."});
+      setCurrentMessage({user: "", error: "Something went wrong."});
       setChatState("ready")
     }
   }
