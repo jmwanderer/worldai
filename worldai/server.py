@@ -444,7 +444,7 @@ def login_required(view):
 
 
 @bp.route("/login", methods=["GET", "POST"])
-def login() -> Response:
+def login():
     """
     Login view
     """
@@ -457,7 +457,7 @@ def login() -> Response:
         session["auth_key"] = auth
         return flask.redirect(flask.url_for("worldai.top_view"))
 
-    return Response(flask.render_template("login.html"))
+    return flask.render_template("login.html")
 
 
 @bp.route("/", methods=["GET"])
