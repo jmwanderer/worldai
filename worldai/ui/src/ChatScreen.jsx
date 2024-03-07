@@ -198,8 +198,8 @@ const ChatScreen = forwardRef(({ name, calls,
     // to react to something the user does.
     // All details of the action are opaque and carried in the context
     useImperativeHandle(submitActionRef, () => ({
-      submitAction: () => {
-        runChatAction();
+      submitAction: (args) => {
+        runChatAction(args);
       }}))
   }
 
@@ -237,7 +237,7 @@ const ChatScreen = forwardRef(({ name, calls,
     }
   }
   
-  async function runChatAction() {
+  async function runChatAction(args) {
     if (!chatEnabled || chatState !== "ready") {
       return
     }
@@ -247,7 +247,7 @@ const ChatScreen = forwardRef(({ name, calls,
     setChatState("waiting");
 
     try {
-      const values = await calls.postChatAction(calls.context);
+      const values = await calls.postChatAction(calls.context, args);
       processChatMessage(values);
     } catch (e) {
       console.log(e);

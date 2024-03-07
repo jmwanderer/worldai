@@ -195,11 +195,10 @@ async function postChatContinue(context, msg_id) {
   return values;
 }
 
-async function postCharacterAction(context) {
+async function postCharacterAction(context, args) {
   const worldId = context.worldId
   const characterId = context.characterId
-  const itemId = context.itemId
-  const data = { "action": "use", "item": itemId }
+  const data = { "action": args.action, "item": args.itemId }
   const url = `/worlds/${worldId}/characters/${characterId}/action`;
   // Post the user request
   const response = await fetch(get_url(url), {
@@ -224,7 +223,6 @@ function ChatCharacter({ world, characterId,
   const [context, setContext ] = useState(
     {
       "worldId": world.id,
-      "itemId": selectedItem === null ? null : selectedItem.id,
       "characterId": characterId
     });
   // Hook to a function defined in the ChatScreen to run an action
@@ -258,7 +256,6 @@ function ChatCharacter({ world, characterId,
   useEffect(() => {
     setContext({
       "worldId": world.id,
-      "itemId": selectedItem === null ? null : selectedItem.id,      
       "characterId": characterId
     });
   }, [ selectedItem ]);
@@ -289,7 +286,11 @@ function ChatCharacter({ world, characterId,
 
   async function useSelectedItem() {
     if (selectedItem !== null && submitActionRef.current !== null) {
-      submitActionRef.current.submitAction();
+      const args = {
+        "action": "use",
+        "itemId": selectedItem.id
+      }
+      submitActionRef.current.submitAction(args);
     }
   }
 
@@ -313,8 +314,8 @@ function ChatCharacter({ world, characterId,
     return values.chat_response
   }
  
-  async function runCharacterAction(context) {
-    let values = await postCharacterAction(context);
+  async function runCharacterAction(context, args) {
+    let values = await postCharacterAction(context, args);
     setStatusMessage(values.world_status.response_message)
     setCurrentTime(values.world_status.current_time)
     if (values.world_status.changed) {
