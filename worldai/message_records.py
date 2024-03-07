@@ -297,6 +297,9 @@ class MessageRecords:
         return self.message_history
 
     def current_message_set(self) -> MessageSetRecord:
+        if self.current_message is None:
+            self.current_message = MessageSetRecord()
+            self.message_history.append(self.current_message)
         return self.current_message
 
     def jsonString(self) -> str:

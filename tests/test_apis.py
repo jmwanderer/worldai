@@ -440,7 +440,9 @@ def testCharacterAction(client, app):
             "Content-Type": "application/json",
             "Authorization": bearer_token(app),
         },
-        json={"action": "use", "item": item_id},
+        json={ "command": "start",
+              "action": "use", 
+              "item": item_id},
     )
     assert response.status_code == 200
     content = response.json
@@ -452,3 +454,17 @@ def testCharacterAction(client, app):
     # assert len(content["reply"]) > 0
     assert content["world_status"]["response_message"] is not None
     assert len(content["world_status"]["response_message"]) > 0
+    msg_id = content["chat_response"]["id"]
+
+    response = client.post(
+        f"/api/worlds/{wid}/characters/{cid}/action",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": bearer_token(app),
+        },
+        json={ "command": "continue",
+              "msg_id": msg_id },
+    )
+    assert response.status_code == 200
+    content = response.json
+    assert content["chat_response"]["done"]

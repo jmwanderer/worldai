@@ -78,19 +78,6 @@ class CharacterChat:
         chat_enabled = chat_enabled and wstate.getPlayerHealth() > 0
         return chat_enabled
 
-    def chat_message(self, db, user: str) -> CharacterResponse:
-        if len(user) == 0:
-            message = None
-        else:
-            message = user
-        response = CharacterResponse()
-        response.chat_response = self.chat.chat_exchange(db, user=message)
-        wstate = world_state.loadWorldState(db, self.wstate_id)
-        response.chat_response.chat_enabled = self.checkChatEnabled(wstate)
-        client.update_world_status(db, wstate, response.world_status)
-        response.world_status.changed = self.char_functions.world_changed
-        return response
-
     def chat_start(self, db, user: str) -> CharacterResponse:
         if len(user) == 0:
             message = None

@@ -385,7 +385,7 @@ class ChatSession:
 
         # Lookup archived messages to include in the context window.
         archived = self.chatFunctions.lookup_content(
-            db, self.history.current_message.getRequestContent()
+            db, self.history.current_message_set().getRequestContent()
         )
         # Make messages from the archived content
         for entry in archived:
