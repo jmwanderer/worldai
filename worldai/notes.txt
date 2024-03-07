@@ -13,18 +13,17 @@ Three things cause the world state to change:
 
   Design a facility that:
   - runs time going foward each call - DONE
-  - accumulates events and status updates
-  - reports events and status updates on return call
+  - accumulates events and status updates, adds to next chat or acton call - DONE
 
 * List
 - Add ending of character status events to char thread. - DONE
-- Make drop item happen in a character context
+- Make drop item happen in a character context - DONE
 - Perhaps have a world list instance that has info about the game play and unsets the world_id session cookie
-- Mention selecting an ability for an item in the design instructions
+- Mention selecting an ability for an item in the design instructions - DONE
 
 - include system messages in character thread RAG
 - give characters ability to learn about:
-  * who has which item
+  * who has which item - DONE
   * who is present at the current site - DONE
   * the ability of all of the items - DONE
 - consider adding a secret password facility
@@ -57,10 +56,8 @@ Three things cause the world state to change:
 
 - Handle incomplete message events using msg_id
   - may need to detect if previous message isnt complete
-- Add user approval to some tool functions
 
 - Add per character knowledge, use RAG
-- find character and items?
 
 - Features:
   -unlock site. design attribute for locked sites, - DONE
@@ -124,9 +121,7 @@ Three things cause the world state to change:
 
 Bugs
 ----
-- characters will get confused with give item, when trying to take, actually give
-  moving to names should help
-- characters will list my items thinking they are looking at traveler
+- can run an object action on a character after they have departed the location
 - characters are too eager to give items!
 
 - removing and restoring elements only works if the mode is correct

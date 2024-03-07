@@ -213,8 +213,9 @@ We are working on world "{current_world_name}": {current_world_description}
 {element}
 
 Worlds have items which exist in the world and have special significance.  You can create items and change information about the items.
+Items may have an ability, such as 'hurt', 'heal', 'invisibility'.
 
-You can update the name, description, and details of an item.
+You can update the name, description, details, mobility, and ability of an item.
 You save changes to an item by calling UpdateItem.  
 
 Use information in the world details to guide item creation and design.
