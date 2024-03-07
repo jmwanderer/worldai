@@ -466,10 +466,14 @@ async function postSelectItem(worldId, itemId) {
   return response.json();
 }
 
-async function postDropItem(worldId, itemId) {
+async function postDropItem(worldId, itemId, char_id) {
   const url = `/worlds/${worldId}/command`;
   const data = { "name": "drop",
                  "item": itemId }
+  if (char_id != null) {
+    data["character"] = char_id
+  }
+
   const response = await fetch(get_url(url), {
     method: 'POST',
     body: JSON.stringify(data),
@@ -554,7 +558,7 @@ function Site({ world, siteId,
 
   async function siteDropItem(item_id) {
     try {
-      let response = await postDropItem(world.id, item_id);
+      let response = await postDropItem(world.id, item_id, characterId);
       setStatusMessage(response.world_status.response_message);
       if (response.world_status.changed) {
         reloadSiteState()
@@ -583,7 +587,7 @@ function Site({ world, siteId,
 
   async function useSelectedItem() {
     if (selectedItem !== null) {
-      useItem(selectedItem.id, characterId);
+      useItem(selectedItem.id);
     }
   }
 

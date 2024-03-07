@@ -109,6 +109,11 @@ class ClientActions:
                 response.call_status.result = client.StatusCode.ERROR
             else:
                 response.world_status = self.DropItem(item)
+            if command.character is not None:
+                if elements.loadCharacter(self.db, command.character) is not None:
+                    self.wstate.addCharacterEvent(
+                        command.character, 
+                        response.world_status.last_event)
 
         elif command.name == CommandName.select:
             item_id = command.item

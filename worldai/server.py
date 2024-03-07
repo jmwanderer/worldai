@@ -1364,6 +1364,7 @@ def action_api(wid, cid):
         world_status = client_actions.UseItemCharacter(item, character)
     elif action == "drop":
         # Run the drop item command
+        # Note: this is currently not used. Instead wstate.character_event is used on a drop
         world_status = client_actions.DropItem(item_id, item)
 
     if world_status.changed:
