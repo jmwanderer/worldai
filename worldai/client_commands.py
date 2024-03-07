@@ -48,10 +48,11 @@ class CommandResponse(pydantic.BaseModel):
 
 
 class ClientActions:
-    def __init__(self, db, world, wstate):
+    def __init__(self, db, world, wstate, player_name):
         self.db = db
         self.world = world
         self.wstate = wstate
+        self.player_name = player_name
 
     def ExecCommand(self, command):
         """
@@ -106,13 +107,8 @@ class ClientActions:
             item = elements.loadItem(self.db, item_id)
             if item is None:
                 response.call_status.result = client.StatusCode.ERROR
-            # Verify
-            elif self.wstate.hasItem(item_id):
-                self.wstate.dropItem(item_id)
-                response.world_status.changed = True
-                response.world_status.response_message = (
-                    f"You dropped {item.getName()}"
-                )
+            else:
+                response.world_status = self.DropItem(item)
 
         elif command.name == CommandName.select:
             item_id = command.item
@@ -135,7 +131,7 @@ class ClientActions:
                 response.call_status.result = client.StatusCode.ERROR
             else:
                 logging.info("use item %s", command.item)
-                response.world_status = self.UseItem("Travler", item)
+                response.world_status = self.UseItem(item)
                 if response.world_status.changed:
                     self.wstate.advanceTime(5)
 
@@ -176,8 +172,24 @@ class ClientActions:
         logging.info("Client command response: %s", response.model_dump())
         return response
 
+    def DropItem(self, item: elements.Item) -> client.WorldStatus:
+        """
+        Player drops an item.
+        Sets a status message and an event in case it is needed.
+        """
+        world_status = client.WorldStatus()
+        if self.wstate.hasItem(item.getID()):
+            self.wstate.dropItem(item.getID())
+            world_status.changed = True
+            world_status.response_message = (
+                f"You dropped {item.getName()}"
+            )
+            world_status.last_event = f"{self.player_name} dropped {item.getName()}"
+        client.update_world_status(self.db, self.wstate, world_status)
+        return world_status
+
     def UseItemCharacter(
-        self, item_id: elements.ElemID, cid: elements.ElemID
+        self, item: elements.Item, character: elements.Character
     ) -> client.WorldStatus:
         """
         Player uses an item in the context of a specific character
@@ -186,21 +198,16 @@ class ClientActions:
         - last_event - event to feed to the chat thread for the character
         - response_message - status message for the user
         """
-        item = elements.loadItem(self.db, item_id)
-        character = elements.loadCharacter(self.db, cid)
-        if item is None or character is None:
-            return client.WorldStatus()
-
         # TODO: check character is engaged, same location
 
-        logging.info("use character %s item %s", cid, item_id)
-        world_status = self.UseItem("Travler", item, character)
+        logging.info("use character %s item %s", character.getID(), item.getID())
+        world_status = self.UseItem(item, character)
         if world_status.changed:
             self.wstate.advanceTime(5)
         client.update_world_status(self.db, self.wstate, world_status)
         return world_status
 
-    def UseItem(self, name, item, character=None):
+    def UseItem(self, item, character=None):
         """
          Returns a client.WorldStatus with the following set:
         - changed - did the world state change?
@@ -257,12 +264,12 @@ class ClientActions:
                             world_status.response_message = (
                                 f"{character.getName()} is healed"
                             )
-                            world_status.last_event = f"{name} uses {item.getName()} to heal {character.getName()}"
+                            world_status.last_event = f"{self.player_name} uses {item.getName()} to heal {character.getName()}"
                         else:
                             world_status.response_message = (
                                 f"{character.getName()} is already healthy"
                             )
-                            world_status.last_event = f"{name} uses {item.getName()} to heal {character.getName()}, but they were already healthy"
+                            world_status.last_event = f"{self.player_name} uses {item.getName()} to heal {character.getName()}, but they were already healthy"
 
             case elements.ItemEffect.HURT:
                 # Only other TODO: extend so characters can use
@@ -273,14 +280,14 @@ class ClientActions:
                     if self.wstate.isCharacterDead(cid):
                         world_status.response_message = f"{character.getName()} is dead"
                         world_status.last_event = (
-                            f"{name} uses {item.getName()} to kill {character.getName()}. "
+                            f"{self.player_name} uses {item.getName()} to kill {character.getName()}. "
                             + world_status.response_message
                         )
                     else:
                         world_status.response_message = (
                             f"{character.getName()} took damage"
                         )
-                        world_status.last_event = f"{name} uses {item.getName()} to cause {character.getName()} harm"
+                        world_status.last_event = f"{self.player_name} uses {item.getName()} to cause {character.getName()} harm"
 
             case elements.ItemEffect.PARALIZE:
                 # Only other TODO: extend so characters can use
@@ -290,7 +297,7 @@ class ClientActions:
                         f"{character.getName()} is paralized"
                     )
                     world_status.last_event = (
-                        f"{name} uses {item.getName()} to paralize {character.getName()}.\n" +
+                        f"{self.player_name} uses {item.getName()} to paralize {character.getName()}.\n" +
                         f"{character.getName()} is paralized."
                     )
 
@@ -301,7 +308,7 @@ class ClientActions:
                     self.wstate.addCharacterStatus(cid, poisoned)
                     world_status.response_message = f"{character.getName()} is poisoned"
                     world_status.last_event = (
-                        f"{name} uses {item.getName()} to poison {character.getName()}"
+                        f"{self.player_name} uses {item.getName()} to poison {character.getName()}"
                     )
 
             case elements.ItemEffect.SLEEP:
@@ -310,7 +317,7 @@ class ClientActions:
                     self.wstate.addCharacterStatus(cid, sleeping)
                     world_status.response_message = f"{character.getName()} is sleeping"
                     world_status.last_event = (
-                        f"{name} uses {item.getName()} to put {character.getName()} to sleep.\n"  +
+                        f"{self.player_name} uses {item.getName()} to put {character.getName()} to sleep.\n"  +
                         f"{character.getName()} is asleep."
                     )
 
@@ -330,25 +337,25 @@ class ClientActions:
                         world_status.response_message = (
                             f"{character.getName()} is released"
                         )
-                        world_status.last_event = f"{name} uses {item.getName()} to release {character.getName()} from capture"
+                        world_status.last_event = f"{self.player_name} uses {item.getName()} to release {character.getName()} from capture"
                     else:
                         self.wstate.addCharacterStatus(cid, captured)
                         world_status.response_message = (
                             f"{character.getName()} is captured"
                         )
-                        world_status.last_event = f"{name} uses {item.getName()} to capture {character.getName()}"
+                        world_status.last_event = f"{self.player_name} uses {item.getName()} to capture {character.getName()}"
 
             case elements.ItemEffect.INVISIBILITY:
                 # Self only - toggle
                 if self.wstate.hasPlayerStatus(invisible):
                     self.wstate.removePlayerStatus(invisible)
                     world_status.response_message = "You are now visible"
-                    world_status.last_event = f"{name} has become visible"
+                    world_status.last_event = f"{self.player_name} has become visible"
                 else:
                     self.wstate.addPlayerStatus(invisible)
                     world_status.response_message = "You are invisible"
                     world_status.last_event = (
-                        f"{name} uses {item.getName()} to turn invisible"
+                        f"{self.player_name} uses {item.getName()} to turn invisible"
                     )
 
             case elements.ItemEffect.OPEN:

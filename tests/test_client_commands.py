@@ -36,32 +36,34 @@ def test_access_app(app):
 def test_go_command(app):
     env = Environment.get_env(app)
     command = {"name": "go", "to": "id123"}
+    name = "Travler"
 
     # Non-existant site
     command = client_commands.Command(**command)
-    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
     response = client_actions.ExecCommand(command)
 
     # Real site
     sites = elements.listSites(env.db, env.world.getID())
     command.to = sites[0].getID()
-    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
     response = client_actions.ExecCommand(command)
 
     # No site
     sites = elements.listSites(env.db, env.world.getID())
     command.to = None
-    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
     response = client_actions.ExecCommand(command)
 
 
 def test_take_command(app):
     env = Environment.get_env(app)
     command = {"name": "take", "item": "id123"}
+    name = "Travler"
 
     # Non existant item
     command = client_commands.Command(**command)
-    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
     response = client_actions.ExecCommand(command)
 
     # Real item - diff location
@@ -86,10 +88,11 @@ def test_take_command(app):
 def test_select_command(app):
     env = Environment.get_env(app)
     command = {"name": "select", "item": "id123"}
+    name = "Travler"
 
     # Non-existant item
     command = client_commands.Command(**command)
-    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
     response = client_actions.ExecCommand(command)
     assert not response.world_status.changed
 
@@ -100,7 +103,7 @@ def test_select_command(app):
     item_id = items[0].getID()
 
     command.item = item_id
-    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
     response = client_actions.ExecCommand(command)
     assert not response.world_status.changed
 
@@ -108,7 +111,7 @@ def test_select_command(app):
     env.wstate.setLocation(site_id)
     env.wstate.setItemLocation(item_id, site_id)
     env.wstate.addItem(item_id)
-    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
     response = client_actions.ExecCommand(command)
     assert response.world_status.changed
 
@@ -116,10 +119,11 @@ def test_select_command(app):
 def test_enage_command(app):
     env = Environment.get_env(app)
     command = {"name": "engage", "character": "id123"}
+    name = "Travler"
 
     # Non existant character
     command = client_commands.Command(**command)
-    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
     response = client_actions.ExecCommand(command)
     assert not response.world_status.changed
 
@@ -141,10 +145,11 @@ def test_enage_command(app):
 def test_disenage_command(app):
     env = Environment.get_env(app)
     command = {"name": "disengage", "character": "id123"}
+    name = "Travler"
 
     # Not existant character
     command = client_commands.Command(**command)
-    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
     response = client_actions.ExecCommand(command)
     assert response.world_status.changed
 
@@ -169,10 +174,11 @@ def test_disenage_command(app):
 def test_use_command(app):
     env = Environment.get_env(app)
     command = {"name": "use", "item": "id123"}
+    name = "Travler"
 
     # Not real item
     command = client_commands.Command(**command)
-    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
     response = client_actions.ExecCommand(command)
     assert not response.world_status.changed
 
@@ -192,25 +198,9 @@ def test_use_command(app):
 
 def test_use_character(app):
     env = Environment.get_env(app)
-    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate)
+    name = "Travler"
 
-    # Not real cid, item
-    item_id = "id123"
-    cid = "id456"
-    world_status = client_actions.UseItemCharacter(item_id, cid)
-    assert not world_status.changed
-
-    # Real cid, not real item
-    item_id = "id123"
-    cid = elements.listCharacters(env.db, env.world.getID())[0].getID()
-    world_status = client_actions.UseItemCharacter(item_id, cid)
-    assert not world_status.changed
-
-    # Not real cid, real item
-    item_id = elements.listItems(env.db, env.world.getID())[0].getID()
-    cid = "id456"
-    world_status = client_actions.UseItemCharacter(item_id, cid)
-    assert not world_status.changed
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
 
     # Real item and cid, same location and engaged
     item_id = elements.listItems(env.db, env.world.getID())[0].getID()
@@ -223,7 +213,26 @@ def test_use_character(app):
     env.wstate.addItem(item_id)
     env.wstate.setChatCharacter(cid)
 
-    world_status = client_actions.UseItemCharacter(item_id, cid)
+    item = elements.loadItem(env.db, item_id)
+    character = elements.loadCharacter(env.db, cid)
+
+    world_status = client_actions.UseItemCharacter(item, character)
     assert world_status.changed
     assert world_status.response_message is not None
     assert world_status.last_event is not None
+
+def test_drop_item(app):
+    env = Environment.get_env(app)
+    name = "Travler"
+
+    client_actions = client_commands.ClientActions(env.db, env.world, env.wstate, name)
+
+    # Real item and cid, same location and engaged
+    item_id = elements.listItems(env.db, env.world.getID())[0].getID()
+    env.wstate.addItem(item_id)
+    item = elements.loadItem(env.db, item_id)
+    world_status = client_actions.DropItem(item)
+    assert world_status.changed
+    assert world_status.response_message is not None
+    assert world_status.last_event is not None
+

@@ -1254,7 +1254,7 @@ def command_api(wid):
     command = client_commands.Command(**request.json)
     logging.info("commmand name %s", command.name)
     logging.info("location: %s", wstate.getLocation())
-    client_actions = client_commands.ClientActions(get_db(), world, wstate)
+    client_actions = client_commands.ClientActions(get_db(), world, wstate, "Travler")
     # TODO: make this return include a WorldStatus
     response = client_actions.ExecCommand(command)
 
@@ -1344,17 +1344,28 @@ def action_api(wid, cid):
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
+
+    action = request.json.get("action")
+    item_id = request.json.get("item")
+    if action == None or item_id == None:
+        return {"error", "missing arguments"}, 400
+
     character = elements.loadCharacter(get_db(), cid)
-    if character is None:
-        return {"error", "Character not found"}, 404
+    item = elements.loadItem(get_db(), item_id)
+    if item is None or character is None:
+        return {"error", "Element not found"}, 404
 
     wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
-    item_id = request.json.get("item")
 
-    # Run the use command
-    client_actions = client_commands.ClientActions(get_db(), world, wstate)
-    world_status = client_actions.UseItemCharacter(item_id, cid)
+    client_actions = client_commands.ClientActions(get_db(), world, wstate, "Travler")
+    if action == "use":
+        # Run the use command
+        world_status = client_actions.UseItemCharacter(item, character)
+    elif action == "drop":
+        # Run the drop item command
+        world_status = client_actions.DropItem(item_id, item)
+
     if world_status.changed:
         # Save state since chat functions may load it again
         world_state.saveWorldState(get_db(), wstate)
@@ -1365,7 +1376,9 @@ def action_api(wid, cid):
     # Run event - ok to call will an empty event
     result = chat_session.chat_event(get_db(), world_status.last_event)
     chat_session.saveChatSession(get_db())
-    # Copy results from use item into final resonse
+
+    # Copy results from command action into final resonse
+    # TODO: just copy entire world_status?
     result.world_status.changed = world_status.changed
     result.world_status.response_message = world_status.response_message
     result.world_status.last_event = world_status.last_event

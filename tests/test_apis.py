@@ -440,7 +440,7 @@ def testCharacterAction(client, app):
             "Content-Type": "application/json",
             "Authorization": bearer_token(app),
         },
-        json={"item": item_id},
+        json={"action": "use", "item": item_id},
     )
     assert response.status_code == 200
     content = response.json

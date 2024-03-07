@@ -199,7 +199,7 @@ async function postCharacterAction(context) {
   const worldId = context.worldId
   const characterId = context.characterId
   const itemId = context.itemId
-  const data = { "item": itemId }
+  const data = { "action": "use", "item": itemId }
   const url = `/worlds/${worldId}/characters/${characterId}/action`;
   // Post the user request
   const response = await fetch(get_url(url), {
