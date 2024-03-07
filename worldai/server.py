@@ -505,7 +505,7 @@ def react_ui(path):
 
 @bp.route("/view/worlds", methods=["GET"])
 @login_required
-def list_worlds() -> Response:
+def list_worlds():
     """
     List Worlds
     """
@@ -517,18 +517,18 @@ def list_worlds() -> Response:
         if world is not None:
             world_list.append((wid, world.getName(), world.getDescription()))
 
-    return Response(flask.render_template("list_worlds.html", world_list=world_list))
+    return flask.render_template("list_worlds.html", world_list=world_list)
 
 
 @bp.route("/view/worlds/<wid>", methods=["GET"])
 @login_required
-def view_world(wid: elements.WorldID) -> Response:
+def view_world(wid: elements.WorldID):
     """
     View a world
     """
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return Response("World not found", 404)
+        return "World not found", 404
 
     worlds = elements.listWorlds(get_db())
     (pworld, nworld) = elements.getAdjacentElements(world.getIdName(), worlds)
@@ -560,8 +560,7 @@ def view_world(wid: elements.WorldID) -> Response:
         if site is not None:
             site_list.append((site_id, site_name, site.getDescription()))
 
-    return Response(
-        flask.render_template(
+    return flask.render_template(
             "view_world.html",
             world=world,
             character_list=char_list,
@@ -570,77 +569,70 @@ def view_world(wid: elements.WorldID) -> Response:
             pworld=pworld,
             nworld=nworld,
         )
-    )
 
 
 @bp.route("/view/worlds/<wid>/characters/<eid>", methods=["GET"])
 @login_required
-def view_character(wid: elements.WorldID, eid: elements.ElemID) -> Response:
+def view_character(wid: elements.WorldID, eid: elements.ElemID):
     """
     View a character
     """
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return Response("World not found", 404)
+        return "World not found", 404
     character = elements.loadCharacter(get_db(), eid)
     if character is None:
-        return Response("Character not found", 404)
+        return "Character not found", 404
     characters = elements.listCharacters(get_db(), wid)
     (pchar, nchar) = elements.getAdjacentElements(character.getIdName(), characters)
 
-    return Response(
-        flask.render_template(
+    return flask.render_template(
             "view_character.html",
             world=world,
             character=character,
             pchar=pchar,
             nchar=nchar,
         )
-    )
 
 
 @bp.route("/view/worlds/<wid>/items/<eid>", methods=["GET"])
 @login_required
-def view_item(wid: elements.WorldID, eid: elements.ElemID) -> Response:
+def view_item(wid: elements.WorldID, eid: elements.ElemID):
     """
     View a character
     """
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return Response("World not found", 404)
+        return "World not found", 404
     item = elements.loadItem(get_db(), eid)
     if item is None:
-        return Response("Item not found", 404)
+        return "Item not found", 404
     items = elements.listItems(get_db(), wid)
     (pitem, nitem) = elements.getAdjacentElements(item.getIdName(), items)
 
-    return Response(
-        flask.render_template(
+    return flask.render_template(
             "view_item.html", world=world, item=item, nitem=nitem, pitem=pitem
         )
-    )
 
 
 @bp.route("/view/worlds/<wid>/sites/<eid>", methods=["GET"])
 @login_required
-def view_site(wid: elements.WorldID, eid: elements.ElemID) -> Response:
+def view_site(wid: elements.WorldID, eid: elements.ElemID):
     """
     View a site
     """
     world = elements.loadWorld(get_db(), wid)
     if world is None:
-        return Response("World not found", 404)
+        return "World not found", 404
     site = elements.loadSite(get_db(), eid)
     if site is None:
-        return Response("Site not found", 404)
+        return "Site not found", 404
     sites = elements.listSites(get_db(), wid)
     (psite, nsite) = elements.getAdjacentElements(site.getIdName(), sites)
 
-    return Response(
-        flask.render_template(
+    return flask.render_template(
             "view_site.html", world=world, site=site, psite=psite, nsite=nsite
         )
-    )
 
 
 @bp.route("/images/<iid>", methods=["GET"])
@@ -651,11 +643,11 @@ def get_image(iid: elements.ElemID):
     """
     image = elements.getImage(get_db(), iid)
     if image is None:
-        return Response("Image not found", 404)
+        return "Image not found", 404
 
     image_file = os.path.join(current_app.instance_path, image.filename)
     if not os.path.isfile(image_file):
-        return Response("Image file not found", 404)
+        return "Image file not found", 404
     return flask.send_file(image_file, mimetype="image/webp")
 
 
