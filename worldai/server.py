@@ -15,7 +15,7 @@ from werkzeug.wrappers import Response as Response
 
 from . import (character_chat, chat, chat_cli, client, client_commands,
                db_access, design_chat, design_functions, element_info,
-               elements, info_set, world_state)
+               elements, info_set, users, world_state)
 
 
 def create_app(instance_path=None, test_config=None):
@@ -110,6 +110,16 @@ def close_db(e=None):
 
 
 bp = Blueprint("worldai", __name__, cli_group=None)
+
+
+@bp.cli.command("add-user")
+@click.argument("username")
+def add_user(username: str):
+    """ 
+    Create a user entry and print the authkey
+    """
+    key = users.add_user(get_db(), username)
+    click.echo("Added user %s. Auth key = [%s]" % (username, key))
 
 
 @bp.cli.command("chat")

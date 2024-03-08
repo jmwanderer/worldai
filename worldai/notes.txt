@@ -16,6 +16,9 @@ Three things cause the world state to change:
   - accumulates events and status updates, adds to next chat or acton call - DONE
 
 * List
+- List of tools calls for chat_start
+- tool calls stream for design on view change
+- drop items on sleep
 - Add ending of character status events to char thread. - DONE
 - Make drop item happen in a character context - DONE
 - Perhaps have a world list instance that has info about the game play and unsets the world_id session cookie
