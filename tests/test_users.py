@@ -29,6 +29,25 @@ class BasicTestCase(unittest.TestCase):
         key = users.add_user(self.db, username)
         self.assertIsNotNone(key)
 
+    def testAuthGet(self):
+        username = "Jim"
+        key = users.add_user(self.db, username)
+        self.assertIsNotNone(key)
+
+        user_id = users.find_by_auth_key(self.db, "1")
+        self.assertIsNone(user_id)
+
+        user_id = users.find_by_auth_key(self.db, key)
+        self.assertIsNotNone(user_id)
+
+        key_found = users.get_auth_key(self.db, "1")
+        self.assertIsNone(key_found)
+
+        key_found = users.get_auth_key(self.db, user_id)
+        self.assertIsNotNone(key_found)
+
+
+
     def testAuthFind(self):
         username = "Jim"
         key1 = users.add_user(self.db, username)
@@ -45,14 +64,14 @@ class BasicTestCase(unittest.TestCase):
         self.assertNotEqual(key1, key3)
         self.assertNotEqual(key2, key3)
 
-        id1 = users.find_auth_key(self.db, key1)
+        id1 = users.find_by_auth_key(self.db, key1)
         self.assertIsNotNone(id1)
 
-        id2 = users.find_auth_key(self.db, key2)
+        id2 = users.find_by_auth_key(self.db, key2)
         self.assertIsNotNone(id2)
         self.assertNotEqual(id1, id2)
 
-        id3 = users.find_auth_key(self.db, key3)
+        id3 = users.find_by_auth_key(self.db, key3)
         self.assertIsNotNone(id3)
         self.assertNotEqual(id1, id3)
         self.assertNotEqual(id2, id3)

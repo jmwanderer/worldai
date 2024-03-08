@@ -19,7 +19,7 @@ def add_user(db, username: str) -> str:
     db.commit()
     return auth_key
 
-def find_auth_key(db, auth_key: str) -> str|None:
+def find_by_auth_key(db, auth_key: str) -> str|None:
     c = db.cursor()
     q = c.execute("SELECT id, username FROM users WHERE auth_key = ?", (auth_key,))
     r = q.fetchone()
@@ -30,5 +30,14 @@ def find_auth_key(db, auth_key: str) -> str|None:
     c.execute("UPDATE users SET accessed = ? WHERE id = ?", (now, user_id))
     db.commit()
     return user_id
+
+def get_auth_key(db, user_id: str) -> str|None:
+    c = db.cursor()
+    q = c.execute("SELECT auth_key FROM users WHERE id = ?",  (user_id,))
+    r = q.fetchone()
+    if r is None:
+        return None
+    return r[0]
+
 
  

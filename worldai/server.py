@@ -429,11 +429,11 @@ def auth_required(view):
     def wrapped_view(**kwargs):
         # Verify auth matches
         auth = extract_auth_key(request.headers)
-        user_id = users.find_auth_key(get_db(), auth)
+        user_id = users.find_by_auth_key(get_db(), auth)
         if user_id is None:
             logging.info("auth failed: %s", auth)
             return {"error": "Invalid authorization header"}, 401
-        flask.g.user_id = user_id
+        g.user_id = user_id
         return view(**kwargs)
 
     return wrapped_view
@@ -447,11 +447,11 @@ def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         auth = session.get("auth_key")
-        user_id = users.find_auth_key(get_db(), auth)
+        user_id = users.find_by_auth_key(get_db(), auth)
         if user_id is None:
             flask.flash("Please enter an authorization key")
             return flask.redirect(flask.url_for("worldai.login"))
-        flask.g.user_id = user_id
+        g.user_id = user_id
         return view(**kwargs)
 
     return wrapped_view
@@ -464,7 +464,8 @@ def login():
     """
     if request.method == "POST":
         auth = request.form["auth_key"]
-        if auth != current_app.config["AUTH_KEY"]:
+        user_id = users.find_by_auth_key(get_db(), auth)
+        if user_id is None:
             flask.flash("Authorization key does not match")
             return flask.redirect(flask.url_for("worldai.login"))
         session.permanent = True
@@ -493,7 +494,8 @@ def play_page():
     with open(html_file) as f:
         html = f.read()
 
-    return flask.render_template_string(html, auth_key=current_app.config["AUTH_KEY"])
+    auth_key = users.get_auth_key(get_db(), g.user_id)
+    return flask.render_template_string(html, auth_key=auth_key)
 
 
 @bp.route("/ui/design", methods=["GET"])
@@ -506,7 +508,8 @@ def design_page():
     with open(html_file) as f:
         html = f.read()
 
-    return flask.render_template_string(html, auth_key=current_app.config["AUTH_KEY"])
+    auth_key = users.get_auth_key(get_db(), g.user_id)
+    return flask.render_template_string(html, auth_key=auth_key)
 
 
 @bp.route("/ui/<path:path>", methods=["GET"])
@@ -686,7 +689,7 @@ def get_user_id() -> str:
     Return an ID for the current session.
     Create one if needed.
     """
-    return flask.g.user_id
+    return g.user_id
 
 @bp.route("/api/design_chat", methods=["GET", "POST"])
 @auth_required
