@@ -93,7 +93,7 @@ WORLD_STATE_ID_NONE = WorldStateID("")
 class WorldState:
     def __init__(self, wstate_id: WorldStateID) -> None:
         self.wstate_id: WorldStateID = wstate_id
-        self.session_id = None
+        self.user_id = None
         self.world_id: elements.WorldID = elements.WORLD_ID_NONE
         self.model: WorldStateModel = WorldStateModel()
 
@@ -451,7 +451,7 @@ class WorldState:
         self.get_site(site_id).is_open = value
 
 
-def getWorldStateID(db, session_id: str, world_id: elements.WorldID) -> WorldStateID:
+def getWorldStateID(db, user_id: str, world_id: elements.WorldID) -> WorldStateID:
     """
     Get an ID for a World State record - create if needed.
     """
@@ -459,8 +459,8 @@ def getWorldStateID(db, session_id: str, world_id: elements.WorldID) -> WorldSta
     c = db.cursor()
     c.execute("BEGIN EXCLUSIVE")
     c.execute(
-        "SELECT id FROM world_state " + "WHERE session_id = ? and world_id = ?",
-        (session_id, world_id),
+        "SELECT id FROM world_state " + "WHERE user_id = ? and world_id = ?",
+        (user_id, world_id),
     )
     r = c.fetchone()
     if r is None:
@@ -469,9 +469,9 @@ def getWorldStateID(db, session_id: str, world_id: elements.WorldID) -> WorldSta
         state = WorldState(wstate_id)
         logging.info("world id %s", world_id)
         c.execute(
-            "INSERT INTO world_state (id, session_id, world_id, created, "
+            "INSERT INTO world_state (id, user_id, world_id, created, "
             + "updated, state) VALUES (?, ?, ?, ?, ?, ?)",
-            (wstate_id, session_id, world_id, now, now, state.get_model_str()),
+            (wstate_id, user_id, world_id, now, now, state.get_model_str()),
         )
     else:
         wstate_id = WorldStateID(r[0])
@@ -544,13 +544,13 @@ def loadWorldState(db, wstate_id: WorldStateID) -> WorldState:
     wstate = WorldState(WORLD_STATE_ID_NONE)
     c = db.cursor()
     c.execute(
-        "SELECT session_id, world_id, state FROM world_state WHERE id = ?", (wstate_id,)
+        "SELECT user_id, world_id, state FROM world_state WHERE id = ?", (wstate_id,)
     )
 
     r = c.fetchone()
     if r is not None:
         wstate = WorldState(wstate_id)
-        wstate.session_id = r[0]
+        wstate.user_id = r[0]
         wstate.world_id = r[1]
         wstate.set_model_str(r[2])
 
@@ -570,10 +570,10 @@ def saveWorldState(db, state: WorldState) -> None:
     now = time.time()
     c = db.cursor()
     c.execute("BEGIN EXCLUSIVE")
-    # Support changing the session_id (Still figuring that out)
+    # Support changing the user_id (Still figuring that out)
     c.execute(
-        "UPDATE world_state SET session_id = ?, "
+        "UPDATE world_state SET user_id = ?, "
         + "updated = ?, state = ? WHERE id = ?",
-        (state.session_id, now, state.get_model_str(), state.wstate_id),
+        (state.user_id, now, state.get_model_str(), state.wstate_id),
     )
     db.commit()

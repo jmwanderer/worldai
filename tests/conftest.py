@@ -8,6 +8,7 @@ import tiktoken
 import worldai.chat
 import worldai.db_access
 import worldai.info_set
+import worldai.users
 import worldai.server
 
 """
@@ -35,6 +36,7 @@ def app():
     db = worldai.db_access.open_db()
     with open(path) as f:
         db.executescript(f.read())
+    app.config['AUTH_KEY'] = worldai.users.add_user(db, "Jim")
     db.close()
     # Mock out chat calls
     chatmock = ChatMockUtil()

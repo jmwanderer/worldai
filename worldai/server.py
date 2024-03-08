@@ -429,9 +429,11 @@ def auth_required(view):
     def wrapped_view(**kwargs):
         # Verify auth matches
         auth = extract_auth_key(request.headers)
-        if auth != current_app.config["AUTH_KEY"]:
+        user_id = users.find_auth_key(get_db(), auth)
+        if user_id is None:
             logging.info("auth failed: %s", auth)
             return {"error": "Invalid authorization header"}, 401
+        flask.g.user_id = user_id
         return view(**kwargs)
 
     return wrapped_view
@@ -445,9 +447,11 @@ def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         auth = session.get("auth_key")
-        if auth != current_app.config["AUTH_KEY"]:
+        user_id = users.find_auth_key(get_db(), auth)
+        if user_id is None:
             flask.flash("Please enter an authorization key")
             return flask.redirect(flask.url_for("worldai.login"))
+        flask.g.user_id = user_id
         return view(**kwargs)
 
     return wrapped_view
@@ -677,18 +681,12 @@ def get_image_thumb(iid: elements.ElemID):
     return flask.send_file(image_file, mimetype="image/webp")
 
 
-def get_session_id() -> str:
+def get_user_id() -> str:
     """
     Return an ID for the current session.
     Create one if needed.
     """
-    session_id = session.get("session_id")
-    if session_id is None:
-        session_id = os.urandom(12).hex()
-        session.permanent = True
-        session["session_id"] = session_id
-    return session_id
-
+    return flask.g.user_id
 
 @bp.route("/api/design_chat", methods=["GET", "POST"])
 @auth_required
@@ -696,8 +694,8 @@ def design_chat_api():
     """
     Chat interface
     """
-    session_id = get_session_id()
-    chat_session = design_chat.DesignChatSession.loadChatSession(get_db(), session_id)
+    user_id = get_user_id()
+    chat_session = design_chat.DesignChatSession.loadChatSession(get_db(), user_id)
     deleteSession = False
 
     if request.method == "GET":
@@ -734,8 +732,8 @@ def design_chat_view_api():
     """
     Get / set current view for design chat.
     """
-    session_id = get_session_id()
-    chat_session = design_chat.DesignChatSession.loadChatSession(get_db(), session_id)
+    user_id = get_user_id()
+    chat_session = design_chat.DesignChatSession.loadChatSession(get_db(), user_id)
     if request.method == "GET":
         content = {"view": chat_session.get_view()}
     else:
@@ -758,10 +756,10 @@ def get_init_data():
     Initial load of information for clients
     """
     # Returns session id and world id last loaded
-    session_id = get_session_id()
+    user_id = get_user_id()
     world_id = session.get("world_id", "")
 
-    return {"session_id": session_id, "world_id": world_id}
+    return {"user_id": user_id, "world_id": world_id}
 
 
 @bp.route("/api/worlds", methods=["GET"])
@@ -873,11 +871,11 @@ def characters_inst_list(wid):
     session["world_id"] = wid
 
     character_list = []
-    session_id = get_session_id()
+    user_id = get_user_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
-    wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
     characters = elements.listCharacters(get_db(), wid)
 
@@ -922,14 +920,14 @@ def character_stats(wid, cid):
     """
     API to get character status
     """
-    session_id = get_session_id()
+    user_id = get_user_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
     # Save last opened in session
     session["world_id"] = wid
 
-    wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
 
     character_data = client.LoadCharacterData(get_db(), wstate, cid)
@@ -1011,8 +1009,8 @@ def site_instances_list(wid):
     session["world_id"] = wid
 
     site_list = []
-    session_id = get_session_id()
-    wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+    user_id = get_user_id()
+    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
     sites = elements.listSites(get_db(), wid)
 
@@ -1058,14 +1056,14 @@ def site_instance(wid, sid):
     """
     API to load info and state for a site
     """
-    session_id = get_session_id()
+    user_id = get_user_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
     # Save last opened in session
     session["world_id"] = wid
 
-    wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
     site = elements.loadSite(get_db(), sid)
     if site == None:
@@ -1151,14 +1149,14 @@ def items_intances_list(wid):
     API to get the items instances for a world
     """
     item_list = []
-    session_id = get_session_id()
+    user_id = get_user_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
     # Save last opened in session
     session["world_id"] = wid
 
-    wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
     items = elements.listItems(get_db(), wid)
 
@@ -1212,14 +1210,14 @@ def item_instance(wid, iid):
     """
     API to access an item instance
     """
-    session_id = get_session_id()
+    user_id = get_user_id()
     item = elements.loadItem(get_db(), iid)
     if item == None or item.parent_id != wid:
         return {"error", "Item not found"}, 404
     # Save last opened in session
     session["world_id"] = wid
 
-    wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
 
     images = getElementImageProps(item)
@@ -1246,11 +1244,11 @@ def command_api(wid):
 
     Returns a client_command.CommandResponse: (message, status, changed)
     """
-    session_id = get_session_id()
+    user_id = get_user_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
-    wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
 
     command = client_commands.Command(**request.json)
@@ -1273,11 +1271,11 @@ def state(wid):
     """
     Load and return the world status
     """
-    session_id = get_session_id()
+    user_id = get_user_id()
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
-    wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
     wstate = world_state.loadWorldState(get_db(), wstate_id)
     response = client.WorldStatus()
     client.update_world_status(get_db(), wstate, response)
@@ -1294,13 +1292,13 @@ def thread_api(wid, cid):
     or
     - character_chat.CharacterHistoryResponse
     """
-    session_id = get_session_id()
+    user_id = get_user_id()
     character = elements.loadCharacter(get_db(), cid)
     world = elements.loadWorld(get_db(), wid)
     if character is None or world is None:
         return {"error", "World not found"}, 404
 
-    wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
     # TODO: this is where we need lock for updating
     chat_session = character_chat.CharacterChat.loadChatSession(
         get_db(), wstate_id, wid, cid
@@ -1343,7 +1341,7 @@ def action_api(wid, cid):
       - result.world_status.changed  (changed): state of the world changed as a result
       - result.chat_response.chat_enabled  (enabled): user can continue to chat with character
     """
-    session_id = get_session_id()
+    user_id = get_user_id()
     character = elements.loadCharacter(get_db(), cid)
     world = elements.loadWorld(get_db(), wid)
     if character is None or world is None:
@@ -1354,7 +1352,7 @@ def action_api(wid, cid):
     if command == None:
         return {"error", "missing arguments"}, 400
 
-    wstate_id = world_state.getWorldStateID(get_db(), session_id, wid)
+    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
     chat_session = character_chat.CharacterChat.loadChatSession(
         get_db(), wstate_id, wid, cid
     )

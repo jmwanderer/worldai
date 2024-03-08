@@ -41,7 +41,7 @@ CREATE TABLE users (
 
 -- Message threads. Used directly by design and supports character threads
 CREATE TABLE threads (
-  id TEXT PRIMARY KEY,        -- session_id for design threads, generated for character threads
+  id TEXT PRIMARY KEY,        -- user_id for design threads, generated for character threads
   created INTEGER NOT NULL,   -- timstamp creation
   updated INTEGER NOT NULL,   -- timestamp last changed
   thread TEXT                 -- JSON eencode message thread
@@ -50,12 +50,13 @@ CREATE TABLE threads (
 -- Dynamic game state for an instance of a world
 CREATE TABLE world_state (
   id TEXT PRIMARY KEY,
-  session_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
   world_id TEXT NOT NULL,
   created INTEGER NOT NULL,
   updated INTEGER NOT NULL,
   state TEXT NOT NULL,
-  FOREIGN KEY (world_id) REFERENCES elements(id)
+  FOREIGN KEY (world_id) REFERENCES elements(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
  
 CREATE TABLE character_threads (

@@ -4,7 +4,7 @@ Test Client Command Functions
 Integration test
 """
 
-from worldai import client_commands, db_access, elements, world_state
+from worldai import client_commands, db_access, elements, users, world_state
 
 
 class Environment:
@@ -20,10 +20,11 @@ class Environment:
         worlds = elements.listWorlds(db)
         world_id = worlds[0].getID()
         assert world_id is not None
-        session_id = "1234"
+        auth_key = app.config["AUTH_KEY"]
+        user_id = users.find_auth_key(db, auth_key)
         world = elements.loadWorld(db, world_id)
         assert world is not None
-        wstate_id = world_state.getWorldStateID(db, session_id, world_id)
+        wstate_id = world_state.getWorldStateID(db, user_id, world_id)
         wstate = world_state.loadWorldState(db, wstate_id)
         assert wstate is not None
         return Environment(db, world, wstate)
