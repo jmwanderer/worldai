@@ -21,7 +21,7 @@ class Environment:
         world_id = worlds[0].getID()
         assert world_id is not None
         auth_key = app.config["AUTH_KEY"]
-        user_id = users.find_auth_key(db, auth_key)
+        user_id = users.find_by_auth_key(db, auth_key)
         world = elements.loadWorld(db, world_id)
         assert world is not None
         wstate_id = world_state.getWorldStateID(db, user_id, world_id)

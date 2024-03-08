@@ -27,7 +27,6 @@ def create_app(instance_path=None, test_config=None):
         )
     app.config.from_mapping(
         SECRET_KEY="DEV",
-        AUTH_KEY="auth",
         OPENAI_API_KEY=os.getenv("OPENAI_API_KEY"),
         DATABASE=os.path.join(app.instance_path, "worldai.sqlite"),
         TESTING=False,

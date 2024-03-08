@@ -16,6 +16,7 @@ Three things cause the world state to change:
   - accumulates events and status updates, adds to next chat or acton call - DONE
 
 * List
+- Add per user stable accounts - DONE
 - List of tools calls for chat_start
 - tool calls stream for design on view change
 - drop items on sleep
