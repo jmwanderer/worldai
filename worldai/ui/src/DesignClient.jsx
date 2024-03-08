@@ -290,7 +290,7 @@ function Character({ tag, setChatView }) {
 
               <Accordion.Item eventKey='2'>
                 <Accordion.Header>
-                  Appearance
+                  Physical Appearance
                   { character.appearance.length === 0 ? " -- TBD" : ""}
                 </Accordion.Header>
                 <Accordion.Body>

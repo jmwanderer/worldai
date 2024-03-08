@@ -379,6 +379,7 @@ function ChatCharacter({ world, characterId,
       <Row>
         <Navigation time={currentTime}
                     onClose={onClose}
+                    world={world}
                     setView={ setView }/>
       </Row>
       <Row>
@@ -696,6 +697,7 @@ function Site({ world, siteId,
     <Container>
       <Row>
         <Navigation time={currentTime}
+                    world={world}
                     onClose={clickClose}
                     setView={ setView }/>
       </Row>
@@ -744,7 +746,7 @@ function getTimeString(time) {
 }
 
 
-function Navigation({ time, onClose, setView}) {
+function Navigation({ time, world, onClose, setView}) {
 
   function setCharactersView() {
     setView("characters");        
@@ -758,9 +760,6 @@ function Navigation({ time, onClose, setView}) {
   return (
     <Navbar expand="lg" className="bg-body-tertiary">
       <Container>
-        <CloseButton onClick={onClose}/>
-        <Navbar.Brand>Story Quest</Navbar.Brand>
-        <Navbar.Text>{getTimeString(time)}</Navbar.Text>
         <Nav>
           <Nav.Link onClick={setCharactersView}>
             Characters
@@ -769,6 +768,9 @@ function Navigation({ time, onClose, setView}) {
             Inventory
           </Nav.Link>                        
         </Nav>
+        <Navbar.Brand>Story Quest: { world.name }</Navbar.Brand>
+        <Navbar.Text>{getTimeString(time)}</Navbar.Text>
+        <CloseButton onClick={onClose}/>
       </Container>
     </Navbar>);
 }
@@ -954,20 +956,14 @@ function DetailsView({view, world, selectItem, dropItem, onClose}) {
   if (view === "characters") {
     return (
       <div>
-        <CloseBar onClose={onClose}/>
-        <h5>
-          {world.name} Characters
-        </h5>
+        <CloseBar title="Characters" onClose={onClose}/>
         <CharacterList worldId={world.id}/>
       </div>
     );        
   } else {
     return (
       <div>
-        <CloseBar onClose={onClose}/>
-        <h5>
-          Inventory
-        </h5>
+        <CloseBar title="Inventory" onClose={onClose}/>
         <Inventory worldId={world.id}
                    selectItem={ typeof selectItem !== 'undefined' ? onSelect : null}
                    dropItem={ typeof dropItem !== 'undefined' ? onDrop : null}
@@ -1211,6 +1207,7 @@ function World({ worldId, setWorldId }) {
     <Container>
       <Row>
         <Navigation time={currentTime}
+                    world={world}
                     onClose={clickClose}
                     setView={ setView }/>
       </Row>

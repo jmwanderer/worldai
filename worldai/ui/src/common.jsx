@@ -4,10 +4,11 @@ import Navbar from 'react-bootstrap/Navbar';
 import Container from 'react-bootstrap/Container';
 import CloseButton from 'react-bootstrap/CloseButton';
 
-function CloseBar({ onClose }) {
+function CloseBar({ onClose, title }) {
   return (
     <Navbar expand="lg" className="bg-body-tertiary">
       <Container>
+        <Navbar.Brand>{ title }</Navbar.Brand>
         <CloseButton onClick={onClose}/>
       </Container>
     </Navbar>);
