@@ -16,6 +16,10 @@ Three things cause the world state to change:
   - accumulates events and status updates, adds to next chat or acton call - DONE
 
 * List
+- add secret character information that other characters do not know
+- add location to get info for items in lookup info - DONE
+- fix character name as "location" for item in ListItems - DONE
+- should characters healing other characters work?
 - Add per user stable accounts - DONE
 - List of tools calls for chat_start
 - tool calls stream for design on view change

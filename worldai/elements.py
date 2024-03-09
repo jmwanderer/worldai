@@ -628,6 +628,9 @@ class Item(Element):
         self.prop_model.ability = ability
 
     def getInfoText(self) -> list[tuple[int, str]]:
+        return [(0, self.getProfile())]
+
+    def getProfile(self) -> str:
         # Append item ability to the info text
         content = self.getName()
         if self.getIsMobile():
@@ -644,7 +647,7 @@ class Item(Element):
             content = content + self.getDescription()
         if self.getDetails() is not None:
             content = content + "\n" + self.getDetails()
-        return [(0, content)]
+        return content
 
 
 class ElementStore:

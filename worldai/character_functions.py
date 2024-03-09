@@ -8,7 +8,8 @@ You are a  professonal actor playing '{name}', a fictional character in a story 
 place in the world {world_name}.
 Given the following character description, personality,
 goals, and emotional state, adopt the personality described and respond as the character in a physical world.
-You may change locations, fetch items, give items to the user, use items, note friendship, or lack of friendship with the user.
+You may change locations, fetch items, and use items that are in your possession.
+Update opinion of travler using Increase and Decrease Friendship.
 When answering questions, use GetInformation to find knowledge, facts, and history about yourself, others, and the world.
 You can format in markdown.
 
@@ -51,7 +52,7 @@ Travler is holding an interesting item: '{selected_item}'
 """
 
 FRIENDSHIP_NEUTRAL = """
-You do not yet know if Traveler is a friend or an enemy.
+You do not yet know if Traveler is a friend or an enemy. You do not yet trust Traveler and are reluctant to provide assistance.
 """
 
 FRIEND = """
@@ -94,6 +95,29 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         self.character_id = properties["character_id"]
         self.archive_id = properties["archive_id"]
 
+    
+    @staticmethod
+    def char_status_descr(wstate: world_state.WorldState, cid: elements.ElemID) -> str:
+        status = []
+        sleeping = world_state.CharStatus.SLEEPING
+        poisoned = world_state.CharStatus.POISONED
+        paralized = world_state.CharStatus.PARALIZED
+
+        if wstate.hasCharacterStatus(cid, sleeping):
+            status.append("sleeping")
+        if wstate.hasCharacterStatus(cid, poisoned):
+            status.append("poisoned")
+        if wstate.hasCharacterStatus(cid, paralized):
+            status.append("paralized")
+        if wstate.getCharacterHealthPercent(cid, ) < 25:
+            status.append("gravely injured")
+        elif wstate.getCharacterHealthPercent(cid, ) < 100:
+            status.append("injured")
+        if len(status) > 0:
+            return ".".join(status)
+        return "healthy"
+
+
     def get_instructions(self, db):
         world = elements.loadWorld(db, self.world_id)
         character = elements.loadCharacter(db, self.character_id)
@@ -124,7 +148,8 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         for cid in cid_list:
             present = elements.loadCharacter(db, cid)
             if present is not None:
-                characters_present.append("- " + present.getName())
+                value = "- " + present.getName() + ": " + self.char_status_descr(wstate, cid)
+                characters_present.append(value)
         if len(characters_present) == 0:
             characters_present.append("None")
 
@@ -252,6 +277,20 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             return json.loads(encoded)
         return []
 
+    @staticmethod
+    def get_item_location_desc(db, wstate, item_id) -> str:
+        location_id = wstate.getItemLocation(item_id)
+        location = "unknown"
+        character = elements.loadCharacter(db, location_id)
+        if character is not None:
+            location = "with " + character.getName()
+        else:
+            site = elements.loadSite(db, location_id)
+            if site is not None:
+                location = "at " + site.getName()
+        return location
+
+
     def execute_function_call(self, db, function_name, arguments):
         """
         Dispatch function for function_name
@@ -306,16 +345,7 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
             wstate = world_state.loadWorldState(db, self.wstate_id)
             for entry in elements.listItems(db, self.world_id):
                 item = elements.loadItem(db, entry.getID())
-                location_id = wstate.getItemLocation(item.getID())
-                location = "unknown"
-                character = elements.loadCharacter(db, location_id)
-                if character is not None:
-                    location = character.getName()
-                else:
-                    site = elements.loadSite(db, location_id)
-                    if site is not None:
-                        location = site.getName()
-
+                location = self.get_item_location_desc(db, wstate, item.getID())
                 result.append(
                     {
                         "name": item.getName(),
@@ -372,12 +402,17 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         else:
             wstate = world_state.loadWorldState(db, self.wstate_id)
             character = elements.findCharacter(db, self.world_id, context)
+            item = elements.findItem(db, self.world_id, context)
             if character is not None:
                 content = character.getProfile()
                 site_id = wstate.getCharacterLocation(character.getID()) 
                 site = elements.loadSite(db, site_id)
                 if site is not None:
                     content = content + "\nLocation: " + site.getName()
+            elif item is not None:
+                content = item.getProfile()
+                location = self.get_item_location_desc(db, wstate, item.getID())
+                content = content + "\nLocation: " + location
             else:
                 embed = info_set.generateEmbedding(context)
                 content = info_set.getInformation(db, self.world_id, embed, 2)
@@ -602,7 +637,7 @@ all_functions = [
     },
     {
         "name": "IncreaseFriendship",
-        "description": "Note a developing friendship.",
+        "description": "Note travelers deeds and words.",
         "parameters": {
             "type": "object",
             "properties": {},
