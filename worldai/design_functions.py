@@ -425,7 +425,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     def get_view(self):
         return self.current_view.json()
 
-    def set_view(self, next_view):
+    def set_next_view(self, next_view):
         """
         Set the target view.
         If same as current, this is a NO-OP

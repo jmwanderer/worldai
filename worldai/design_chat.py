@@ -66,86 +66,80 @@ class DesignChatSession:
     def get_view(self):
         return self.chatFunctions.get_view()
 
-    def set_view(self, db, view):
-        logging.info("design chat set view")
-        self.chatFunctions.set_view(view)
+    def plan_next_view(self, db):
+        view = self.chatFunctions.next_view
+        logging.info("plan next view %s", view.jsonStr())
 
-        if self.chatFunctions.next_view != self.chatFunctions.current_view:
-            logging.info("*** Change view")
-            # TODO: handle failure
-            next_view = self.chatFunctions.next_view
-            current_view = self.chatFunctions.current_view
-            logging.info("current view: %s", current_view.jsonStr())
-            logging.info("next view: %s", next_view.jsonStr())
+        plan = []
+        if self.chatFunctions.next_view == self.chatFunctions.current_view:
+            logging.info("plan next view - no change")
+            return plan
+        
+        if view.getType() == elements.ElementTypes.NoneType():
+            self.chatFunctions.current_state = design_functions.STATE_WORLDS
+            self.chatFunctions.clearCurrentView()
+            logging.info("plan next view - clear view, set state to WORLDS")
+            return plan
 
-            # Handle when next view is world list.
-            if next_view.getType() == elements.ElementTypes.NoneType():
-                self.chatFunctions.current_state = design_functions.STATE_WORLDS
-                self.chatFunctions.clearCurrentView()
-                return
+        self.chatFunctions.current_state = design_functions.STATE_WORLD
+        if view.getWorldID() != self.chatFunctions.current_view.getWorldID():
+            world = elements.loadWorld(db, view.getWorldID())
+            if world is None:
+                return plan
+            entry = ("ShowWorld", f"World id is '{world.getName()}'")
+            logging.info("plan next view: %s, %s", entry[0], entry[1])
+            plan.append(entry)
 
-            # Handle a change in the current world.
-            if next_view.getWorldID() != current_view.getWorldID():
-                logging.info("Show world '%s'", next_view.getWorldID())
-                self.chatFunctions.current_state = design_functions.STATE_WORLDS
-                world = elements.loadWorld(db, next_view.getWorldID())
-                if world is not None:
-                    self.chat.chat_exchange(
-                        db,
-                        system=f"World id is '{world.getName()}'",
-                        tool_choice="ShowWorld",
-                        call_limit=1,
-                    )
+        if view.getID() != self.chatFunctions.current_view.getID():
+            if view.getType() == elements.ElementTypes.CharacterType():
+                character = elements.loadCharacter(db, view.getID())
+                if character is not None:
+                    entry = ("ShowCharacter",  f"Character is '{character.getName()}'")
+                    logging.info("plan next view: %s, %s", entry[0], entry[1])
+                    plan.append(entry)
 
-            # Handle when next view is world.
-            if next_view.getType() == elements.ElementTypes.WorldType():
-                new_state = design_functions.elemTypeToState(next_view.getType())
-                logging.info("world view, change state to: %s", new_state)
-                self.chatFunctions.current_state = new_state
-                self.chatFunctions.current_view = next_view
+            elif view.getType() == elements.ElementTypes.ItemType():
+                item = elements.loadItem(db, view.getID())
+                if item is not None:
+                    entry = ("ShowItem", f"Item is '{item.getName()}'")
+                    logging.info("plan next view: %s, %s", entry[0], entry[1])
+                    plan.append(entry)
 
-            # Refresh current_view, may have changed
-            current_view = self.chatFunctions.current_view
-            new_state = design_functions.elemTypeToState(next_view.getType())
+            elif view.getType() == elements.ElementTypes.SiteType():
+                site = elements.loadSite(db, view.getID())
+                if site is not None:
+                    entry = ("ShowSite", f"Site is '{site.getName()}'")
+                    logging.info("plan next view: %s, %s", entry[0], entry[1])
+                    plan.append(entry)
 
-            # Handle if the next view is a new item, character, or site
-            if next_view.getID() != current_view.getID():
-                tool_choice = None
-                self.chatFunctions.current_view = next_view
-                if next_view.getType() == elements.ElementTypes.CharacterType():
-                    character = elements.loadCharacter(db, next_view.getID())
-                    logging.info("Show character '%s'", character.getName())
-                    tool_choice = "ShowCharacter"
-                    system = f"Character is '{character.getName()}'"
+            elif view.getType() == elements.ElementTypes.DocumentType():
+                document = elements.loadDocument(db, view.getID())
+                if document is not None:
+                    entry = ("ShowDocument", f"Document is '{document.getName()}'")
+                    logging.info("plan next view: %s, %s", entry[0], entry[1])
+                    plan.append(entry)
 
-                elif next_view.getType() == elements.ElementTypes.ItemType():
-                    item = elements.loadItem(db, next_view.getID())
-                    logging.info("Show item '%s'", item.getName())
-                    tool_choice = "ShowItem"
-                    system = f"Item is '{item.getName()}'"
+        return plan
 
-                elif next_view.getType() == elements.ElementTypes.SiteType():
-                    site = elements.loadSite(db, next_view.getID())
-                    logging.info("Show site '%s'", site.getName())
-                    tool_choice = "ShowSite"
-                    system = f"Site is '{site.getName()}'"
 
-                elif next_view.getType() == elements.ElementTypes.DocumentType():
-                    document = elements.loadDocument(db, next_view.getID())
-                    logging.info("Show document '%s'", document.getName())
-                    tool_choice = "ShowDocument"
-                    system = f"Document is '{document.getName()}'"
-
-                self.chatFunctions.current_state = new_state
-                if tool_choice is not None:
-                    self.chat.chat_exchange(
-                        db, system=system, tool_choice=tool_choice, call_limit=1
-                    )
+    def set_view(self, db, new_view):
+        # Save next view
+        self.chatFunctions.set_next_view(new_view)
+        view = self.chatFunctions.next_view
+        logging.info("design_functions: set_view %s", view.jsonStr())
 
     def madeChanges(self) -> bool:
         return self.chatFunctions.madeChanges()
 
     def chat_start(self, db, user: str) -> DesignChatResponse:
+        plan = self.plan_next_view(db)
+        for (tool, msg) in plan:
+            logging.info("chat run %s", tool)
+            self.chat.chat_exchange(
+                db, system=msg, tool_choice=tool, call_limit=1
+            )
+            logging.info("done - current view: %s", self.chatFunctions.current_view.jsonStr())
+
         response = DesignChatResponse()
         response.chat_response = self.chat.chat_start(db, user=user)
         response.view = self.get_view()

@@ -706,6 +706,8 @@ def design_chat_api():
         command = request.json.get("command")
         if command == "start":
             user_msg = request.json.get("user")
+            view = request.json.get("view")
+            chat_session.set_view(get_db(), view)
             reply = chat_session.chat_start(get_db(), user_msg)
             content = reply.model_dump()
 
@@ -728,7 +730,7 @@ def design_chat_api():
     return flask.jsonify(content)
 
 
-@bp.route("/api/design_chat/view", methods=["GET", "POST"])
+@bp.route("/api/design_chat/view", methods=["GET"])
 @auth_required
 def design_chat_view_api():
     """
@@ -736,20 +738,8 @@ def design_chat_view_api():
     """
     user_id = get_user_id()
     chat_session = design_chat.DesignChatSession.loadChatSession(get_db(), user_id)
-    if request.method == "GET":
-        content = {"view": chat_session.get_view()}
-    else:
-        if request.json.get("view") is not None:
-            view = request.json["view"]
-            logging.info("view: %s", view)
-            chat_session.set_view(get_db(), view)
-            logging.info("view2: %s", chat_session.get_view())
-            content = {"view": chat_session.get_view()}
-        else:
-            content = {"error": "malformed input"}
-    chat_session.saveChatSession(get_db())
+    content = {"view": chat_session.get_view()}
     return flask.jsonify(content)
-
 
 @bp.route("/api/initdata", methods=["GET"])
 @auth_required

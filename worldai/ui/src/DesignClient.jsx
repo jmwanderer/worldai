@@ -671,20 +671,12 @@ function DesignChat({name, chatView, setChatView}) {
   async function postChatStart(context, user_msg) {
     // Potentially update current view
     console.log("post view: " + JSON.stringify(context));
-    const view_data = { "view": context };
-    const url_view = '/design_chat/view';
-    const response_view = await fetch(get_url(url_view), {
-      method: 'POST',
-      body: JSON.stringify(view_data),
-      headers: headers_post()
-    });
-    const result = await response_view.json();
-    console.log("get view: " + JSON.stringify(result.view));   
-
     // Post message
     const msg_data = {
       "command": "start",
-      "user": user_msg }
+      "user": user_msg,
+      "view": context
+     }
     const url_msg = '/design_chat'    
     // Post the user request
     console.log("start chat: " + user_msg)
