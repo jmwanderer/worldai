@@ -23,30 +23,30 @@ class DesignHistoryResponse(pydantic.BaseModel):
 
 
 class DesignChatSession:
-    def __init__(self, session_id, chat_session=None):
+    def __init__(self, user_id, chat_session=None):
         if chat_session is None:
             self.chatFunctions = design_functions.DesignFunctions()
             self.chat = chat.ChatSession(chatFunctions=self.chatFunctions)
         else:
             self.chatFunctions = chat_session.chatFunctions
             self.chat = chat_session
-        self.session_id = session_id
+        self.user_id = user_id
 
     @staticmethod
-    def loadChatSession(db, session_id):
+    def loadChatSession(db, user_id):
         functions = design_functions.DesignFunctions()
         chat_session = chat.ChatSession(functions)
-        thread = threads.get_thread(db, session_id)
+        thread = threads.get_thread(db, user_id)
         if thread is not None:
             chat_session.load(thread)
-        return DesignChatSession(session_id, chat_session)
+        return DesignChatSession(user_id, chat_session)
 
     def saveChatSession(self, db):
         thread = self.chat.save()
-        threads.save_thread(db, self.session_id, thread)
+        threads.save_thread(db, self.user_id, thread)
 
     def deleteChatSession(self, db):
-        threads.delete_thread(db, self.session_id)
+        threads.delete_thread(db, self.user_id)
 
     def chat_history(self) -> DesignHistoryResponse:
         response = DesignHistoryResponse()
