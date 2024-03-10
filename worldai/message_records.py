@@ -176,12 +176,13 @@ class MessageSetRecord:
         """
         Verify the message was successfully completed.
         """
-        # We consider a message that ends with an assistant role that
-        # is not a tools call.
+        # We consider a message that ends with an assistant response (not a tool request)
+        # or has a tool response to be a complete message.
         if len(self.messages) < 1:
             return False
         message = self.messages[-1]
-        return message.get("role") == "assistant" and message.get("tool_calls") is None
+        return ((message.get("role") == "assistant" and message.get("tool_calls") is None) or
+                message.get("role") == "tool")
 
     def addMessagesToList(self, messages):
         for message in self.messages:

@@ -187,6 +187,13 @@ class ChatState(pydantic.BaseModel):
     # Supports multiple tool calls per assistant response
     tool_call_index: int = 0
 
+    # Initial argument for a specific tool call to be made.
+    tool_name: str = ""
+
+    # Flag indicating to generate a response after tool calls.
+    # Design tool may only want to add a system message and do a tool call
+    gen_final_response: bool = True
+
     # Context passed to the chat_functions (world_id, etc)
     context: str = "{}"
 
@@ -204,6 +211,9 @@ class ChatSession:
         self.call_limit = 0
         self.tool_call_pending = False
         self.tool_call_index = 0
+        self.tool_name = ""
+        # False if app wants to stop at end of tool calls
+        self.gen_final_response = True
         if chatFunctions is None:
             self.chatFunctions = chat_functions.BaseChatFunctions()
         else:
@@ -223,6 +233,8 @@ class ChatSession:
         self.msg_id = state.msg_id
         self.tool_call_pending = state.tool_call_pending
         self.tool_call_index = state.tool_call_index
+        self.tool_name = state.tool_name
+        self.gen_final_response = state.gen_final_response
         self.call_count = state.call_count
         self.call_limit = state.call_limit
         self.prompt_tokens = state.tokens.prompt_tokens
@@ -234,6 +246,8 @@ class ChatSession:
         state.msg_id = self.msg_id
         state.tool_call_pending = self.tool_call_pending
         state.tool_call_index = self.tool_call_index
+        state.tool_name = self.tool_name
+        state.gen_final_response = self.gen_final_response
         state.call_count = self.call_count
         state.call_limit = self.call_limit
         state.tool_call_index = self.tool_call_index
@@ -333,6 +347,7 @@ class ChatSession:
         user: typing.Union[str, None] = None,
         system: typing.Union[str, None] = None,
         tool_name: typing.Union[str, None] = None,
+        respond_to_system: bool = False
     ) -> ChatResponse:
         """
         Initiate a new chat
@@ -346,23 +361,29 @@ class ChatSession:
 
         self.history.startNewMessageSet()
 
+        if tool_name is not None:
+            self.tool_name = tool_name
         if system is not None:
             self.history.addMessage({"role": "system", "content": system})
+
+        self.gen_final_response = True
         if user is not None:
             self.history.addMessage({"role": "user", "content": user})
+        elif not respond_to_system:
+            self.gen_final_response = False
 
-        # If there is a system message, the first step is to simply return that system
-        # message to the client.
+        # If there is a system message and no tool call, we can just return
+        # that immeidately to show that state to the user.
         if system is not None:
             result = ChatResponse(id=self.msg_id, done=False)
             result.event = system
             return result
 
         # First run a chat completion, may be the last operation
-        return self.chat_message(db, tool_name)
+        return self.chat_message(db)
 
     def chat_message(
-        self, db, tool_name: typing.Union[str, None] = None
+        self, db
     ) -> ChatResponse:
         """
         Process a chat message completion call.
@@ -400,6 +421,12 @@ class ChatSession:
         else:
             tools = None
 
+        if len(self.tool_name) > 0:
+            tool_name = self.tool_name
+            self.tool_name = ""
+        else:
+            tool_name = None
+
         if tool_name is not None:
             logging.info("ChatEx called with tool: %s", tool_name)
             tool_choice = {"type": "function", "function": {"name": tool_name}}
@@ -414,9 +441,6 @@ class ChatSession:
             messages, tools=tools, tool_choice=tool_choice
         )
         logging.info("Response: %s", json.dumps(response))
-
-        # Clear tool choice, only force a tool call on the first request.
-        tool_name = None
 
         # Check for an error
         if response.get("usage") is not None:
@@ -504,12 +528,17 @@ class ChatSession:
 
         # Build result
         done = False
+        # TODO: Consider  stopping on call_limit exceeded
+        if self.call_count > self.call_limit:
+            pass
+
         # Can be done if no more tool alls AND we have met the chat call limt
-        if not self.tool_call_pending and self.call_count < self.call_limit:
+        if not self.tool_call_pending and not self.gen_final_response:
+            print("gen final response is false - BAIL early!!!")
             done = True
 
         content = self.getMessageContent(self.history.current_message_set())
-        result = ChatResponse(id=self.msg_id, done=False)
+        result = ChatResponse(id=self.msg_id, done=done)
         result.user = content["user"]
         result.reply = content["assistant"]
         result.updates = content["updates"]

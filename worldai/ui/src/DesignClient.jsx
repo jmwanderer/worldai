@@ -686,7 +686,9 @@ function DesignChat({name, chatView, setChatView}) {
       headers: headers_post()
     });
     const values = await response.json();
-    setChatView(values.view); 
+    if (values.chat_response.done) {
+      setChatView(values.view); 
+    }
     return values.chat_response;
   }
 
@@ -705,7 +707,9 @@ function DesignChat({name, chatView, setChatView}) {
       headers: headers_post()
     });
     const values = await response.json();
-    setChatView(values.view); 
+    if (values.chat_response.done) {
+      setChatView(values.view); 
+    }
     return values.chat_response;
   }
 

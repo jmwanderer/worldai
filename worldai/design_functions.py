@@ -270,6 +270,42 @@ def checkDuplication(name, element_list):
 
     return None
 
+class ChatCall:
+    def __init__(self):
+        self.user_msg = None
+        self.tool_call = None
+        self.system_message = None
+
+    def getProps(self):
+        props = {}
+        if self.user_msg is not None:
+            props["user_msg"] = self.user_msg
+        if self.tool_call is not None:
+            props["tool_call"] = self.tool_call
+        if self.system_message is not None:
+            props["system_message"] = self.system_message
+        return props
+
+    def setProps(self, props):
+        if props.get("user_msg") is not None:
+            self.user_msg = props["user_msg"]
+        if props.get("tool_call") is not None:
+            self.tool_call = props["tool_call"]
+        if props.get("system_message") is not None:
+            self.system_message = props["system_message"]
+
+    def toStr(self):
+        lines = []
+        if self.user_msg is not None:
+            lines.append("user_msg: " + self.user_msg)
+        if self.tool_call is not None:
+            lines.append("tool_call: " + self.tool_call)
+        if self.system_message is not None:
+            lines.append("system_message: " + self.system_message) 
+        if len(lines) == 0:
+            return "empty"
+        return ", ".join(lines)
+
 
 class DesignFunctions(chat_functions.BaseChatFunctions):
 
@@ -284,7 +320,10 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         # The none elem tag means that there is no change for the view.
         # This happens when the user changes the view in the UI.
         # We need to sync the GPT to the new view
+        # TODO: remove this
         self.next_view = elements.ElemTag()
+        self.pending_chat_calls : list[ChatCall] = []
+        self.message_done: bool = True
 
     # Class variables for puplic properties for each type
     WORLD_PROPS = ["name", "description", "details"]
@@ -297,6 +336,11 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         properties["current_state"] = self.current_state
         properties["current_view"] = self.current_view.json()
         properties["next_view"] = self.next_view.json()
+        pending_calls = []
+        for chat_call in self.pending_chat_calls:
+            pending_calls.append(chat_call.getProps())
+        properties["pending_calls"] = pending_calls
+        properties["message_done"] = self.message_done
         return properties
 
     def setProperties(self, properties):
@@ -304,6 +348,13 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         self.current_state = properties["current_state"]
         self.current_view = elements.ElemTag.JsonTag(properties["current_view"])
         self.next_view = elements.ElemTag.JsonTag(properties["next_view"])
+        if properties.get("message_done") is not None:
+            self.message_done = properties["message_done"]
+        if properties.get("pending_calls") is not None:
+            for entry in properties["pending_calls"]:
+                chat_call = ChatCall()
+                chat_call.setProps(entry)
+                self.pending_chat_calls.append(chat_call)
 
     def getCurrentWorldID(self):
         # May return None
