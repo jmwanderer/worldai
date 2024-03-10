@@ -97,7 +97,9 @@ class CharacterChat:
                 system_message = system_message.format(name=character.getName())
 
         response = CharacterResponse()
-        response.chat_response = self.chat.chat_start(db, user=message, system=system_message)
+        response.chat_response = self.chat.chat_start(db, user=message, 
+                                                      system=system_message,
+                                                      respond_to_system=True)
 
         # Reload world state as it may have changed during message processing
         wstate = world_state.loadWorldState(db, self.wstate_id)
@@ -136,7 +138,8 @@ class CharacterChat:
             if character  is not None:
                 system = system.format(name=character.getName())
 
-            response.chat_response = self.chat.chat_start(db, system=system)
+            response.chat_response = self.chat.chat_start(db, system=system,
+                                                          respond_to_system=True)
 
         wstate = world_state.loadWorldState(db, self.wstate_id)
         response.chat_response.chat_enabled = self.checkChatEnabled(wstate)

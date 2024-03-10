@@ -534,6 +534,7 @@ class ChatSession:
 
         # Can be done if no more tool alls AND we have met the chat call limt
         if not self.tool_call_pending and not self.gen_final_response:
+            logging.info("Tool calls complete, final response not needed. Done chat sequence")
             done = True
 
         content = self.getMessageContent(self.history.current_message_set())
