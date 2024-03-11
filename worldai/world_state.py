@@ -577,3 +577,23 @@ def saveWorldState(db, state: WorldState) -> None:
         (state.user_id, now, state.get_model_str(), state.wstate_id),
     )
     db.commit()
+
+def clearWorldState(db, wstate_id: WorldStateID) -> None:
+    """
+    Reset an instance of world state.
+    Erase all related data.
+    """
+    db.execute("BEGIN TRANSACTION")
+    sql = "DELETE FROM info_chunks WHERE doc_id IN (SELECT id FROM info_docs WHERE wstate_id = ?)"
+    db.execute(sql, (wstate_id,))
+    sql = "DELETE FROM info_docs WHERE info_docs.wstate_id = ? "
+    db.execute(sql, (wstate_id,))
+    q = db.execute(
+        "SELECT thread_id FROM character_threads WHERE world_state_id = ?", (wstate_id,)
+    )
+    for entry in q.fetchall():
+        thread_id = entry[0]
+        db.execute("DELETE FROM character_threads WHERE thread_id = ?", (thread_id,))
+        db.execute("DELETE FROM threads where id = ?", (thread_id,))
+    db.execute("DELETE FROM world_state where id = ?", (wstate_id,))
+    db.commit()

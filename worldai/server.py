@@ -330,24 +330,7 @@ def clear_all_world_state() -> None:
 def clear_world_state(wstate_id) -> None:
     """Clear a specific wstate"""
     print("clearing state for %s..." % wstate_id)
-    db = get_db()
-    db.execute("BEGIN TRANSACTION")
-    sql = "DELETE FROM info_chunks WHERE doc_id IN (SELECT id FROM info_docs WHERE wstate_id = ?)"
-    db.execute(sql, (wstate_id,))
-    sql = "DELETE FROM info_docs WHERE info_docs.wstate_id = ? "
-    db.execute(sql, (wstate_id,))
-    q = db.execute(
-        "SELECT thread_id FROM character_threads WHERE world_state_id = ?", (wstate_id,)
-    )
-    for entry in q.fetchall():
-        thread_id = entry[0]
-        db.execute("DELETE FROM character_threads WHERE thread_id = ?", (thread_id,))
-        db.execute("DELETE FROM threads where id = ?", (thread_id,))
-    db.execute("DELETE FROM world_state where id = ?", (wstate_id,))
-    db.commit()
-
-    pass
-
+    world_state.clearWorldState(get_db(), wstate_id)
 
 @bp.cli.command("dump-worlds")
 def dump_worlds() -> None:
@@ -1257,7 +1240,7 @@ def command_api(wid):
     return response.model_dump()
 
 
-@bp.route("/api/worlds/<wid>/status")
+@bp.route("/api/worlds/<wid>/instance", methods=["GET", "POST"])
 @auth_required
 def state(wid):
     """
@@ -1268,10 +1251,17 @@ def state(wid):
     if world is None:
         return {"error", "World not found"}, 404
     wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
-    wstate = world_state.loadWorldState(get_db(), wstate_id)
-    response = client.WorldStatus()
-    client.update_world_status(get_db(), wstate, response)
-    return response.model_dump()
+
+    if request.method == "GET":
+        wstate = world_state.loadWorldState(get_db(), wstate_id)
+        response = client.WorldStatus()
+        client.update_world_status(get_db(), wstate, response)
+        return response.model_dump()
+
+    logging.info("Reset game %s:%s:%s", user_id, world.getID(), wstate_id)
+    world_state.clearWorldState(get_db(), wstate_id)
+
+    return { "status": "ok"}, 200
 
 
 @bp.route("/api/worlds/<wid>/characters/<cid>/thread", methods=["GET", "POST"])

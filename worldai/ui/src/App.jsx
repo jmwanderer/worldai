@@ -1,6 +1,6 @@
 import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
-import { getWorldList, getWorld, getWorldStatus } from './api.js';
+import { getWorldList, getWorld, getWorldStatus, resetWorldState } from './api.js';
 import { getSiteInstancesList, getItemInstancesList, getCharacterInstancesList } from './api.js';
 import { getSiteInstance, getItemInstance, getCharacter, getCharacterData } from './api.js';
 
@@ -233,7 +233,7 @@ async function postActionContinue(context, args) {
   return values;
 }
 
-function ChatCharacter({ world, setWorldId, characterId,
+function ChatCharacter({ world, setWorldId, setSiteId, characterId,
                          playerData,
                          setView,
                          statusMessage, setStatusMessage,
@@ -385,6 +385,7 @@ function ChatCharacter({ world, setWorldId, characterId,
                     onClose={onClose}
                     world={world}
                     setWorldId={setWorldId}
+                    setSiteId={setSiteId}
                     setView={ setView }/>
       </Row>
       <Row>
@@ -533,7 +534,7 @@ async function postUseItem(worldId, itemId) {
   return response.json();
 }
 
-function Site({ world, setWorldId, siteId,
+function Site({ world, setWorldId, siteId, setSiteId,
                 playerData, setPlayerData,
                 selectedItem, setSelectedItem,
                 selectItem, 
@@ -679,6 +680,7 @@ function Site({ world, setWorldId, siteId,
     return (
       <ChatCharacter world={world}
                      setWorldId={setWorldId}
+                     setSiteId={setSiteId}
                      characterId={characterId}
                      playerData={playerData}
                      setView={setView}
@@ -705,6 +707,7 @@ function Site({ world, setWorldId, siteId,
         <Navigation time={currentTime}
                     world={world}
                     setWorldId={setWorldId}
+                    setSiteId={setSiteId}
                     onClose={clickClose}
                     setView={ setView }/>
       </Row>
@@ -753,7 +756,7 @@ function getTimeString(time) {
 }
 
 
-function Navigation({ time, world, setWorldId, onClose, setView}) {
+function Navigation({ time, world, setWorldId, setSiteId, onClose, setView}) {
   const [showDialog, setShowDialog] = useState(false);
 
   function setCharactersView() {
@@ -777,6 +780,8 @@ function Navigation({ time, world, setWorldId, onClose, setView}) {
   }
 
   function resetGame() {
+    setSiteId("")
+    resetWorldState(world.id)
     setShowDialog(false);
   }
 
@@ -1132,7 +1137,7 @@ function World({ worldId, setWorldId }) {
     return () => {
       ignore = true;
     }
-  }, [worldId]);
+  },  [worldId, siteId]);
 
   function clickClose() {
     setWorldId("");
@@ -1232,6 +1237,7 @@ function World({ worldId, setWorldId }) {
     return (<Site world={world}
                   setWorldId={setWorldId}
                   siteId={siteId}
+                  setSiteId={setSiteId}
                   playerData={playerData}
                   setPlayerData={setPlayerData}
                   selectedItem={selectedItem}

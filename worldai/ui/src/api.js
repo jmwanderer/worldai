@@ -63,10 +63,21 @@ async function getWorld(worldId) {
 }
 
 async function getWorldStatus(worldId) {
-  const url = `/worlds/${worldId}/status`
+  const url = `/worlds/${worldId}/instance`
   const response =
         await fetch(get_url(url),
                     { headers: headers_get() });
+  const values = await response.json();
+  return values;
+}
+
+async function resetWorldState(worldId) {
+  const url = `/worlds/${worldId}/instance`
+  const response = await fetch(get_url(url), {
+    method: 'POST',
+    body: JSON.stringify({"reset": true}),
+    headers: headers_post()
+  });
   const values = await response.json();
   return values;
 }
@@ -146,6 +157,6 @@ async function getDocument(worldId, docId) {
 
 export { getWorldList, getWorld, getSiteList, getItemList, getCharacterList };
 export { getCharacterInstancesList, getSiteInstancesList };
-export { getCharacter, getSite, getItem, getWorldStatus };
+export { getCharacter, getSite, getItem, getWorldStatus, resetWorldState };
 export { getCharacterData, getSiteInstance, getItemInstancesList };
 export { getItemInstance, getDocumentList, getDocument };
