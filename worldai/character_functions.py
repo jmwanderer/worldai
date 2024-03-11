@@ -653,7 +653,7 @@ all_functions = [
     },
     {
         "name": "GiveItemToUser",
-        "description": "Give an item to the user.",
+        "description": "Give an item that is in your possession to the user.",
         "parameters": {
             "type": "object",
             "properties": {

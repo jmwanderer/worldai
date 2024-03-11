@@ -16,13 +16,16 @@ Three things cause the world state to change:
   - accumulates events and status updates, adds to next chat or acton call - DONE
 
 * List
+- Change UI to have an explicit Open World instead of closing existing
+- Add new game selection
+- if we add list games, refactor instances API to have an ID
 - add secret character information that other characters do not know
 - add location to get info for items in lookup info - DONE
 - fix character name as "location" for item in ListItems - DONE
 - should characters healing other characters work?
 - Add per user stable accounts - DONE
-- List of tools calls for chat_start
-- tool calls stream for design on view change
+- List of tools calls for chat_start - DONE
+- tool calls stream for design on view change - DONE
 - drop items on sleep
 - Add ending of character status events to char thread. - DONE
 - Make drop item happen in a character context - DONE

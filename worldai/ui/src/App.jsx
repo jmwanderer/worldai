@@ -23,8 +23,12 @@ import Table from 'react-bootstrap/Table';
 import Image from 'react-bootstrap/Image';
 import Stack from 'react-bootstrap/Stack';
 
+import Modal from 'react-bootstrap/Modal';
+
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
+import NavDropdown from 'react-bootstrap/NavDropdown';
+import ModalHeader from 'react-bootstrap/esm/ModalHeader.js';
 
 function getFriendship(level) {
   let friend_icon = "bi bi-emoji-neutral";
@@ -229,7 +233,7 @@ async function postActionContinue(context, args) {
   return values;
 }
 
-function ChatCharacter({ world, characterId,
+function ChatCharacter({ world, setWorldId, characterId,
                          playerData,
                          setView,
                          statusMessage, setStatusMessage,
@@ -380,6 +384,7 @@ function ChatCharacter({ world, characterId,
         <Navigation time={currentTime}
                     onClose={onClose}
                     world={world}
+                    setWorldId={setWorldId}
                     setView={ setView }/>
       </Row>
       <Row>
@@ -528,7 +533,7 @@ async function postUseItem(worldId, itemId) {
   return response.json();
 }
 
-function Site({ world, siteId,
+function Site({ world, setWorldId, siteId,
                 playerData, setPlayerData,
                 selectedItem, setSelectedItem,
                 selectItem, 
@@ -673,6 +678,7 @@ function Site({ world, siteId,
   if (characterId) {
     return (
       <ChatCharacter world={world}
+                     setWorldId={setWorldId}
                      characterId={characterId}
                      playerData={playerData}
                      setView={setView}
@@ -698,6 +704,7 @@ function Site({ world, siteId,
       <Row>
         <Navigation time={currentTime}
                     world={world}
+                    setWorldId={setWorldId}
                     onClose={clickClose}
                     setView={ setView }/>
       </Row>
@@ -746,7 +753,8 @@ function getTimeString(time) {
 }
 
 
-function Navigation({ time, world, onClose, setView}) {
+function Navigation({ time, world, setWorldId, onClose, setView}) {
+  const [showDialog, setShowDialog] = useState(false);
 
   function setCharactersView() {
     setView("characters");        
@@ -755,12 +763,36 @@ function Navigation({ time, world, onClose, setView}) {
   function setItemsView() {
     setView("items");        
   }
-
   
+  function closeGame() {
+    setWorldId("");
+  }
+
+  function showResetGame() {
+    setShowDialog(true);
+  }
+
+  function closeDialog() {
+    setShowDialog(false);
+  }
+
+  function resetGame() {
+    setShowDialog(false);
+  }
+
+  let close_button = "";
+  if (typeof onClose != 'undefined') {
+    close_button = (<CloseButton onClick={onClose}/>);
+  }
+
   return (
     <Navbar expand="lg" className="bg-body-tertiary">
       <Container>
         <Nav>
+          <NavDropdown id="games" title="Game">
+            <NavDropdown.Item onClick={closeGame}>Close Game</NavDropdown.Item>
+            <NavDropdown.Item onClick={showResetGame}>Reset Game</NavDropdown.Item>
+          </NavDropdown>
           <Nav.Link onClick={setCharactersView}>
             Characters
           </Nav.Link>
@@ -770,7 +802,19 @@ function Navigation({ time, world, onClose, setView}) {
         </Nav>
         <Navbar.Brand>Story Quest: { world.name }</Navbar.Brand>
         <Navbar.Text>{getTimeString(time)}</Navbar.Text>
-        <CloseButton onClick={onClose}/>
+        { close_button }
+        <Modal show={showDialog} onHide={closeDialog}>
+          <Modal.Header closeButton>
+            <Modal.Title>Reset Game?</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>Reset game and discard all progress?</p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant='primary' onClick={closeDialog}>Close</Button>
+            <Button variant="secondary" onClick={resetGame}>Reset</Button>
+          </Modal.Footer>
+        </Modal>
       </Container>
     </Navbar>);
 }
@@ -1186,6 +1230,7 @@ function World({ worldId, setWorldId }) {
   // Show a specific site
   if (siteId) {
     return (<Site world={world}
+                  setWorldId={setWorldId}
                   siteId={siteId}
                   playerData={playerData}
                   setPlayerData={setPlayerData}
@@ -1208,7 +1253,7 @@ function World({ worldId, setWorldId }) {
       <Row>
         <Navigation time={currentTime}
                     world={world}
-                    onClose={clickClose}
+                    setWorldId={setWorldId}
                     setView={ setView }/>
       </Row>
       <Row >
