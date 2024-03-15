@@ -9,14 +9,19 @@ Three things cause the world state to change:
   User invokes an action with a character.
 - GPT invoking character functions -
   TODO: update execfunc to have one saveWorldState for all funcions
-        on change
+        on change - is this done?
 
   Design a facility that:
   - runs time going foward each call - DONE
   - accumulates events and status updates, adds to next chat or acton call - DONE
 
 * List
-- Change UI to have an explicit Open World instead of closing existing
+- Prompt user for name in game, use that
+- start and end conditions
+- events are shared with all characters at the same location - interesting
+- drop items on sleep
+- First load of inventory after picking up items seems broken - empty list
+- Change UI to have an explicit Open World instead of closing existing - DONE
 - Add new game selection
 - if we add list games, refactor instances API to have an ID
 - add secret character information that other characters do not know
@@ -26,7 +31,6 @@ Three things cause the world state to change:
 - Add per user stable accounts - DONE
 - List of tools calls for chat_start - DONE
 - tool calls stream for design on view change - DONE
-- drop items on sleep
 - Add ending of character status events to char thread. - DONE
 - Make drop item happen in a character context - DONE
 - Perhaps have a world list instance that has info about the game play and unsets the world_id session cookie
