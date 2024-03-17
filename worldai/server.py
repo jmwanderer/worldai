@@ -118,7 +118,7 @@ def add_user(username: str):
     Create a user entry and print the authkey
     """
     key = users.add_user(get_db(), username)
-    click.echo("Added user %s. Auth key = [%s]" % (username, key))
+    click.echo("Added user %s. Auth key = %s" % (username, key))
 
 
 @bp.cli.command("chat")

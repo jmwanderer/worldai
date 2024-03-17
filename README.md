@@ -41,16 +41,30 @@ npm install
 # Run Development / Debug Mode
 ## Server
 ```
-export OPENAI_API_KEY='secret key'
+export OPENAI_API_KEY="secret key"
 flask --app worldai.server run --debug
 ```
 
-TODO: add user command
+Add a user entry for access:
+```
+flask --app worldai.server add-user jim
+```
+
+Output:
+```
+Added user jim. Auth key = f3625fcdab32159bd0874364
+```
+
+
 
 ## Client
+
+Set an environment variable for the client's auth key and run the client in 
+debug mode:
 ```
+export VITE_AUTH_KEY="auth key value"
 cd worldai/ui
-npm start
+npm run dev
 ```
 Connect to: http://localhost:5173
 
@@ -62,6 +76,7 @@ flask --app worldai.server run --debug
 
 Connect to http://localhost:5000
 
+Use the auth key value to login to the client when prompted for an auth key.
 
 ## Test
 ```
@@ -78,12 +93,16 @@ cp worldai-*.whl <dest>
 
 ## Install and Configure for Production
 
+```
+pip install worlai-....whl
+```
+
 Setup config.py in instance directory:
 
 - SECRET_KEY='generate a secret string'
 - OPENAI_API_KEY='the key'
 
-TODO: add user command
+## Run a production server
 
-TODO: run with waitress
+TODO: run with waitress or gunicorn
 
