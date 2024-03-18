@@ -1,6 +1,6 @@
 import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
-import { getWorldList, getWorld, getWorldStatus, resetWorldState } from './api.js';
+import { getWorldList, getWorld, getWorldStatus, resetWorldState, getSiteList } from './api.js';
 import { getSiteInstancesList, getItemInstancesList, getCharacterInstancesList } from './api.js';
 import { getSiteInstance, getItemInstance, getCharacter, getCharacterData } from './api.js';
 
@@ -762,6 +762,14 @@ function Navigation({ time, world, setWorldId, setSiteId, onClose, setView}) {
   function setCharactersView() {
     setView("characters");        
   }
+
+  function setSitesView() {
+    setView("sites");        
+  }
+ 
+  function setInventoryView() {
+    setView("inventory");        
+  }
   
   function setItemsView() {
     setView("items");        
@@ -798,10 +806,12 @@ function Navigation({ time, world, setWorldId, setSiteId, onClose, setView}) {
             <NavDropdown.Item onClick={closeGame}>Close Game</NavDropdown.Item>
             <NavDropdown.Item onClick={showResetGame}>Reset Game</NavDropdown.Item>
           </NavDropdown>
-          <Nav.Link onClick={setCharactersView}>
-            Characters
-          </Nav.Link>
-          <Nav.Link onClick={setItemsView}>
+          <NavDropdown id="world" title="World">
+            <NavDropdown.Item onClick={setCharactersView}>Characters</NavDropdown.Item>
+            <NavDropdown.Item onClick={setItemsView}>Items</NavDropdown.Item>
+            <NavDropdown.Item onClick={setSitesView}>Sites</NavDropdown.Item>
+          </NavDropdown>
+          <Nav.Link onClick={setInventoryView}>
             Inventory
           </Nav.Link>                        
         </Nav>
@@ -885,12 +895,7 @@ function CharacterList({ worldId }) {
   );
 }
 
-function ItemListEntry({ item, selectItem, dropItem}) {
-
-  let in_inventory = "";
-  if (item.have_item || true) {
-    in_inventory = <i className="bi bi-check" style={{ fontSize: "4rem"}}/>
-  }
+function InventoryListEntry({ item, selectItem, dropItem}) {
 
   function selectClick() {
     if (selectItem) {
@@ -943,6 +948,73 @@ function ItemListEntry({ item, selectItem, dropItem}) {
 }
 
 
+function ItemListEntry({ item, selectItem, dropItem}) {
+
+  let in_inventory = "";
+  if (item.have_item) {
+    in_inventory = <i className="bi bi-check" style={{ fontSize: "4rem"}}/>
+  }
+
+  return (
+    <div className="card mb-3 container">            
+      <div className="row">
+        <div className="col-2">
+          <img src={item.image.url} className="card-img"
+               alt="item"/>
+        </div>
+        <div className="col-8">
+          <div className="card-body">
+            <h5 className="card-title">
+              { item.name }
+            </h5>
+            <p className="card-text" style={{ textAlign: "left" }}>
+              { item.description }
+              <br/>
+              Ability: { item.ability }
+            </p>
+          </div>
+        </div>
+       </div>
+    </div>
+  );
+}
+
+function ItemsList({ worldId }) {
+
+  const [itemList, setItemList] = useState([]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function getItemData() {
+      try {
+        const values = await getItemInstancesList(worldId);
+        if (!ignore) {
+          setItemList(values);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    }
+    
+    getItemData();
+    return () => {
+      ignore = true;
+    }
+  }, [worldId]);
+
+  let entries = itemList.map(entry => <ItemListEntry 
+	    		      key={entry.id}
+                              item={entry}/>);
+  
+  return (
+    <Stack className="mt-3">
+      { entries }
+    </Stack>
+  );
+}
+
+
 function Inventory({ worldId, selectItem, dropItem }) {
 
   const [itemList, setItemList] = useState([]);
@@ -969,7 +1041,8 @@ function Inventory({ worldId, selectItem, dropItem }) {
 
   let entries = itemList.filter(
     entry => entry.have_item).map(
-      entry => <ItemListEntry key={entry.id}
+      entry => <InventoryListEntry 
+	    		      key={entry.id}
                               item={entry}
                               selectItem={selectItem}
                               dropItem={dropItem}/>);
@@ -985,6 +1058,66 @@ function Inventory({ worldId, selectItem, dropItem }) {
     </Stack>
   );
 }
+
+function SitesListEntry({ site }) {
+
+  return (
+    <div className="card mb-3 container">            
+      <div className="row">
+        <div className="col-2">
+          <img src={site.image.url} className="card-img"
+               alt="site"/>
+        </div>
+        <div className="col-8">
+          <div className="card-body">
+            <h5 className="card-title">
+              { site.name }
+            </h5>
+            <p className="card-text" style={{ textAlign: "left" }}>
+              { site.description }
+            </p>
+          </div>
+        </div>
+       </div>
+    </div>
+  );
+}
+
+function SitesList({ worldId }) {
+
+  const [siteList, setSiteList] = useState([]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function getSiteData() {
+      try {
+        const values = await getSiteList(worldId);
+        if (!ignore) {
+          setSiteList(values);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    }
+    
+    getSiteData();
+    return () => {
+      ignore = true;
+    }
+  }, [worldId]);
+
+  let entries = siteList.map(entry => <SitesListEntry 
+	    		      key={entry.id}
+                              site={entry}/>);
+  
+  return (
+    <Stack className="mt-3">
+      { entries }
+    </Stack>
+  );
+}
+
 
 function DetailsView({view, world, selectItem, dropItem, onClose}) {
 
@@ -1009,6 +1142,20 @@ function DetailsView({view, world, selectItem, dropItem, onClose}) {
         <CharacterList worldId={world.id}/>
       </div>
     );        
+  } else if (view === "items") {
+    return (
+      <div>
+	    <CloseBar title="Items" onClose={onClose}/>
+	    <ItemsList worldId={world.id}/>
+      </div>
+    );
+  } else if (view === "sites") {
+     return (
+      <div>
+	    <CloseBar title="Sites" onClose={onClose}/>
+	    <SitesList worldId={world.id}/>
+      </div>
+    );
   } else {
     return (
       <div>
