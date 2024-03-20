@@ -23,18 +23,10 @@ import typing
 import pydantic
 
 from . import elements
+from .elements import CharStatus
 
 PLAYER_ID = elements.ElemID("id0")
 
-
-class CharStatus(str, enum.Enum):
-    # Possible states of characters
-    SLEEPING = "sleeping"
-    PARALIZED = "paralized"
-    POISONED = "poisoned"
-    BRAINWASHED = "brainwashed"
-    CAPTURED = "captured"
-    INVISIBLE = "invisible"
 
 class CharStatusRecord(pydantic.BaseModel):
     """

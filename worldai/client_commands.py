@@ -243,12 +243,12 @@ class ClientActions:
                 world_status.response_message = f"{item.getName()} is not present"
                 return world_status
 
-        sleeping = world_state.CharStatus.SLEEPING
-        poisoned = world_state.CharStatus.POISONED
-        paralized = world_state.CharStatus.PARALIZED
-        brainwashed = world_state.CharStatus.BRAINWASHED
-        captured = world_state.CharStatus.CAPTURED
-        invisible = world_state.CharStatus.INVISIBLE
+        sleeping = elements.CharStatus.SLEEPING
+        poisoned = elements.CharStatus.POISONED
+        paralized = elements.CharStatus.PARALIZED
+        brainwashed = elements.CharStatus.BRAINWASHED
+        captured = elements.CharStatus.CAPTURED
+        invisible = elements.CharStatus.INVISIBLE
         logging.info("use item - %s", item.getAbility().effect)
 
         # Apply an effect

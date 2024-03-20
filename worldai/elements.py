@@ -94,6 +94,37 @@ class BaseProps(pydantic.BaseModel):
     details: str = ""
 
 
+class CharStatus(str, enum.Enum):
+    # Possible states of characters
+    SLEEPING = "sleeping"
+    PARALIZED = "paralized"
+    POISONED = "poisoned"
+    BRAINWASHED = "brainwashed"
+    CAPTURED = "captured"
+    INVISIBLE = "invisible"
+
+
+class StartCondProps(pydantic.BaseModel):
+    pass
+    # WHO
+    # WHAT
+    # WHERE
+    # character at location
+    # character has item
+    # item at location
+
+class EndCondProps(pydantic.BaseModel):
+    pass
+    # More complex...
+    # character at location
+    # character uses item at location
+    # character uses item on character
+    # character uses ite on character at location
+    # character has item
+    # character has item at locaton
+    # character is condtion
+
+
 class WorldProps(BaseProps):
     plans: typing.Optional[str] = ""
 

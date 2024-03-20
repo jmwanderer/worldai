@@ -16,6 +16,7 @@ Three things cause the world state to change:
   - accumulates events and status updates, adds to next chat or acton call - DONE
 
 * List
+- Make tests pass without using the external network
 - Prompt user for name in game, use that
 - start and end conditions
 - events are shared with all characters at the same location - interesting

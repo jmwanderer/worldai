@@ -3,7 +3,7 @@
 import random
 import unittest
 
-from worldai import world_state
+from worldai import world_state, elements
 
 
 class BasicTestCase(unittest.TestCase):
@@ -63,8 +63,8 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(self.wstate.getCharacterCredits(cid), 2000)
 
         # Status
-        sleeping = world_state.CharStatus.SLEEPING
-        poisoned = world_state.CharStatus.POISONED
+        sleeping = elements.CharStatus.SLEEPING
+        poisoned = elements.CharStatus.POISONED
         self.assertFalse(self.wstate.hasPlayerStatus(sleeping))
         self.wstate.addPlayerStatus(sleeping)
         self.wstate.addPlayerStatus(poisoned)

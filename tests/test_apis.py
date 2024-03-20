@@ -368,15 +368,7 @@ def testLoadWorldStatus(client, app):
     world_id = response.json[0]["id"]
 
     response = client.get(
-        f"/api/worlds/{world_id}/status",
-        headers={
-            "Authorization": bearer_token(app),
-        },
-    )
-    assert response.status_code == 200
-
-    response = client.get(
-        f"/api/worlds/{world_id}/status",
+        f"/api/worlds/{world_id}/instance",
         headers={
             "Authorization": bearer_token(app),
         },

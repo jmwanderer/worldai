@@ -99,9 +99,9 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
     @staticmethod
     def char_status_descr(wstate: world_state.WorldState, cid: elements.ElemID) -> str:
         status = []
-        sleeping = world_state.CharStatus.SLEEPING
-        poisoned = world_state.CharStatus.POISONED
-        paralized = world_state.CharStatus.PARALIZED
+        sleeping = elements.CharStatus.SLEEPING
+        poisoned = elements.CharStatus.POISONED
+        paralized = elements.CharStatus.PARALIZED
 
         if wstate.hasCharacterStatus(cid, sleeping):
             status.append("sleeping")
@@ -174,9 +174,9 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         user_state = []
 
         # Invisibility
-        invisible = world_state.CharStatus.INVISIBLE
-        poisoned = world_state.CharStatus.POISONED
-        paralized = world_state.CharStatus.PARALIZED
+        invisible = elements.CharStatus.INVISIBLE
+        poisoned = elements.CharStatus.POISONED
+        paralized = elements.CharStatus.PARALIZED
 
         if wstate.hasPlayerStatus(invisible):
             user_state.append("Traveler is here, but invisible. You can not see them")
@@ -570,12 +570,12 @@ class CharacterFunctions(chat_functions.BaseChatFunctions):
         return message
 
     def poisonPlayer(self, wstate):
-        wstate.addPlayerStatus(world_state.CharStatus.POISONED)
+        wstate.addPlayerStatus(elements.CharStatus.POISONED)
         message = "Travler is poisoned"
         return message
 
     def paralizePlayer(self, wstate):
-        wstate.addPlayerStatus(world_state.CharStatus.PARALIZED)
+        wstate.addPlayerStatus(elements.CharStatus.PARALIZED)
         message = "Travler is paralized"
         return message
 

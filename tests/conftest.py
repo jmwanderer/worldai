@@ -18,6 +18,9 @@ Test fixtures for WorldAI
 - CLI client
 """
 
+class mock_encoder:
+    def encode(self, value: str):
+        return [ 22, 44, 55 ];
 
 @pytest.fixture()
 def app():
@@ -63,7 +66,8 @@ class ChatMockUtil:
     def setUp(self):
         # Stub out the user input, completion request, and exec fuc routines
         self.max_token_count = 0
-        self.encoder = tiktoken.encoding_for_model(worldai.chat.GPT_MODEL)
+        # self.encoder = tiktoken.encoding_for_model(worldai.chat.GPT_MODEL)
+        self.encoder = mock_encoder()
         os.environ["OPENAI_API_KEY"] = "dummy key"
 
         def chat_completion_request(messages, tools=None, tool_choice=None):

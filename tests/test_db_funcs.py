@@ -62,8 +62,8 @@ class BasicTestCase(unittest.TestCase):
         state = world_state.loadWorldState(self.db, wstate_id)
         self.assertIsNotNone(state)
 
-        sleeping = world_state.CharStatus.SLEEPING
-        poisoned = world_state.CharStatus.POISONED
+        sleeping = elements.CharStatus.SLEEPING
+        poisoned = elements.CharStatus.POISONED
         state.addPlayerStatus(sleeping)
         state.addPlayerStatus(poisoned)
         state.removePlayerStatus(poisoned)
