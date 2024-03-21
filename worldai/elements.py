@@ -96,6 +96,7 @@ class BaseProps(pydantic.BaseModel):
 
 class CharStatus(str, enum.Enum):
     # Possible states of characters
+    NONE = "none"
     SLEEPING = "sleeping"
     PARALIZED = "paralized"
     POISONED = "poisoned"
@@ -103,30 +104,63 @@ class CharStatus(str, enum.Enum):
     CAPTURED = "captured"
     INVISIBLE = "invisible"
 
+class ConditionVerb(str, enum.Enum):
+    NONE = "none"
+    AT = "at"
+    HAS = "has"
+    IS = "is"
 
-class StartCondProps(pydantic.BaseModel):
-    pass
-    # WHO
-    # WHAT
-    # WHERE
-    # character at location
-    # character has item
-    # item at location
+class ConditionProp(pydantic.BaseModel):
+    """
+    Describes a start or end condition.
+    WHO - WHAT, WHO - WHERE, WHAT - WHERE
+    Start:
+        - character at location
+        - character has item
+        - character is CharStatus
+        - item at location
+    End:
+        - character uses item
+        - character uses item at location
+        - character has item at location
+        - character uses item on character
+        - character uses ite on character at location
+    May extend to include CharStatus
+    """
+    # condition defines which other fields are valid
+    # meaning given by combination of IDs set and condition verb
+    verb: ConditionVerb = ConditionVerb.NONE
+    char_id: ElemID = ELEM_ID_NONE
+    char_status: CharStatus = CharStatus.NONE
+    item_id: ElemID = ELEM_ID_NONE
+    site_id: ElemID = ELEM_ID_NONE
+    target_char_id: ElemID = ELEM_ID_NONE
 
-class EndCondProps(pydantic.BaseModel):
-    pass
-    # More complex...
-    # character at location
-    # character uses item at location
-    # character uses item on character
-    # character uses ite on character at location
-    # character has item
-    # character has item at locaton
-    # character is condtion
+class Condition:
+    """
+    Utility functions for working with conditions.
+    """
+    @staticmethod
+    def characterAt(char_id: ElemID, site_id: ElemID) -> ConditionProp:
+        return ConditionProp(char_id=char_id, verb=ConditionVerb.AT, site_id=site_id)
+
+    @staticmethod
+    def characterHas(char_id: ElemID, item_id: ElemID) -> ConditionProp:
+        return ConditionProp(char_id=char_id, verb=ConditionVerb.HAS, item_id=item_id)
+
+    @staticmethod
+    def itemAt(item_id: ElemID, site_id: ElemID) -> ConditionProp:
+        return ConditionProp(item_id=item_id, verb=ConditionVerb.AT, site_id=site_id)
+
+    @ staticmethod
+    def characterIs(char_id: ElemID, char_status: CharStatus) -> ConditionProp:
+        return ConditionProp(char_id=char_id, verb=ConditionVerb.IS, char_status=char_status)
 
 
 class WorldProps(BaseProps):
     plans: typing.Optional[str] = ""
+    start_conditions: list[ConditionProp] = []
+    end_conditions: list[ConditionProp] = []
 
 
 class DocSection(pydantic.BaseModel):
@@ -432,6 +466,12 @@ class World(Element):
         if properties.get("notes") is not None:
             del properties["notes"]
         return properties
+    
+    def startConditions(self) -> list[ConditionProp]:
+        return self.prop_model.start_conditions
+
+    def endConditions(self) -> list[ConditionProp]:
+        return self.prop_model.end_conditions
 
     def getPlans(self) -> str:
         if self.prop_model.plans is None:

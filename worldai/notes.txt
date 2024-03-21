@@ -16,9 +16,11 @@ Three things cause the world state to change:
   - accumulates events and status updates, adds to next chat or acton call - DONE
 
 * List
-- Make tests pass without using the external network
+- Make tests pass without network connections (TikToken issue)
+- Add an info menu: world, characters, items, sites.
+- Open initial view in a specific location
+- start and end conditions: type: name, verb: is, at, -- work on this
 - Prompt user for name in game, use that
-- start and end conditions
 - events are shared with all characters at the same location - interesting
 - drop items on sleep
 - First load of inventory after picking up items seems broken - empty list

@@ -338,6 +338,47 @@ class BasicTestCase(unittest.TestCase):
         self.assertIsNotNone(item)
         self.assertEqual(item.getDescription(), "a new description")
 
+    def testConditions(self):
+        # Create world
+        world = elements.World()
+        world.setName("world")
+        world = elements.createWorld(self.db, world)
+
+        # Character
+        char = elements.Character()
+        char.setName("character")
+        char = elements.createCharacter(self.db, char)
+
+        # Site
+        site = elements.Site()
+        site.setName("site")
+        site = elements.createSite(self.db, site)
+
+        # Item
+        item = elements.Item()
+        item.setName("item")
+        item = elements.createItem(self.db, item)
+
+        # Character at property
+        prop = elements.Condition.characterAt(char.getID(), site.getID())
+        world.startConditions().append(prop)
+
+        # Item at property
+        prop = elements.Condition.itemAt(item.getID(), site.getID())
+        world.startConditions().append(prop)
+
+        # Character has item property
+        prop = elements.Condition.characterHas(char.getID(), item.getID())
+        world.startConditions().append(prop)
+
+        # Character is sleeping
+        prop = elements.Condition.characterIs(char.getID(), elements.CharStatus.SLEEPING)
+        world.startConditions().append(prop)
+
+        elements.updateWorld(self.db, world)
+        world = elements.loadWorld(self.db, world.getID())
+        self.assertEqual(len(world.startConditions()), 4)
+
 
 if __name__ == "__main__":
     unittest.main()
