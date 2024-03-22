@@ -1407,6 +1407,7 @@ function World({ worldId, setWorldId }) {
         <Navigation time={currentTime}
                     world={world}
                     setWorldId={setWorldId}
+                    setSiteId={setSiteId}
                     setView={ setView }/>
       </Row>
       <Row >

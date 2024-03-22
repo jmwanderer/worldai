@@ -473,12 +473,17 @@ def getWorldStateID(db, user_id: str, world_id: elements.WorldID) -> WorldStateI
 
 
 def checkWorldState(db, wstate: WorldState) -> bool:
-    # Ensure all characters and items are assigned.
-    # Initializes everything on first load. Will also
-    # set locations for newly added items and characters.
+    """
+    Ensure all characters and items are assigned.
+    Initializes everything on first load. Will also
+    set locations for newly added items and characters.
+
+    TODO: make this more efficient and lightweight
+    """
 
     changed = False
 
+    world = elements.loadWorld(db, wstate.world_id)
     characters = elements.listCharacters(db, wstate.world_id)
     sites = elements.listSites(db, wstate.world_id)
     items = elements.listItems(db, wstate.world_id)
@@ -498,33 +503,38 @@ def checkWorldState(db, wstate: WorldState) -> bool:
         # Assign characters to sites
         for character in characters:
             if wstate.getCharacterLocation(character.getID()) == "":
-                site_entry = random.choice(avail_sites)
-                wstate.setCharacterLocation(character.getID(), site_entry.getID())
+                site_id = elements.Condition.getCharStartSite(world.startConditions(), character.getID())
+                if site_id == elements.ELEM_ID_NONE:
+                    site_entry = random.choice(avail_sites)
+                    site_id = site_entry.getID()
+                wstate.setCharacterLocation(character.getID(), site_id)
                 wstate.setCharacterHealth(character.getID(), 
                                           wstate.getCharacterHealth(character.getID()) - 1)
                 changed = True
                 logging.info(
-                    "assign %s to location %s", character.getName(), site_entry.getName()
+                    "assign %s to location %s", character.getName(), site_id
                 )
 
         places = []
         places.extend(characters)
         places.extend(avail_sites)
 
-        if len(characters) > 0 and len(sites) > 0:
+        if len(places) > 0:
             # Set item location - character or site
             for item_entry in items:
                 if wstate.model.item_state.get(item_entry.getID()) is None:
                     changed = True
                     item = elements.loadItem(db, item_entry.getID())
                     if item is not None:
-                        # Place non-mobile items at sites
-                        if item.getIsMobile():
-                            place = random.choice(places)
-                        else:
-                            place = random.choice(avail_sites)
-                        wstate.setItemLocation(item.getID(), place.getID())
-                        logging.info("place item %s: %s", item.getName(), place.getName())
+                        place_id = elements.Condition.getItemStartPlace(world.startConditions(), item.getID())
+                        if place_id is elements.ELEM_ID_NONE:
+                            # Place non-mobile items at sites
+                            if item.getIsMobile():
+                                place_id = random.choice(places).getID()
+                            else:
+                                place_id = random.choice(avail_sites).getID()
+                        wstate.setItemLocation(item.getID(), place_id)
+                        logging.info("place item %s: %s", item.getName(), place_id)
 
     return changed
 

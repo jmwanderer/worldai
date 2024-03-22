@@ -230,6 +230,23 @@ class Condition:
                 return 1
         return 0
 
+    @staticmethod
+    def getCharStartSite(properties: list[ConditionProp], char_id: ElemID) -> ElemID:
+        for entry in properties:
+            if entry.char_id == char_id and entry.verb == ConditionVerb.AT:
+                return entry.site_id
+        return ELEM_ID_NONE
+
+
+    @staticmethod
+    def getItemStartPlace(properties: list[ConditionProp], item_id: ElemID) -> ElemID:
+        for entry in properties:
+            if entry.item_id == item_id:
+                if entry.verb == ConditionVerb.AT:
+                    return entry.site_id
+                else:
+                    return entry.char_id
+        return ELEM_ID_NONE
 
 
 
