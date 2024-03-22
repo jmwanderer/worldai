@@ -420,6 +420,16 @@ class DesignTestCase(unittest.TestCase):
                                                      "item": "USB Stick"})
         self.assertCallOK(result)
 
+        # Add duplicate
+        result = self.funcCall("SetStartCondition", {"verb": "has", 
+                                                     "character": "Bob",
+                                                     "item": "USB Stick"})
+        self.assertCallOK(result)
+
+        result = self.funcCall("GetStartConditions", {})
+        print(result)
+        self.assertEqual(len(result), 2)
+
     def assertCallOK(self, result):
         self.assertFalse("error" in result)
 

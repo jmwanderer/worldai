@@ -17,6 +17,7 @@ Three things cause the world state to change:
 
 * List
 - Add abilities to characters
+- Address test failure when build_ui has not been run
 - Make all characters in a location aware of what happens at that location
 - consider site locking as a start condition?
 - Make tests pass without network connections (TikToken issue)

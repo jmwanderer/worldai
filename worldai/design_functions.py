@@ -44,6 +44,7 @@ states = {
         "ShowSite",
         "ChangeState",
         "EditWorld",
+        "GetStartConditions",
     ],
     STATE_WORLD_EDIT: [
         "UpdateWorld",
@@ -54,7 +55,8 @@ states = {
         "ChangeState",
         "RemoveWorldImage",
         "RecoverWorldImages",
-        "SetStartCondition"
+        "SetStartCondition",
+        "GetStartConditions",
     ],
     STATE_DOCUMENTS: [
         "ListDocuments",
@@ -122,7 +124,7 @@ Save high level ideas on characters, items, and sites in the world plan.
 We can be in one of the following states:
 - State_Worlds: We can list and show existing worlds and create new worlds
 - State_World: We view a world description, details, and Plans.
-- State_World_Edit: We change a world description, details, and Plans.
+- State_World_Edit: We change a world description, details, plans, and starting conditions.
 - State_Documents: We view and edit background documents for the world.
 - State_Characters: We can view characters and create new characters and change the description and details of a character.
 - State_Items: We can view items and create new items and change the description and details of an item.
@@ -532,6 +534,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         elif function_name == "SetStartCondition":
             result = self.FuncSetStartCondition(db, arguments)
 
+        elif function_name == "GetStartConditions":
+            result = self.FuncGetStartConditions(db)
+
         elif function_name == "ListDocuments":
             result = self.FuncListDocuments(db)
 
@@ -712,6 +717,14 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         status["name"] = world.getName()
         return status
 
+    def FuncGetStartConditions(self, db):
+        world_id = self.getCurrentWorldID()
+        world = elements.loadWorld(db, world_id)
+        result = []
+        for prop in world.startConditions():
+            result.append(elements.Condition.getStrVal(db, prop))
+        return result
+ 
     def FuncSetStartCondition(self, db, arguments):
         world_id = self.getCurrentWorldID()
         world = elements.loadWorld(db, world_id)
@@ -751,17 +764,18 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
 
         prop = None
         if verb == elements.ConditionVerb.AT:
-            if char_id is not None and site_id is not None:
+            if char_id != elements.ELEM_ID_NONE and site_id != elements.ELEM_ID_NONE:
                 prop = elements.Condition.characterAt(char_id, site_id)
-            elif item_id is not None and site_id is not None:
+            elif item_id != elements.ELEM_ID_NONE and site_id != elements.ELEM_ID_NONE:
                 prop = elements.Condition.itemAt(item_id, site_id)
         elif verb == elements.ConditionVerb.HAS:
-            if char_id is not None and item_id is not None:
+            if char_id != elements.ELEM_ID_NONE and item_id != elements.ELEM_ID_NONE:
                 prop = elements.Condition.characterHas(char_id, item_id)    
         
         if prop is None:
             return self.funcError("Did not understand the condition")
 
+        elements.Condition.removeOverlap(world.startConditions(), prop)
         world.startConditions().append(prop)
         elements.updateWorld(db, world)
         return self.funcStatus("Condition added")
@@ -2014,6 +2028,12 @@ all_functions = [
                     ],
                 }
             }
+        }
+    },
+    {
+        "name": "GetStartConditions",
+        "description": "Get the list of configured starting conditions.",
+        "parameters": {
         }
     }
 ]

@@ -361,18 +361,22 @@ class BasicTestCase(unittest.TestCase):
 
         # Character at property
         prop = elements.Condition.characterAt(char.getID(), site.getID())
+        self.assertGreater(len(elements.Condition.getStrVal(self.db, prop)), 0)
         world.startConditions().append(prop)
 
         # Item at property
         prop = elements.Condition.itemAt(item.getID(), site.getID())
+        self.assertGreater(len(elements.Condition.getStrVal(self.db, prop)), 0)
         world.startConditions().append(prop)
 
         # Character has item property
         prop = elements.Condition.characterHas(char.getID(), item.getID())
+        self.assertGreater(len(elements.Condition.getStrVal(self.db, prop)), 0)
         world.startConditions().append(prop)
 
         # Character is sleeping
         prop = elements.Condition.characterIs(char.getID(), elements.CharStatus.SLEEPING)
+        self.assertGreater(len(elements.Condition.getStrVal(self.db, prop)), 0)
         world.startConditions().append(prop)
 
         elements.updateWorld(self.db, world)

@@ -155,6 +155,68 @@ class Condition:
     @ staticmethod
     def characterIs(char_id: ElemID, char_status: CharStatus) -> ConditionProp:
         return ConditionProp(char_id=char_id, verb=ConditionVerb.IS, char_status=char_status)
+    
+    @staticmethod
+    def getStrVal(db, prop: ConditionProp) -> str:
+        character = None
+        item = None
+        site = None
+        if prop.char_id != ELEM_ID_NONE:
+            character = loadCharacter(db, prop.char_id)
+        if prop.item_id != ELEM_ID_NONE:
+            item = loadItem(db, prop.item_id)
+        if prop.site_id != ELEM_ID_NONE:
+            site = loadSite(db, prop.site_id)
+
+        if prop.verb == ConditionVerb.AT:
+            if character is not None and site is not None:
+                return f"{character.getName()} at {site.getName()}"
+            if item is not None and site is not None:
+                return f"{item.getName()} at {site.getName()}"
+        if prop.verb == ConditionVerb.HAS:
+            if character is not None and item is not None:
+                return f"{character.getName()} has {item.getName()}"
+        if prop.verb == ConditionVerb.IS:
+            if character is not None and prop.char_status != CharStatus.NONE:
+                return f"{character.getName()} is {prop.char_status}"
+        return ""
+
+    @staticmethod
+    def overlaps(prop1: ConditionProp, prop2: ConditionProp) -> bool:
+        """
+        Checks if the two properties overlap and could conflict or be equal
+        E.G. Check if the two properties specify a location for the same character or item
+        """
+        # Check item at a location and character has item
+        if prop1.item_id != ELEM_ID_NONE and prop1.item_id == prop2.item_id:
+            if ((prop1.verb == ConditionVerb.AT or prop1.verb == ConditionVerb.HAS) and
+                (prop2.verb == ConditionVerb.AT or prop2.verb == ConditionVerb.HAS)):
+                return True
+
+        if prop1.verb != prop2.verb:
+            return False
+
+        if prop1.verb == ConditionVerb.AT:
+            # Check character at a location
+            if prop1.char_id != ELEM_ID_NONE and prop1.char_id == prop2.char_id:
+                return True
+
+        elif prop1.verb == ConditionVerb.IS:
+            return prop1.char_id == prop2.char_id and prop1.char_status == prop2.char_status
+
+        return False
+
+    @staticmethod
+    def removeOverlap(properties: list[ConditionProp], prop: ConditionProp):
+        """
+        Remove an overlapping property from the list if it exists
+        """
+        for entry in properties:
+            if Condition.overlaps(entry, prop):
+                properties.remove(entry)
+                return
+
+
 
 
 class WorldProps(BaseProps):
