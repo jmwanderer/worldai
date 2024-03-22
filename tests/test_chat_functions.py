@@ -396,6 +396,33 @@ class DesignTestCase(unittest.TestCase):
         self.callFunction("ChangeState", '{ "state": "State_World" }')
         self.assertEqual(self.chatFunctions.current_state, design_functions.STATE_WORLD)
 
+    def testConditions(self):
+        self.funcCall("CreateWorld", {"name": "the_world"})
+        self.funcCall("ChangeState", {"state": "State_Characters"})
+        self.funcCall("CreateCharacter", {"name": "Bob"})
+        self.funcCall("ChangeState", {"state": "State_Sites"})
+        self.funcCall("CreateSite", {"name": "The City"})
+        self.funcCall("ChangeState", {"state": "State_Items"})
+        self.funcCall("CreateItem", { "name": "USB Stick"})
+        self.callFunction("ChangeState", '{ "state": "State_World_Edit" }')
+        result = self.funcCall("SetStartCondition", {"verb": "at", 
+                                                     "character": "Bob",
+                                                     "site": "The City"})
+        self.assertCallOK(result)
+ 
+        result = self.funcCall("SetStartCondition", {"verb": "at", 
+                                                     "item": "USB Stick",
+                                                     "site": "The City"})
+        self.assertCallOK(result)
+
+        result = self.funcCall("SetStartCondition", {"verb": "has", 
+                                                     "character": "Bob",
+                                                     "item": "USB Stick"})
+        self.assertCallOK(result)
+
+    def assertCallOK(self, result):
+        self.assertFalse("error" in result)
+
     def assertCallAvailable(self, name):
         # Assert we are allowed to call the function in the current state
         functions = self.chatFunctions.get_available_tools()
@@ -407,6 +434,9 @@ class DesignTestCase(unittest.TestCase):
         functions = self.chatFunctions.get_available_tools()
         names = [x["function"]["name"] for x in functions]
         self.assertNotIn(name, names)
+
+    def funcCall(self, name: str, arguments):
+        return self.chatFunctions.execute_function_call(self.db, name, arguments)
 
     def callFunction(self, name, arguments):
         """

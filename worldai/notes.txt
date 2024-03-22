@@ -16,6 +16,9 @@ Three things cause the world state to change:
   - accumulates events and status updates, adds to next chat or acton call - DONE
 
 * List
+- Add abilities to characters
+- Make all characters in a location aware of what happens at that location
+- consider site locking as a start condition?
 - Make tests pass without network connections (TikToken issue)
 - Add an info menu: world, characters, items, sites.
 - Open initial view in a specific location
