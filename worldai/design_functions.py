@@ -56,6 +56,7 @@ states = {
         "RemoveWorldImage",
         "RecoverWorldImages",
         "SetStartCondition",
+        "ResetStartCondition",
         "GetStartConditions",
     ],
     STATE_DOCUMENTS: [
@@ -534,6 +535,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         elif function_name == "SetStartCondition":
             result = self.FuncSetStartCondition(db, arguments)
 
+        elif function_name == "ResetStartCondition":
+            result = self.FuncResetStartCondition(db, arguments)
+
         elif function_name == "GetStartConditions":
             result = self.FuncGetStartConditions(db)
 
@@ -728,8 +732,6 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
     def FuncSetStartCondition(self, db, arguments):
         world_id = self.getCurrentWorldID()
         world = elements.loadWorld(db, world_id)
-        if world is None:
-            return self.funcError(f"World not found {world_id}")
         verb = arguments.get("verb")
         if verb is None:
             return self.funcError(f"Must have a verb: is, has, at, ...")
@@ -762,16 +764,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             else:
                 return self.funcError(f"Unknown site {site_name}")
 
-        prop = None
-        if verb == elements.ConditionVerb.AT:
-            if char_id != elements.ELEM_ID_NONE and site_id != elements.ELEM_ID_NONE:
-                prop = elements.Condition.characterAt(char_id, site_id)
-            elif item_id != elements.ELEM_ID_NONE and site_id != elements.ELEM_ID_NONE:
-                prop = elements.Condition.itemAt(item_id, site_id)
-        elif verb == elements.ConditionVerb.HAS:
-            if char_id != elements.ELEM_ID_NONE and item_id != elements.ELEM_ID_NONE:
-                prop = elements.Condition.characterHas(char_id, item_id)    
-        
+        prop = elements.Condition.makeProp(verb, char_id, item_id, site_id)
         if prop is None:
             return self.funcError("Did not understand the condition")
 
@@ -780,7 +773,51 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         elements.updateWorld(db, world)
         return self.funcStatus("Condition added")
 
- 
+    def FuncResetStartCondition(self, db, arguments):
+        world_id = self.getCurrentWorldID()
+        world = elements.loadWorld(db, world_id)
+        verb = arguments.get("verb")
+        if verb is None:
+            return self.funcError(f"Must have a verb: is, has, at, ...")
+
+        item_id = elements.ELEM_ID_NONE
+        char_id = elements.ELEM_ID_NONE
+        site_id = elements.ELEM_ID_NONE
+
+        item_name = arguments.get("item")
+        if item_name is not None:
+            item = elements.findItem(db, world_id, item_name)
+            if item is not None:
+                item_id = item.getID()
+            else:
+                return self.funcError(f"Unknown item {item_name}")
+
+        character_name = arguments.get("character")
+        if character_name is not None:
+            character = elements.findCharacter(db, world_id, character_name)
+            if character is not None:
+                char_id = character.getID()
+            else:
+                return self.funcError(f"Unknown character {character_name}")
+
+        site_name = arguments.get("site")
+        if site_name is not None:
+            site = elements.findSite(db, world_id, site_name)
+            if site is not None:
+                site_id = site.getID()
+            else:
+                return self.funcError(f"Unknown site {site_name}")
+
+        prop = elements.Condition.makeProp(verb, char_id, item_id, site_id)
+        if prop is None:
+            return self.funcError("Did not understand the condition")
+
+        count = elements.Condition.removeOverlap(world.startConditions(), prop)
+        if count > 0:
+            elements.updateWorld(db, world)
+            return self.funcStatus("Condition added")
+        return self.funcError("Didn't find a matching condition")
+
 
     def FuncListDocuments(self, db):
         result = []
@@ -2005,6 +2042,34 @@ all_functions = [
     {
         "name": "SetStartCondition",
         "description": "Add a condition of the starting state",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "character": {
+                    "type": "string",
+                    "description": "Name of character"
+                },
+                "site": {
+                    "type": "string",
+                    "description": "Name of site"
+                },
+                "item": {
+                    "type": "string",
+                    "description": "Name of item"
+                },
+                "verb": {
+                    "type": "string",
+                    "enum": [
+                        elements.ConditionVerb.AT,
+                        elements.ConditionVerb.HAS,
+                    ],
+                }
+            }
+        }
+    },
+    {
+        "name": "ResetStartCondition",
+        "description": "Remove a condition of the starting state",
         "parameters": {
             "type": "object",
             "properties": {

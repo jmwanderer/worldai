@@ -155,7 +155,20 @@ class Condition:
     @ staticmethod
     def characterIs(char_id: ElemID, char_status: CharStatus) -> ConditionProp:
         return ConditionProp(char_id=char_id, verb=ConditionVerb.IS, char_status=char_status)
-    
+
+    @staticmethod
+    def makeProp(verb: ConditionVerb, char_id: ElemID, item_id: ElemID, site_id: ElemID) -> ConditionProp|None:
+        prop = None
+        if verb == ConditionVerb.AT:
+            if char_id != ELEM_ID_NONE and site_id != ELEM_ID_NONE:
+                prop = Condition.characterAt(char_id, site_id)
+            elif item_id != ELEM_ID_NONE and site_id != ELEM_ID_NONE:
+                prop = Condition.itemAt(item_id, site_id)
+        elif verb == ConditionVerb.HAS:
+            if char_id != ELEM_ID_NONE and item_id != ELEM_ID_NONE:
+                prop = Condition.characterHas(char_id, item_id)    
+        return prop
+ 
     @staticmethod
     def getStrVal(db, prop: ConditionProp) -> str:
         character = None
@@ -214,7 +227,8 @@ class Condition:
         for entry in properties:
             if Condition.overlaps(entry, prop):
                 properties.remove(entry)
-                return
+                return 1
+        return 0
 
 
 

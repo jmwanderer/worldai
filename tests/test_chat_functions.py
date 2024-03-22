@@ -430,6 +430,17 @@ class DesignTestCase(unittest.TestCase):
         print(result)
         self.assertEqual(len(result), 2)
 
+        result = self.funcCall("ResetStartCondition", {"verb": "has", 
+                                                       "character": "Bob",
+                                                       "item": "USB Stick"})
+        self.assertCallOK(result)
+
+        result = self.funcCall("GetStartConditions", {})
+        print(result)
+        self.assertEqual(len(result), 1)
+
+
+
     def assertCallOK(self, result):
         self.assertFalse("error" in result)
 
