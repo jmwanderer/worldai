@@ -773,6 +773,15 @@ def worlds_api(wid):
 
     images = getElementImageProps(world)
     result = world.getAllProperties()
+
+    # Translate start conditions to a readable form
+    start_conditions: list[str] = []
+    for entry in world.startConditions():
+        value = elements.Condition.getStrVal(get_db(), entry)
+        if value is not None and len(value) > 0:
+            start_conditions.append(value)
+    
+    result["start_conditions"] = start_conditions
     result["images"] = images
 
     return result

@@ -51,8 +51,8 @@ function ElementImages({element}) {
     <Carousel.Item key={entry.url}>
       <div className="d-flex justify-content-center">
         <Image src={entry.url}
-               style={{ maxWidth: "50vmin", maxHeight: "50vmin",
-                        minHeight: "30vmin"}}/>
+               style={{ maxWidth: "40vmin", maxHeight: "40vmin",
+                        minHeight: "25"}}/>
       </div>
     </Carousel.Item>);
   const show = element.images.length > 1;

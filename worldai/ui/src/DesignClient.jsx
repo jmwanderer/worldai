@@ -488,6 +488,12 @@ function World({ tag, setChatView }) {
         </b>
       </li>)
 
+    const start_conditions = world.start_conditions.map(entry =>
+      <li key={entry}>
+        {entry}
+      </li>
+      );
+
     
     return (
       <Stack>
@@ -571,6 +577,18 @@ function World({ tag, setChatView }) {
               <Markdown>
                 { world.plans }          
               </Markdown>
+            </Accordion.Body>
+          </Accordion.Item>
+
+          <Accordion.Item eventKey='6'>
+            <Accordion.Header>
+              Starting Conditions:
+              { start_conditions.length === 0 ? " -- None" : ""}
+            </Accordion.Header>
+            <Accordion.Body>
+              <ul>
+                { start_conditions }
+              </ul>
             </Accordion.Body>
           </Accordion.Item>
         </Accordion>

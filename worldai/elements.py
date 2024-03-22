@@ -451,7 +451,7 @@ class Element:
     def getAllProperties(self) -> dict:
         """
         Return a map of properties including id and name,
-        excluse internals of type and parent id.
+        exclude internals of type and parent id.
         """
         return {
             CoreProps.PROP_ID: self.eid,
