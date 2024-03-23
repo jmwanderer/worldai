@@ -764,7 +764,9 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             else:
                 return self.funcError(f"Unknown site {site_name}")
 
-        props = elements.Condition.makeProps(verb, char_id, item_id, site_id)
+        condition = arguments.get("condition")
+
+        props = elements.Condition.makeProps(verb, char_id, item_id, site_id, condition)
         if len(props) == 0:
             return self.funcError("Did not understand the condition")
 
@@ -2060,11 +2062,23 @@ all_functions = [
                     "type": "string",
                     "description": "Name of item"
                 },
+                "condition": {
+                    "type": "string",
+                    "description": "Condition of character",
+                    "enum": [
+                        "injured",
+                        "paralized",
+                        "sleeping",
+                        "poisoned",
+                        "invisible"
+                    ]
+                },
                 "verb": {
                     "type": "string",
                     "enum": [
                         elements.ConditionVerb.AT,
                         elements.ConditionVerb.HAS,
+                        elements.ConditionVerb.IS,
                     ],
                 }
             }

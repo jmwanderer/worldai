@@ -506,13 +506,22 @@ def checkWorldState(db, wstate: WorldState) -> bool:
         # Assign characters to sites
         for character in characters:
             if wstate.getCharacterLocation(character.getID()) == "":
+                # Character is not yet initialized
                 site_id = elements.Condition.getCharStartSite(world.startConditions(), character.getID())
                 if site_id == elements.ELEM_ID_NONE:
                     site_entry = random.choice(avail_sites)
                     site_id = site_entry.getID()
                 wstate.setCharacterLocation(character.getID(), site_id)
-                wstate.setCharacterHealth(character.getID(), 
-                                          wstate.getCharacterHealth(character.getID()) - 1)
+                if elements.Condition.isCharStatus(world.startConditions(), character.getID(), CharStatus.INJURED):
+                    wstate.setCharacterHealth(character.getID(), 
+                                              wstate.getCharacterHealth(character.getID()) - 5)
+                if elements.Condition.isCharStatus(world.startConditions(), character.getID(), CharStatus.SLEEPING):
+                    wstate.addCharacterStatus(character.getID(), CharStatus.SLEEPING)
+                if elements.Condition.isCharStatus(world.startConditions(), character.getID(), CharStatus.POISONED):
+                    wstate.addCharacterStatus(character.getID(), CharStatus.POISONED)
+                if elements.Condition.isCharStatus(world.startConditions(), character.getID(), CharStatus.PARALIZED):
+                    wstate.addCharacterStatus(character.getID(), CharStatus.PARALIZED)
+                    
                 changed = True
                 logging.info(
                     "assign %s to location %s", character.getName(), site_id

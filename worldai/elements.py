@@ -103,6 +103,7 @@ class CharStatus(str, enum.Enum):
     BRAINWASHED = "brainwashed"
     CAPTURED = "captured"
     INVISIBLE = "invisible"
+    INJURED = "injured"
 
 class ConditionVerb(str, enum.Enum):
     NONE = "none"
@@ -125,7 +126,6 @@ class ConditionProp(pydantic.BaseModel):
         - character has item at location
         - character uses item on character
         - character uses ite on character at location
-    May extend to include CharStatus
     """
     # condition defines which other fields are valid
     # meaning given by combination of IDs set and condition verb
@@ -157,7 +157,7 @@ class Condition:
         return ConditionProp(char_id=char_id, verb=ConditionVerb.IS, char_status=char_status)
 
     @staticmethod
-    def makeProps(verb: ConditionVerb, char_id: ElemID, item_id: ElemID, site_id: ElemID) -> list[ConditionProp]:
+    def makeProps(verb: ConditionVerb, char_id: ElemID, item_id: ElemID, site_id: ElemID, state: str = "") -> list[ConditionProp]:
         props = []
         if verb == ConditionVerb.AT:
             if char_id != ELEM_ID_NONE and site_id != ELEM_ID_NONE:
@@ -167,12 +167,30 @@ class Condition:
                     props.append(Condition.characterHas(char_id, item_id))
             elif item_id != ELEM_ID_NONE and site_id != ELEM_ID_NONE:
                 props.append(Condition.itemAt(item_id, site_id))
+
         elif verb == ConditionVerb.HAS:
             if char_id != ELEM_ID_NONE and item_id != ELEM_ID_NONE:
                 props.append(Condition.characterHas(char_id, item_id))
                 # site id may also be set
                 if site_id != ELEM_ID_NONE:
                     props.append(Condition.characterAt(char_id, site_id))
+
+        elif verb == ConditionVerb.IS:
+            if char_id != ELEM_ID_NONE and len(state) > 0:
+                char_status: CharStatus = CharStatus.NONE
+                if state == "sleeping":
+                    char_status = CharStatus.SLEEPING
+                elif state == "poisoned":
+                    char_status = CharStatus.POISONED
+                elif state == "paralized":
+                    char_status = CharStatus.PARALIZED
+                elif state == "injured":
+                    char_status = CharStatus.INJURED
+                elif state == "invisible":
+                    char_status = CharStatus.INJURED
+                if char_status != CharStatus.NONE:
+                    props.append(Condition.characterIs(char_id, char_status))
+
         return props
  
     @staticmethod
@@ -197,7 +215,7 @@ class Condition:
                 return f"{character.getName()} has {item.getName()}"
         if prop.verb == ConditionVerb.IS:
             if character is not None and prop.char_status != CharStatus.NONE:
-                return f"{character.getName()} is {prop.char_status}"
+                return f"{character.getName()} is {prop.char_status.value}"
         return ""
 
     @staticmethod
@@ -254,7 +272,12 @@ class Condition:
                     return entry.char_id
         return ELEM_ID_NONE
 
-
+    @staticmethod
+    def isCharStatus(properties: list[ConditionProp], char_id: ElemID, char_status: CharStatus) -> bool:
+        for entry in properties:
+            if entry.verb == ConditionVerb.IS and entry.char_id == char_id and entry.char_status == char_status:
+                return True
+        return False
 
 class WorldProps(BaseProps):
     plans: typing.Optional[str] = ""
