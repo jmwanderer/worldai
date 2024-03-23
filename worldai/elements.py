@@ -157,17 +157,23 @@ class Condition:
         return ConditionProp(char_id=char_id, verb=ConditionVerb.IS, char_status=char_status)
 
     @staticmethod
-    def makeProp(verb: ConditionVerb, char_id: ElemID, item_id: ElemID, site_id: ElemID) -> ConditionProp|None:
-        prop = None
+    def makeProps(verb: ConditionVerb, char_id: ElemID, item_id: ElemID, site_id: ElemID) -> list[ConditionProp]:
+        props = []
         if verb == ConditionVerb.AT:
             if char_id != ELEM_ID_NONE and site_id != ELEM_ID_NONE:
-                prop = Condition.characterAt(char_id, site_id)
+                props.append(Condition.characterAt(char_id, site_id))
+                # item id may also be set
+                if item_id != ELEM_ID_NONE:
+                    props.append(Condition.characterHas(char_id, item_id))
             elif item_id != ELEM_ID_NONE and site_id != ELEM_ID_NONE:
-                prop = Condition.itemAt(item_id, site_id)
+                props.append(Condition.itemAt(item_id, site_id))
         elif verb == ConditionVerb.HAS:
             if char_id != ELEM_ID_NONE and item_id != ELEM_ID_NONE:
-                prop = Condition.characterHas(char_id, item_id)    
-        return prop
+                props.append(Condition.characterHas(char_id, item_id))
+                # site id may also be set
+                if site_id != ELEM_ID_NONE:
+                    props.append(Condition.characterAt(char_id, site_id))
+        return props
  
     @staticmethod
     def getStrVal(db, prop: ConditionProp) -> str:

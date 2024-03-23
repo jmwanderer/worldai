@@ -764,12 +764,13 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             else:
                 return self.funcError(f"Unknown site {site_name}")
 
-        prop = elements.Condition.makeProp(verb, char_id, item_id, site_id)
-        if prop is None:
+        props = elements.Condition.makeProps(verb, char_id, item_id, site_id)
+        if len(props) == 0:
             return self.funcError("Did not understand the condition")
 
-        elements.Condition.removeOverlap(world.startConditions(), prop)
-        world.startConditions().append(prop)
+        for prop in props:
+            elements.Condition.removeOverlap(world.startConditions(), prop)
+            world.startConditions().append(prop)
         elements.updateWorld(db, world)
         return self.funcStatus("Condition added")
 
@@ -808,14 +809,16 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             else:
                 return self.funcError(f"Unknown site {site_name}")
 
-        prop = elements.Condition.makeProp(verb, char_id, item_id, site_id)
-        if prop is None:
+        props = elements.Condition.makeProps(verb, char_id, item_id, site_id)
+        if len(props) == 0:
             return self.funcError("Did not understand the condition")
 
-        count = elements.Condition.removeOverlap(world.startConditions(), prop)
+        count = 0
+        for prop in props:
+            count = count + elements.Condition.removeOverlap(world.startConditions(), prop)
         if count > 0:
             elements.updateWorld(db, world)
-            return self.funcStatus("Condition added")
+            return self.funcStatus("Removed condition")
         return self.funcError("Didn't find a matching condition")
 
 

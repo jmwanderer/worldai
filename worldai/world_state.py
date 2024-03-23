@@ -484,6 +484,9 @@ def checkWorldState(db, wstate: WorldState) -> bool:
     changed = False
 
     world = elements.loadWorld(db, wstate.world_id)
+    if world is None:
+        return False
+
     characters = elements.listCharacters(db, wstate.world_id)
     sites = elements.listSites(db, wstate.world_id)
     items = elements.listItems(db, wstate.world_id)
