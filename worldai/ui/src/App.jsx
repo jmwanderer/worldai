@@ -233,7 +233,7 @@ async function postActionContinue(context, args) {
   return values;
 }
 
-function ChatCharacter({ world, setWorldId, setSiteId, characterId,
+function ChatCharacter({ world, setWorldId, reloadClient, characterId,
                          playerData,
                          setView,
                          statusMessage, setStatusMessage,
@@ -385,7 +385,7 @@ function ChatCharacter({ world, setWorldId, setSiteId, characterId,
                     onClose={onClose}
                     world={world}
                     setWorldId={setWorldId}
-                    setSiteId={setSiteId}
+                    reloadClient={reloadClient}
                     setView={ setView }/>
       </Row>
       <Row>
@@ -534,7 +534,7 @@ async function postUseItem(worldId, itemId) {
   return response.json();
 }
 
-function Site({ world, setWorldId, siteId, setSiteId,
+function Site({ world, setWorldId, siteId, reloadClient,
                 playerData, setPlayerData,
                 selectedItem, setSelectedItem,
                 selectItem, 
@@ -680,7 +680,7 @@ function Site({ world, setWorldId, siteId, setSiteId,
     return (
       <ChatCharacter world={world}
                      setWorldId={setWorldId}
-                     setSiteId={setSiteId}
+                     reloadClient={reloadClient}
                      characterId={characterId}
                      playerData={playerData}
                      setView={setView}
@@ -707,7 +707,7 @@ function Site({ world, setWorldId, siteId, setSiteId,
         <Navigation time={currentTime}
                     world={world}
                     setWorldId={setWorldId}
-                    setSiteId={setSiteId}
+                    reloadClient={reloadClient}
                     onClose={clickClose}
                     setView={ setView }/>
       </Row>
@@ -756,7 +756,7 @@ function getTimeString(time) {
 }
 
 
-function Navigation({ time, world, setWorldId, setSiteId, onClose, setView}) {
+function Navigation({ time, world, setWorldId, reloadClient, onClose, setView}) {
   const [showDialog, setShowDialog] = useState(false);
 
   function setCharactersView() {
@@ -788,8 +788,8 @@ function Navigation({ time, world, setWorldId, setSiteId, onClose, setView}) {
   }
 
   function resetGame() {
-    setSiteId("")
     resetWorldState(world.id)
+    reloadClient();
     setShowDialog(false);
   }
 
@@ -1384,7 +1384,7 @@ function World({ worldId, setWorldId }) {
     return (<Site world={world}
                   setWorldId={setWorldId}
                   siteId={siteId}
-                  setSiteId={setSiteId}
+                  reloadClient={updateWorldData}
                   playerData={playerData}
                   setPlayerData={setPlayerData}
                   selectedItem={selectedItem}
@@ -1407,7 +1407,7 @@ function World({ worldId, setWorldId }) {
         <Navigation time={currentTime}
                     world={world}
                     setWorldId={setWorldId}
-                    setSiteId={setSiteId}
+                    reloadClient={updateWorldData}
                     setView={ setView }/>
       </Row>
       <Row >

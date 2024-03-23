@@ -458,7 +458,7 @@ function World({ tag, setChatView }) {
           </a>
 
         </b>
-        - {formatDescription(entry.description)}
+        - {formatDescription(entry.description)} [{entry.ability}]
       </li>
 
     );

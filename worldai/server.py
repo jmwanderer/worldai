@@ -1119,6 +1119,7 @@ def items_list(wid):
                 "id": iid,
                 "name": item.getName(),
                 "description": item.getDescription(),
+                "ability": elements.getItemAbilityDescription(get_db(), item),
                 "image": image_prop,
             }
         )

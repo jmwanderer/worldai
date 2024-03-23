@@ -16,7 +16,9 @@ Three things cause the world state to change:
   - accumulates events and status updates, adds to next chat or acton call - DONE
 
 * List
-- reset game doesn't reload when reset from the top level
+- reset game doesn't reload when reset from the top level - FIXED
+- Add item ability to list of items in design tool
+- support making two start conditions from one func call
 - Add abilities to characters
 - Address test failure when build_ui has not been run
 - Make all characters in a location aware of what happens at that location
