@@ -25,9 +25,6 @@ import pydantic
 from . import elements
 from .elements import CharStatus
 
-PLAYER_ID = elements.ElemID("id0")
-
-
 class CharStatusRecord(pydantic.BaseModel):
     """
     Record of an active character status affliction
@@ -165,15 +162,15 @@ class WorldState:
     def getCharactersAtLocation(self, site_id: elements.ElemID) -> list[elements.ElemID]:
         result = []
         for char_id in self.model.char_state.keys():
-            if char_id != PLAYER_ID and self.getCharacterLocation(char_id) == site_id:
+            if char_id != elements.PLAYER_ID and self.getCharacterLocation(char_id) == site_id:
                 result.append(char_id)
         return result
 
     def setLocation(self, site_id: elements.ElemID = elements.ELEM_ID_NONE) -> None:
-        self.setCharacterLocation(PLAYER_ID, site_id)
+        self.setCharacterLocation(elements.PLAYER_ID, site_id)
 
     def getLocation(self) -> elements.ElemID:
-        return self.getCharacterLocation(PLAYER_ID)
+        return self.getCharacterLocation(elements.PLAYER_ID)
 
     def getCharacterStrength(self, char_id: elements.ElemID) -> int:
         return self.get_char(char_id).strength
@@ -241,13 +238,13 @@ class WorldState:
         return self.getCharacterStatusRecord(char_id, status) != None
 
     def addPlayerStatus(self, status: CharStatus):
-        self.addCharacterStatus(PLAYER_ID, status)
+        self.addCharacterStatus(elements.PLAYER_ID, status)
 
     def removePlayerStatus(self, status: CharStatus) -> None:
-        self.removeCharacterStatus(PLAYER_ID, status)
+        self.removeCharacterStatus(elements.PLAYER_ID, status)
 
     def hasPlayerStatus(self, status: CharStatus) -> bool:
-        return self.hasCharacterStatus(PLAYER_ID, status)
+        return self.hasCharacterStatus(elements.PLAYER_ID, status)
 
     def processCharStatusUpdates(self) -> None:
         for char_state in self.model.char_state.values():
@@ -306,49 +303,49 @@ class WorldState:
         )
 
     def healPlayer(self) -> None:
-        self.healCharacter(PLAYER_ID)
+        self.healCharacter(elements.PLAYER_ID)
 
     def getPlayerStrength(self) -> int:
-        return self.getCharacterStrength(PLAYER_ID)
+        return self.getCharacterStrength(elements.PLAYER_ID)
 
     def getPlayerMaxStrength(self) -> int:
-        return self.getCharacterMaxStrength(PLAYER_ID)
+        return self.getCharacterMaxStrength(elements.PLAYER_ID)
 
     def getPlayerStrengthPercent(self) -> int:
-        return self.getCharacterStrengthPercent(PLAYER_ID)
+        return self.getCharacterStrengthPercent(elements.PLAYER_ID)
 
     def setPlayerStrength(self, value: int) -> None:
-        self.setCharacterStrength(PLAYER_ID, value)
+        self.setCharacterStrength(elements.PLAYER_ID, value)
 
     def setPlayerToMaxStrength(self) -> None:
-        self.setCharacterToMaxStrength(PLAYER_ID)
+        self.setCharacterToMaxStrength(elements.PLAYER_ID)
 
     def getPlayerHealth(self) -> int:
-        return self.getCharacterHealth(PLAYER_ID)
+        return self.getCharacterHealth(elements.PLAYER_ID)
 
     def getPlayerHealthPercent(self) -> int:
-        return self.getCharacterHealthPercent(PLAYER_ID)
+        return self.getCharacterHealthPercent(elements.PLAYER_ID)
 
     def setPlayerHealth(self, value: int):
-        self.setCharacterHealth(PLAYER_ID, value)
+        self.setCharacterHealth(elements.PLAYER_ID, value)
 
     def setPlayerToMaxHealth(self) -> None:
-        self.setCharacterToMaxHealth(PLAYER_ID)
+        self.setCharacterToMaxHealth(elements.PLAYER_ID)
 
     def getPlayerMaxHealth(self) -> int:
-        return self.getCharacterMaxHealth(PLAYER_ID)
+        return self.getCharacterMaxHealth(elements.PLAYER_ID)
 
     def isPlayerHealthy(self) -> bool:
-        return self.isCharacterHealthy(PLAYER_ID)
+        return self.isCharacterHealthy(elements.PLAYER_ID)
 
     def isPlayerDead(self) -> bool:
-        return self.isCharacterDead(PLAYER_ID)
+        return self.isCharacterDead(elements.PLAYER_ID)
 
     def getPlayerCredits(self) -> int:
-        return self.getCharacterCredits(PLAYER_ID)
+        return self.getCharacterCredits(elements.PLAYER_ID)
 
     def setPlayerCredits(self, value: int) -> None:
-        self.setCharacterCredits(PLAYER_ID, value)
+        self.setCharacterCredits(elements.PLAYER_ID, value)
 
     def getCharacterItems(self, char_id: elements.ElemID) -> list[elements.ElemID]:
         result = []
@@ -373,7 +370,7 @@ class WorldState:
 
     def addItem(self, item_id: elements.ElemID) -> None:
         # Give an item to the player
-        self.get_item(item_id).location = PLAYER_ID
+        self.get_item(item_id).location = elements.PLAYER_ID
 
     def dropItem(self, item_id: elements.ElemID) -> None:
         self.get_item(item_id).location = self.getLocation()
@@ -382,13 +379,13 @@ class WorldState:
 
     def hasItem(self, item_id: elements.ElemID) -> bool:
         # True if player has this item
-        return self.get_item(item_id).location == PLAYER_ID
+        return self.get_item(item_id).location == elements.PLAYER_ID
 
     def getItems(self) -> list[elements.ElemID]:
         # Return a list of item ids possesed by the player
         result = []
         for item_id in self.model.item_state.keys():
-            if self.model.item_state[item_id].location == PLAYER_ID:
+            if self.model.item_state[item_id].location == elements.PLAYER_ID:
                 result.append(item_id)
         return result
 

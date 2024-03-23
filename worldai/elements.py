@@ -18,6 +18,7 @@ ElemID = typing.NewType("ElemID", str)
 WorldID = typing.NewType("WorldID", ElemID)
 ELEM_ID_NONE = ElemID("")
 WORLD_ID_NONE = WorldID(ELEM_ID_NONE)
+PLAYER_ID = ElemID("id0")
 
 
 class ElementType(int, enum.Enum):
@@ -104,12 +105,14 @@ class CharStatus(str, enum.Enum):
     CAPTURED = "captured"
     INVISIBLE = "invisible"
     INJURED = "injured"
+    DEAD = "dead"
 
 class ConditionVerb(str, enum.Enum):
     NONE = "none"
     AT = "at"
     HAS = "has"
     IS = "is"
+    USES = "uses"
 
 class ConditionProp(pydantic.BaseModel):
     """
@@ -121,11 +124,12 @@ class ConditionProp(pydantic.BaseModel):
         - character is CharStatus
         - item at location
     End:
+        - start conditions, plus:
         - character uses item
         - character uses item at location
         - character has item at location
         - character uses item on character
-        - character uses ite on character at location
+        - character uses item on character at location
     """
     # condition defines which other fields are valid
     # meaning given by combination of IDs set and condition verb
@@ -140,6 +144,14 @@ class Condition:
     """
     Utility functions for working with conditions.
     """
+    @staticmethod
+    def characterUses(char_id: ElemID, item_id: ElemID) -> ConditionProp:
+        return ConditionProp(char_id=char_id, verb=ConditionVerb.USES, item_id=item_id)
+
+    @staticmethod
+    def characterUsesAt(char_id: ElemID, item_id: ElemID, site_id: ElemID) -> ConditionProp:
+        return ConditionProp(char_id=char_id, verb=ConditionVerb.USES, item_id=item_id, site_id=site_id)
+
     @staticmethod
     def characterAt(char_id: ElemID, site_id: ElemID) -> ConditionProp:
         return ConditionProp(char_id=char_id, verb=ConditionVerb.AT, site_id=site_id)
@@ -216,6 +228,15 @@ class Condition:
         if prop.verb == ConditionVerb.IS:
             if character is not None and prop.char_status != CharStatus.NONE:
                 return f"{character.getName()} is {prop.char_status.value}"
+
+        if prop.verb == ConditionVerb.USES:
+            if prop.char_id is not None and character is not None:
+                if prop.item_id is not None and item is not None:
+                    if prop.site_id is not None and site is not None:
+                        return f"{character.getName()} uses {item.getName()} at {site.getName()}"
+                    else:
+                        return f"{character.getName()} uses {item.getName()}"
+
         return ""
 
     @staticmethod
@@ -1192,6 +1213,13 @@ def loadCharacter(db, eid: ElemID) -> Optional[Character]:
     """
     Return a character instance
     """
+    if eid == PLAYER_ID:
+        # Special handling for a player record. Unsure if this is a good approach
+        char = Character()
+        char.name = "Player"
+        char.eid = PLAYER_ID
+        return char
+
     return ElementStore.loadElement(db, eid, Character())
 
 

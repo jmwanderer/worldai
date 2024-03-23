@@ -383,6 +383,21 @@ class BasicTestCase(unittest.TestCase):
         world = elements.loadWorld(self.db, world.getID())
         self.assertEqual(len(world.startConditions()), 4)
 
+        # Character uses an item
+        prop = elements.Condition.characterUses(char.getID(), item.getID())
+        self.assertGreater(len(elements.Condition.getStrVal(self.db, prop)), 0)
+        world.endConditions().append(prop)
+
+        # Player uses an item at a location
+        prop = elements.Condition.characterUsesAt(elements.PLAYER_ID, item.getID(), site.getID())
+        self.assertGreater(len(elements.Condition.getStrVal(self.db, prop)), 0)
+        world.endConditions().append(prop)
+
+        elements.updateWorld(self.db, world)
+        world = elements.loadWorld(self.db, world.getID())
+        self.assertEqual(len(world.endConditions()), 2)
+
+
 
 if __name__ == "__main__":
     unittest.main()

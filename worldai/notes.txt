@@ -16,11 +16,12 @@ Three things cause the world state to change:
   - accumulates events and status updates, adds to next chat or acton call - DONE
 
 * List
+- change how we add world start properties
 - enforce initial state of sleeping and lets not have them wake up on their own
 - reset game doesn't reload when reset from the top level - FIXED
 - Add item ability to list of items in design tool - DONE
 - support making two start conditions from one func call - DONE (seems better, not perfect)
-- Add start condition for character state
+- Add start condition for character state - DONE
 - Add abilities to characters
 - Address test failure when build_ui has not been run
 - Make all characters in a location aware of what happens at that location
