@@ -45,6 +45,7 @@ states = {
         "ChangeState",
         "EditWorld",
         "GetStartConditions",
+        "GetEndGoals",
     ],
     STATE_WORLD_EDIT: [
         "UpdateWorld",
@@ -58,6 +59,9 @@ states = {
         "SetStartCondition",
         "ResetStartCondition",
         "GetStartConditions",
+        "GetEndGoals",
+        "SetEndGoal",
+        "ResetEndGoal",
     ],
     STATE_DOCUMENTS: [
         "ListDocuments",
@@ -541,6 +545,15 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         elif function_name == "GetStartConditions":
             result = self.FuncGetStartConditions(db)
 
+        elif function_name == "SetEndGoal":
+            result = self.FuncSetEndGoal(db, arguments)
+
+        elif function_name == "ResetEndGoal":
+            result = self.FuncResetEndGoal(db, arguments)
+
+        elif function_name == "GetEndGoals":
+            result = self.FuncGetEndGoals(db)
+ 
         elif function_name == "ListDocuments":
             result = self.FuncListDocuments(db)
 
@@ -729,13 +742,19 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             result.append(elements.Condition.getStrVal(db, prop))
         return result
  
-    def FuncSetStartCondition(self, db, arguments):
+    def FuncGetEndGoals(self, db):
         world_id = self.getCurrentWorldID()
         world = elements.loadWorld(db, world_id)
-        verb = arguments.get("verb")
-        if verb is None:
-            return self.funcError(f"Must have a verb: is, has, at, ...")
-
+        result = []
+        for prop in world.endConditions():
+            result.append(elements.Condition.getStrVal(db, prop))
+        return result
+ 
+    def BuildPropSet(self, db, 
+                     verb: elements.ConditionVerb, 
+                     arguments: dict[str,str]) -> tuple[list[elements.ConditionProp]|None, dict[str,str]]:
+        result: list[elements.ConditionProp] = []
+        world_id = self.getCurrentWorldID()
         item_id = elements.ELEM_ID_NONE
         char_id = elements.ELEM_ID_NONE
         site_id = elements.ELEM_ID_NONE
@@ -746,7 +765,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             if item is not None:
                 item_id = item.getID()
             else:
-                return self.funcError(f"Unknown item {item_name}")
+                return (result, self.funcError(f"Unknown item {item_name}"))
 
         character_name = arguments.get("character")
         if character_name is not None:
@@ -754,7 +773,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             if character is not None:
                 char_id = character.getID()
             else:
-                return self.funcError(f"Unknown character {character_name}")
+                return (result, self.funcError(f"Unknown character {character_name}"))
 
         site_name = arguments.get("site")
         if site_name is not None:
@@ -762,13 +781,27 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
             if site is not None:
                 site_id = site.getID()
             else:
-                return self.funcError(f"Unknown site {site_name}")
+                return (result, self.funcError(f"Unknown site {site_name}"))
 
-        condition = arguments.get("condition")
+        condition = arguments.get("condition", "")
 
-        props = elements.Condition.makeProps(verb, char_id, item_id, site_id, condition)
+        result = elements.Condition.makeProps(verb, char_id, item_id, site_id, condition)
+        if len(result) == 0:
+            return (result, self.funcError("Did not understand the condition"))
+        return (result, {})
+
+    def FuncSetStartCondition(self, db, arguments):
+        world_id = self.getCurrentWorldID()
+        world = elements.loadWorld(db, world_id)
+        verb = arguments.get("verb")
+        if verb is None:
+            return self.funcError(f"Must have a verb: is, has, at, ...")
+        if verb == elements.ConditionVerb.USES:
+            return self.funcError("Starting conditions don't inlcude use")
+
+        (props, err) = self.BuildPropSet(db, verb, arguments)
         if len(props) == 0:
-            return self.funcError("Did not understand the condition")
+            return err
 
         for prop in props:
             elements.Condition.removeOverlap(world.startConditions(), prop)
@@ -783,41 +816,46 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         if verb is None:
             return self.funcError(f"Must have a verb: is, has, at, ...")
 
-        item_id = elements.ELEM_ID_NONE
-        char_id = elements.ELEM_ID_NONE
-        site_id = elements.ELEM_ID_NONE
-
-        item_name = arguments.get("item")
-        if item_name is not None:
-            item = elements.findItem(db, world_id, item_name)
-            if item is not None:
-                item_id = item.getID()
-            else:
-                return self.funcError(f"Unknown item {item_name}")
-
-        character_name = arguments.get("character")
-        if character_name is not None:
-            character = elements.findCharacter(db, world_id, character_name)
-            if character is not None:
-                char_id = character.getID()
-            else:
-                return self.funcError(f"Unknown character {character_name}")
-
-        site_name = arguments.get("site")
-        if site_name is not None:
-            site = elements.findSite(db, world_id, site_name)
-            if site is not None:
-                site_id = site.getID()
-            else:
-                return self.funcError(f"Unknown site {site_name}")
-
-        props = elements.Condition.makeProps(verb, char_id, item_id, site_id)
-        if len(props) == 0:
-            return self.funcError("Did not understand the condition")
+        (props, err) = self.BuildPropSet(db, verb, arguments)
 
         count = 0
         for prop in props:
             count = count + elements.Condition.removeOverlap(world.startConditions(), prop)
+        if count > 0:
+            elements.updateWorld(db, world)
+            return self.funcStatus("Removed condition")
+        return self.funcError("Didn't find a matching condition")
+
+
+    def FuncSetEndGoal(self, db, arguments):
+        world_id = self.getCurrentWorldID()
+        world = elements.loadWorld(db, world_id)
+        verb = arguments.get("verb")
+        if verb is None:
+            return self.funcError(f"Must have a verb: is, has, at, ...")
+
+        (props, err) = self.BuildPropSet(db, verb, arguments)
+        if len(props) == 0:
+            return err
+
+        for prop in props:
+            elements.Condition.removeOverlap(world.endConditions(), prop)
+            world.endConditions().append(prop)
+        elements.updateWorld(db, world)
+        return self.funcStatus("Condition added")
+
+    def FuncResetEndGoal(self, db, arguments):
+        world_id = self.getCurrentWorldID()
+        world = elements.loadWorld(db, world_id)
+        verb = arguments.get("verb")
+        if verb is None:
+            return self.funcError(f"Must have a verb: is, has, at, ...")
+
+        (props, err) = self.BuildPropSet(db, verb, arguments)
+
+        count = 0
+        for prop in props:
+            count = count + elements.Condition.removeOverlap(world.endConditions(), prop)
         if count > 0:
             elements.updateWorld(db, world)
             return self.funcStatus("Removed condition")
@@ -2081,7 +2119,8 @@ all_functions = [
                         elements.ConditionVerb.IS,
                     ],
                 }
-            }
+            },
+            "required": ["verb"],
         }
     },
     {
@@ -2102,14 +2141,27 @@ all_functions = [
                     "type": "string",
                     "description": "Name of item"
                 },
+                "condition": {
+                    "type": "string",
+                    "description": "Condition of character",
+                    "enum": [
+                        "injured",
+                        "paralized",
+                        "sleeping",
+                        "poisoned",
+                        "invisible"
+                    ]
+                },
                 "verb": {
                     "type": "string",
                     "enum": [
                         elements.ConditionVerb.AT,
                         elements.ConditionVerb.HAS,
+                        elements.ConditionVerb.IS,
                     ],
                 }
-            }
+            },
+            "required": ["verb"],
         }
     },
     {
@@ -2117,5 +2169,99 @@ all_functions = [
         "description": "Get the list of configured starting conditions.",
         "parameters": {
         }
-    }
+    },
+    {
+        "name": "SetEndGoal",
+        "description": "Add a condition of the end goals",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "character": {
+                    "type": "string",
+                    "description": "Name of character"
+                },
+                "site": {
+                    "type": "string",
+                    "description": "Name of site"
+                },
+                "item": {
+                    "type": "string",
+                    "description": "Name of item"
+                },
+                "condition": {
+                    "type": "string",
+                    "description": "Condition of character",
+                    "enum": [
+                        "injured",
+                        "paralized",
+                        "sleeping",
+                        "poisoned",
+                        "invisible",
+                        "captured",
+                        "dead"
+                    ]
+                },
+                "verb": {
+                    "type": "string",
+                    "enum": [
+                        elements.ConditionVerb.AT,
+                        elements.ConditionVerb.HAS,
+                        elements.ConditionVerb.IS,
+                        elements.ConditionVerb.USES,
+                    ],
+                }
+            },
+            "required": ["verb"],
+        }
+    },
+    {
+        "name": "ResetEndGoal",
+        "description": "Remove a condition of the end goals",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "character": {
+                    "type": "string",
+                    "description": "Name of character"
+                },
+                "site": {
+                    "type": "string",
+                    "description": "Name of site"
+                },
+                "item": {
+                    "type": "string",
+                    "description": "Name of item"
+                },
+                "condition": {
+                    "type": "string",
+                    "description": "Condition of character",
+                    "enum": [
+                        "injured",
+                        "paralized",
+                        "sleeping",
+                        "poisoned",
+                        "invisible",
+                        "captured",
+                        "dead"
+                    ]
+                },
+                "verb": {
+                    "type": "string",
+                    "enum": [
+                        elements.ConditionVerb.AT,
+                        elements.ConditionVerb.HAS,
+                        elements.ConditionVerb.IS,
+                        elements.ConditionVerb.USES,
+                    ],
+                }
+            },
+            "required": ["verb"],
+        }
+    },
+    {
+        "name": "GetEndGoals",
+        "description": "Get the list of configured ending goals.",
+        "parameters": {
+        }
+    },
 ]

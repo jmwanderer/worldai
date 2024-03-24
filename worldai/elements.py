@@ -199,9 +199,20 @@ class Condition:
                 elif state == "injured":
                     char_status = CharStatus.INJURED
                 elif state == "invisible":
-                    char_status = CharStatus.INJURED
+                    char_status = CharStatus.INVISIBLE
+                elif state == "captured":
+                    char_status = CharStatus.CAPTURED
+                elif state == "dead":
+                    char_status = CharStatus.DEAD
                 if char_status != CharStatus.NONE:
                     props.append(Condition.characterIs(char_id, char_status))
+
+        elif verb == ConditionVerb.USES:
+            if char_id != ELEM_ID_NONE and item_id != ELEM_ID_NONE:
+                if site_id != ELEM_ID_NONE:
+                    props.append(Condition.characterUsesAt(char_id, item_id, site_id))
+                else:
+                    props.append(Condition.characterUses(char_id, item_id))
 
         return props
  
@@ -261,6 +272,9 @@ class Condition:
 
         elif prop1.verb == ConditionVerb.IS:
             return prop1.char_id == prop2.char_id and prop1.char_status == prop2.char_status
+
+        elif prop1.verb == ConditionVerb.USES:
+            return prop1.char_id == prop2.char_id and prop1.item_id == prop2.item_id
 
         return False
 

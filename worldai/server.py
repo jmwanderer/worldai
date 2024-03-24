@@ -780,8 +780,16 @@ def worlds_api(wid):
         value = elements.Condition.getStrVal(get_db(), entry)
         if value is not None and len(value) > 0:
             start_conditions.append(value)
+ 
+    # Translate end goals to a readable form
+    end_goals: list[str] = []
+    for entry in world.endConditions():
+        value = elements.Condition.getStrVal(get_db(), entry)
+        if value is not None and len(value) > 0:
+            end_goals.append(value)
     
     result["start_conditions"] = start_conditions
+    result["end_goals"] = end_goals
     result["images"] = images
 
     return result
