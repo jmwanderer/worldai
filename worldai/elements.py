@@ -118,6 +118,7 @@ class ConditionProp(pydantic.BaseModel):
     """
     Describes a start or end condition.
     WHO - WHAT, WHO - WHERE, WHAT - WHERE
+    TODO: consider including the player in these conditions. Player as a character
     Start:
         - character at location
         - character has item
@@ -126,10 +127,7 @@ class ConditionProp(pydantic.BaseModel):
     End:
         - start conditions, plus:
         - character uses item
-        - character uses item at location
-        - character has item at location
-        - character uses item on character
-        - character uses item on character at location
+        - character uses item on character - TODO
     """
     # condition defines which other fields are valid
     # meaning given by combination of IDs set and condition verb
@@ -149,10 +147,6 @@ class Condition:
         return ConditionProp(char_id=char_id, verb=ConditionVerb.USES, item_id=item_id)
 
     @staticmethod
-    def characterUsesAt(char_id: ElemID, item_id: ElemID, site_id: ElemID) -> ConditionProp:
-        return ConditionProp(char_id=char_id, verb=ConditionVerb.USES, item_id=item_id, site_id=site_id)
-
-    @staticmethod
     def characterAt(char_id: ElemID, site_id: ElemID) -> ConditionProp:
         return ConditionProp(char_id=char_id, verb=ConditionVerb.AT, site_id=site_id)
 
@@ -170,6 +164,13 @@ class Condition:
 
     @staticmethod
     def makeProps(verb: ConditionVerb, char_id: ElemID, item_id: ElemID, site_id: ElemID, state: str = "") -> list[ConditionProp]:
+        """
+        Make valid condition properties from the 5 possible input values.
+        One set of values can create multiple properties
+        If the input values don't make sense, an empty list is returned.
+        Note: we don't try to catch information that will be ignored. This is matched to the values that we see the
+        GPT setting in the action calls
+        """
         props = []
         if verb == ConditionVerb.AT:
             if char_id != ELEM_ID_NONE and site_id != ELEM_ID_NONE:
@@ -208,11 +209,14 @@ class Condition:
                     props.append(Condition.characterIs(char_id, char_status))
 
         elif verb == ConditionVerb.USES:
-            if char_id != ELEM_ID_NONE and item_id != ELEM_ID_NONE:
-                if site_id != ELEM_ID_NONE:
-                    props.append(Condition.characterUsesAt(char_id, item_id, site_id))
-                else:
+            if char_id != ELEM_ID_NONE:
+                if item_id != ELEM_ID_NONE:
                     props.append(Condition.characterUses(char_id, item_id))
+                if site_id != ELEM_ID_NONE:
+                    # GPT can include a location in a uses statement depending on user input.
+                    # We break these into two conditions.
+                    props.append(Condition.characterAt(char_id, site_id))
+                # TODO: consider the uses item on a character - later
 
         return props
  
@@ -233,9 +237,11 @@ class Condition:
                 return f"{character.getName()} at {site.getName()}"
             if item is not None and site is not None:
                 return f"{item.getName()} at {site.getName()}"
+
         if prop.verb == ConditionVerb.HAS:
             if character is not None and item is not None:
                 return f"{character.getName()} has {item.getName()}"
+
         if prop.verb == ConditionVerb.IS:
             if character is not None and prop.char_status != CharStatus.NONE:
                 return f"{character.getName()} is {prop.char_status.value}"
@@ -243,10 +249,7 @@ class Condition:
         if prop.verb == ConditionVerb.USES:
             if prop.char_id is not None and character is not None:
                 if prop.item_id is not None and item is not None:
-                    if prop.site_id is not None and site is not None:
-                        return f"{character.getName()} uses {item.getName()} at {site.getName()}"
-                    else:
-                        return f"{character.getName()} uses {item.getName()}"
+                    return f"{character.getName()} uses {item.getName()}"
 
         return ""
 
@@ -281,7 +284,8 @@ class Condition:
     @staticmethod
     def removeOverlap(properties: list[ConditionProp], prop: ConditionProp):
         """
-        Remove an overlapping property from the list if it exists
+        Remove a single overlapping property from the list if it exists
+        Returns the number of entries removed
         """
         for entry in properties:
             if Condition.overlaps(entry, prop):

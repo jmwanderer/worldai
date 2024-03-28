@@ -389,7 +389,7 @@ class BasicTestCase(unittest.TestCase):
         world.endConditions().append(prop)
 
         # Player uses an item at a location
-        prop = elements.Condition.characterUsesAt(elements.PLAYER_ID, item.getID(), site.getID())
+        prop = elements.Condition.characterAt(elements.PLAYER_ID, site.getID())
         self.assertGreater(len(elements.Condition.getStrVal(self.db, prop)), 0)
         world.endConditions().append(prop)
 
