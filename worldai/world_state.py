@@ -100,14 +100,28 @@ class WorldState:
         return self.model.model_dump_json()
 
     def get_char(self, char_id: elements.ElemID) -> CharState:
+        """
+        Helper function to get (perhaps allocate) a Character State entry
+        """
         if not char_id in self.model.char_state.keys():
             self.model.char_state[char_id] = CharState(char_id=char_id)
         return self.model.char_state[char_id]
 
     def get_item(self, item_id: elements.ElemID) -> ItemState:
+        """
+        Helper function to get and perhaps create an Item State entry
+        """
         if not item_id in self.model.item_state.keys():
             self.model.item_state[item_id] = ItemState()
         return self.model.item_state[item_id]
+
+    def get_site(self, site_id: elements.ElemID) -> SiteState:
+        """
+        Helper function to get and perhaps create a Site State entry
+        """
+        if not site_id in self.model.site_state.keys():
+            self.model.site_state[site_id] = SiteState()
+        return self.model.site_state[site_id]
 
     def get_events(self, char_id: elements.ElemID) -> list[str]:
         if not char_id in self.model.character_events.keys():
@@ -116,11 +130,6 @@ class WorldState:
 
     def isSiteInitialized(self, site_id: elements.ElemID) -> bool:
         return site_id in self.model.site_state.keys()
-
-    def get_site(self, site_id: elements.ElemID) -> SiteState:
-        if not site_id in self.model.site_state.keys():
-            self.model.site_state[site_id] = SiteState()
-        return self.model.site_state[site_id]
 
     def getCurrentTime(self) -> int:
         # Return time in minutes
@@ -167,9 +176,15 @@ class WorldState:
         return result
 
     def setLocation(self, site_id: elements.ElemID = elements.ELEM_ID_NONE) -> None:
+        """
+        Set player location
+        """
         self.setCharacterLocation(elements.PLAYER_ID, site_id)
 
     def getLocation(self) -> elements.ElemID:
+        """
+        Get the player location
+        """
         return self.getCharacterLocation(elements.PLAYER_ID)
 
     def getCharacterStrength(self, char_id: elements.ElemID) -> int:
@@ -215,7 +230,9 @@ class WorldState:
 
     def addCharacterStatus(self, char_id: elements.ElemID, status: CharStatus) -> None:
         """
-        Add a status to the list of CharStatus
+        Set a status value for a character: sleeping, invisible, etc.
+
+        Adds a status to the list of CharStatus
         state: CharStatus
         """
         char_status = CharStatusRecord(char_status=status)
@@ -238,6 +255,9 @@ class WorldState:
         return self.getCharacterStatusRecord(char_id, status) != None
 
     def addPlayerStatus(self, status: CharStatus):
+        """
+        Add a status entry for the player. E.G. sleeping, poisoned, etc.
+        """
         self.addCharacterStatus(elements.PLAYER_ID, status)
 
     def removePlayerStatus(self, status: CharStatus) -> None:
@@ -264,6 +284,7 @@ class WorldState:
                 elif char_status == CharStatus.POISONED:
                     self.addCharacterEvent(char_state.char_id, "{name} is no longer poisoned")
                 elif char_status == CharStatus.SLEEPING:
+                    # TODO: condsider removing the time limit on sleep
                     self.addCharacterEvent(char_state.char_id, "{name} is now awake")
 
     def updateCharStatus(self, char_id: elements.ElemID, 
@@ -281,6 +302,7 @@ class WorldState:
             self.setCharacterHealth(char_id, self.getCharacterHealth(char_id) - 1)
 
         elif char_status_rec.char_status == CharStatus.SLEEPING:
+            # TODO: condier removing the time limit on sleep
             char_status_rec.count -= 1
 
         
@@ -382,7 +404,9 @@ class WorldState:
         return self.get_item(item_id).location == elements.PLAYER_ID
 
     def getItems(self) -> list[elements.ElemID]:
-        # Return a list of item ids possesed by the player
+        """
+        Return a list of item ids possesed by the player
+        """
         result = []
         for item_id in self.model.item_state.keys():
             if self.model.item_state[item_id].location == elements.PLAYER_ID:
@@ -438,6 +462,9 @@ class WorldState:
         Record if site is open
         """
         self.get_site(site_id).is_open = value
+
+    def checkEndConditions(self, world: elements.World) -> bool:
+        return evalEndConditions(self, world)
 
 
 def getWorldStateID(db, user_id: str, world_id: elements.WorldID) -> WorldStateID:
@@ -547,6 +574,36 @@ def checkWorldState(db, wstate: WorldState) -> bool:
 
     return changed
 
+def evalEndConditions(wstate: WorldState, world: elements.World) -> bool:
+    """
+    Evaluate end conditions against the current world state.
+    Return TRUE if all true
+    """
+    for condition in world.endConditions():
+        if not evalEndCondition(wstate, condition):
+            return False
+    return True
+
+def evalEndCondition(wstate: WorldState, condition: elements.ConditionProp) -> bool:
+    """
+    Evaluate and end condition agains the current world state
+    """
+    if condition.verb == elements.ConditionVerb.AT:
+        if condition.char_id != elements.ELEM_ID_NONE:
+            return wstate.getCharacterLocation(condition.char_id) == condition.site_id
+        if condition.item_id != elements.ELEM_ID_NONE:
+            return wstate.getItemLocation(condition.item_id) == condition.site_id
+    
+    if condition.verb == elements.ConditionVerb.HAS:
+        return wstate.getItemLocation(condition.item_id) == condition.char_id
+
+    if condition.verb == elements.ConditionVerb.IS:
+        return wstate.hasCharacterStatus(condition.char_id, condition.char_status)
+
+    if condition.verb == elements.ConditionVerb.USES:
+        # TODO: capture item usage events
+        pass
+    return False
 
 def loadWorldState(db, wstate_id: WorldStateID) -> WorldState:
     """

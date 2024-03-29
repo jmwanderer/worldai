@@ -1229,6 +1229,35 @@ def item_instance(wid, iid):
     return result
 
 
+@bp.route("/api/worlds/<wid>/instance", methods=["GET", "POST"])
+@auth_required
+def state(wid):
+    """
+    Load and return the world status
+    """
+    user_id = get_user_id()
+    world = elements.loadWorld(get_db(), wid)
+    if world is None:
+        return {"error", "World not found"}, 404
+    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
+
+    if request.method == "GET":
+        wstate = world_state.loadWorldState(get_db(), wstate_id)
+        response = client.WorldStatus()
+        client.update_world_status(get_db(), wstate, response)
+        return response.model_dump()
+
+    logging.info("Reset game %s:%s:%s", user_id, world.getID(), wstate_id)
+    world_state.clearWorldState(get_db(), wstate_id)
+
+    return { "status": "ok"}, 200
+
+#
+# WORLD STATE altering API calls
+#
+# User can alter the world state with a command, a character chat, or character action
+#
+
 @bp.route("/api/worlds/<wid>/command", methods=["POST"])
 @auth_required
 def command_api(wid):
@@ -1256,30 +1285,6 @@ def command_api(wid):
         world_state.saveWorldState(get_db(), wstate)
 
     return response.model_dump()
-
-
-@bp.route("/api/worlds/<wid>/instance", methods=["GET", "POST"])
-@auth_required
-def state(wid):
-    """
-    Load and return the world status
-    """
-    user_id = get_user_id()
-    world = elements.loadWorld(get_db(), wid)
-    if world is None:
-        return {"error", "World not found"}, 404
-    wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
-
-    if request.method == "GET":
-        wstate = world_state.loadWorldState(get_db(), wstate_id)
-        response = client.WorldStatus()
-        client.update_world_status(get_db(), wstate, response)
-        return response.model_dump()
-
-    logging.info("Reset game %s:%s:%s", user_id, world.getID(), wstate_id)
-    world_state.clearWorldState(get_db(), wstate_id)
-
-    return { "status": "ok"}, 200
 
 
 @bp.route("/api/worlds/<wid>/characters/<cid>/thread", methods=["GET", "POST"])

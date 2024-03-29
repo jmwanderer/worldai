@@ -180,3 +180,54 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(len(events), 3)
         events = self.wstate.getCharacterEvents(cid2)
         self.assertEqual(len(events), 0)
+
+    def testEndConditionEval(self):
+        cid1 = self.char_ids[0]
+        sid1 = self.site_ids[0]
+        sid2 = self.site_ids[1]
+        iid1 = self.item_ids[0]
+        iid2 = self.item_ids[1]
+
+        world = elements.World()
+
+        prop = elements.Condition.characterAt(cid1, sid1)
+        world.endConditions().append(prop)
+        self.wstate.setCharacterLocation(cid1, sid2)
+        self.assertFalse(world_state.evalEndCondition(self.wstate, prop))
+        self.wstate.setCharacterLocation(cid1, sid1)
+        self.assertTrue(world_state.evalEndCondition(self.wstate, prop))
+
+        prop = elements.Condition.characterHas(cid1, iid1)
+        world.endConditions().append(prop)
+        self.wstate.setItemLocation(iid1, sid1)
+        self.assertFalse(world_state.evalEndCondition(self.wstate, prop))
+        self.wstate.setItemLocation(iid1, cid1)
+        self.assertTrue(world_state.evalEndCondition(self.wstate, prop))
+
+        prop = elements.Condition.itemAt(iid2, sid2)
+        world.endConditions().append(prop)
+        self.wstate.setItemLocation(iid2, sid1)
+        self.assertFalse(world_state.evalEndCondition(self.wstate, prop))
+        self.wstate.setItemLocation(iid2, sid2)
+        self.assertTrue(world_state.evalEndCondition(self.wstate, prop))
+
+        prop = elements.Condition.characterIs(cid1, elements.CharStatus.SLEEPING)
+        world.endConditions().append(prop)
+        self.assertFalse(world_state.evalEndCondition(self.wstate, prop))
+        self.wstate.addCharacterStatus(cid1, elements.CharStatus.SLEEPING)
+        self.assertTrue(world_state.evalEndCondition(self.wstate, prop))
+
+        self.assertTrue(world_state.evalEndConditions(self.wstate, world))
+        self.assertTrue(self.wstate.checkEndConditions(world))
+
+        self.wstate.setItemLocation(iid2, sid1)
+        self.assertFalse(world_state.evalEndConditions(self.wstate, world))
+
+        # TODO: test ConditionVerb.USES
+
+
+ 
+
+
+
+

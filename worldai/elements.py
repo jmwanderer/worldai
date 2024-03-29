@@ -141,6 +141,7 @@ class ConditionProp(pydantic.BaseModel):
 class Condition:
     """
     Utility functions for working with conditions.
+    Consider this the set of valid conditions
     """
     @staticmethod
     def characterUses(char_id: ElemID, item_id: ElemID) -> ConditionProp:
@@ -158,7 +159,7 @@ class Condition:
     def itemAt(item_id: ElemID, site_id: ElemID) -> ConditionProp:
         return ConditionProp(item_id=item_id, verb=ConditionVerb.AT, site_id=site_id)
 
-    @ staticmethod
+    @staticmethod
     def characterIs(char_id: ElemID, char_status: CharStatus) -> ConditionProp:
         return ConditionProp(char_id=char_id, verb=ConditionVerb.IS, char_status=char_status)
 
@@ -292,6 +293,11 @@ class Condition:
                 properties.remove(entry)
                 return 1
         return 0
+
+    #
+    # Methods for start conditions:
+    # Note, the implementation produces n-squared behavior. Probably OK, but worth noting.
+    #
 
     @staticmethod
     def getCharStartSite(properties: list[ConditionProp], char_id: ElemID) -> ElemID:
