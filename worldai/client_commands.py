@@ -48,10 +48,10 @@ class CommandResponse(pydantic.BaseModel):
 
 
 class ClientActions:
-    def __init__(self, db, world, wstate, player_name):
+    def __init__(self, db, world: elements.World, wstate: world_state.WorldState, player_name: str):
         self.db = db
         self.world = world
-        self.wstate = wstate
+        self.wstate  = wstate
         self.player_name = player_name
 
     def ExecCommand(self, command):
@@ -172,6 +172,10 @@ class ClientActions:
             logging.info("disengage character")
             response.world_status.changed = True
             response.world_status.response_message = f"Talking to nobody"
+
+        # Check if end conditions completed
+        if  response.world_status.changed:
+            response.world_status.game_won = self.wstate.checkEndConditions(self.world)
 
         client.update_world_status(self.db, self.wstate, response.world_status)
         logging.info("Client command response: %s", response.model_dump())

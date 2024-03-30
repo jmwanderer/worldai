@@ -1317,11 +1317,25 @@ def thread_api(wid, cid):
         if command == "start":
             user_msg = request.json.get("user")
             result = chat_session.chat_start(get_db(), user_msg)
+
+            # Check if we have completed the game goals.
+            if result.world_status.changed:
+                wstate = world_state.loadWorldState(get_db(), wstate_id)
+                result.world_status.game_won = wstate.checkEndConditions(world)
+                world_state.saveWorldState(get_db(), wstate)
+
             content = result.model_dump()
 
         elif command == "continue":
             msg_id = request.json.get("id")
             reply = chat_session.chat_continue(get_db(), msg_id)
+
+            # Check if we have completed the game goals.
+            if reply.world_status.changed:
+                wstate = world_state.loadWorldState(get_db(), wstate_id)
+                reply.world_status.game_won = wstate.checkEndConditions(world)
+                world_state.saveWorldState(get_db(), wstate)
+
             content = reply.model_dump()
 
     # TODO: make this return include a WorldStatus
@@ -1391,17 +1405,31 @@ def action_api(wid, cid):
             world_state.saveWorldState(get_db(), wstate)
 
         reply = chat_session.chat_event_start(get_db(), world_status.last_event)
-        
+
+        # Check if we have completed the game goals.
+        if reply.world_status.changed:
+            wstate = world_state.loadWorldState(get_db(), wstate_id)
+            reply.world_status.game_won = wstate.checkEndConditions(world)
+            world_state.saveWorldState(get_db(), wstate)
+       
         # Copy results from command action into resonse
         # TODO: just copy entire world_status?
         reply.world_status.changed = world_status.changed
         reply.world_status.response_message = world_status.response_message
         reply.world_status.last_event = world_status.last_event
+
         content = reply.model_dump()
 
     elif command == "continue":
         msg_id = request.json.get("id")
         reply = chat_session.chat_continue(get_db(), msg_id)
+
+         # Check if we have completed the game goals.
+        if reply.world_status.changed:
+            wstate = world_state.loadWorldState(get_db(), wstate_id)
+            reply.world_status.game_won = wstate.checkEndConditions(world)
+            world_state.saveWorldState(get_db(), wstate)
+
         content = reply.model_dump()
 
     chat_session.saveChatSession(get_db())

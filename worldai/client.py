@@ -59,6 +59,7 @@ class PlayerData(pydantic.BaseModel):
 # calls that mutate the world.  WIP
 class WorldStatus(pydantic.BaseModel):
     current_time: int = 0
+    game_won: bool = False
     player_alive: bool = True
     location_id: str = ""
     engaged_character_id: str = ""
@@ -152,6 +153,7 @@ def LoadPlayerData(db, wstate):
 
 def update_world_status(db, wstate: world_state.WorldState, status: WorldStatus):
     status.current_time = wstate.getCurrentTime()
+    status.game_won = wstate.gameWonStatus()
     status.location_id = wstate.getLocation()
     status.player_alive = wstate.getPlayerHealth() > 0
     status.engaged_character_id = wstate.getChatCharacter()

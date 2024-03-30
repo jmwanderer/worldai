@@ -222,6 +222,8 @@ class BasicTestCase(unittest.TestCase):
 
         self.wstate.setItemLocation(iid2, sid1)
         self.assertFalse(world_state.evalEndConditions(self.wstate, world))
+        # A win is sticky, verify
+        self.assertTrue(self.wstate.checkEndConditions(world))
 
         # TODO: test ConditionVerb.USES
 

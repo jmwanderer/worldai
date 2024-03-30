@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Represets the state of an instance of a world.
 A player interacting with a specific world
@@ -67,7 +66,7 @@ class WorldStateModel(pydantic.BaseModel):
     """
     Represents an instantation of a world
     """
-
+    game_won: bool = False
     char_state: typing.Dict[elements.ElemID, CharState] = {}
     player_state: PlayerState = PlayerState()
     item_state: typing.Dict[elements.ElemID, ItemState] = {}
@@ -463,8 +462,15 @@ class WorldState:
         """
         self.get_site(site_id).is_open = value
 
+    def gameWonStatus(self) -> bool:
+        return self.model.game_won
+
     def checkEndConditions(self, world: elements.World) -> bool:
-        return evalEndConditions(self, world)
+        if self.model.game_won:
+            return True
+        self.model.game_won = evalEndConditions(self, world)
+        logging.info("game won status: ",  self.model.game_won)
+        return self.model.game_won
 
 
 def getWorldStateID(db, user_id: str, world_id: elements.WorldID) -> WorldStateID:
@@ -588,6 +594,7 @@ def evalEndCondition(wstate: WorldState, condition: elements.ConditionProp) -> b
     """
     Evaluate and end condition agains the current world state
     """
+    logging.info("eval end condition: ", condition.verb)
     if condition.verb == elements.ConditionVerb.AT:
         if condition.char_id != elements.ELEM_ID_NONE:
             return wstate.getCharacterLocation(condition.char_id) == condition.site_id
@@ -595,6 +602,7 @@ def evalEndCondition(wstate: WorldState, condition: elements.ConditionProp) -> b
             return wstate.getItemLocation(condition.item_id) == condition.site_id
     
     if condition.verb == elements.ConditionVerb.HAS:
+        result =  wstate.getItemLocation(condition.item_id) == condition.char_id
         return wstate.getItemLocation(condition.item_id) == condition.char_id
 
     if condition.verb == elements.ConditionVerb.IS:
