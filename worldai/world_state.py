@@ -469,7 +469,7 @@ class WorldState:
         if self.model.game_won:
             return True
         self.model.game_won = evalEndConditions(self, world)
-        logging.info("game won status: ",  self.model.game_won)
+        logging.info("game won status: %s",  self.model.game_won)
         return self.model.game_won
 
 
@@ -594,7 +594,7 @@ def evalEndCondition(wstate: WorldState, condition: elements.ConditionProp) -> b
     """
     Evaluate and end condition agains the current world state
     """
-    logging.info("eval end condition: ", condition.verb)
+    logging.info("eval end condition: %s", condition.verb)
     if condition.verb == elements.ConditionVerb.AT:
         if condition.char_id != elements.ELEM_ID_NONE:
             return wstate.getCharacterLocation(condition.char_id) == condition.site_id
