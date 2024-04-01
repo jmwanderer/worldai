@@ -534,37 +534,11 @@ async function postUseItem(worldId, itemId) {
   return response.json();
 }
 
-function Site({ world, setWorldId, siteId, reloadClient,
-                playerData, setPlayerData,
-                selectedItem, setSelectedItem,
-                selectItem, 
+function Site({ worldState, setWorldState, reloadClient,
                 statusMessage, setStatusMessage,
-                currentTime,  setCurrentTime,
-                characterId, setCharacterId,
                 onClose }) {
-  const [site, setSite] = useState(null);
-  const [view, setView] = useState(null);
   
-  useEffect(() => {
-    let ignore = false;
-
-    async function getData() {
-      // Load the site
-      try {
-        const value = await getSiteInstance(world.id, siteId)
-        if (!ignore) {
-          setSite(value);
-        }
-      } catch (e) {
-        console.log(e);        
-      }
-    }
-    getData();
-    return () => {
-      ignore = true;
-    }
-  }, [world, siteId]);
-
+  console.log("function site");
   async function reloadSiteState() {
     try {
       let calls = Promise.all([ getWorldStatus(world.id), getSiteInstance(world.id, siteId) ]);
@@ -642,10 +616,6 @@ function Site({ world, setWorldId, siteId, reloadClient,
     onClose()
   }
 
-  if (!site) {
-    return <div/>        
-  }
-
   async function engageCharacter(char_id) {
     try {    
       const response = await postEngage(world.id, char_id);
@@ -666,20 +636,11 @@ function Site({ world, setWorldId, siteId, reloadClient,
       console.log(e);
     }
   }
-  
 
-  if (view) {
-    return (<DetailsView view={view}
-                         world={ world }
-                         selectItem={selectItem}
-                         dropItem={siteDropItem}
-                         onClose={clearView}/>);
-  }
-
-  if (characterId) {
+  if (worldState.character !== null) {
+    console.log("rendering character");
     return (
       <ChatCharacter world={world}
-                     setWorldId={setWorldId}
                      reloadClient={reloadClient}
                      characterId={characterId}
                      playerData={playerData}
@@ -695,26 +656,27 @@ function Site({ world, setWorldId, siteId, reloadClient,
   }
 
   let item_card = "";
-  if (selectedItem !== null) {
+
+  if (worldState.selectedItem !== null) {
     item_card = (<ItemCard item={selectedItem}
                            action={ "Use" }
                            onClick={useSelectedItem}/>);
   }
   
+  console.log("rendering site");
+
   return (
     <Container>
       <Row>
-        <Navigation time={currentTime}
-                    world={world}
-                    setWorldId={setWorldId}
+        <Navigation time={worldState.worldStatus.current_time}
+                    world={worldState.world}
                     reloadClient={reloadClient}
-                    onClose={clickClose}
-                    setView={ setView }/>
+                    onClose={clickClose}/>
       </Row>
       <Row>
         <Col xs={6}>
           <Stack>
-            <ElementImages element={site}/>
+            <ElementImages element={worldState.site}/>
             <Alert className="m-3">
               { statusMessage }
             </Alert>
@@ -722,17 +684,17 @@ function Site({ world, setWorldId, siteId, reloadClient,
         </Col>
         <Col xs={6} style={{ textAlign: "left" }}>
           <Stack>
-            <h2>{site.name}</h2>
-            <h5>{site.description}</h5>
-            <PlayerStats charStats={playerData.status}/>
+            <h2>{worldState.site.name}</h2>
+            <h5>{worldState.site.description}</h5>
+            <PlayerStats charStats={worldState.worldStatus.player.status}/>
             { item_card }
           </Stack>
         </Col>
       </Row>
       <Row className="mb-2">
         <Stack direction="horizontal">
-          { getSitePeople(site, engageCharacter) }
-          { getSiteItems(site, useItem, takeItem) }
+          { getSitePeople(worldState.site, engageCharacter) }
+          { getSiteItems(worldState.site, useItem, takeItem) }
         </Stack>
       </Row>
     </Container>            
@@ -1243,15 +1205,15 @@ async function postEngage(worldId, charId) {
 }
 
 function World({ worldId, setWorldId }) {
-  const [world, setWorld] = useState(null);            
-  const [siteList, setSiteList] = useState([]);
-  const [siteId, setSiteId] = useState(null);
+  const [worldState, setWorldState] = useState({ world: null,
+                                                 siteList: null,
+                                                 site: null,
+                                                 character: null,
+                                                 selectedItem: null,
+                                                 worldStatus: null
+                                                 });
   const [view, setView] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null);  
   const [statusMessage, setStatusMessage] = useState("");
-  const [playerData, setPlayerData] = useState(null);
-  const [currentTime, setCurrentTime] = useState(0);  
-  const [characterId, setCharacterId] = useState(null);
 
   useEffect(() => {
     let ignore = false;
@@ -1263,16 +1225,16 @@ function World({ worldId, setWorldId }) {
         let calls = Promise.all([ getSiteInstancesList(worldId),
           getWorld(worldId),
           getWorldStatus(worldId)]);
-        let [newSites, newWorld, newStatus] = await calls;
+        let [sites, world, world_status] = await calls;
 
         if (!ignore) {
-          setWorld(newWorld);
-          setSiteList(newSites);
-          setPlayerData(newStatus.player);
-          setCurrentTime(newStatus.current_time);  // TODO - decide on this
-          loadSelectedItem(newWorld, newStatus.player);
-          setSiteId(newStatus.location_id);
-          setCharacterId(newStatus.engaged_character_id);
+          let newWorldState = { ...worldState}
+          newWorldState.world = world;
+          newWorldState.siteList = sites;
+          newWorldState.worldStatus = world_status;
+          setWorldState(newWorldState);
+          //loadCharacter(world_status.engaged_character_id);
+          //loadSelectedItem(world.id, world_status.player.selected_item);
         }
       } 
       catch (e) {
@@ -1284,10 +1246,66 @@ function World({ worldId, setWorldId }) {
     return () => {
       ignore = true;
     }
-  },  [worldId, siteId]);
+  },  []);
 
-  function clickClose() {
-    setWorldId("");
+  if (worldState.worldStatus != null && worldState.worldStatus.location_id !== null && worldState.worldStatus.location_id !== "") {
+    if (worldState.site == null || worldState.site.id != worldState.worldStatus.location_id) {
+      loadSite(worldState.world.id, worldState.worldStatus.location_id);
+    }
+  }
+  async function loadSite(world_id, site_id) {
+    if (site_id === null || site_id === "") {
+      worldState.site = null;
+      setWorldState(worldState);
+    } else {
+      console.log("load site: " + site_id);
+      let newWorldState = { ...worldState};
+      newWorldState.site = await getSiteInstance(world_id, site_id); 
+      console.log("loaded site: " + newWorldState.site);
+      setWorldState(newWorldState);
+    }
+  }
+
+  async function goToSite(site_id) {
+    console.log("go to site: " + site_id);
+    try {    
+      let response = await postGoTo(worldState.world.id, site_id);
+      console.log("post go to");
+      console.log("status message: " + response.world_status.response_message);
+      setStatusMessage(response.world_status.response_message);    
+      console.log("location_id: " + response.world_status.location_id);
+      loadSite(worldState.world.id, response.world_status.location_id);
+      let newWorldState = {...worldState};
+      newWorldState.worldStatus = response.world_status;
+      setWorldState(newWorldState);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  // CURRENT PROGRESS 
+
+  async function loadCharacter(character_id) {
+    if (character_id === null) {
+      worldState.character = null;
+      setWorldState(worldState);
+    }
+  }
+
+  async function loadSelectedItem(world_id, selected_item_id) {
+    try {    
+      if (selected_item_id === null || selected_item_id === "") {
+        worldState.selectedItem = null;
+        setWorldState(worldState);
+      } else if (worldState.selectedItem === null || worldState.selectedItem.id != selected_item_id) {
+        // No currently selected item
+        worldState.selectedItem = await getItemInstance(world_id, selected_item_id);
+        setWorldState(worldState);
+      }
+    } 
+    catch (e) {
+      console.log(e);
+    }
   }
 
   function clearView() {
@@ -1297,31 +1315,9 @@ function World({ worldId, setWorldId }) {
   function clearSite() {
     goToSite("");
     setStatusMessage("");
-    setSiteId(null);
   }
 
-  function selectSite(site_id) {
-    goToSite(site_id);
-  }
-
-  async function loadSelectedItem(world, playerData) {
-    try {    
-      if (playerData.selected_item === "") {
-        setSelectedItem(null);
-      } else if (selectedItem === null) {
-        // No currently selected item
-        const newItem = await getItemInstance(world.id, playerData.selected_item);
-        setSelectedItem(newItem);
-      } else if (playerData.selected_item !== selectedItem.id) {
-        const newItem = await getItemInstance(world.id, playerData.selected_item);        
-        setSelectedItem(newItem);
-      }
-    } 
-    catch (e) {
-      console.log(e);
-    }
-  }
-  
+ 
   async function updateWorldData() {
     // Reload player data and dependent information.
     try {
@@ -1352,23 +1348,9 @@ function World({ worldId, setWorldId }) {
     }
   }
   
-    async function goToSite(site_id) {
-      try {    
-        let response = await postGoTo(world.id, site_id);
-        console.log("post go to");
-        setStatusMessage(response.world_status.response_message);    
-        setCurrentTime(response.world_status.current_time);
-        if (response.world_status.changed) {
-          updateWorldData();
-        }
-      } catch (e) {
-        console.log(e);
-      }
-    }
-
 
     // Wait until data loads
-    if (world === null || siteList === null) {
+    if (worldState.world === null || worldState.siteList === null) {
       return (<div></div>);
     }
 
@@ -1377,25 +1359,15 @@ function World({ worldId, setWorldId }) {
                           world={ world }
                           selectItem={ selectItem }
                           onClose={clearView}/>);
-  }
+    }
 
   // Show a specific site
-  if (siteId) {
-    return (<Site world={world}
-                  setWorldId={setWorldId}
-                  siteId={siteId}
+  if (worldState.site !== null) {
+    return (<Site worldState={worldState}
+                  setWorldState={setWorldState}
                   reloadClient={updateWorldData}
-                  playerData={playerData}
-                  setPlayerData={setPlayerData}
-                  selectedItem={selectedItem}
-                  setSelectedItem={setSelectedItem}
-                  selectItem={selectItem}
                   statusMessage={statusMessage}
                   setStatusMessage={setStatusMessage}
-                  currentTime={currentTime}
-                  setCurrentTime={setCurrentTime}
-                  characterId={characterId}
-                  setCharacterId={setCharacterId}
                   onClose={clearSite}/>);
   }
 
@@ -1404,8 +1376,8 @@ function World({ worldId, setWorldId }) {
   return (
     <Container>
       <Row>
-        <Navigation time={currentTime}
-                    world={world}
+        <Navigation time={worldState.worldStatus.current_time}
+                    world={worldState.world}
                     setWorldId={setWorldId}
                     reloadClient={updateWorldData}
                     setView={ setView }/>
@@ -1413,19 +1385,19 @@ function World({ worldId, setWorldId }) {
       <Row >
         <Col xs={6}>
           <Stack>
-            <ElementImages element={world}/>
+            <ElementImages element={worldState.world}/>
             <Alert className="m-3">
               { statusMessage }
             </Alert>
           </Stack>
         </Col>
         <Col xs={6} style={{ textAlign: "left" }}>
-          <h2>{world.name}</h2>
-          <h5>{world.description}</h5>
+          <h2>{worldState.world.name}</h2>
+          <h5>{worldState.world.description}</h5>
         </Col>                        
       </Row>
       <Row>
-        <WorldSites siteList={siteList} onClick={selectSite}/>
+        <WorldSites siteList={worldState.siteList} onClick={goToSite}/>
       </Row>
     </Container>            
   );
