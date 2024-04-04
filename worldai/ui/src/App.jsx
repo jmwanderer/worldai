@@ -233,85 +233,35 @@ async function postActionContinue(context, args) {
   return values;
 }
 
-function ChatCharacter({ world, setWorldId, reloadClient, characterId,
-                         playerData,
-                         setView,
-                         statusMessage, setStatusMessage,
-                         selectedItem,
-                         currentTime,  setCurrentTime,
-                         onClose, onChange}) {
-  const [character, setCharacter] = useState(null);
+function ChatCharacter({ worldData, worldStatus, setWorldStatus, 
+                         statusMessage, setStatusMessage }) {
   const [characterData, setCharacterData] = useState(null);
-  const [chatEnabled, setChatEnabled] = useState(true);
   const [context, setContext ] = useState(
     {
-      "worldId": world.id,
-      "characterId": characterId
+      "worldId": worldData.world.id,
+      "characterId": worldData.character.id
     });
   // Hook to a function defined in the ChatScreen to run an action
   const submitActionRef = useRef(null);
   
-  useEffect(() => {
-    let ignore = false;
-    async function getData() {
-      // Load the character
-      try {
-        let calls = Promise.all([ getCharacter(world.id, characterId),
-                                  getCharacterData(world.id, characterId)]);
-        const [character, characterData] = await calls;
-                                  
-        if (!ignore) {
-          setCharacter(character);
-          setCharacterData(characterData);
-          setChatEnabled(characterData.can_chat);
-          console.log("current time: " + characterData.current_time)
-        }
-      } catch (e) {
-        console.log(e);        
-      }
-    }
-    getData();
-    return () => {
-      ignore = true;
-    }
-  }, [world, characterId]);
-
+  // TODO: review this one?
   useEffect(() => {
     setContext({
-      "worldId": world.id,
-      "characterId": characterId
+      "worldId": worldData.world.id,
+      "characterId": worldData.character.id
     });
-  }, [ selectedItem ]);
+  }, [ worldStatus.player.selected_item]);
 
   
-  async function reloadState() {
-    // Chat signaled state change on server side
-    // Reload player and character
-    try {
-      let calls = Promise.all([ getCharacter(world.id, characterId),
-                                getCharacterData(world.id, characterId)]);
-      const [character, characterData] = await calls;
-      
-      setCharacter(character);
-      setCharacterData(characterData);
-      setChatEnabled(characterData.can_chat);
-      
-    } catch (e) {
-      console.log(e);
-    }
-    // Let parent component know
-    onChange();
-  }
-
-  if (!character) {
+  if (!worldData.character) {
     return <div/>
   }
 
   async function useSelectedItem() {
-    if (selectedItem !== null && submitActionRef.current !== null) {
+    if (worldData.selectedItem !== null && submitActionRef.current !== null) {
       const args = {
         "action": "use",
-        "itemId": selectedItem.id
+        "itemId": worldData.selectedItem.id
       }
       submitActionRef.current.submitAction(args);
     }
@@ -320,30 +270,21 @@ function ChatCharacter({ world, setWorldId, reloadClient, characterId,
   async function runChatStart(context, user_msg) {
     let values = await postChatStart(context, user_msg);
     setStatusMessage(values.world_status.response_message)
-    if (values.world_status.changed) {
-      reloadState();
-    }
-    setCurrentTime(values.world_status.current_time)
+    setWorldStatus(values.world_status);
     return values.chat_response
   }
 
    async function runChatContinue(context, msg_id) {
     let values = await postChatContinue(context, msg_id);
     setStatusMessage(values.world_status.response_message)
-    setCurrentTime(values.world_status.current_time)
-    if (values.world_status.changed) {
-      reloadState();
-    }
+    setWorldStatus(values.world_status);
     return values.chat_response
   }
  
   async function startCharacterAction(context, args) {
     let values = await postActionStart(context, args);
     setStatusMessage(values.world_status.response_message)
-    setCurrentTime(values.world_status.current_time)
-    if (values.world_status.changed) {
-      reloadState();
-    }
+    setWorldStatus(values.world_status);
     return values.chat_response
   }
   
@@ -352,16 +293,13 @@ function ChatCharacter({ world, setWorldId, reloadClient, characterId,
     if (values.world_status.response_message.length > 0) {
       setStatusMessage(values.world_status.response_message)
     }
-    setCurrentTime(values.world_status.current_time)
-    if (values.world_status.changed) {
-      reloadState();
-    }
+    setWorldStatus(values.world_status);
     return values.chat_response
   }
   
   let item_card = "";
-  if (selectedItem !== null) {
-    item_card = (<ItemCard item={selectedItem}
+  if (worldData.selectedItem !== null) {
+    item_card = (<ItemCard item={worldData.selectedItem}
                            no_title={ true }
                            action={ "Use" }
                            onClick={ useSelectedItem }/>);
@@ -381,25 +319,17 @@ function ChatCharacter({ world, setWorldId, reloadClient, characterId,
   return (
     <Container>
       <Row>
-        <Navigation time={currentTime}
-                    onClose={onClose}
-                    world={world}
-                    setWorldId={setWorldId}
-                    reloadClient={reloadClient}
-                    setView={ setView }/>
-      </Row>
-      <Row>
         <Col xs={6}>
           <Stack>
-            <CharacterScreen character={character}/>
+            <CharacterScreen character={worldData.character}/>
             <Container>
               <Row>
                 <Col xs={8}>
                   <Alert className="mt-3">              
                     { statusMessage }
                   </Alert>
-                  <CharacterStats charStats={characterData}/>
-                  <PlayerStats charStats={playerData.status}/>
+                  <CharacterStats charStats={worldData.characterData}/>
+                  <PlayerStats charStats={worldStatus.player.status}/>
                 </Col>
                 <Col xs={4}>
                   { item_card }
@@ -409,9 +339,9 @@ function ChatCharacter({ world, setWorldId, reloadClient, characterId,
           </Stack>
         </Col>
         <Col xs={6}>
-            <ChatScreen name={character.name}
+            <ChatScreen name={worldData.character.name}
                         calls={calls}
-                        chatEnabled={chatEnabled}
+                        chatEnabled={worldData.characterData.can_chat}
                         ref={submitActionRef}/>
         </Col>
       </Row>
@@ -550,16 +480,6 @@ function Site({ worldData, worldStatus, setWorldStatus, reloadClient,
     }
   }
 
-  async function disengageCharacter() {
-    try {    
-      const response = await postEngage(worldData.world.id, null);
-      setWorldStatus(response.world_status);
-      setStatusMessage("");      
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
   async function takeItem(item_id) {
     try {
       let response = await postTakeItem(worldData.world.id, item_id);
@@ -596,36 +516,14 @@ function Site({ worldData, worldStatus, setWorldStatus, reloadClient,
   }
 
   async function useSelectedItem() {
-    if (worldData.world.selectedItem !== null) {
-      useItem(worldData.world.selectedItem.id);
+    if (worldData.selectedItem !== null) {
+      useItem(worldData.selectedItem.id);
     }
   }
-
-  function clickClose() {
-    onClose()
-  }
-
-  if (worldData.character !== null) {
-    console.log("rendering character");
-    return (
-      <ChatCharacter world={world}
-                     characterId={characterId}
-                     playerData={playerData}
-                     setView={setView}
-                     statusMessage={statusMessage}
-                     setStatusMessage={setStatusMessage}                     
-                     selectedItem={selectedItem}
-                     currentTime={currentTime}
-                     setCurrentTime={setCurrentTime}
-                     onClose={disengageCharacter}
-                     onChange={handleChanges}/>
-    );
-  }
-
   let item_card = "";
 
   if (worldData.selectedItem !== null) {
-    item_card = (<ItemCard item={selectedItem}
+    item_card = (<ItemCard item={worldData.selectedItem}
                            action={ "Use" }
                            onClick={useSelectedItem}/>);
   }
@@ -634,13 +532,7 @@ function Site({ worldData, worldStatus, setWorldStatus, reloadClient,
 
   return (
     <Container>
-      <Row>
-        <Navigation time={worldStatus.current_time}
-                    world={worldData.world}
-                    reloadClient={reloadClient}
-                    onClose={clickClose}/>
-      </Row>
-      <Row>
+     <Row>
         <Col xs={6}>
           <Stack>
             <ElementImages element={worldData.site}/>
@@ -1264,7 +1156,12 @@ function World({ worldId, setWorldId }) {
       newWorldData.character = null;
       setWorldData(newWorldData);
     } else {
-      newWorldData.character = await getCharacter(world_id, char_id);
+      let calls = Promise.all([ getCharacter(world_id, char_id),
+                                getCharacterData(world_id, char_id)]);
+        const [character, characterData] = await calls;
+ 
+      newWorldData.character = character
+      newWorldData.characterData = characterData
       setWorldData(newWorldData);
     }
   }
@@ -1299,7 +1196,16 @@ function World({ worldId, setWorldId }) {
     }
   }
 
-  // CURRENT PROGRESS 
+  async function selectItem(item_id) {
+    try {
+      let response = await postSelectItem(worldData.world.id, item_id);
+      setStatusMessage(response.world_status.response_message)
+      setWorldStatus(response.world_status);
+    } catch (e) {
+      // TODO: fix reporting
+      console.log(e);      
+    }
+  }
 
   function clearView() {
     setView("");
@@ -1310,60 +1216,74 @@ function World({ worldId, setWorldId }) {
     setStatusMessage("");
   }
 
- 
-  async function updateWorldData() {
-    // Reload player data and dependent information.
-    try {
-      let calls = Promise.all([ getSiteInstancesList(worldId),
-        getWorldStatus(worldId)]);
-      let [newSites, newWorldStatus] = await calls;
-
-      setSiteList(newSites)
-      setPlayerData(newWorldStatus.player);
-      setSiteId(newWorldStatus.location_id);      
-      loadSelectedItem(world, newWorldStatus.player);
+  async function disengageCharacter() {
+    try {    
+      const response = await postEngage(worldData.world.id, null);
+      setWorldStatus(response.world_status);
+      setStatusMessage("");      
     } catch (e) {
       console.log(e);
     }
-      
   }
-  
-  async function selectItem(item_id) {
-    try {
-      let response = await postSelectItem(world.id, item_id);
-      setStatusMessage(response.world_status.response_message)
-      if (response.world_status.changed) {
-        loadSelectedItem(world, response.world_status.player);
-      }
-    } catch (e) {
-      // TODO: fix reporting
-      console.log(e);      
-    }
+
+
+
+  // Wait until data loads
+  if (worldData.world === null || worldData.siteList === null) {
+    return (<div></div>);
   }
-  
 
-    // Wait until data loads
-    if (worldData.world === null || worldData.siteList === null) {
-      return (<div></div>);
-    }
+  if (view) {
+    return (<DetailsView view={view}
+                         world={ worldData.world }
+                         selectItem={selectItem}
+                         onClose={clearView}/>);
+  }
 
-    if (view) {
-      return (<DetailsView view={view}
-                          world={ world }
-                          selectItem={ selectItem }
-                          onClose={clearView}/>);
-    }
+  if (worldData.character !== null) {
+    console.log("rendering character");
+    return (
+     <Container>
+       <Row>
+        <Navigation time={worldStatus.current_time}
+                    world={worldData.world}
+                    setWorldId={setWorldId}
+                    onClose={disengageCharacter}
+                    setView={ setView }/>
+      </Row>
+      <Row> 
+        <ChatCharacter worldData={worldData}
+                       worldStatus={worldStatus}
+                       setWorldStatus={setWorldStatus}
+                       statusMessage={statusMessage}
+                       setStatusMessage={setStatusMessage}/>
+        </Row>
+      </Container>
+    );
+  }
+
 
   // Show a specific site
   if (worldData.site !== null) {
-    return (<Site worldData={worldData}
+    return (
+      <Container>
+       <Row>
+        <Navigation time={worldStatus.current_time}
+                    world={worldData.world}
+                    setWorldId={setWorldId}
+                    onClose={clearSite}
+                    setView={ setView }/>
+      </Row>
+       <Row> 
+        <Site worldData={worldData}
                   worldStatus={worldStatus}
                   setWorldStatus={setWorldStatus}
                   setWorldState={setWorldData}
-                  reloadClient={updateWorldData}
                   statusMessage={statusMessage}
                   setStatusMessage={setStatusMessage}
-                  onClose={clearSite}/>);
+                  onClose={clearSite}/>
+      </Row>
+      </Container>);
   }
 
   // Show world view
@@ -1374,7 +1294,6 @@ function World({ worldId, setWorldId }) {
         <Navigation time={worldStatus.current_time}
                     world={worldData.world}
                     setWorldId={setWorldId}
-                    reloadClient={updateWorldData}
                     setView={ setView }/>
       </Row>
       <Row >
