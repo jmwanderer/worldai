@@ -1267,10 +1267,12 @@ def command_api(wid):
     Returns a client_command.CommandResponse: (message, status, changed)
     """
     user_id = get_user_id()
+    logging.info(f"user_id: {user_id}")
     world = elements.loadWorld(get_db(), wid)
     if world is None:
         return {"error", "World not found"}, 404
     wstate_id = world_state.getWorldStateID(get_db(), user_id, wid)
+    logging.info(f"wstate_id: {wstate_id}")
     wstate = world_state.loadWorldState(get_db(), wstate_id)
 
     command = client_commands.Command(**request.json)
@@ -1284,6 +1286,7 @@ def command_api(wid):
         logging.info("COMMAND: save world state")
         world_state.saveWorldState(get_db(), wstate)
 
+    print(response.model_dump())
     return response.model_dump()
 
 
