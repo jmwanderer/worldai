@@ -491,17 +491,6 @@ function Site({ worldData, worldStatus, setWorldStatus, reloadClient,
     }
   }
 
-  async function siteDropItem(item_id) {
-    try {
-      let response = await postDropItem(worldData.world.id, item_id, worldData.character.id);
-      setWorldStatus(response.world_status);
-      setStatusMessage(response.world_status.response_message);
-    } catch (e) {
-      // TODO: fix reporting
-      console.log(e);      
-    }
-  }
-
   async function useItem(item_id) {
     // Use item not in the presence of a character
     try {
@@ -991,8 +980,6 @@ function DetailsView({view, world, selectItem, dropItem, onClose}) {
 }
 
 
-
-
 function SiteItem({ site, onClick }) {
   function handleClick() {
     onClick(site.id);
@@ -1226,7 +1213,16 @@ function World({ worldId, setWorldId }) {
     }
   }
 
-
+  async function siteDropItem(item_id) {
+    try {
+      let response = await postDropItem(worldData.world.id, item_id, worldData.character.id);
+      setWorldStatus(response.world_status);
+      setStatusMessage(response.world_status.response_message);
+    } catch (e) {
+      // TODO: fix reporting
+      console.log(e);      
+    }
+  }
 
   // Wait until data loads
   if (worldData.world === null || worldData.siteList === null) {
@@ -1234,12 +1230,26 @@ function World({ worldId, setWorldId }) {
   }
 
   if (view) {
+    if (worldData.character !== null) {
     return (<DetailsView view={view}
-                         world={ worldData.world }
+                         world={worldData.world}
+                         selectItem={selectItem}
+                         dropItem={siteDropItem}
+                         onClose={clearView}/>);
+    } else if (worldData.site !== null) {
+    return (<DetailsView view={view}
+                         world={worldData.world}
+                         selectItem={selectItem}
+                         dropItem={siteDropItem}
+                         onClose={clearView}/>);
+    }
+    return (<DetailsView view={view}
+                         world={worldData.world}
                          selectItem={selectItem}
                          onClose={clearView}/>);
   }
 
+  // Show the character view
   if (worldData.character !== null) {
     console.log("rendering character");
     return (
@@ -1249,7 +1259,7 @@ function World({ worldId, setWorldId }) {
                     world={worldData.world}
                     setWorldId={setWorldId}
                     onClose={disengageCharacter}
-                    setView={ setView }/>
+                    setView={setView}/>
       </Row>
       <Row> 
         <ChatCharacter worldData={worldData}
@@ -1261,7 +1271,6 @@ function World({ worldId, setWorldId }) {
       </Container>
     );
   }
-
 
   // Show a specific site
   if (worldData.site !== null) {
