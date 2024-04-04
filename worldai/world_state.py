@@ -585,6 +585,10 @@ def evalEndConditions(wstate: WorldState, world: elements.World) -> bool:
     Evaluate end conditions against the current world state.
     Return TRUE if all true
     """
+    # If no end conditions, then does not eval to true.
+    if len(world.endConditions()) == 0:
+        return False
+
     for condition in world.endConditions():
         if not evalEndCondition(wstate, condition):
             return False

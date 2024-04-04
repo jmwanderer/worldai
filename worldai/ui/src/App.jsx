@@ -631,7 +631,7 @@ function Navigation({ world, setWorldId, worldStatus, reloadWorldStatus, onClose
         </Nav>
         <Navbar.Brand>Story Quest: { world.name }</Navbar.Brand>
         <Navbar.Text>{getTimeString(worldStatus.current_time)}</Navbar.Text>
-        <Navbar.Text> { worldStatus.game_won ? "WIN" : "" }</Navbar.Text>
+        <Navbar.Text class="win_text"> { worldStatus.game_won ? "WIN" : "" }</Navbar.Text>
         { close_button }
         <Modal show={showDialog} onHide={closeDialog}>
           <Modal.Header closeButton>

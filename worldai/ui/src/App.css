@@ -9,3 +9,8 @@
 .card {
   padding: 2em;
 }
+
+.win_text {
+  background: green;
+  color: white;
+}
