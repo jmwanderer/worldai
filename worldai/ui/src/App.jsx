@@ -971,6 +971,15 @@ function DetailsView({view, world, selectItem, dropItem, onClose}) {
 	    <SitesList worldId={world.id}/>
       </div>
     );
+  } else  if (view === "win") {
+     return (
+      <div>
+	    <CloseBar title="Game Won" onClose={onClose}/>
+      <Alert key="success" variant="success">
+        Game won: All objectives achived.
+      </Alert>
+      </div>
+    );
   } else {
     return (
       <div>
@@ -1109,9 +1118,16 @@ function World({ worldId, setWorldId }) {
     }
   }
 
+  function updateWorldStatus(newWorldStatus) {
+    if (newWorldStatus.game_won && !worldStatus.game_won) {
+      setView("win");
+    }
+    setWorldStatus(newWorldStatus);
+  }
+
   async function reloadWorldStatus() {
     const values = await getWorldStatus(worldId);
-    setWorldStatus(values);
+    updateWorldStatus(values);
     clearDataCache()
   }
 
@@ -1200,7 +1216,7 @@ function World({ worldId, setWorldId }) {
     try {    
       let response = await postGoTo(worldData.world.id, site_id);
       setStatusMessage(response.world_status.response_message);    
-      setWorldStatus(response.world_status);
+      updateWorldStatus(response.world_status);
     } catch (e) {
       console.log(e);
     }
@@ -1210,7 +1226,7 @@ function World({ worldId, setWorldId }) {
     try {
       let response = await postSelectItem(worldData.world.id, item_id);
       setStatusMessage(response.world_status.response_message)
-      setWorldStatus(response.world_status);
+      updateWorldStatus(response.world_status);
       if (response.world_status.changed) {
         clearDataCache();
       }
@@ -1232,7 +1248,7 @@ function World({ worldId, setWorldId }) {
   async function disengageCharacter() {
     try {    
       const response = await postEngage(worldData.world.id, null);
-      setWorldStatus(response.world_status);
+      updateWorldStatus(response.world_status);
       setStatusMessage("");      
     } catch (e) {
       console.log(e);
@@ -1242,7 +1258,7 @@ function World({ worldId, setWorldId }) {
   async function siteDropItem(item_id) {
     try {
       let response = await postDropItem(worldData.world.id, item_id, worldStatus.engaged_character_id);
-      setWorldStatus(response.world_status);
+      updateWorldStatus(response.world_status);
       setStatusMessage(response.world_status.response_message);
       if (response.world_status.changed) {
         clearDataCache();
@@ -1293,7 +1309,7 @@ function World({ worldId, setWorldId }) {
       <Row> 
         <ChatCharacter worldData={worldData}
                        worldStatus={worldStatus}
-                       setWorldStatus={setWorldStatus}
+                       setWorldStatus={updateWorldStatus}
                        clearDataCache={clearDataCache}
                        statusMessage={statusMessage}
                        setStatusMessage={setStatusMessage}/>
@@ -1317,7 +1333,7 @@ function World({ worldId, setWorldId }) {
        <Row> 
         <Site worldData={worldData}
                   worldStatus={worldStatus}
-                  setWorldStatus={setWorldStatus}
+                  setWorldStatus={updateWorldStatus}
                   setWorldState={setWorldData}
                   clearDataCache={clearDataCache}
                   statusMessage={statusMessage}
