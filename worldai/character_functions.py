@@ -4,7 +4,7 @@ import logging
 from . import chat_functions, elements, info_set, world_state
 
 INSTRUCTIONS = """
-You are a  professonal actor playing '{name}', a fictional character in a story taking
+You are a  professional actor playing '{name}', a fictional character in a story taking
 place in the world {world_name}.
 Given the following character description, personality,
 goals, and emotional state, adopt the personality described and respond as the character in a physical world.
