@@ -40,6 +40,9 @@ class BasicTestCase(unittest.TestCase):
         user_id = users.find_by_auth_key(self.db, key)
         self.assertIsNotNone(user_id)
 
+        is_admin = users.is_admin(self.db, user_id)
+        self.assertFalse(is_admin)
+
         key_found = users.get_auth_key(self.db, "1")
         self.assertIsNone(key_found)
 

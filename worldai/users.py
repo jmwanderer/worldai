@@ -39,5 +39,14 @@ def get_auth_key(db, user_id: str) -> str|None:
         return None
     return r[0]
 
+def is_admin(db, user_id: str) -> bool:
+    """
+    Lookup if the user is marked as an admin.
+    """
+    c = db.cursor()
+    q = c.execute("SELECT is_admin FROM users WHERE id = ?", (user_id, ))
+    r = q.fetchone()
+    return r is not None and r[0]
+
 
  

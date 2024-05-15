@@ -35,6 +35,7 @@ CREATE TABLE users (
   id TEXT NOT NULL PRIMARY KEY,
   username TEXT,
   auth_key TEXT UNIQUE NOT NULL,
+  is_admin BOOLEAN DEFAULT FALSE,
   created INTEGER NOT NULL,        -- timstamp creation
   accessed INTEGER NOT NULL        -- timestamp last authenticated
 );

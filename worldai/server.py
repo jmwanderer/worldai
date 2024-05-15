@@ -454,7 +454,7 @@ def login():
         session["auth_key"] = auth
         return flask.redirect(flask.url_for("worldai.top_view"))
 
-    return flask.render_template("login.html")
+    return flask.render_template("login.html" )
 
 
 @bp.route("/", methods=["GET"])
@@ -463,7 +463,7 @@ def top_view():
     """
     Top level logo screen
     """
-    return flask.render_template("top.html")
+    return flask.render_template("top.html", is_admin=users.is_admin(get_db(), g.user_id))
 
 
 @bp.route("/ui/play", methods=["GET"])
