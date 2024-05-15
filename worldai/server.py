@@ -428,11 +428,22 @@ def login_required(view):
 
     @functools.wraps(view)
     def wrapped_view(**kwargs):
+        # Authenticate based on session key.
         auth = session.get("auth_key")
         user_id = users.find_by_auth_key(get_db(), auth)
+
+        if user_id is None and "auth" in request.args:
+            # Login using query argument
+            auth = request.args["auth"]
+            user_id = users.find_by_auth_key(get_db(), auth)
+            if user_id is not None:
+                session.permanent = True
+                session["auth_key"] = auth
+
         if user_id is None:
             flask.flash("Please enter an authorization key")
-            return flask.redirect(flask.url_for("worldai.login"))
+            return flask.redirect(flask.url_for("worldai.login", url=request.url))
+
         g.user_id = user_id
         return view(**kwargs)
 
@@ -452,9 +463,12 @@ def login():
             return flask.redirect(flask.url_for("worldai.login"))
         session.permanent = True
         session["auth_key"] = auth
-        return flask.redirect(flask.url_for("worldai.top_view"))
+        url = flask.url_for("worldai.top_view")
+        if "url" in request.form:
+            url = request.form["url"]
+        return flask.redirect(url)
 
-    return flask.render_template("login.html" )
+    return flask.render_template("login.html", url=request.args.get("url"))
 
 
 @bp.route("/", methods=["GET"])
@@ -472,6 +486,12 @@ def play_page():
     """
     Serve the play.html file for the root of the UI
     """
+    world_id = request.args.get("world")
+    if world_id is not None:
+        # Save world from query and reload
+        session["world_id"] = world_id
+        return flask.redirect(flask.url_for("worldai.play_page"))
+
     html_file = os.path.join(current_app.root_path, "static/ui/play.html")
     with open(html_file) as f:
         html = f.read()
