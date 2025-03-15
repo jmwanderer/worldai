@@ -27,6 +27,9 @@ from . import chat_functions, info_set, message_records
 #
 
 GPT_MODEL = "gpt-3.5-turbo-0125"
+GPT_MODEL_TOK = "gpt-3.5-turbo-0125"
+GPT_MODEL_TOK = "gpt-4.5-preview"
+GPT_MODEL_TOK = "gpt-4o"
 # GPT_MODEL = "gpt-3.5-turbo-1106"
 # GPT_MODEL = "gpt-4-1106-preview"
 # Can be higher, but save $$$ with some potential loss in perf
@@ -221,7 +224,8 @@ class ChatSession:
         self.prompt_tokens = 0
         self.complete_tokens = 0
         self.total_tokens = 0
-        self.enc = tiktoken.encoding_for_model(GPT_MODEL)
+        self.enc = tiktoken.encoding_for_model(GPT_MODEL_TOK)
+
         self.history = message_records.MessageRecords()
 
     def load(self, model_str):
