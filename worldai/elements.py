@@ -1378,8 +1378,11 @@ def deleteImage(db, data_dir: str, image_id: ElemID):
     db.commit()
     logging.info("remove image: %s", image_id)
     path = os.path.join(data_dir, image.filename)
-    os.unlink(path)
-    logging.info("delete file: %s", path)
+    try:
+        os.unlink(path)
+        logging.info("delete file: %s", path)
+    except FileNotFoundError:
+        pass
 
 
 def deleteCharacter(db, data_dir: str, eid: ElemID):
