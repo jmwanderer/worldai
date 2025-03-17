@@ -83,26 +83,101 @@ Use the auth key value to login to the client when prompted for an auth key.
 make test
 ```
 
+# Try Out Safely
+In general it is not a good idea to download and run large code bases 
+on your personal machine. It would be easy to search for and exfiltrate 
+secret information on your PC (SSH keys, API keys, bitcoin wallets, etc).
+
+Solution: use a VM to run untrusted software. virt-manager is a great
+package on Linux for creating and running VMs.
+
+It is also not a good idea to share your OpenAI API key. It is diffcult to
+ensure software does't forward a secret key.
+
+Possible solution: OpenAI project keys. Create a dedicated project with an API
+key. Set budget limits and perhaps rate limits on the project to limit
+the impact of any theft.
+
 # Production Use
+A good approach for hosting production applicaiton is to create
+a dedicated user for each app.
 
 ## Build
+
+Build a versoned Python distribution file for install.
+
+Edit the version in pyproject.toml
+- version = "0.2.0"
+
 ```
 make build
-cp worldai-*.whl <dest>
+cp dist/worldai-0.2.0-py3-none-any.whl <dest>
 ```
 
 ## Install and Configure for Production
 
 ```
-pip install worlai-....whl
+mkdir worldai_app
+cd worldai
+python -m venv venv
+source ./venv/bin/activate
+pip install worldai-0.2.0-py3-none-any.whl <dest>
 ```
 
-Setup config.py in instance directory:
+Configure the Flask secret key and the OpenAI API key in
+config.py.  Setup config.py in instance directory:
+
+```
+cd worldai_app/venv
+mkdir -p var/worldai.server-instance/
+vi config.py
+```
 
 - SECRET_KEY='generate a secret string'
 - OPENAI_API_KEY='the key'
 
+A good way to generate a secret string:
+```
+python3
+import os
+os.urandom(32).hex()
+```
+
 ## Run a production server
 
-TODO: run with waitress or gunicorn
+A good configuration for running a production server is:
+- Use a WSGI server to host the app (e.g. waitress or gunicorn)
+- Use Apache2 or NGINX as a front end server
 
+### Run app  in a WSGI server
+
+Example: waitress running the worldai server on port 8085
+
+```
+cd worldai_app
+. ./venv/bin/activate
+pip install waitress
+python3 -m waitress --threads=5 --port 8085 --call worldai.server:create_app
+```
+
+### Run a FrontEnd 
+
+- Add ProxyPass and ProxyPassReverse to sites file:
+```
+    ProxyPass /worldai http://127.0.0.1:8085
+    ProxyPassReverse /worldai http://127.0.0.1:8085
+```
+
+- Run App with a url-prefix
+```
+python3 -m waitress --threads=5 --url-prefix=worldai --port 8085 --call worldai.server:create_app
+```
+
+### Auto Startup
+WIP
+
+Configure worldai.service
+
+or
+
+crontab @reboot
