@@ -1,3 +1,11 @@
+"""
+Chat Interface for Characters
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
 import os
 
 import pydantic

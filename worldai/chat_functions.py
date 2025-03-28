@@ -1,3 +1,11 @@
+"""
+Base class for Character and Design Functions
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
 import logging
 
 

@@ -1,3 +1,10 @@
+//
+// Functions to interact with the server
+//
+//    Jim Wanderer
+//    http://github.com/jmwanderer
+//
+
 import { get_url, headers_get, headers_post } from './util.js';
 
 async function getCharacter(worldId, characterId) {

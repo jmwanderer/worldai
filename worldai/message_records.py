@@ -1,3 +1,11 @@
+"""
+Support for managing chat history.
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
 import json
 import logging
 

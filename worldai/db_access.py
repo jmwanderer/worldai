@@ -1,3 +1,11 @@
+"""
+Isolates use of sqlite3
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
 import os
 import sqlite3
 

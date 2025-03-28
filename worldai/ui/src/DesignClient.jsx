@@ -1,3 +1,10 @@
+//
+// React client for design app
+//
+//    Jim Wanderer
+//    http://github.com/jmwanderer
+//
+
 import { get_url, headers_get, headers_post } from './util.js';
 import { getWorldList, getWorld  } from './api.js';
 import {  getSiteList, getItemList, getCharacterList } from './api.js';

@@ -1,3 +1,12 @@
+"""
+Module for the Design Chat Session
+uses ChatSession and DesignFunctions
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
 import logging
 import os
 
@@ -5,10 +14,7 @@ import pydantic
 
 from . import chat, design_functions, elements, threads
 
-#
-# Module for the Design Chat Session
-# uses ChatSession and DesignFunctions
-#
+
 
 
 class DesignChatResponse(pydantic.BaseModel):

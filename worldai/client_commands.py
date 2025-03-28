@@ -1,4 +1,12 @@
 """
+Support game play commands send from the client
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
+"""
 Implements the game play commands.
 """
 

@@ -1,3 +1,11 @@
+"""
+Flask server  - main server module
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
 import functools
 import logging
 import os

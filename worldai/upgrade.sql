@@ -1,3 +1,16 @@
+--
+-- SQLite Schema
+-- Upgrades DB to add ON DELETE CASCADE
+-- Upgrades: 
+--  commit d175cb83506cbd28696021c5a8b29565b8bee18a
+--   to
+--  commit 042e44d6278d5230d978eab4256f8880361dcaeb
+--
+--    Jim Wanderer
+--    http://github.com/jmwanderer
+--
+
+
 PRAGMA foreign_keys=off;
 
 ALTER TABLE world_state RENAME TO _world_state;

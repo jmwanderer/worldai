@@ -1,3 +1,10 @@
+//
+// React Based Client App
+//
+//    Jim Wanderer
+//    http://github.com/jmwanderer
+//
+
 import { get_url, headers_get, headers_post } from './util.js';
 import { ElementImages, WorldItem, CloseBar } from './common.jsx';
 import { getWorldList, getWorld, getWorldStatus, resetWorldState, getSiteList } from './api.js';

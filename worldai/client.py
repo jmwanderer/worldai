@@ -1,6 +1,10 @@
 """
 Standard structures for client communication.
+
+    Jim Wanderer
+    http://github.com/jmwanderer
 """
+
 
 import enum
 import logging

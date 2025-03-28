@@ -1,8 +1,17 @@
+"""
+Backend support for chat function
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
 #!/usr/bin/env python3
 """
 Text chat client that can make function calls update world model
 
-From: https://cookbook.openai.com/examples/how_to_call_functions_with_chat_models
+Started with:
+    https://cookbook.openai.com/examples/how_to_call_functions_with_chat_models
 """
 
 import json
@@ -26,12 +35,9 @@ from . import chat_functions, info_set, message_records
 #  2. change assistant to reply
 #
 
-GPT_MODEL = "gpt-3.5-turbo-0125"
-GPT_MODEL_TOK = "gpt-3.5-turbo-0125"
-GPT_MODEL_TOK = "gpt-4.5-preview"
-GPT_MODEL_TOK = "gpt-4o"
-# GPT_MODEL = "gpt-3.5-turbo-1106"
-# GPT_MODEL = "gpt-4-1106-preview"
+#GPT_MODEL = "gpt-3.5-turbo-0125"
+GPT_MODEL = "gpt-4o"
+
 # Can be higher, but save $$$ with some potential loss in perf
 MESSAGE_THRESHOLD = 3_000
 
@@ -224,7 +230,7 @@ class ChatSession:
         self.prompt_tokens = 0
         self.complete_tokens = 0
         self.total_tokens = 0
-        self.enc = tiktoken.encoding_for_model(GPT_MODEL_TOK)
+        self.enc = tiktoken.encoding_for_model(GPT_MODEL)
 
         self.history = message_records.MessageRecords()
 

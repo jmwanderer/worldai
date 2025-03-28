@@ -1,6 +1,9 @@
 """
 Represets the state of an instance of a world.
 A player interacting with a specific world
+
+    Jim Wanderer
+    http://github.com/jmwanderer
 """
 
 # Notes:
