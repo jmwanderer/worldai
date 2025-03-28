@@ -1,3 +1,12 @@
+"""
+Design functions implementation
+Functions called by the GPT
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
 import json
 import logging
 import os

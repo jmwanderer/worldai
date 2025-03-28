@@ -1,3 +1,11 @@
+"""
+Function calls for character GPT plus prompt
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
 import json
 import logging
 

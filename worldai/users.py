@@ -1,6 +1,11 @@
 """
 Functions to access and manage the user table.
+Users are players of the game
+
+    Jim Wanderer
+    http://github.com/jmwanderer
 """
+
 import os
 import time
 

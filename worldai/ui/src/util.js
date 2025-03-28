@@ -1,3 +1,9 @@
+//
+// Utility functions
+//    Jim Wanderer
+//    http://github.com/jmwanderer
+//
+
 //import { meta.env } from 'vite';
 
 

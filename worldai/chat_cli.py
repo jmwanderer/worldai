@@ -1,3 +1,11 @@
+"""
+Client to run chat from the CLI for testing
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
 import logging
 
 from . import chat, chat_functions, db_access

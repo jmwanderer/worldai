@@ -1,6 +1,8 @@
-#!/usr/bin/env python3
 """
 InfoSet: Document storage into vector database
+
+    Jim Wanderer
+    http://github.com/jmwanderer
 
 Planned uses:
 - World history and facts that anyone can access

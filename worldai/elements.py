@@ -1,6 +1,10 @@
-#!/usr/bin/env python3
 """
 Represets the element of a world definition.
+
+    Worlds, Characters, Sites, Items, Documents
+
+    Jim Wanderer
+    http://github.com/jmwanderer
 """
 
 import enum

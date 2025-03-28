@@ -1,3 +1,10 @@
+--
+-- SQLite Schema
+--
+--    Jim Wanderer
+--    http://github.com/jmwanderer
+--
+
 -- All elements: worlds, characters, items, sites, docs
 CREATE TABLE elements (
   id TEXT PRIMARY KEY,

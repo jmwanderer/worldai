@@ -1,3 +1,10 @@
+//
+// Creates design client
+//
+//    Jim Wanderer
+//    http://github.com/jmwanderer
+//
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import DesignClient from './DesignClient.jsx'

@@ -1,3 +1,10 @@
+//
+// React components used in design and play
+//
+//    Jim Wanderer
+//    http://github.com/jmwanderer
+//
+
 import Image from 'react-bootstrap/Image';
 import Carousel from 'react-bootstrap/Carousel';
 import Navbar from 'react-bootstrap/Navbar';

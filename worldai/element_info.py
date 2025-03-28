@@ -1,9 +1,10 @@
-#!/usr/bin/env python3
 """
 ElementInfo: Capture information about elements into the InfoSet
 
 Characters can look up information in the InfoSet
 
+    Jim Wanderer
+    http://github.com/jmwanderer
 Tables:
 - element_info
 """

@@ -1,4 +1,12 @@
 """
+Divide text into chunks
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
+"""
 Function to take a file, covert the file to text, and return
 content divided into chunks
 """

@@ -1,3 +1,13 @@
+"""
+Chat history for each character
+
+(nothing to do with OS threads)
+
+    Jim Wanderer
+    http://github.com/jmwanderer
+"""
+
+
 import os
 import time
 

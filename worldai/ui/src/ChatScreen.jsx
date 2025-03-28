@@ -1,3 +1,10 @@
+//
+// Component to implement chat for design or game play
+//
+//    Jim Wanderer
+//    http://github.com/jmwanderer
+//
+
 import { get_url, headers_get, headers_post } from './util.js';
 
 import { useState } from 'react'
