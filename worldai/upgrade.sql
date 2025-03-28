@@ -1,47 +1,7 @@
--- All elements: worlds, characters, items, sites, docs
-CREATE TABLE elements (
-  id TEXT PRIMARY KEY,
-  type INTEGER,    
-  parent_id TEXT,                   -- TODO: foreign key of this table
-  name TEXT NOT NULL,
-  properties TEXT NOT NULL,         -- JSON encoded string 
-  is_hidden BOOLEAN DEFAULT FALSE   -- designer has removed from view
-);      
+PRAGMA foreign_keys=off;
 
-CREATE TABLE images (
-  id TEXT PRIMARY KEY,
-  parent_id TEXT NOT NULL,
-  prompt TEXT NOT NULL,
-  filename TEXT NOT NULL,
-  is_hidden BOOLEAN DEFAULT FALSE
-);
+ALTER TABLE world_state RENAME TO _world_state;
 
-CREATE TABLE token_usage (
-  world_id STRING NOT NULL,
-  prompt_tokens INTEGER NOT NULL,
-  complete_tokens INTEGER NOT NULL,
-  total_tokens INTEGER NOT NULL,
-  images INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE TABLE users (
-  id TEXT NOT NULL PRIMARY KEY,
-  username TEXT,
-  auth_key TEXT UNIQUE NOT NULL,
-  is_admin BOOLEAN DEFAULT FALSE,
-  created INTEGER NOT NULL,        -- timstamp creation
-  accessed INTEGER NOT NULL        -- timestamp last authenticated
-);
-
--- Message threads. Used directly by design and supports character threads
-CREATE TABLE threads (
-  id TEXT PRIMARY KEY,        -- user_id for design threads, generated for character threads
-  created INTEGER NOT NULL,   -- timstamp creation
-  updated INTEGER NOT NULL,   -- timestamp last changed
-  thread TEXT                 -- JSON eencode message thread
-);
-
--- Dynamic game state for an instance of a world
 CREATE TABLE world_state (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -52,7 +12,11 @@ CREATE TABLE world_state (
   FOREIGN KEY (world_id) REFERENCES elements(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+INSERT INTO world_state SELECT * FROM _world_state;
+DROP TABLE _world_state;
  
+ALTER TABLE character_threads RENAME TO _character_threads;
+
 CREATE TABLE character_threads (
   character_id TEXT NOT NULL,
   thread_id TEXT NOT NULL,
@@ -62,7 +26,10 @@ CREATE TABLE character_threads (
   FOREIGN KEY (character_id) REFERENCES elements(id) ON DELETE CASCADE,
   FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
 );
-
+INSERT INTO character_threads SELECT * FROM _character_threads;
+DROP TABLE _character_threads;
+ 
+ALTER TABLE info_docs RENAME TO _info_docs;
 CREATE TABLE info_docs (
   id TEXT NOT NULL,
   world_id TEXT NOT NULL,  
@@ -74,7 +41,10 @@ CREATE TABLE info_docs (
   FOREIGN KEY (wstate_id) REFERENCES world_state(id) ON DELETE CASCADE,
   FOREIGN KEY (owner_id) REFERENCES elements(id) ON DELETE CASCADE
 );
-
+INSERT INTO info_docs SELECT * FROM _info_docs;
+DROP TABLE _info_docs;
+ 
+ALTER TABLE info_chunks RENAME TO _info_chunks;
 CREATE TABLE info_chunks(
   id TEXT NOT NULL,
   doc_id TEXT NOT NULL,
@@ -83,7 +53,10 @@ CREATE TABLE info_chunks(
   PRIMARY KEY (id),
   FOREIGN KEY (doc_id) REFERENCES info_docs(id) ON DELETE CASCADE
 );
-  
+INSERT INTO info_chunks SELECT * FROM _info_chunks;
+DROP TABLE _info_chunks;
+ 
+ALTER TABLE element_info RENAME TO _element_info;
 CREATE TABLE element_info(
   element_id TEXT NOT NULL,
   info_index INTEGER DEFAULT 0,
@@ -92,3 +65,6 @@ CREATE TABLE element_info(
   FOREIGN KEY (element_id) REFERENCES elements(id) ON DELETE CASCADE,
   FOREIGN KEY (doc_id) REFERENCES info_docs(id) ON DELETE CASCADE
 );
+INSERT INTO element_info SELECT * FROM _element_info;
+DROP TABLE _element_info;
+ 
