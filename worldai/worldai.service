@@ -6,10 +6,10 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=always
 RestartSec=1
-User=ubuntu
-WorkingDirectory=/home/ubuntu/worldai
-Environment="PATH=/home/ubuntu/.local/bin:/bin:/usr/bin"
-ExecStart=bash -c "python3 -m waitress --threads=5 --url-prefix=worldai --port 8085 --call worldai.server:create_app"
+User=worldai
+WorkingDirectory=/home/worldai
+Environment="PATH=/bin:/usr/bin"
+ExecStart=bash -c ". ./venv/bin/activate; python3 -m waitress --threads=5 --url-prefix=worldai --port 8085 --call worldai.server:create_app"
 
 
 [Install]

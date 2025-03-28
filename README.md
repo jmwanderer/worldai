@@ -181,3 +181,29 @@ Configure worldai.service
 or
 
 crontab @reboot
+
+## Bugs
+
+- Arguments in the click functions in server.py need to have names changed
+
+## TODO
+
+Items to work on:
+
+- We should give the player character some type of appearance, identity, and background. It can be
+secret from the characters.
+
+- Improve prompt to help the characters act more true to their nature
+
+- Make the Take/Give function smarter. Figure out who has what and just do what the GPT intends
+
+- Consider adding an explicit role for each character, and add a start to a narrative. 
+
+- Consider a narrative that expands as the story progresses that charactes can be aware of.
+Right now, characters only deal with the player.
+
+- Should characters take some unilateral actions?
+
+- Check on the concept of recording events and sharing with the characters
+
+

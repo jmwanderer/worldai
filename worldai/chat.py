@@ -3,11 +3,8 @@ Backend support for chat function
 
     Jim Wanderer
     http://github.com/jmwanderer
-"""
 
 
-#!/usr/bin/env python3
-"""
 Text chat client that can make function calls update world model
 
 Started with:
