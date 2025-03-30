@@ -190,7 +190,7 @@ def delete_character(arg: str):
 @click.argument("id")
 def delete_world(id: str):
     """Delete a world and associated characters and images."""
-    wid = elements.WorldID(id)
+    wid = elements.WorldID(elements.ElemID(id))
     world = elements.loadWorld(get_db(), wid)
     if world is not None:
         elements.deleteWorld(get_db(), current_app.instance_path, wid)

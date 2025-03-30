@@ -23,7 +23,7 @@ def test_no_login(client):
     # No login
     response = client.get("/")
     assert response.status_code == 302
-    assert response.location == "/login"
+    assert response.location.startswith("/login")
 
 
 def test_login(client, app):

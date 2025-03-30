@@ -15,7 +15,8 @@ import logging
 
 import tiktoken
 
-AI_MODEL = "gpt-3.5-turbo-0125"
+#AI_MODEL = "gpt-3.5-turbo-0125"
+AI_MODEL = "gpt-4o"
 
 
 def chunk_text(text: str, chunk_size, overlap):

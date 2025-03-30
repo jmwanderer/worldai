@@ -1257,7 +1257,7 @@ class DesignFunctions(chat_functions.BaseChatFunctions):
         dest_file = os.path.join(IMAGE_DIRECTORY, image.getFilename())
         logging.info("dest file: %s", dest_file)
         result = image_get_request(
-            "Produce a visual image that captures the following: " + image.prompt,
+            "Produce a realistic visual image that captures the following: " + image.prompt,
             dest_file,
         )
 
