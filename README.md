@@ -8,6 +8,11 @@ StoryQuest is a GPT-AI driven world builder and story player.
 | /tests                        | Pytest unit tests                                 |
 | /worldai/ui                   | React based Design and Player UIs                 |
 
+# Demo
+
+- Video of [Game Play](https://youtu.be/3NTIyqYmK0Y)
+- Vdeo of [World Design](https://youtu.be/6qNbAhktXu0)
+
 # Architecture
 
 A nominally restful API serving:
