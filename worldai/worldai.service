@@ -1,5 +1,6 @@
+# Edit WorkingDirectory and ExecStart and place in /etc/systemd/system
 [Unit]
-Description=DocServer Web Service
+Description=WorldAI Web Service
 StartLimitIntervalSec=0
 
 [Service]
@@ -7,10 +8,9 @@ Type=simple
 Restart=always
 RestartSec=1
 User=worldai
-WorkingDirectory=/home/worldai
+WorkingDirectory=/home/worldai/worldai
 Environment="PATH=/bin:/usr/bin"
-ExecStart=bash -c ". ./venv/bin/activate; python3 -m waitress --threads=5 --url-prefix=worldai --port 8085 --call worldai.server:create_app"
-
+ExecStart=/home/worldai/venv/bin/python -m waitress --threads=5 --url-prefix=worldai --port 8080 --call worldai.server:create_app
 
 [Install]
 WantedBy=multi-user.target
