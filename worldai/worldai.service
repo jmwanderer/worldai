@@ -10,7 +10,7 @@ RestartSec=1
 User=worldai
 WorkingDirectory=/home/worldai/worldai
 Environment="PATH=/bin:/usr/bin"
-ExecStart=/home/worldai/venv/bin/python -m waitress --threads=5 --url-prefix=worldai --port 8080 --call worldai.server:create_app
+ExecStart=/home/worldai/venv/bin/python -m waitress --threads=5 --url-prefix=worldai --host 127.0.0.1 --port 8080 --call worldai.server:create_app
 
 [Install]
 WantedBy=multi-user.target
